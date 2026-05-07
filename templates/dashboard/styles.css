@@ -206,7 +206,7 @@
     @keyframes toast-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
     .repo.collapsed .repo-b{display:none}
     @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(2.2);opacity:.05}}
-    @media (max-width:1200px){.kanban{grid-template-columns:1fr}}
+    @media (max-width:1200px){.kanban{grid-template-columns:repeat(var(--kanban-cols,5),minmax(300px,380px))}}
     @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
     /* Pipeline toolbar */
     .pipeline-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
@@ -216,8 +216,8 @@
     .toggle-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
     .toggle-btn.active{background:var(--accent);color:#fff}
     /* Pipeline / Kanban */
-    /* minmax: set headers + feature cards need ~220px+; 180px clipped "Start set" and kcard actions */
-    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(220px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px;min-width:0}
+    /* Cards are designed for 300-380px columns; wider viewports center leftover gutter. */
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(300px,380px));gap:10px;align-items:start;justify-content:safe center;overflow-x:auto;padding-bottom:8px;min-width:0}
     .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px;min-width:0}
     .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
     .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
@@ -280,15 +280,16 @@
       box-shadow:none;
     }
     .kanban-set-stack > .kcard.kcard-in-set:first-child{margin-top:0}
-    .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
+    .kcard{container:card / inline-size;border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
     .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
     .kcard.dragging{opacity:.3;cursor:grabbing}
-    .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
-    .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .kcard-title-row{display:flex;align-items:flex-start;gap:7px;min-width:0;margin-bottom:6px}
+    .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono);line-height:1.35;flex:0 0 auto}
+    .kcard-name{font-size:12px;font-weight:500;line-height:1.35;color:var(--text-primary);word-break:break-word;min-width:0;flex:1 1 auto}
     .kcard-scheduled-glyph{display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:var(--text-tertiary)}
     .kcard-scheduled-glyph-svg{width:14px;height:14px;flex-shrink:0;opacity:0.92}
     /* Backlog dependency hint — neutral (not “blocked” / error styling) */
-    .kcard-dep-chain{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:4px 0 6px;font-size:10px;color:var(--text-tertiary);line-height:1.35}
+    .kcard-dep-chain{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:5px 0 0;font-size:10px;color:var(--text-tertiary);line-height:1.35}
     .kcard-dep-chain-label{font-weight:400;font-style:italic;color:var(--text-tertiary);letter-spacing:.01em;text-transform:none;margin-right:1px}
     .kcard-dep-wires{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0}
     .kcard-dep-wire{flex:0 0 10px;height:1px;background:var(--border-subtle);margin:0 1px;opacity:.5}
@@ -316,11 +317,24 @@
     .agent-badge.waiting{border-color:rgba(245,158,11,.4);color:#fcd34d}
     .agent-badge.submitted{border-color:rgba(34,197,94,.4);color:#86efac}
     .agent-badge.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
-    .kcard-status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
-    .kcard-status-label{font-size:10px;color:var(--text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
-    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border-subtle)}
-    .kcard-actions .btn{font-size:11px;padding:3px 8px}
-    .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
+    .kcard-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;flex-wrap:wrap}
+    .kcard-status-row.is-empty-card{justify-content:center;padding:4px 0}
+    .kcard-status-left{display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 120px;font:600 10px/1.35 var(--mono);color:var(--text-secondary);text-transform:uppercase}
+    .kcard-status-left.is-blank{display:none}
+    .kcard-status-left .kcard-status-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)}
+    .kcard-status-row.is-empty-card .kcard-status-left{display:none}
+    .kcard-status-right{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0;flex:0 1 auto;flex-wrap:wrap}
+    .kcard-status-right .btn{font-size:11px;padding:3px 8px;max-width:100%;min-width:0}
+    .kcard-status-right .btn-secondary{font-size:10px;padding:2px 7px}
+    .kcard-status-right .kcard-peek-btn{flex:0 0 auto}
+    .kcard-status-right .kcard-overflow{flex:0 0 auto}
+    .kcard-status-meta{color:var(--text-tertiary);font-weight:500;white-space:nowrap}
+    .machips{display:inline-flex;align-items:center;gap:3px;min-width:0;max-width:100%;overflow:hidden}
+    .machip{display:inline-flex;align-items:center;gap:3px;max-width:72px;padding:1px 5px;border-radius:999px;border:1px solid var(--border-subtle);background:rgba(255,255,255,.025);color:var(--text-tertiary);font:700 9px/1.35 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .machip.is-active{border-color:rgba(74,222,128,.35);color:#86efac}
+    .machip.is-done{opacity:.65}
+    .kcard.kcard-tone-warn{border-left:3px solid #f87171}
+    .kcard-detail-row{margin-top:6px;display:grid;gap:5px}
     /* Agent sections within in-progress/in-evaluation cards */
     .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015);min-width:0;overflow:hidden}
     .agent-cc{border-left-color:#6B9EFF}
@@ -401,29 +415,6 @@
     .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
     .kcard-state-badge.status-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
     .kcard-state-badge.status-review-done{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
-    /* Card headline banner — replaces inline kcard-state-badge with a prominent block under the title */
-    .kcard-headline{margin:6px 0 4px;padding:5px 8px 5px 9px;border-left:3px solid var(--border-default);background:rgba(255,255,255,.025);border-radius:0 4px 4px 0;font-family:var(--mono);line-height:1.2}
-    .kcard-headline-top{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.04em}
-    .kcard-headline-glyph{font-size:11px;line-height:1;display:inline-block;width:10px;text-align:center}
-    .kcard-headline-verb{color:var(--text-primary)}
-    .kcard-headline-meta{margin-top:2px;font-size:10px;color:var(--text-secondary);letter-spacing:.02em}
-    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;word-break:break-word}
-    .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
-    .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}
-    .kcard-headline.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.04)}
-    .kcard-headline.tone-waiting .kcard-headline-verb,.kcard-headline.tone-waiting .kcard-headline-glyph{color:#fbbf24}
-    .kcard-headline.tone-attention{border-left-color:#fbbf24;background:rgba(251,191,36,.09)}
-    .kcard-headline.tone-attention .kcard-headline-verb,.kcard-headline.tone-attention .kcard-headline-glyph{color:#fde68a}
-    .kcard-headline.tone-blocked{border-left-color:#f87171;background:rgba(248,113,113,.05)}
-    .kcard-headline.tone-blocked .kcard-headline-verb,.kcard-headline.tone-blocked .kcard-headline-glyph{color:#fca5a5}
-    .kcard-headline.tone-warn{border-left-color:#f87171;background:rgba(248,113,113,.1)}
-    .kcard-headline.tone-warn .kcard-headline-verb,.kcard-headline.tone-warn .kcard-headline-glyph{color:#fca5a5}
-    .kcard-headline.tone-ready{border-left-color:#6ee7b7;background:rgba(110,231,183,.05)}
-    .kcard-headline.tone-ready .kcard-headline-verb,.kcard-headline.tone-ready .kcard-headline-glyph{color:#6ee7b7}
-    .kcard-headline.tone-done{border-left-color:var(--border-subtle);background:transparent}
-    .kcard-headline.tone-done .kcard-headline-verb,.kcard-headline.tone-done .kcard-headline-glyph{color:var(--text-tertiary)}
-    .kcard-headline.tone-idle{border-left-color:var(--border-subtle);background:transparent}
-    .kcard-headline.tone-idle .kcard-headline-verb,.kcard-headline.tone-idle .kcard-headline-glyph{color:var(--text-secondary)}
     .kcard-cycle-history{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;padding:3px 7px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text-secondary)}
     .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
     .kcard-cycle-entry{color:var(--text-secondary)}
@@ -432,8 +423,12 @@
     .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
     .kcard-close-failure-icon{flex-shrink:0}
     .kcard-close-failure-text{word-break:break-word}
-    .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-    .kcard-transitions .btn{font-size:11px;padding:3px 8px}
+    @container card (max-width: 330px){
+      .kcard-status-row{align-items:flex-start}
+      .kcard-status-left{flex-basis:100%;order:1}
+      .kcard-status-right{flex-basis:100%;order:2;justify-content:flex-end}
+      .kcard-status-row.is-empty-card .kcard-status-right{justify-content:center}
+    }
     .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}
     /* Agent picker modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}

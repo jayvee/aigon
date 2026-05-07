@@ -365,7 +365,7 @@
       'review-complete':      { icon: '✓', label: 'Code reviewed',     cls: 'status-review-done' },
       'spec-reviewing':       { icon: '●', label: 'Reviewing spec',    cls: 'status-reviewing'  },
       'spec-review-complete': { icon: '✓', label: 'Spec reviewed',     cls: 'status-review-done' },
-      'implementing':         { icon: '●', label: 'Implementing',      cls: 'status-running'    },
+      'implementing':         { icon: '●', label: 'Running',           cls: 'status-running'    },
       'implementation-complete': { icon: '✓', label: 'Implemented',   cls: 'status-submitted' },
       'ready':                { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
       'submitted':            { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
@@ -391,7 +391,7 @@
       // `needs-attention` (token-exhausted) is excluded from the override too —
       // tmux is alive but the agent is stuck at its prompt because of quota.
       if (tmuxRunning && status !== 'quota-paused' && status !== 'needs-attention' && !IMPLEMENTER_DONE_STATUSES.has(status) && !isCompleteStatus(status) && status !== 'waiting') {
-        icon = '●'; label = 'Implementing'; cls = 'status-running';
+        icon = '●'; label = 'Running'; cls = 'status-running';
       } else if (drive && status === 'implementing') {
         icon = '●'; label = 'Implementing'; cls = 'status-running';
       } else if (status === 'implementing' && endedFlag) {
@@ -757,10 +757,11 @@
         ).join('');
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
       }
-      // Peek button — only shown when agent has a tmux session
-      const peekBtn = agent.tmuxSession
-        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-        : '';
+      // Peek button — live tmux session only (server sets tmuxRunning + tmuxSession together)
+      const peekBtn = buildPeekButtonHtml(
+        agent.tmuxRunning && agent.tmuxSession ? agent.tmuxSession : '',
+        'Peek at session output'
+      );
       const tripletBadge = buildAgentTripletBadge(agent);
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
@@ -845,6 +846,111 @@
         '</div>';
     }
 
+    function formatCardAge(sec) {
+      if (sec == null || !Number.isFinite(sec)) return '';
+      if (sec < 60) return sec + 's';
+      if (sec < 3600) return Math.floor(sec / 60) + 'm';
+      if (sec < 86400) return Math.floor(sec / 3600) + 'h';
+      return Math.floor(sec / 86400) + 'd';
+    }
+
+    function buildPeekButtonHtml(sessionName, title) {
+      if (!sessionName) return '';
+      return '<button class="kcard-peek-btn" data-peek-session="' + escHtml(sessionName) + '" title="' + escHtml(title || 'Peek at session output') + '"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
+    }
+
+    function buildStatusLeftHtml(feature, agents) {
+      const h = feature.cardHeadline || {};
+      const label = h.verb || (feature.stage === 'done' ? 'Closed' : '');
+      if (!label) return '<div class="kcard-status-left is-blank"></div>';
+      const activeAgent = agents.find(a => a.isWorking || a.tmuxRunning || a.status === 'implementing' || a.status === 'running') || agents[0] || null;
+      const dot = activeAgent ? buildLivenessIndicator(activeAgent) : '';
+      let agentHtml = '';
+      if (agents.length > 1) {
+        agentHtml = '<span class="machips">' + agents.map(agent => {
+          const runtimeId = agent.runtimeAgentId || agent.id;
+          const shortName = AGENT_SHORT_NAMES[runtimeId] || String(runtimeId || '').toUpperCase();
+          const done = isCompleteStatus(agent.status) || agent.status === 'ready' || agent.status === 'submitted';
+          const active = agent === activeAgent && !done;
+          return '<span class="machip ' + (active ? 'is-active' : done ? 'is-done' : '') + '">' + (active ? '● ' : done ? '✓ ' : '') + escHtml(shortName) + '</span>';
+        }).join('') + '</span>';
+      } else if (activeAgent) {
+        const runtimeId = activeAgent.runtimeAgentId || activeAgent.id;
+        agentHtml = '<span class="kcard-status-meta">' + escHtml(AGENT_SHORT_NAMES[runtimeId] || String(runtimeId || '').toUpperCase()) + '</span>';
+      } else if (h.owner) {
+        agentHtml = '<span class="kcard-status-meta">' + escHtml(String(h.owner).toUpperCase()) + '</span>';
+      }
+      const age = formatCardAge(h.age);
+      return '<div class="kcard-status-left">' +
+        dot +
+        '<span class="kcard-status-label">' + escHtml(label) + '</span>' +
+        (agentHtml ? '<span class="kcard-status-meta">·</span>' + agentHtml : '') +
+        (age ? '<span class="kcard-status-meta">· ' + escHtml(age) + '</span>' : '') +
+        '</div>';
+    }
+
+    function buildInlineAgentActionsHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
+      const entityType = pipelineType === 'research' ? 'research' : 'feature';
+      const actions = agentValidActions || [];
+      let html = buildPeekButtonHtml(agent.tmuxRunning && agent.tmuxSession ? agent.tmuxSession : '', 'Peek at session output');
+      const switchVa = actions.find(va => va.action === 'switch-agent');
+      if (switchVa) {
+        const nextAgent = (switchVa.metadata && switchVa.metadata.nextAgentId) || '';
+        const disabled = switchVa.metadata && switchVa.metadata.chainExhausted ? ' disabled title="No agents left in failover chain"' : '';
+        html += '<button class="btn btn-failover kcard-failover-btn" data-failover-feature="' + escHtml(String(feature.id || '')) + '" data-failover-agent="' + escHtml(agent.id) + '" data-failover-next="' + escHtml(nextAgent) + '" data-failover-repo="' + escHtml(repoPath || '') + '"' + disabled + '>' + escHtml(switchVa.label) + '</button>';
+      }
+      const visible = actions.filter(va => va.action !== 'switch-agent' && va.action !== 'feature-stop' && va.action !== 'research-stop');
+      const primary = visible.find(va => va.priority === 'high') || visible[0];
+      if (primary) {
+        const labelOverride = AGENT_ACTION_LABELS[primary.action];
+        const label = typeof labelOverride === 'function' ? labelOverride(primary, { agents: [agent] }) : (labelOverride || primary.label);
+        if (primary.category === 'infra' || primary.category === 'view') {
+          const flagAction = (primary.metadata && primary.metadata.flagAction) || primary.action;
+          if (primary.action === 'dev-server-poke') {
+            html += '<button class="btn btn-secondary kcard-dev-poke-btn" data-dev-poke="1" data-repo-path="' + escHtml(repoPath || '') + '" data-feature-id="' + escHtml(feature.id) + '" data-agent-id="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
+          } else if (primary.action === 'view-findings') {
+            html += '<button class="btn btn-secondary kcard-view-findings-btn" data-findings-path="' + escHtml(agent.findingsPath || '') + '" data-findings-agent="' + escHtml(agent.id) + '" data-findings-id="' + escHtml(feature.id) + '">' + escHtml(label) + '</button>';
+          } else {
+            html += '<button class="btn btn-secondary kcard-flag-btn" data-flag-action="' + escHtml(flagAction) + '" data-flag-entity="' + escHtml(entityType) + '" data-flag-id="' + escHtml(feature.id) + '" data-flag-agent="' + escHtml(agent.id) + '" data-flag-repo="' + escHtml(repoPath || '') + '">' + escHtml(label) + '</button>';
+          }
+        } else {
+          html += '<button class="' + (primary.priority === 'high' ? 'btn btn-primary' : 'btn btn-secondary') + ' kcard-va-btn" data-va-action="' + escHtml(primary.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(label) + '</button>';
+        }
+      }
+      const overflow = actions.filter(va => va !== primary && va.action !== 'switch-agent');
+      if (overflow.length > 0) {
+        const items = overflow.map(va => {
+          const labelOverride = AGENT_ACTION_LABELS[va.action];
+          const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label || 'End Session');
+          return '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(va.action === 'feature-stop' || va.action === 'research-stop' ? 'End Session' : label) + '</button>';
+        }).join('');
+        html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+      }
+      return html;
+    }
+
+    function buildStatusRowHtml(feature, agents, repoPath, pipelineType, actionAgents) {
+      const validActions = feature.validActions || [];
+      const isEmptyCard = !feature.cardHeadline || !feature.cardHeadline.verb;
+      const scopedAgents = actionAgents || agents;
+      let right = '';
+      if (feature.autonomousSession && feature.autonomousSession.running && feature.autonomousSession.sessionName) {
+        right += buildPeekButtonHtml(feature.autonomousSession.sessionName, 'Peek at autonomous controller output');
+      }
+      scopedAgents.forEach(agent => {
+        const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
+        right += buildInlineAgentActionsHtml(agent, agentActions, feature, repoPath, pipelineType);
+      });
+      right += renderActionButtons(feature, repoPath, pipelineType);
+      if (feature.evalSession && feature.evalSession.running && feature.evalSession.session) {
+        right = buildPeekButtonHtml(feature.evalSession.session, 'Peek at live eval output') + right;
+      }
+      return '<div class="kcard-status-row' + (isEmptyCard ? ' is-empty-card' : '') + '">' +
+        buildStatusLeftHtml(feature, agents) +
+        (right ? '<div class="kcard-status-right">' + right + '</div>' : '') +
+        '</div>';
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -856,16 +962,13 @@
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
-      const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
-        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+      const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.running && feature.autonomousSession.sessionName
+        ? buildPeekButtonHtml(feature.autonomousSession.sessionName, 'Peek at autonomous controller output')
         : '';
       const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
-      // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
-      // Drive mode (branch): solo agent with no tmux session — skip agent sections
       const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
-      const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
-
+      const isFleet = feature.mode === 'fleet' || (agents.length > 1 && (feature.evalSession || feature.winnerAgent));
       const reviews = feature.reviewSessionSummary || feature.reviewSessions || [];
 
       const hasNumericId = /^\d+$/.test(String(feature.id || ''));
@@ -893,18 +996,20 @@
           return bits.join('');
         })()
         : '';
+      if (feature.cardHeadline && (feature.cardHeadline.tone === 'warn' || feature.cardHeadline.tone === 'blocked' || feature.cardHeadline.tone === 'attention')) {
+        card.classList.add('kcard-tone-warn');
+      }
       let innerHtml =
-        (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</div>' +
-        buildCardHeadlineHtml(feature) +
-        blockedByHtml +
-        autonomousPlanHtml +
-        buildWorkflowIdleBadgeHtml(feature) +
-        nudgeChipsHtml;
+        '<div class="kcard-title-row">' +
+          (hasNumericId ? '<span class="kcard-id">#' + escHtml(feature.id) + '</span>' : '') +
+          '<span class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildStateRenderBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</span>' +
+        '</div>' +
+        buildStatusRowHtml(feature, agents, repoPath, pipelineType, (isSoloDriveBranch || isFleet) ? [] : agents);
 
-      if (hasAgentSections) {
-        // --- Evaluation verdict layout (pick-winner state) ---
-        // Agent sections — same layout as in-progress (filter out select-winner from per-agent actions)
+      const detailRows = blockedByHtml + autonomousPlanHtml + buildWorkflowIdleBadgeHtml(feature) + nudgeChipsHtml;
+      if (detailRows) innerHtml += '<div class="kcard-detail-row">' + detailRows + '</div>';
+
+      if (isFleet && !isDone && agents.length > 0 && !isSoloDriveBranch) {
         agents.forEach(agent => {
           const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
@@ -965,70 +1070,21 @@
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
-        // Card-level actions (non-per-agent: close, eval, review, etc.)
-        const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        if (cardActionsHtml) {
-          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
+      } else {
+        if (!isDone && agents.length === 1 && !isSoloDriveBranch) {
+          const agent = agents[0];
+          const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
+          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         }
-      } else if (isSoloDriveBranch) {
-        // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
-        const soloAgent = agents[0];
-        const soloStatus = buildAgentStatusHtml(soloAgent, { showDevLink: true });
-        const soloDevLink = buildDevServerLinkHtml(soloStatus.devServerUrl);
-        const soloDevSlot = soloDevLink ? '<span class="kcard-dev-slot">' + soloDevLink + '</span>' : '';
-        const driveToolId = feature.driveToolAgentId || null;
-        const driveAgentSpan = driveToolId
-          ? '<span class="kcard-agent-triplet">' + escHtml(AGENT_DISPLAY_NAMES[driveToolId] || driveToolId) + '</span>'
-          : '';
-        innerHtml += '<div class="kcard-agent agent-solo">' +
-          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + driveAgentSpan + soloDevSlot + '</div>' +
-          '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
-          '</div>';
-        // Review section for solo mode
-        if (reviews.length > 0) {
-          reviews.forEach(r => {
-            innerHtml += buildReviewerSectionHtml('Review', r);
-          });
-        }
+        const specReviews = feature.specReviewSessions || [];
+        const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
+        specReviews.forEach(r => { innerHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
+        specRevisions.forEach(r => { innerHtml += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
+        reviews.forEach(r => { innerHtml += buildReviewerSectionHtml('Review', r); });
         innerHtml += buildReviewCycleHistoryHtml(feature);
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         innerHtml += buildCloseFailureHtml(feature);
-        // Card-level actions (close, review — no session controls)
-        const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        if (soloCardActionsHtml) {
-          innerHtml += '<div class="kcard-transitions">' + soloCardActionsHtml + '</div>';
-        }
-      } else {
-        // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
-        if (!isDone) {
-          const agentBadgesHtml = buildAgentBadgesHtml(agents);
-          const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-          let evalStatusHtml = '';
-          if (feature.evalStatus) {
-            let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
-            if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
-              evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
-            }
-            evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
-            const legacyViewEval = validActions.find(va => va.action === 'view-eval' && !va.agentId);
-            if (legacyViewEval) {
-              evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
-            }
-          }
-          const specReviews = feature.specReviewSessions || [];
-          const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
-          let specReviewHtml = '';
-          specReviews.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
-          specRevisions.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
-          innerHtml +=
-            (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-            evalStatusHtml +
-            specReviewHtml +
-            buildReviewCycleHistoryHtml(feature) +
-            buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
-            (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
-        }
       }
 
       card.innerHTML = innerHtml;
@@ -1143,6 +1199,23 @@
         dragState = null;
         document.querySelectorAll('.kanban-col').forEach(col => col.classList.remove('drag-over', 'drag-blocked'));
       });
+
+      card.addEventListener('click', async (e) => {
+        const targetEl = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const btn = targetEl ? targetEl.closest('.kcard-va-btn') : null;
+        if (!btn || !card.contains(btn)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        closeAllKcardOverflowMenus();
+        const vaAction = btn.getAttribute('data-va-action');
+        const vaAgentId = btn.getAttribute('data-agent') || null;
+        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
+          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
+        if (!va) return;
+        btn._origText = btn._origText || btn.textContent;
+        await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
+      }, true);
 
       // Click to open spec drawer — skip if drag occurred or button clicked
       card.style.cursor = 'pointer';
@@ -1444,7 +1517,7 @@
       }
 
       const DONE_CAP = 6;
-      const OVERFLOW_CAP = 8;
+      const OVERFLOW_CAP = 12;
       const expandedColumns = state.expandedPipelineColumns || {};
       const columnKey = pipelineColumnKey(repo.path, pType, stage);
       const isExpanded = !!expandedColumns[columnKey];
@@ -1627,10 +1700,8 @@
             ungrouped.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
           }
           if (shouldCapOverflow && !isExpanded) {
-            const hiddenCards = cards.slice(OVERFLOW_CAP);
             const hiddenContainer = document.createElement('div');
             hiddenContainer.style.display = 'none';
-            hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
             colBody.appendChild(hiddenContainer);
             const moreBtn = document.createElement('button');
             moreBtn.className = 'btn';
@@ -1675,10 +1746,8 @@
 
       displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
       if (shouldCapOverflow && !isExpanded) {
-        const hiddenCards = cards.slice(OVERFLOW_CAP);
         const hiddenContainer = document.createElement('div');
         hiddenContainer.style.display = 'none';
-        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
         colBody.appendChild(hiddenContainer);
         const moreBtn = document.createElement('button');
         moreBtn.className = 'btn';
