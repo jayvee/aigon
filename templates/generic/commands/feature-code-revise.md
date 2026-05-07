@@ -30,7 +30,15 @@ Find the row whose name matches the slug and read its ID.
 
 Do **not** guess. Do **not** prompt the user to pick from a list — that's noise. Just stop.
 
-## Step 1: Find the review commits
+## Step 1: Signal start of revision
+
+Before reading the review, signal that you are now actively addressing the code review. This makes the dashboard reflect what you're doing in real time, and emits a lifecycle event the AutoConductor uses to detect stalls.
+
+```bash
+aigon agent-status addressing-code-review
+```
+
+## Step 2: Find the review commits
 
 Look at every commit on this branch that came from a reviewer:
 
@@ -46,7 +54,7 @@ git log --oneline main..HEAD
 
 If there are zero `fix(review)` / `docs(review)` commits, the review was clean — tell the user "Review found no fixes." and stop.
 
-## Step 2: Read the diff
+## Step 3: Read the diff
 
 For each review commit, inspect the change:
 
@@ -56,7 +64,7 @@ git show <sha>
 
 Understand what the reviewer changed and why. Pay attention to commit messages.
 
-## Step 3: Read the review notes
+## Step 4: Read the review notes
 
 Open the implementation log and read the `## Code Review` section the reviewer appended:
 
@@ -66,7 +74,7 @@ ls docs/specs/features/logs/feature-<resolved-id>-*-log.md
 
 (There may be multiple log files for the feature — read the one matching your agent or the most recent one with a `## Code Review` section.)
 
-## Step 4: Decide
+## Step 5: Decide
 
 You are the author of this code. The reviewer's changes are suggestions. You have full authority to accept, modify, or revert any review commit.
 
@@ -84,7 +92,7 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
   git commit -m "fix(post-review): <what you changed and why>"
   ```
 
-## Step 4.5: Run the iterate gate if you made code changes
+## Step 5.5: Run the iterate gate if you made code changes
 
 - **Accept**: no code changed — skip this step entirely.
 - **Revert or Modify**:
@@ -93,9 +101,9 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
 npm run test:iterate
 ```
 
-Scoped to your changes, <30s. Do NOT run `npm run test:core`, `npm run test:browser`, or `npm run test:deploy` here; the deploy gate catches the rest. Fix any failures before reporting in Step 5. See `docs/testing.md` for the full rationale.
+Scoped to your changes, <30s. Do NOT run `npm run test:core`, `npm run test:browser`, or `npm run test:deploy` here; the deploy gate catches the rest. Fix any failures before reporting in Step 6. See `docs/testing.md` for the full rationale.
 
-## Step 5: Report
+## Step 6: Report
 
 Tell the user:
 
@@ -105,7 +113,7 @@ Tell the user:
 4. For **Revert**: which commits you reverted and why.
 5. Any open questions for the user.
 
-## Step 6: Signal completion
+## Step 7: Signal completion
 
 After reporting your decision, signal that you have addressed the review feedback:
 
