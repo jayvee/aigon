@@ -1,0 +1,50 @@
+
+  ┃                                                                                                                                                             New session - 2026-04-27T12:01:58.
+  ┃  List the files in this directory and then exit                                                                                                             431Z
+  ┃
+                                                                                                                                                                Context
+  ┃                                                                                                                                                             0 tokens
+  ┃  Key limit exceeded (total limit). Manage it using https://openrouter.ai/settings/keys                                                                      0% used
+  ┃                                                                                                                                                             $0.00 spent
+
+     ▣  Build · GLM-5.1                                                                                                                                         LSP
+                                                                                                                                                                LSPs will activate as files are read
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ┃
+  ┃
+  ┃
+  ┃  Build · GLM-5.1 OpenRouter                                                                                                                                 /private/tmp
+  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+                                                                                                                                 tab agents  ctrl+p commands    • OpenCode 1.14.28
+
