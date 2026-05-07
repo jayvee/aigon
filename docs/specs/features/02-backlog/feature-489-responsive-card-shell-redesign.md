@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T05:43:06.170Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: responsive-card-shell-redesign
