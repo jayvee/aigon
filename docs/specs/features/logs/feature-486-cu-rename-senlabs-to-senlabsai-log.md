@@ -1,3 +1,17 @@
+---
+commit_count: 2
+lines_added: 83
+lines_removed: 38
+lines_changed: 121
+files_touched: 15
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 486 - rename-senlabs-to-senlabsai
 Agent: cu
 
