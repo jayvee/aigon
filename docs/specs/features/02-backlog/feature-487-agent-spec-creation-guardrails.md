@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T05:13:29.059Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-spec-creation-guardrails
