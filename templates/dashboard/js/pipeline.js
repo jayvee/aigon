@@ -1699,10 +1699,8 @@
             ungrouped.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
           }
           if (shouldCapOverflow && !isExpanded) {
-            const hiddenCards = cards.slice(OVERFLOW_CAP);
             const hiddenContainer = document.createElement('div');
             hiddenContainer.style.display = 'none';
-            hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
             colBody.appendChild(hiddenContainer);
             const moreBtn = document.createElement('button');
             moreBtn.className = 'btn';
@@ -1747,10 +1745,8 @@
 
       displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
       if (shouldCapOverflow && !isExpanded) {
-        const hiddenCards = cards.slice(OVERFLOW_CAP);
         const hiddenContainer = document.createElement('div');
         hiddenContainer.style.display = 'none';
-        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
         colBody.appendChild(hiddenContainer);
         const moreBtn = document.createElement('button');
         moreBtn.className = 'btn';
