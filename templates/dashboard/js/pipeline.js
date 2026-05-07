@@ -365,7 +365,7 @@
       'review-complete':      { icon: '✓', label: 'Code reviewed',     cls: 'status-review-done' },
       'spec-reviewing':       { icon: '●', label: 'Reviewing spec',    cls: 'status-reviewing'  },
       'spec-review-complete': { icon: '✓', label: 'Spec reviewed',     cls: 'status-review-done' },
-      'implementing':         { icon: '●', label: 'Implementing',      cls: 'status-running'    },
+      'implementing':         { icon: '●', label: 'Running',           cls: 'status-running'    },
       'implementation-complete': { icon: '✓', label: 'Implemented',   cls: 'status-submitted' },
       'ready':                { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
       'submitted':            { icon: '✓', label: 'Implemented',       cls: 'status-submitted' },
