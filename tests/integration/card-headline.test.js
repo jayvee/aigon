@@ -19,7 +19,7 @@ test('rule 1: lastCloseFailure produces warn / CLOSE FAILED with reason and age'
     };
     const h = computeCardHeadline(entity, null, [], entity.autonomousPlan, 'in-progress', opts());
     assert.strictEqual(h.tone, 'warn');
-    assert.strictEqual(h.verb, 'CLOSE FAILED');
+    assert.strictEqual(h.verb, 'Close failed');
     assert.strictEqual(h.detail, 'tests failed');
     assert.strictEqual(h.age, 120);
 });
@@ -27,12 +27,12 @@ test('rule 1: lastCloseFailure produces warn / CLOSE FAILED with reason and age'
 test('rule 1: specDrift → warn / SPEC DRIFT', () => {
     const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, null, [], null, 'in-progress', opts());
     assert.strictEqual(h.tone, 'warn');
-    assert.strictEqual(h.verb, 'SPEC DRIFT');
+    assert.strictEqual(h.verb, 'Spec drift');
 });
 
-test('rule 1: missing snapshot past backlog → NO ENGINE STATE', () => {
+test('rule 1: missing snapshot past backlog → No engine state', () => {
     const h = computeCardHeadline({}, null, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'NO ENGINE STATE');
+    assert.strictEqual(h.verb, 'No engine state');
     assert.strictEqual(h.tone, 'warn');
 });
 
@@ -46,13 +46,13 @@ test('rule 2: lane=done → done / CLOSED', () => {
     const snap = { closedAt: isoMinusSec(3600) };
     const h = computeCardHeadline({}, snap, [], null, 'done', opts());
     assert.strictEqual(h.tone, 'done');
-    assert.strictEqual(h.verb, 'CLOSED');
+    assert.strictEqual(h.verb, 'Closed');
     assert.strictEqual(h.age, 3600);
 });
 
 test("rule 2: feedback wont-fix → done / WON'T FIX", () => {
     const h = computeCardHeadline({}, null, [], null, 'wont-fix', opts({ entityType: 'feedback' }));
-    assert.strictEqual(h.verb, "WON'T FIX");
+    assert.strictEqual(h.verb, "Won't fix");
 });
 
 // Rule 3 — awaiting human input wins over implementing
@@ -64,7 +64,7 @@ test('rule 3: awaitingInput supersedes a running drive agent', () => {
         awaitingInput: { message: 'pick option A or B' },
     }];
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'NEEDS YOU');
+    assert.strictEqual(h.verb, 'Needs you');
     assert.strictEqual(h.tone, 'attention');
     assert.strictEqual(h.owner, 'cc');
     assert.strictEqual(h.detail, 'pick option A or B');
@@ -79,14 +79,14 @@ test('rule 4: pendingCompletionSignal with !isWorking → CONFIRM <SIGNAL>', () 
         pendingCompletionSignal: 'implementation-complete',
     }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'CONFIRM IMPLEMENTATION-COMPLETE');
+    assert.strictEqual(h.verb, 'Confirm implementation-complete');
     assert.strictEqual(h.owner, 'cc');
 });
 
 // Rule 5
 test('rule 5: evalStatus=pick winner → PICK WINNER', () => {
     const h = computeCardHeadline({ evalStatus: 'pick winner', winnerAgent: 'cc' }, { currentSpecState: 'evaluating' }, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'PICK WINNER');
+    assert.strictEqual(h.verb, 'Pick winner');
     assert.ok(/cc/.test(h.detail || ''));
 });
 
@@ -98,7 +98,7 @@ test('rule 6: feature inbox → no headline (lane label already conveys prioriti
 
 test('rule 6: feedback inbox → NEEDS TRIAGE', () => {
     const h = computeCardHeadline({}, null, [], null, 'inbox', opts({ entityType: 'feedback' }));
-    assert.strictEqual(h.verb, 'NEEDS TRIAGE');
+    assert.strictEqual(h.verb, 'Needs triage');
 });
 
 // Rule 7
@@ -119,7 +119,7 @@ test('rule 8: running stage → RUNNING · STAGE with owner', () => {
         { type: 'implement', status: 'running', agents: [{ id: 'cc' }], startedAt: isoMinusSec(45) },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'RUNNING · IMPLEMENT');
+    assert.strictEqual(h.verb, 'Running · Implement');
     assert.strictEqual(h.owner, 'cc');
     assert.strictEqual(h.age, 45);
     assert.strictEqual(h.tone, 'running');
@@ -130,7 +130,7 @@ test('rule 8: failed stage → STAGE FAILED (warn)', () => {
         { type: 'implement', status: 'failed', agents: [{ id: 'cc' }] },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'IMPLEMENT FAILED');
+    assert.strictEqual(h.verb, 'Implement failed');
     assert.strictEqual(h.tone, 'warn');
 });
 
@@ -140,7 +140,7 @@ test('rule 8: gate (waiting after complete) → STAGE GATE', () => {
         { type: 'review', status: 'waiting', agents: [{ id: 'gg' }] },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'REVIEW GATE');
+    assert.strictEqual(h.verb, 'Review gate');
     assert.strictEqual(h.owner, 'gg');
     assert.strictEqual(h.tone, 'waiting');
 });
@@ -151,30 +151,30 @@ test('rule 8: all complete → READY TO CLOSE', () => {
         { type: 'review', status: 'complete', agents: [{ id: 'gg' }] },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'READY TO CLOSE');
+    assert.strictEqual(h.verb, 'Ready to close');
     assert.strictEqual(h.tone, 'ready');
 });
 
 // Rule 9 — drive/solo
-test('rule 9: drive implementing → RUNNING with owner', () => {
+test('rule 9: drive implementing → Running with owner', () => {
     const agents = [{ id: 'solo', status: 'implementing', isWorking: true }];
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'RUNNING');
+    assert.strictEqual(h.verb, 'Running');
     assert.strictEqual(h.subject, 'Implement');
     assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 9: drive submitted → ready / IMPLEMENTED', () => {
+test('rule 9: drive submitted → ready / Implemented', () => {
     const agents = [{ id: 'solo', status: 'submitted', isWorking: false }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'IMPLEMENTED');
+    assert.strictEqual(h.verb, 'Implemented');
     assert.strictEqual(h.tone, 'ready');
 });
 
 test('rule 9: sessionEnded while implementing → FINISHED (UNCONFIRMED)', () => {
     const agents = [{ id: 'cc', status: 'implementing', isWorking: false, flags: { sessionEnded: true } }];
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'FINISHED (UNCONFIRMED)');
+    assert.strictEqual(h.verb, 'Finished (unconfirmed)');
 });
 
 test('rule 9: idleLadder needs-attention upgrades tone to attention', () => {
@@ -197,7 +197,7 @@ test('rule 9: idleLadder idle on non-running agent → IDLE with age', () => {
         idleLadder: { state: 'idle', idleSec: 1200 },
     }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'IDLE');
+    assert.strictEqual(h.verb, 'Idle');
     assert.strictEqual(h.age, 1200);
 });
 
@@ -205,7 +205,7 @@ test('rule 9: idleLadder idle on non-running agent → IDLE with age', () => {
 test('rule 11: lifecycle fallback when no agents/plan', () => {
     const snapshot = { currentSpecState: 'code_review_in_progress' };
     const h = computeCardHeadline({}, snapshot, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'CODE REVIEW');
+    assert.strictEqual(h.verb, 'Code review');
     assert.strictEqual(h.tone, 'waiting');
 });
 
@@ -220,7 +220,7 @@ test('age silently drops when timestamp missing', () => {
 test('combo: warn-class (specDrift) beats a running stage', () => {
     const plan = { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] };
     const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'SPEC DRIFT');
+    assert.strictEqual(h.verb, 'Spec drift');
 });
 
 report();
