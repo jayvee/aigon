@@ -757,10 +757,11 @@
         ).join('');
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
       }
-      // Peek button — only shown when agent has a tmux session
-      const peekBtn = agent.tmuxSession
-        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-        : '';
+      // Peek button — live tmux session only (server sets tmuxRunning + tmuxSession together)
+      const peekBtn = buildPeekButtonHtml(
+        agent.tmuxRunning && agent.tmuxSession ? agent.tmuxSession : '',
+        'Peek at session output'
+      );
       const tripletBadge = buildAgentTripletBadge(agent);
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
@@ -891,7 +892,7 @@
     function buildInlineAgentActionsHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
       const actions = agentValidActions || [];
-      let html = buildPeekButtonHtml(agent.tmuxSession, 'Peek at session output');
+      let html = buildPeekButtonHtml(agent.tmuxRunning && agent.tmuxSession ? agent.tmuxSession : '', 'Peek at session output');
       const switchVa = actions.find(va => va.action === 'switch-agent');
       if (switchVa) {
         const nextAgent = (switchVa.metadata && switchVa.metadata.nextAgentId) || '';
