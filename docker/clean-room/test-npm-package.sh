@@ -45,7 +45,7 @@ fi
 
 # ── step 3: release channel (F327) ───────────────────────────────────────────
 section "Step 3: Release channel detection (F327)"
-CHANNEL=$(node -e "const rc = require('/usr/lib/node_modules/@senlabs/aigon/lib/release-channel'); console.log(rc.channel)")
+CHANNEL=$(node -e "const rc = require('/usr/lib/node_modules/@senlabsai/aigon/lib/release-channel'); console.log(rc.channel)")
 if [[ "$CHANNEL" == "latest" ]]; then
   ok "channel = latest (stable version, correct)"
 else
@@ -64,7 +64,7 @@ else
 fi
 # Verify the JS module itself returns a structured result (not a thrown error)
 node - <<'EOF'
-const { checkForUpdate } = require('/usr/lib/node_modules/@senlabs/aigon/lib/npm-update-check');
+const { checkForUpdate } = require('/usr/lib/node_modules/@senlabsai/aigon/lib/npm-update-check');
 checkForUpdate({ force: true }).then(r => {
   if (!r || !r.state) { process.stderr.write('no state field\n'); process.exit(1); }
   console.log('  update-check state: ' + r.state + (r.error ? ' (' + r.error + ')' : ''));

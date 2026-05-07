@@ -41,7 +41,7 @@ During the beta period, all normal releases go to `next`. Only a deliberate stab
 4. `npm run release` — lands on `latest`.
 5. Deprecate any beta versions that were published to `latest` by mistake:
    ```bash
-   npm deprecate @senlabs/aigon@<version> "Use the stable release: npm i -g @senlabs/aigon" --otp=<code>
+   npm deprecate @senlabsai/aigon@<version> "Use the stable release: npm i -g @senlabsai/aigon" --otp=<code>
    ```
 6. Update `site/content/getting-started.mdx` and `README.md` — remove the `@next` suffix from install commands.
 
@@ -50,7 +50,7 @@ During the beta period, all normal releases go to `next`. Only a deliberate stab
 npm 2FA prompts come in two forms:
 - **Browser auth flow** — works for `npm publish` but fails for `npm deprecate`. If you see a 404 error on the auth endpoint, add `--otp=<code>` directly:
   ```bash
-  npm deprecate @senlabs/aigon@<version> "message" --otp=<code>
+  npm deprecate @senlabsai/aigon@<version> "message" --otp=<code>
   npm publish --tag <tag> --otp=<code>
   ```
 - **TOTP code** — get from your authenticator app and append as `--otp=<6-digit-code>`.

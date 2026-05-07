@@ -103,9 +103,9 @@ install_aigon() {
   else
     step "Install aigon from npm (@next)"
     if [[ "$PLATFORM" == "linux" ]]; then
-      sudo npm install -g @senlabs/aigon@next 2>&1 | tail -3
+      sudo npm install -g @senlabsai/aigon@next 2>&1 | tail -3
     else
-      npm install -g @senlabs/aigon@next 2>&1 | tail -3
+      npm install -g @senlabsai/aigon@next 2>&1 | tail -3
     fi
   fi
   check_command aigon

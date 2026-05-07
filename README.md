@@ -57,7 +57,7 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 
 ```bash
 # Install aigon globally (beta)
-npm install -g @senlabs/aigon@next
+npm install -g @senlabsai/aigon@next
 
 # First-time setup — installs agent CLIs, configures terminal,
 # starts the dashboard. Auto-launches on first aigon command, or
