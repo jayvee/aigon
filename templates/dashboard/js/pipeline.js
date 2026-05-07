@@ -432,7 +432,7 @@
       if (idle.state === 'needs-attention') {
         return '<span class="kcard-idle-chip kcard-idle-chip-attention" title="Agent is idle and needs manual attention">🚨 needs attention ' + escHtml(duration) + '</span>';
       }
-      const suffix = idle.paused ? ' · paused' : (idle.nudged ? ' · nudged' : '');
+      const suffix = idle.nudged ? ' · nudged' : '';
       return '<span class="kcard-idle-chip" title="Agent appears idle at its prompt">💤 idle ' + escHtml(duration + suffix) + '</span>';
     }
 
@@ -744,19 +744,11 @@
               escHtml(label) + '</button>';
           })()
         : '';
-      const pauseAutoNudgeItem = (agent.tmuxSession && agent.idleLadder && agent.idleLadder.autoNudgeEnabled && !agent.idleLadder.paused)
-        ? '<button class="kcard-overflow-item kcard-pause-auto-nudge-btn"' +
-          ' data-feature-id="' + escHtml(String(feature.id || '')) + '"' +
-          ' data-entity-type="' + escHtml(entityType) + '"' +
-          ' data-agent-id="' + escHtml(agent.id) + '"' +
-          ' data-session-name="' + escHtml(agent.tmuxSession || '') + '"' +
-          ' data-repo-path="' + escHtml(repoPath || '') + '">Pause auto-nudge for this session</button>'
-        : '';
-      if (overflowActions.length > 0 || secondaryInfraOverflow || sessionOverflow || markCompleteItem || pauseAutoNudgeItem) {
+      if (overflowActions.length > 0 || secondaryInfraOverflow || sessionOverflow || markCompleteItem) {
         const stopItems = overflowActions.map(va =>
           '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">End Session</button>'
         ).join('');
-        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
+        actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + '</div></div>';
       }
       // Peek button — only shown when agent has a tmux session
       const peekBtn = agent.tmuxSession
@@ -1283,33 +1275,6 @@
           btn.disabled = true;
           await postMarkComplete(entityId, btnEntityType, signal, agentId, btnRepoPath);
           btn.disabled = false;
-        };
-      });
-
-      card.querySelectorAll('.kcard-pause-auto-nudge-btn').forEach(btn => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          closeAllKcardOverflowMenus();
-          const targetRepoPath = btn.getAttribute('data-repo-path') || repoPath || '';
-          const featureId = btn.getAttribute('data-feature-id') || feature.id;
-          const entityPath = (btn.getAttribute('data-entity-type') === 'research') ? 'research' : 'feature';
-          const agentId = btn.getAttribute('data-agent-id') || '';
-          const sessionName = btn.getAttribute('data-session-name') || '';
-          btn.disabled = true;
-          try {
-            const res = await fetch('/api/' + entityPath + '/' + encodeURIComponent(featureId) + '/agents/' + encodeURIComponent(agentId) + '/auto-nudge/pause', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ repoPath: targetRepoPath, sessionName })
-            });
-            const payload = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(payload.error || 'Failed to pause auto-nudge');
-            showToast(payload.message || 'Auto-nudge paused');
-          } catch (err) {
-            showToast(err.message || 'Failed to pause auto-nudge', 'error');
-          } finally {
-            btn.disabled = false;
-          }
         };
       });
 

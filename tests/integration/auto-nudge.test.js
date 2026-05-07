@@ -70,19 +70,4 @@ test('auto-nudge is on by default, opt-out via enabled:false, and skips quota-pa
     assert.strictEqual(quota.skipped, 'quota-paused');
 }));
 
-test('auto-nudge can pause a live session', () => withTempDir('aigon-auto-nudge-pause-', (repo) => {
-    autoNudge._resetForTests();
-    let nudges = 0;
-    const input = baseInput('repo-f01-do-cx-live');
-    autoNudge.pauseAutoNudgeForSession(repo, input);
-    const state = autoNudge.computeIdleLadder(repo, input, {
-        loadProjectConfig: () => ({ autoNudge: { enabled: true, idleVisibleSec: 1, idleAutoNudgeSec: 2, idleEscalateSec: 3 } }),
-        sendNudge: async () => { nudges += 1; return { ok: true }; },
-        nowMs: Date.parse('2026-04-29T00:00:02.500Z'),
-    });
-    assert.strictEqual(state.paused, true);
-    assert.strictEqual(state.state, 'idle-visible');
-    assert.strictEqual(nudges, 0);
-}));
-
 report();
