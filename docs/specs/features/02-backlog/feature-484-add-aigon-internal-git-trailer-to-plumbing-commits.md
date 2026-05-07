@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T04:47:25.335Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Add Aigon-Internal Git Trailer to Plumbing Commits
