@@ -598,11 +598,24 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     }
   });
 
-  // If no high-priority actions, promote first non-schedule normal action to primary
+  // If no high-priority actions, promote first eligible normal action to primary.
+  // Excluded from auto-promotion: schedule actions (always-overflow per UX), and
+  // feature-nudge (exception-path action; surfacing it as primary on a healthy
+  // running card reads as "do this nudge now" when nothing is wrong).
   if (primary.length === 0 && overflow.length > 0) {
-    const idx = overflow.findIndex(va => va.action !== 'feature-schedule' && va.action !== 'research-schedule');
-    if (idx !== -1) primary.push(...overflow.splice(idx, 1));
-    else if (overflow.length > 0) primary.push(overflow.shift());
+    const idx = overflow.findIndex(va =>
+      va.action !== 'feature-schedule' &&
+      va.action !== 'research-schedule' &&
+      va.action !== 'feature-nudge'
+    );
+    if (idx !== -1) {
+      primary.push(...overflow.splice(idx, 1));
+    } else {
+      // Last-resort fallback: schedule is OK, nudge is not.
+      const fallbackIdx = overflow.findIndex(va => va.action !== 'feature-nudge');
+      if (fallbackIdx !== -1) primary.push(...overflow.splice(fallbackIdx, 1));
+      // If only nudge remains, primary stays empty — user opens ··· to nudge.
+    }
   }
 
   function actionLabel(va) {
