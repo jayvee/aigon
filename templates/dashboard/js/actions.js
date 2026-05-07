@@ -608,14 +608,12 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   // HIGH_PRIORITY_ACTION_KINDS server-side.
 
   function actionLabel(va) {
-    if (va.action === 'feature-close' && hasSelectWinner) {
-      return 'Close';
-    }
-    // Eval complete + recommendation exists: clicking opens a picker modal
-    // (winner radio + optional cherry-pick from loser). 'Pick & Close'
-    // signals both decisions in the label without introducing a new
-    // 'Merge' verb that doesn't exist elsewhere in the workflow.
-    if (evalPickWinner && va.action === 'feature-close') {
+    // Eval-complete state: dashboard collapses select-winner into a
+    // synthetic feature-close button. The click opens a picker modal
+    // (winner radio + optional cherry-pick from loser), so the label
+    // names both decisions: 'Pick & Close'. No 'Merge' terminology —
+    // the workflow consistently uses 'Close', not 'Merge'.
+    if (va.action === 'feature-close' && (hasSelectWinner || evalPickWinner)) {
       return 'Pick & Close';
     }
     return va.label;

@@ -947,7 +947,7 @@
           if (hasEvalActions) {
             innerHtml += '<div class="kcard-eval-actions">';
             if (evalRunning && evalSess.session && openEvalAction) {
-              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open eval</button>';
+              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open Terminal</button>';
             }
             if (viewEvalAction) {
               innerHtml += '<button class="btn btn-secondary btn-xs kcard-verdict-btn" data-view-eval>View report</button>';
@@ -967,8 +967,13 @@
                 : 'Ready to pick winner') +
               '</div>';
           } else if (feature.evalStatus) {
+            // Sentence case for the status label so it matches the
+            // capitalised 'Implemented' / 'Reviewing' etc. used elsewhere
+            // on the card. Source field is lowercase ('evaluating',
+            // 'pick winner') so we transform on render.
+            const evalStatusLabel = String(feature.evalStatus).charAt(0).toUpperCase() + String(feature.evalStatus).slice(1);
             innerHtml += '<div class="kcard-eval-detail">' +
-              '<span class="eval-badge">' + escHtml(feature.evalStatus) + '</span>' +
+              '<span class="eval-badge">' + escHtml(evalStatusLabel) + '</span>' +
               '</div>';
           }
 
