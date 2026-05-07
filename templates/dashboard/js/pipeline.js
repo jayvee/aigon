@@ -917,16 +917,13 @@
         }
       }
       const overflow = actions.filter(va => va !== primary && va.action !== 'switch-agent');
-      const markCompleteItem = (agent.pendingCompletionSignal && !agent.isWorking)
-        ? '<button class="kcard-overflow-item kcard-mark-complete-btn" data-signal="' + escHtml(agent.pendingCompletionSignal) + '" data-entity-type="' + escHtml(entityType) + '" data-entity-id="' + escHtml(String(feature.id || '')) + '" data-agent-id="' + escHtml(agent.id) + '" data-repo-path="' + escHtml(repoPath || '') + '">Mark complete</button>'
-        : '';
-      if (overflow.length > 0 || markCompleteItem) {
+      if (overflow.length > 0) {
         const items = overflow.map(va => {
           const labelOverride = AGENT_ACTION_LABELS[va.action];
           const label = typeof labelOverride === 'function' ? labelOverride(va, { agents: [agent] }) : (labelOverride || va.label || 'End Session');
           return '<button class="kcard-overflow-item kcard-va-btn" data-va-action="' + escHtml(va.action) + '" data-agent="' + escHtml(agent.id) + '">' + escHtml(va.action === 'feature-stop' || va.action === 'research-stop' ? 'End Session' : label) + '</button>';
         }).join('');
-        html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + markCompleteItem + '</div></div>';
+        html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
       }
       return html;
     }
@@ -1203,7 +1200,8 @@
       });
 
       card.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.kcard-va-btn');
+        const targetEl = e.target && e.target.nodeType === 1 ? e.target : (e.target && e.target.parentElement);
+        const btn = targetEl ? targetEl.closest('.kcard-va-btn') : null;
         if (!btn || !card.contains(btn)) return;
         e.preventDefault();
         e.stopPropagation();
