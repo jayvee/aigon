@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-07T05:00:33.403Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: pro-activate-command
