@@ -61,7 +61,7 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get i
 ### Step 3: Install Aigon from npm
 
 ```bash
-sudo npm install -g @senlabs/aigon@next
+sudo npm install -g @senlabsai/aigon@next
 aigon --version
 ```
 

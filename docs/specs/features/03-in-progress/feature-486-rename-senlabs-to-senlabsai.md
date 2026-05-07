@@ -12,16 +12,16 @@ Rename the npm package from `@senlabs/aigon` to `@senlabsai/aigon` across all so
 
 ## User Stories
 
-- [ ] As a new user following the docs, every install command I see says `@senlabsai/aigon`
-- [ ] As an existing user, `npm update -g @senlabsai/aigon@next` works after the package is republished under the new org
+- [x] As a new user following the docs, every install command I see says `@senlabsai/aigon`
+- [x] As an existing user, `npm update -g @senlabsai/aigon@next` works after the package is republished under the new org
 
 ## Acceptance Criteria
 
-- [ ] `grep -r "@senlabs/aigon" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=docs/specs` returns zero results
-- [ ] `package.json` `"name"` is `"@senlabsai/aigon"`
-- [ ] `site/content/getting-started.mdx` install commands use `@senlabsai/aigon@next` and the Pro section shows the new 3-step flow (install package, activate key, restart server) — not the old git clone flow
-- [ ] `npm test` passes
-- [ ] `node -c aigon-cli.js` passes
+- [x] `grep -r "@senlabs/aigon" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=docs/specs` returns zero results
+- [x] `package.json` `"name"` is `"@senlabsai/aigon"`
+- [x] `site/content/getting-started.mdx` install commands use `@senlabsai/aigon@next` and the Pro section shows the new 3-step flow (install package, activate key, restart server) — not the old git clone flow
+- [x] `npm test` passes
+- [x] `node -c aigon-cli.js` passes
 
 ## Validation
 

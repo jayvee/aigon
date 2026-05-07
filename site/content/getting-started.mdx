@@ -16,14 +16,14 @@ Install Aigon and run the setup wizard:
 **macOS:**
 
 ```bash
-npm install -g @senlabs/aigon@next
+npm install -g @senlabsai/aigon@next
 aigon setup
 ```
 
 **Linux:**
 
 ```bash
-sudo npm install -g @senlabs/aigon@next
+sudo npm install -g @senlabsai/aigon@next
 aigon setup
 ```
 
@@ -190,7 +190,7 @@ If a step fails, the dashboard shows a "Resolve & close" action that launches an
 ## Updating Aigon
 
 ```bash
-npm update -g @senlabs/aigon@next
+npm update -g @senlabsai/aigon@next
 ```
 
 Inside any Aigon-enabled project, run `aigon update` to sync the latest agent slash commands and templates into your repo. Add `--pull` to also `git pull` the repo first. The dashboard does not auto-restart in user projects after `aigon update` — restart it manually with `aigon server restart` if you want the latest dashboard UI.
@@ -253,22 +253,27 @@ Aigon Pro extends Aigon with production-grade capabilities for operators running
 - **Backup & sync** — encrypted vault for spec and workflow state.
 - **Scheduled features** — time-triggered autonomous runs.
 
-Aigon Pro is a private package distributed alongside the public CLI. If you've been granted beta access:
+Aigon Pro is distributed as an npm package alongside the public CLI. If you've been granted beta access, use the same pattern as the [Pro installation guide](/docs/guides/pro-installation): install the package, activate your key once, restart the server.
+
+**1. Install the package**
 
 ```bash
-git clone https://github.com/jayvee/aigon-pro.git ~/src/aigon-pro
-cd ~/src/aigon-pro && npm install
-sudo npm link        # macOS without sudo: `npm link`
+npm install -g @senlabsai/aigon-pro
 ```
 
-Then link Aigon Pro into your global Aigon install (the npm-installed one):
+**2. Activate your key**
 
 ```bash
-cd $(npm root -g)/@senlabs/aigon
-sudo npm link @aigon/pro
+aigon pro activate <your-key>
 ```
 
-> **Access:** Aigon Pro is a private repository. If `git clone` fails with a permissions error, you have not yet been granted beta access. Contact [Sen Labs](https://senlabs.ai) to request it.
+**3. Restart the server**
+
+```bash
+aigon server restart
+```
+
+> **Access:** Pro requires a licence key from Sen Labs. Contact [Sen Labs](https://senlabs.ai) to request beta access.
 
 ### Optional / additional tools
 
