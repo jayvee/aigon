@@ -115,6 +115,10 @@
       drawerState.title = title;
       drawerState.stage = stage;
       drawerState.type = specTypeFromPath(specPath);
+      // Feature-only tabs (Code Changes) are hidden for research/feedback entities.
+      drawerTabs.querySelectorAll('.drawer-tab[data-feature-only]').forEach(btn => {
+        btn.style.display = drawerState.type === 'feature' ? '' : 'none';
+      });
       drawerState.repoPath = repoPath || null;
       drawerState.entityId = opts.entityId || specIdFromPath(specPath);
       drawerState.detailFingerprint = opts.detailFingerprint || null;

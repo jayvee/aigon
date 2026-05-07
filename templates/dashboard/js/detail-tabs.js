@@ -8,7 +8,7 @@
       const getDrawerState = opts.getDrawerState;
       const onToggleSpecView = opts.onToggleSpecView || (() => {});
 
-      const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'log', 'control'];
+      const TAB_ORDER = ['spec', 'status', 'events', 'agents', 'stats', 'code-changes', 'log', 'control'];
       const detailCache = window.__aigonEntityDetailCache || new Map();
       window.__aigonEntityDetailCache = detailCache;
       const state = {
@@ -354,6 +354,70 @@
           costHtml;
       }
 
+      async function fetchCommits() {
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) throw new Error('This item has no numeric ID yet.');
+        if (parsed.type !== 'feature') throw new Error('Code Changes is feature-only.');
+        const q = new URLSearchParams();
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        const res = await fetch(`/api/feature/${encodeURIComponent(parsed.id)}/commits?${q.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+      }
+
+      function formatRelativeTimestamp(iso) {
+        const d = new Date(iso);
+        if (isNaN(d)) return 'unknown';
+        const diff = Date.now() - d.getTime();
+        if (diff < 0) return formatIso(iso);
+        const s = Math.round(diff / 1000);
+        if (s < 60) return s + 's ago';
+        const m = Math.round(s / 60);
+        if (m < 60) return m + 'm ago';
+        const h = Math.round(m / 60);
+        if (h < 24) return h + 'h ago';
+        const days = Math.round(h / 24);
+        if (days < 30) return days + 'd ago';
+        return formatIso(iso);
+      }
+
+      function renderCodeChanges(payload) {
+        const commits = Array.isArray(payload && payload.commits) ? payload.commits : [];
+        if (commits.length === 0) {
+          detailEl.innerHTML = '<div class="drawer-empty">No commits yet.</div>';
+          return;
+        }
+        const sourceLabel = payload.source === 'merged'
+          ? 'Merged to main'
+          : 'Worktree (in-progress)';
+        const rows = commits.map((c, idx) => {
+          const files = Array.isArray(c.files) ? c.files : [];
+          const filesHtml = files.length
+            ? '<ul class="commit-files">' + files.map(f =>
+                '<li><span class="commit-file-path mono">' + escHtml(f.path) + '</span>' +
+                '<span class="commit-file-stat commit-file-add">+' + (f.added || 0) + '</span>' +
+                '<span class="commit-file-stat commit-file-del">-' + (f.removed || 0) + '</span></li>'
+              ).join('') + '</ul>'
+            : '<div class="commit-files-empty">No file diff available.</div>';
+          return '<details class="commit-row" data-commit-idx="' + idx + '">' +
+            '<summary class="commit-summary">' +
+              '<span class="commit-hash mono" data-copy-hash="' + escHtml(c.hash) + '" title="Click to copy">' + escHtml(c.hash) + '</span>' +
+              '<span class="commit-message">' + escHtml(c.message || '') + '</span>' +
+              '<span class="commit-meta">' + escHtml(c.author || '') + ' · ' + escHtml(formatRelativeTimestamp(c.timestamp)) + '</span>' +
+            '</summary>' +
+            filesHtml +
+          '</details>';
+        }).join('');
+        detailEl.innerHTML =
+          '<div class="commits-header">' +
+            '<span class="commits-source">Source: ' + escHtml(sourceLabel) + '</span>' +
+            '<span class="commits-count">' + String(commits.length) + ' commit' + (commits.length === 1 ? '' : 's') + '</span>' +
+          '</div>' +
+          '<div class="commits-list">' + rows + '</div>';
+      }
+
       async function fetchDeepStatus() {
         const drawer = getDrawerState();
         const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
@@ -631,6 +695,10 @@
             }
             state.loadedTabs[tab] = true;
             renderStatus(deepStatus, transcriptBundle);
+          } else if (tab === 'code-changes') {
+            const commitsPayload = await fetchCommits();
+            state.loadedTabs[tab] = true;
+            renderCodeChanges(commitsPayload);
           } else {
             const payload = await fetchDetailPayload();
             let transcriptBundle = { records: [] };
@@ -666,6 +734,14 @@
       });
 
       detailEl.addEventListener('click', async (e) => {
+        const hashEl = e.target.closest('[data-copy-hash]');
+        if (hashEl) {
+          e.preventDefault();
+          e.stopPropagation();
+          const ok = await copyText(hashEl.dataset.copyHash || '');
+          showToast(ok ? 'Copied commit hash' : 'Copy failed');
+          return;
+        }
         const btn = e.target.closest('.detail-copy-json');
         if (!btn) return;
         const id = btn.dataset.copyId;

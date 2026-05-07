@@ -130,6 +130,7 @@ Current shared modules:
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
   - `analytics.js` — analytics, telemetry, signal-health, weekly autonomy trend endpoints
+  - `commits.js` — `GET /api/feature/:id/commits` — git commits for a feature at any lifecycle stage; resolves from worktree (in-progress) or merge commit on main (done)
   - `config.js` — config read/write endpoints (`/api/config/*`)
   - `entities.js` — feature/research/feedback CRUD endpoints
   - `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
