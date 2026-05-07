@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 303
+lines_removed: 172
+lines_changed: 475
+files_touched: 21
+fix_commit_count: 2
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 200
+output_tokens: 198266
+cache_creation_input_tokens: 372655
+cache_read_input_tokens: 19661777
+thinking_tokens: 0
+total_tokens: 20232898
+billable_tokens: 198466
+cost_usd: 10.2706
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 490 - patch-card-shell-duplicates
 Agent: cc
 
