@@ -443,6 +443,8 @@
     .kcard-close-failure-icon{flex-shrink:0}
     .kcard-close-failure-text{word-break:break-word}
     .cfleet{border-top:1px solid var(--border-subtle);padding:6px 10px 8px;display:flex;flex-direction:column;gap:4px}
+    .cfrow-block{display:flex;flex-direction:column;gap:4px;width:100%;min-width:0}
+    .cfrow-act{display:flex;flex-wrap:wrap;align-items:center;gap:5px;justify-content:flex-end}
     .cfrow{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;min-width:0}
     .cfrow.dim{opacity:.48}
     .cfagent{width:26px;color:var(--text-secondary);font-weight:700;white-space:nowrap;flex-shrink:0}

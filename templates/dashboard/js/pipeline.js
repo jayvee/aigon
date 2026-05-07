@@ -374,6 +374,8 @@
       'waiting':              { icon: '⏳', label: 'Needs input',         cls: 'status-waiting'    },
       'quota-paused':         { icon: '⏸', label: 'Quota paused',        cls: 'status-waiting'    },
       'needs-attention':      { icon: '⚠', label: 'Token limit hit',     cls: 'status-needs-attention' },
+      'failed':               { icon: '✕', label: 'Failed',              cls: 'status-failed' },
+      'error':                { icon: '✕', label: 'Failed',              cls: 'status-failed' },
     };
     const AGENT_STATUS_DEFAULT = { icon: '○', label: 'Not started', cls: 'status-idle' };
 
@@ -599,23 +601,11 @@
       return '<span class="kcard-agent-triplet" title="Per-feature override captured at start">' + escHtml(text) + '</span>';
     }
 
-    // Actions rendered from API — do not add action eligibility logic here.
-    // All actions (workflow + infra) are derived server-side via the action registry.
-    function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
-      // After a failover the slot id (agent.id) stays as the original agent
-      // for routing/file-keying, but `runtimeAgentId` reflects who's actually
-      // running now. Render the runtime so the card visibly changes after a
-      // swap; if it differs from the slot, append "(was cx)" so the history
-      // is still legible.
-      const runtimeId = agent.runtimeAgentId || agent.id;
-      const slotId = agent.id;
-      const runtimeName = AGENT_DISPLAY_NAMES[runtimeId] || runtimeId;
-      const displayName = runtimeId !== slotId
-        ? runtimeName + ' (was ' + (AGENT_DISPLAY_NAMES[slotId] || slotId) + ')'
-        : runtimeName;
-      const s = buildAgentStatusHtml(agent, { showDevLink: true });
-      const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
-      const devSlot = devServerLink ? '<span class="kcard-dev-slot">' + devServerLink + '</span>' : '';
+    // Per-agent validActions strip (quota chip, failover, workflow, infra) — server-driven only.
+    // Card-level actions (no agentId) stay in renderActionButtons(); this covers every action
+    // that carries agentId so recovery / stop / mark-submitted still render in the 2-row shell.
+    function buildAgentScopedActionHtml(agent, feature, repoPath, pipelineType) {
+      const agentValidActions = (feature.validActions || []).filter(va => va.agentId === agent.id);
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
 
       const isQuotaChipVa = va => va.metadata && va.metadata.quotaPaused &&
@@ -757,22 +747,8 @@
         ).join('');
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">···</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + pauseAutoNudgeItem + '</div></div>';
       }
-      // Peek button — only shown when agent has a tmux session
-      const peekBtn = isLiveSessionAgent(agent)
-        ? terminalButtonHtml(agent.tmuxSession, 'Open session output')
-        : '';
-      const tripletBadge = buildAgentTripletBadge(agent);
-      return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
-        '<div class="kcard-agent-header">' +
-          '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
-          tripletBadge +
-          peekBtn +
-          devSlot +
-        '</div>' +
-        quotaChipHtml +
-        '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>' +
-        (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +
-        '</div>';
+      const body = quotaChipHtml + (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '');
+      return body || '';
     }
 
     // validActionBtnClass, buildValidActionsHtml, handleValidAction moved to actions.js
@@ -957,6 +933,12 @@
       } else if (activeAgent && isLiveSessionAgent(activeAgent)) {
         right.push(terminalButtonHtml(activeAgent.tmuxSession, 'Open ' + agentShortName(activeAgent.runtimeAgentId || activeAgent.id) + ' session'));
       }
+      if (!isFleetCard(feature, pipelineType)) {
+        for (const ag of feature.agents || []) {
+          const scoped = buildAgentScopedActionHtml(ag, feature, repoPath, pipelineType);
+          if (scoped) right.push(scoped);
+        }
+      }
       const actions = renderActionButtons(feature, repoPath, pipelineType);
       if (actions) right.push(actions);
       return '<div class="kcard-status-row cs ' + tone + agentCls + '">' +
@@ -991,7 +973,9 @@
       const rowCls = isAgentDone(agent) ? ' dim' : '';
       const liveBtn = isLiveSessionAgent(agent) ? terminalButtonHtml(agent.tmuxSession, 'Open ' + agentShortName(agent.runtimeAgentId || agent.id) + ' session') : '';
       const dev = buildDevServerLinkHtml(s.devServerUrl);
-      return '<div class="cfrow kcard-agent agent-' + escHtml(agent.id) + rowCls + '">' +
+      const scopedAct = buildAgentScopedActionHtml(agent, feature, repoPath, pipelineType);
+      const row =
+        '<div class="cfrow kcard-agent agent-' + escHtml(agent.id) + rowCls + '">' +
         livenessDotHtml(agent) +
         '<span class="cfagent">' + escHtml(agentShortName(agent.runtimeAgentId || agent.id)) + '</span>' +
         '<span class="sl kcard-agent-status ' + s.cls + ' ' + (s.cls === 'status-running' ? 'run' : isAgentDone(agent) ? 'done' : s.cls === 'status-waiting' ? 'wait' : s.cls === 'status-needs-attention' ? 'attn' : 'idle') + '">' + escHtml(s.label) + '</span>' +
@@ -999,7 +983,8 @@
         '<span class="cfspacer"></span>' +
         (dev ? '<span class="kcard-dev-slot">' + dev + '</span>' : '') +
         liveBtn +
-      '</div>';
+        '</div>';
+      return '<div class="cfrow-block">' + row + (scopedAct ? '<div class="cfrow-act">' + scopedAct + '</div>' : '') + '</div>';
     }
 
     function buildFleetRowsHtml(feature, repoPath, pipelineType) {

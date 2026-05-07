@@ -535,7 +535,8 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   if (validActions.length === 0) return '';
 
   // Filter: non-per-agent, non-infra/view actions render as card-level buttons
-  // Per-agent actions are handled by buildAgentSectionHtml.
+  // Per-agent actions are rendered in pipeline.js via buildAgentScopedActionHtml
+  // (status row for non-fleet, fleet row footers for multi-agent cards).
   // Infra/view actions are rendered inline in agent sections or special UI elements.
   const evalRunning = feature.evalSession && feature.evalSession.running;
   // Collapse select-winner actions into a single "Close" button
