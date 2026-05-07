@@ -432,7 +432,11 @@
     .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
     .kcard-cycle-entry{color:var(--text-secondary)}
     .kcard-cycle-when{color:var(--text-tertiary);font-size:9px}
-    .kcard-ready-indicator{display:flex;align-items:center;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(134,239,172,.05);border:1px solid rgba(134,239,172,.18);border-left:3px solid #86efac;border-radius:4px;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
+    /* Ready-to-close: status label only, NOT a clickable affordance.
+       The Close button at the card bottom is the actual click target.
+       Stripped padding/border/border-radius/background that previously
+       made this look like a clickable button. */
+    .kcard-ready-indicator{display:flex;align-items:center;gap:5px;margin:6px 10px 0;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
     .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
     .kcard-close-failure-icon{flex-shrink:0}
     .kcard-close-failure-text{word-break:break-word}
