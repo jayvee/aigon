@@ -955,11 +955,15 @@
             innerHtml += '</div>';
           }
 
-          // Status + winner recommendation
+          // Status + winner recommendation. Frame as 'Recommended:' (not
+          // 'Winner:') because nothing is finalised until the user clicks
+          // through the Pick & Close modal — the recommendation is
+          // preliminary, the user can override and/or adopt changes from
+          // the loser before merging.
           if (feature.evalStatus === 'pick winner') {
             innerHtml += '<div class="kcard-eval-detail">' +
               (recommendedDisplay
-                ? 'Winner: <strong>' + escHtml(recommendedDisplay) + '</strong>'
+                ? 'Recommended: <strong>' + escHtml(recommendedDisplay) + '</strong>'
                 : 'Ready to pick winner') +
               '</div>';
           } else if (feature.evalStatus) {

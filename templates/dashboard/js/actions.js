@@ -611,8 +611,12 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.action === 'feature-close' && hasSelectWinner) {
       return 'Close';
     }
+    // Eval complete + recommendation exists: clicking opens a picker modal
+    // (winner radio + optional cherry-pick from loser). 'Pick & Close'
+    // signals both decisions in the label without introducing a new
+    // 'Merge' verb that doesn't exist elsewhere in the workflow.
     if (evalPickWinner && va.action === 'feature-close') {
-      return 'Close & Merge ' + (AGENT_DISPLAY_NAMES[feature.winnerAgent] || feature.winnerAgent);
+      return 'Pick & Close';
     }
     return va.label;
   }
@@ -863,7 +867,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
         showCloseModal(feature, repoPath, pipelineType);
       } else if (feature.stage === 'in-evaluation') {
         // Solo eval — pick winner via agent picker
-        const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner to merge', submitLabel: 'Close & Merge', preselect: feature.winnerAgent, repoPath, taskType: 'evaluate', action: va.action });
+        const picked = await showAgentPicker(id, feature.name, { single: true, title: 'Pick winner', submitLabel: 'Pick & Close', preselect: feature.winnerAgent, repoPath, taskType: 'evaluate', action: va.action });
         if (!picked || picked.length === 0) return;
         await requestAction('feature-close', [id, picked[0]], repoPath, btn);
       } else {

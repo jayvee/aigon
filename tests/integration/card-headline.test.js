@@ -84,9 +84,9 @@ test('rule 4: pendingCompletionSignal with !isWorking → Confirm <signal>', () 
 });
 
 // Rule 5
-test('rule 5: evalStatus=pick winner → Pick winner', () => {
+test('rule 5: evalStatus=pick winner → Eval complete', () => {
     const h = computeCardHeadline({ evalStatus: 'pick winner', winnerAgent: 'cc' }, { currentSpecState: 'evaluating' }, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Pick winner');
+    assert.strictEqual(h.verb, 'Eval complete');
     assert.ok(/cc/.test(h.detail || ''));
 });
 
