@@ -202,7 +202,7 @@ install_aigon_into_repo() {
   pass "aigon init"
 
   step "Install agents (cc + gg)"
-  aigon install-agent cc gg 2>&1 || true
+  aigon install-agent cc gg --force 2>&1 || true
   pass "aigon install-agent cc gg"
 
   step "Verify board shows seeded features"
