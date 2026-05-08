@@ -272,9 +272,60 @@ scenario_2() {
   echo "=== SCENARIO 2 COMPLETE ==="
 }
 
+preflight_pro_tarball() {
+  # Fail fast BEFORE any downloading — verify the Pro tarball exists and
+  # installs cleanly. This prevents wasting 15+ minutes on scenario 1
+  # only to discover the Pro tarball is broken at the end.
+  CURRENT_SCENARIO="S3 preflight"
+
+  local tgz="${AIGON_PRO_TGZ:-}"
+  if [[ -z "$tgz" ]]; then
+    tgz="$(ls "$REPO_ROOT"/../aigon-pro/senlabsai-aigon-pro-*.tgz 2>/dev/null | sort -V | tail -1)"
+  fi
+
+  if [[ -z "$tgz" ]]; then
+    fail "No aigon-pro tarball found at $REPO_ROOT/../aigon-pro/senlabsai-aigon-pro-*.tgz — run 'npm pack' in the aigon-pro repo first"
+  fi
+
+  step "Pre-flight: verify Pro tarball exists"
+  if [[ ! -f "$tgz" ]]; then
+    fail "Tarball not found: $tgz"
+  fi
+  pass "Tarball found: $(basename "$tgz")"
+
+  step "Pre-flight: verify tarball contents"
+  local contents
+  contents="$(tar -tzf "$tgz" 2>&1)"
+  if ! echo "$contents" | grep -q "dist/index.js"; then
+    fail "dist/index.js missing from tarball — run 'npm pack' in aigon-pro (prepublishOnly builds it)"
+  fi
+  if ! echo "$contents" | grep -q "package.json"; then
+    fail "package.json missing from tarball"
+  fi
+  pass "Tarball contains dist/index.js and package.json"
+
+  step "Pre-flight: dry-run install into temp dir"
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  # Install both aigon + aigon-pro into same prefix to mirror global install
+  local aigon_tgz
+  aigon_tgz="$(ls "$REPO_ROOT"/senlabsai-aigon-*.tgz 2>/dev/null | sort -V | tail -1)"
+  if [[ -n "$aigon_tgz" ]]; then
+    npm install --prefix "$tmpdir" --no-save "$aigon_tgz" "$tgz" > /dev/null 2>&1 || fail "Dry-run install failed — tarball may be corrupt or have broken dependencies. Fix before running the full scenario."
+  else
+    npm install --prefix "$tmpdir" --no-save "$tgz" > /dev/null 2>&1 || fail "Dry-run install failed — tarball may be corrupt or have broken dependencies. Fix before running the full scenario."
+  fi
+  rm -rf "$tmpdir"
+  pass "Dry-run install succeeded"
+}
+
 scenario_3() {
   CURRENT_SCENARIO="S3: Full install + Pro"
   step "Starting scenario: full install + Pro"
+
+  # Validate the Pro tarball BEFORE spending time on scenario 1 downloads
+  preflight_pro_tarball
+
   # Run scenario 1 if prerequisites aren't in place
   if ! command -v aigon &>/dev/null; then
     scenario_1
