@@ -380,6 +380,12 @@
     .kcard-autonomous-plan-error-wrap{display:flex;align-items:center;gap:6px}
     .kcard-autonomous-plan-error{font-size:10px;line-height:1.45;color:#FB7185}
     @keyframes kcard-stage-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+    /* F492 AC3: pulsing liveness dot inside cards. Inline-block so it sits
+       beside the agent name; alignment baseline-tweaked to read centered
+       next to text. The base .dot style is 8px round; .live colors it green
+       and pulses opacity. */
+    .kcard .dot{display:inline-block;background:var(--text-tertiary);vertical-align:middle;margin:0 4px 0 2px}
+    .kcard .dot.live{background:#4ADE80;animation:kcard-stage-pulse 1.6s ease-in-out infinite}
     .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
     .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
     .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}

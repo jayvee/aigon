@@ -409,10 +409,18 @@
     }
 
     function buildLivenessIndicator(agent) {
-      // Liveness is now determined by tmux session check (tmuxRunning field).
-      // The heartbeat-based liveness dots were redundant and often wrong.
-      // The card status (Running/Not started) already reflects tmux state.
-      return '';
+      // F492 AC3: pulsing green dot when the agent's tmux is alive AND the
+      // agent has not signalled a done state. The existing status pill icon
+      // (●/✓/○) communicates lifecycle state; this dot is the orthogonal
+      // "tmux process is currently running" cue. They differ when an
+      // implementer-done agent is still parked at its prompt: the icon shows
+      // ✓ but the tmux is alive — we deliberately suppress the dot there so
+      // it always means "actively working".
+      if (!agent || !agent.tmuxRunning) return '';
+      const status = agent.status || 'idle';
+      if (IMPLEMENTER_DONE_STATUSES.has(status) || isCompleteStatus(status)) return '';
+      if (status === 'quota-paused' || status === 'needs-attention' || status === 'waiting') return '';
+      return '<span class="dot live" aria-hidden="true" title="tmux session running"></span>';
     }
 
     function buildAgentStatusSpan(agent, options) {
@@ -773,12 +781,25 @@
       const soloLivenessIcon = isSoloCard
         ? '<span class="kcard-agent-status kcard-agent-status-icon-only ' + s.cls + '" title="' + escHtml(s.label) + '">' + s.icon + '</span>'
         : '';
+      // F492 AC3: pulsing .dot.live alongside the agent name. Suppressed when
+      // tmux is not alive or the agent is in a done state — see
+      // buildLivenessIndicator for the gate.
+      const livenessDot = buildLivenessIndicator(agent);
+      // F492 AC4: append elapsed time to the fleet status row when the card
+      // is in a running tone. Solo cards already surface age via the headline
+      // meta line, so we only attach it to the fleet status pill where the
+      // text is otherwise the only running cue.
+      const headlineRunning = !!(feature.cardHeadline && feature.cardHeadline.tone === 'running');
+      const elapsedSuffix = (!isSoloCard && headlineRunning && feature.cardHeadline.age != null)
+        ? ' · ' + escHtml(_formatHeadlineAge(feature.cardHeadline.age))
+        : '';
       const statusRowHtml = isSoloCard
         ? buildIdleLadderChip(agent) // solo: keep idle-ladder chip if present, drop the status pill text
-        : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + buildLivenessIndicator(agent) + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>' + buildIdleLadderChip(agent) + '</div>';
+        : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + livenessDot + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + elapsedSuffix + '</span>' + buildIdleLadderChip(agent) + '</div>';
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
           soloLivenessIcon +
+          (isSoloCard ? livenessDot : '') +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
           tripletBadge +
           peekBtn +
