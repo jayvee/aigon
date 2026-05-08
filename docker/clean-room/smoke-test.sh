@@ -108,6 +108,7 @@ install_aigon() {
       npm install -g @senlabsai/aigon@next 2>&1 | tail -3
     fi
   fi
+  hash -r 2>/dev/null || true
   check_command aigon
   aigon --version
   pass "aigon installed and responds to --version"
@@ -137,6 +138,7 @@ install_aigon_pro() {
     else
       npm install -g "$tgz" 2>&1 | tail -3
     fi
+    hash -r 2>/dev/null || true
     pass "aigon-pro installed from tarball"
   else
     step "Install aigon-pro from npm (public)"
@@ -145,6 +147,7 @@ install_aigon_pro() {
     else
       npm install -g @senlabsai/aigon-pro 2>&1 | tail -3
     fi
+    hash -r 2>/dev/null || true
     pass "aigon-pro installed from registry"
   fi
 
