@@ -66,27 +66,30 @@
     const stages = Array.isArray(plan.stages) ? plan.stages : [];
     if (stages.length === 0) return '';
 
-    const items = stages.map(function(stage, idx) {
+    const items = stages.map(function(stage) {
       const status = stage && stage.status ? String(stage.status) : 'waiting';
       const label = stageLabel(stage);
       const titleBits = [label, statusLabel(status)];
       const agentSummary = stageAgentSummary(stage, opts);
       if (agentSummary) titleBits.push(agentSummary);
-      // Completed stages get the agent attribution inline (per wireframe I3:
-      // ✓ Implement · CC) so the track doubles as an audit trail.
+      // Completed stages inline the agent attribution so the track doubles as
+      // an audit trail ("✓ Implement · Claude Code").
       const inlineAgent = (status === 'complete' && agentSummary)
         ? ' <span class="kcard-stage-agent">· ' + escHtml(agentSummary.split(' (')[0]) + '</span>'
         : '';
-      const sep = idx > 0 ? '<span class="kcard-stage-sep" aria-hidden="true">›</span>' : '';
-      return sep + '<span class="kcard-stage is-' + escHtml(status) + '" title="' + escHtml(titleBits.join(' — ')) + '">' +
+      return '<div class="kcard-stage is-' + escHtml(status) + '" role="listitem" title="' + escHtml(titleBits.join(' — ')) + '">' +
         '<span class="kcard-stage-marker">' + escHtml(stageMarker(status)) + '</span>' +
         '<span class="kcard-stage-label">' + escHtml(label) + inlineAgent + '</span>' +
-        '</span>';
+        '</div>';
     }).join('');
 
+    const header = peekButtonHtml
+      ? '<div class="kcard-stage-track-header"><span class="kcard-stage-track-title">Autonomous plan</span>' + peekButtonHtml + '</div>'
+      : '';
+
     return '<div class="kcard-autonomous-plan kcard-stage-track" role="list" aria-label="Autonomous plan stages">' +
+      header +
       items +
-      peekButtonHtml +
       '</div>';
   }
 

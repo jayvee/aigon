@@ -360,13 +360,14 @@
     .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
     .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
     .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
-    .kcard-autonomous-plan{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
-    .kcard-stage-track{font-size:11px;line-height:1.35}
-    .kcard-stage{display:inline-flex;align-items:baseline;gap:4px;color:var(--text-tertiary)}
-    .kcard-stage-marker{font-size:11px;width:10px;flex-shrink:0;display:inline-flex;justify-content:center}
-    .kcard-stage-label{white-space:nowrap}
+    .kcard-autonomous-plan{display:flex;flex-direction:column;align-items:stretch;gap:3px;margin-top:6px}
+    .kcard-stage-track{font-size:11px;line-height:1.4}
+    .kcard-stage-track-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:1px}
+    .kcard-stage-track-title{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary)}
+    .kcard-stage{display:flex;align-items:center;gap:6px;color:var(--text-tertiary)}
+    .kcard-stage-marker{font-size:11px;width:12px;flex-shrink:0;display:inline-flex;justify-content:center}
+    .kcard-stage-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .kcard-stage-agent{color:var(--text-tertiary);opacity:.85;font-weight:400}
-    .kcard-stage-sep{color:var(--text-tertiary);opacity:.5;font-size:11px;margin:0 1px}
     .kcard-stage.is-complete{color:var(--text-secondary)}
     .kcard-stage.is-complete .kcard-stage-marker{color:#86EFAC}
     .kcard-stage.is-running{color:var(--text-primary)}
