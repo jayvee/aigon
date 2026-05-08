@@ -44,7 +44,10 @@ for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', 
         const ready = await engine.signalAgentReady(repo, featureId, agentId);
         const actions = getActions(ready, featureId);
         assert.ok(hasAction(actions, 'feature-close'));
-        assert.ok(hasAction(actions, 'feature-pause'));
+        // feature-pause is gated to inbox/backlog only (commit aa88bf23 —
+        // "hide Pause action for in-progress features"); after signalAgentReady
+        // the lifecycle is 'submitted' so Pause should NOT be valid.
+        assert.ok(!hasAction(actions, 'feature-pause'), 'Pause must not be offered post-start');
         const closed = await engine.closeFeatureWithEffects(repo, featureId, async () => {});
         assert.strictEqual(closed.lifecycle, 'done');
         assert.strictEqual(getActions(closed, featureId).validActions.length, 0);
@@ -174,7 +177,9 @@ testAsync('pause → resume lifecycle', () => withTempRepo(async (repo) => {
     assert.ok(!hasAction(getActions(paused, '03'), 'feature-pause'));
     const resumed = await engine.resumeFeature(repo, '03');
     assert.strictEqual(resumed.currentSpecState, 'implementing');
-    assert.ok(hasAction(getActions(resumed, '03'), 'feature-pause'));
+    // feature-pause is gated to inbox/backlog only (commit aa88bf23). After
+    // resume, lifecycle is 'implementing' — Pause is intentionally absent.
+    assert.ok(!hasAction(getActions(resumed, '03'), 'feature-pause'), 'Pause must not be offered after resume to implementing');
 }));
 test('telemetry aggregator keeps feature-close normalization invariants', () => withTempDir('aigon-tel-', (repo) => {
     const telemetry = require('../../lib/telemetry');
