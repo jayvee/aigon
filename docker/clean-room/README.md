@@ -37,7 +37,10 @@ The script exits 0 on success and non-zero with a stage-tagged error on any must
 
 ### Step 0: Launch the container
 
+Run from the aigon repo root (`~/src/aigon`):
+
 ```bash
+cd ~/src/aigon
 docker build -t aigon-clean-room docker/clean-room/
 docker run --rm -it -v ~/src/aigon:/home/dev/src/aigon -p 4102:4100 --hostname clean-room aigon-clean-room bash
 ```
@@ -119,7 +122,10 @@ cd ~/src/aigon-pro && npm pack
 
 ### Step 2 — Launch the container with both repos mounted
 
+Run from the aigon repo root (`~/src/aigon`):
+
 ```bash
+cd ~/src/aigon
 docker build -t aigon-clean-room docker/clean-room/
 docker run --rm -it \
   -v ~/src/aigon:/home/dev/src/aigon \
