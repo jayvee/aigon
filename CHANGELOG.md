@@ -13,12 +13,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Autonomous mode dashboard liveness (F492)
+
+- **Vertical autonomous stage track** — every in-progress autonomous card renders an `AUTONOMOUS PLAN` block listing each stage on its own row with a status marker (`✓` complete / `●` running / `○` waiting / `!` failed). Completed stages inline the agent that ran them as an audit trail (`✓ Implement · CC`). Conductor peek button (`👁`) sits in the section header and opens the orchestrator's tmux session.
+- **Pulsing liveness dot** — `.dot.live` element appears next to the agent name (solo cards) or in the status row (fleet cards) whenever the agent's tmux session is alive and it has not signalled a done state. Uses the existing `kcard-stage-pulse` animation so the card has a single visual rhythm.
+- **Elapsed time on agent rows** — fleet status pills append `· Xm` from `cardHeadline.age` when the card is in a running tone; solo cards already surface the same age via the headline meta line.
+- **Autonomous-tone headline vocabulary** — verb-form running labels (`Implementing`, `Reviewing`, `Revising`, `Evaluating`, `Closing`); handoff label `Starting <stage>` (was `<Stage> gate`); finished-run label `Stopped at <stage>` (was `Ready to close`); pending-confirmation label `Confirming <stage>` (was `<Stage> done · confirm to proceed`). Drops every word that implied user action because autonomous mode never does.
+- **Playwright spec for stage-track rendering** — `tests/dashboard-e2e/autonomous-stage-track.spec.js` covers pre-close, mid-implement, and non-autonomous regression cases with mocked `/api/status` payloads.
+
+#### Card design redesign (F489 / F490)
+
+- **Responsive kanban card shell** — cards collapse to a single status-row layout that fits narrower columns and reflows on resize without horizontal overflow. Card-level identity (id, name, headline) and card-level state (badges, headline meta) are now confined to the top zone; agent boxes live below in a uniform stack.
+- **Card design wireframe (`docs/card-design-wireframe.html`)** — canonical reference for every card state across the lifecycle (drive, fleet, autonomous), including state-by-state vocabulary, glyphs, and tone palette. Designated as the single source of truth for any card UX change.
+
+#### Code Changes tab (F481)
+
+- **Dashboard spec drawer "Code Changes" tab** — surfaces the feature's commits with GitHub commit links and async-loaded diffs at any lifecycle stage. Internal "plumbing" commits (spec moves, scope snapshots, agent infra) are filtered via the `Aigon-Internal` git trailer so the tab shows only user-meaningful changes.
+- **`/api/feature/:id/commits` route** — backs the new tab; emits commit metadata grouped per branch with detection of merge commits.
+- **`Aigon-Internal` git trailer** — auto-applied by the CLI to plumbing commits (spec moves, lifecycle bookkeeping) so they can be filtered out of public-facing commit lists.
+
+#### Conductor + failover
+
+- **Conductor stays alive on quota-paused (F482)** — when an autonomous run hits a quota limit and the failover policy is `switch`, the conductor keeps polling instead of exiting prematurely, allowing the auto-switch path to land cleanly.
+- **Agent failover lifted to Pro (F421)** — failover orchestration moves out of the OSS package and registers via the Pro hook surface; `lib/agent-failover.js` becomes a thin OSS shim that delegates when Pro is loaded.
+- **End-to-end failover integration test (F472)** — `tests/integration/agent-failover-end-to-end.test.js` runs a full sweep across the failover state machine to lock the contract before further refactors.
+
+#### Test suite tiering
+
+- **Iterate / deploy gate split** — `npm run test:iterate` (scoped, <30s, no Playwright, no budget check) is the iteration gate; `npm run test:deploy` (= `test:core` + `test:browser` + `scripts/check-test-budget.sh`) is the pre-push gate. `test:browser:smoke` runs the Playwright `@smoke` subset automatically when dashboard files change in iterate.
+- **CI matrix split** — `.github/workflows/test.yml` now has a fast `core` matrix job and a `browser` push-to-main-only job. Reduces PR feedback time without losing coverage at merge.
+- **Screenshot footprint reduction** — Playwright specs no longer auto-screenshot every step; targeted snapshots on failure only.
+
+#### Pro CLI surface
+
+- **`aigon pro activate <key>` / `aigon pro status`** — first-class Pro license commands that surface activation state and key health in the CLI rather than via opaque env-var probes.
 - **Pro installation guide** — new docs page at `/docs/guides/pro-installation` covering GitHub PAT setup, `.npmrc` configuration, package install, and `pro.register(api)` wiring, plus a troubleshooting table for common 401/404/git errors.
+
+#### Misc
+
+- **`@senlabsai/aigon` package scope (F416)** — package renamed from `@aigon/cli` to `@senlabsai/aigon` ahead of npm publish.
+- **KM nudge via `/skill: send-keys`** — keyboard-maestro nudge path now uses Claude's `/skill: send-keys` slash command instead of `tmux paste-buffer`, eliminating the buffer-eating side effect on long messages.
+- **Research card nudge follow-ups** — research entities surface up to three recent nudges as chips on the card.
 - **Node 24 CI matrix** — added `24.x` to the `node-version` matrix in `.github/workflows/test.yml`.
 
 ### Changed
 
+- **`Pause` action gated to inbox/backlog only** — engine-event Pause path was offering Pause on every implementing/submitted card; restricted to pre-start lifecycles to match the bypass-machine entry above it.
+- **Dashboard server emits `feature.autonomousPlan` on list payloads** — list/detail split previously dropped the `stages` array; F492's stage track requires it on the kanban view, so the API now ships a lightweight stages-only shape (`{ mode, workflowSlug, error, stages }`) on list rows. List/detail-split test updated with a shape allow-list invariant rather than absence assertion.
+- **Headline tone for stage handoffs flipped to running (green)** — `Starting <stage>` reads as active autonomous progression rather than a yellow "gate" awaiting user action.
+- **Headline subject dropped from autonomous running cards** — verb already names the stage (`Implementing`); the redundant `Implement · CC` meta line is gone.
+- **Eval section copy** — dropped redundant workflow guidance; the headline + stage track already convey the next step.
+- **Awaiting-input headline detail** — long verbose agent prompts replaced with a short action hint (`→ Open eval terminal to respond`); the prompt itself lives in the terminal.
 - **README Pro section** — updated from "not yet available" to private beta status with a link to the installation guide.
+
+### Fixed
+
+- **Stage track never rendered for any autonomous card** (root cause for the F492 user-visible "card looks inert" bug) — the dashboard collector emitted only an `autonomousPlanSummary` and dropped the `stages` array; the renderer's `feature.autonomousPlan.stages` lookup was therefore always undefined, even though headlines worked because they ran server-side with the full plan.
+- **Pause auto-nudge menu item removed from agent cards** — surfaced an action that no longer existed after F445's auto-nudge contract change.
+- **`Needs you` cards no longer dump full agent prompt into the headline detail** — the prompt was often a multi-line block that broke layout; replaced with a one-line action hint.
+- **Agent IDs in headline detail resolve to display names** — `recommended: cu` reads as `recommended: Cursor` (matched to the eval section right below).
+- **Research-eval awaiting-input UX** — banner truncation, step indicator, dimmed close action so the card matches the actual interaction state.
+- **Card shell duplicates on solo cards** — patched the cases where the card-level identity row was rendering alongside the per-agent header (later superseded by the F489/F490 collapse).
+- **F481 restoration** — Code Changes tab and related specs were dropped from main during a bad merge; restored with a follow-up post-review fix.
+
+### Removed
+
+- **`feature-491-card-shell-deferred-followups`** — blank spec, never written; superseded by F492.
 
 ## [2.63.0] — 2026-04-30
 
