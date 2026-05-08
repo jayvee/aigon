@@ -64,7 +64,24 @@ testAsync('collectRepoStatus trims detail-only fields from feature and research 
         assert.ok(row.detailFingerprint, 'list row should expose detail fingerprint for drawer cache invalidation');
         assert.ok(Array.isArray(row.reviewSessionSummary), 'list row should keep lightweight review summary');
     });
-    assert.strictEqual(Object.prototype.hasOwnProperty.call(feature, 'autonomousPlan'), false, 'autonomousPlan must be detail-only');
+    // F492: list rows DO carry feature.autonomousPlan now — the dashboard
+    // stage track renders on every kanban card on the list view, so it
+    // needs per-stage data without a detail roundtrip. The shape is
+    // intentionally lightweight (stages + mode/slug/error only — no full
+    // controller state, no transcripts), and is null when no autonomous
+    // run exists. Keep the contract by allow-listing the lightweight keys.
+    if (feature.autonomousPlan != null) {
+        const allowed = new Set(['mode', 'workflowSlug', 'error', 'stages']);
+        const extras = Object.keys(feature.autonomousPlan).filter(k => !allowed.has(k));
+        assert.deepStrictEqual(extras, [], 'list-row autonomousPlan must stay stages-only — extras: ' + extras.join(','));
+        if (Array.isArray(feature.autonomousPlan.stages)) {
+            const stageAllowed = new Set(['key', 'type', 'label', 'status', 'agents']);
+            for (const s of feature.autonomousPlan.stages) {
+                const stageExtras = Object.keys(s).filter(k => !stageAllowed.has(k));
+                assert.deepStrictEqual(stageExtras, [], 'stage object leaked detail field: ' + stageExtras.join(','));
+            }
+        }
+    }
 }));
 
 testAsync('typed feature and research detail routes resolve independently', async () => {

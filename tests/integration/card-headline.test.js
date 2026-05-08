@@ -70,8 +70,9 @@ test('rule 3: awaitingInput supersedes a running drive agent', () => {
     assert.strictEqual(h.detail, 'pick option A or B');
 });
 
-// Rule 4
-test('rule 4: pendingCompletionSignal with !isWorking → friendly done label', () => {
+// Rule 4 — F492: autonomous-tone label "Confirming <stage>" replaces the old
+// user-action-implying "Implementation done · confirm to proceed".
+test('rule 4: pendingCompletionSignal with !isWorking → Confirming <stage> (running)', () => {
     const agents = [{
         id: 'cc',
         status: 'submitted',
@@ -79,9 +80,8 @@ test('rule 4: pendingCompletionSignal with !isWorking → friendly done label', 
         pendingCompletionSignal: 'implementation-complete',
     }];
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implementation done');
-    assert.strictEqual(h.tone, 'ready');
-    assert.strictEqual(h.detail, 'confirm to proceed');
+    assert.strictEqual(h.verb, 'Confirming implementation');
+    assert.strictEqual(h.tone, 'running');
     assert.strictEqual(h.owner, 'cc');
 });
 
@@ -115,13 +115,14 @@ test('rule 7: backlog ready → no headline', () => {
     assert.strictEqual(h, null);
 });
 
-// Rule 8 — autonomous stages
-test('rule 8: running stage → Running · stage with owner', () => {
+// Rule 8 — autonomous stages. F492: verb is the active participle so the
+// stage name appears once (not paired with a generic "Running ·" prefix).
+test('rule 8: running stage → verb-form stage name with owner', () => {
     const plan = { stages: [
         { type: 'implement', status: 'running', agents: [{ id: 'cc' }], startedAt: isoMinusSec(45) },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Running · implement');
+    assert.strictEqual(h.verb, 'Implementing');
     assert.strictEqual(h.owner, 'cc');
     assert.strictEqual(h.age, 45);
     assert.strictEqual(h.tone, 'running');
@@ -136,24 +137,28 @@ test('rule 8: failed stage → Stage failed (warn)', () => {
     assert.strictEqual(h.tone, 'warn');
 });
 
-test('rule 8: gate (waiting after complete) → Stage gate', () => {
+// F492: stage handoff label is autonomous-tone "Starting <noun>" (running)
+// replacing the old user-action-flavoured "<Stage> gate" (waiting).
+test('rule 8: handoff (waiting after complete) → Starting <stage> (running)', () => {
     const plan = { stages: [
         { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
         { type: 'review', status: 'waiting', agents: [{ id: 'gg' }] },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Review gate');
+    assert.strictEqual(h.verb, 'Starting review');
     assert.strictEqual(h.owner, 'gg');
-    assert.strictEqual(h.tone, 'waiting');
+    assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 8: all complete → Ready to close', () => {
+// F492: when every stage is complete and the lane is still in-progress, the
+// run finished where the user asked it to stop. Label names the stop point.
+test('rule 8: all complete → Stopped at <last-stage> (ready)', () => {
     const plan = { stages: [
         { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
         { type: 'review', status: 'complete', agents: [{ id: 'gg' }] },
     ] };
     const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Ready to close');
+    assert.strictEqual(h.verb, 'Stopped at review');
     assert.strictEqual(h.tone, 'ready');
 });
 
