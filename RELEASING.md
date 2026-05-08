@@ -27,11 +27,12 @@ During the beta period, all normal releases go to `next`. Only a deliberate stab
    git push && git push origin v2.x.y-beta.N
    ```
 
-4. **Publish to npm** (prompts for OTP — always use `npm run release`, never bare `npm publish`):
+4. **Publish to npm:**
    ```bash
-   npm run release
+   node scripts/publish.js
    ```
-   The `release` script reads the version and automatically publishes to `next` for prerelease versions, `latest` for stable versions.
+   The publish script reads the version and automatically publishes to `next` for prerelease versions, `latest` for stable versions.
+   Requires an npm auth token in `~/.npmrc` — see **npm authentication** below.
 
 ## Stable launch (when ready)
 
@@ -41,19 +42,39 @@ During the beta period, all normal releases go to `next`. Only a deliberate stab
 4. `npm run release` — lands on `latest`.
 5. Deprecate any beta versions that were published to `latest` by mistake:
    ```bash
-   npm deprecate @senlabsai/aigon@<version> "Use the stable release: npm i -g @senlabsai/aigon" --otp=<code>
+   npm deprecate @senlabsai/aigon@<version> "Use the stable release: npm i -g @senlabsai/aigon"
    ```
 6. Update `site/content/getting-started.mdx` and `README.md` — remove the `@next` suffix from install commands.
 
-## OTP note
+## npm authentication
 
-npm 2FA prompts come in two forms:
-- **Browser auth flow** — works for `npm publish` but fails for `npm deprecate`. If you see a 404 error on the auth endpoint, add `--otp=<code>` directly:
-  ```bash
-  npm deprecate @senlabsai/aigon@<version> "message" --otp=<code>
-  npm publish --tag <tag> --otp=<code>
-  ```
-- **TOTP code** — get from your authenticator app and append as `--otp=<6-digit-code>`.
+Classic tokens were permanently revoked December 2025. Use a **Granular Access Token** instead.
+
+### One-time setup
+
+1. Go to **npmjs.com → your avatar → Access Tokens → Generate New Token → Granular Access Token**
+2. Fill in:
+   - **Token name:** `aigon-publish` (or anything)
+   - **Expiration:** 90 days (maximum)
+   - **Packages and scopes → Permissions:** Read and write
+   - **Packages and scopes → Scope:** `@senlabsai`
+   - **Bypass two-factor authentication:** ✅ checked ← critical, defaults to unchecked
+3. Generate and copy the token
+4. Add to `~/.npmrc`:
+   ```
+   //registry.npmjs.org/:_authToken=<your-token>
+   ```
+
+After this, `node scripts/publish.js` works with no prompts. Rotate the token every 90 days.
+
+### Quick session publish (no token setup)
+
+```bash
+npm login   # opens browser → passkey auth → 2-hour session
+node scripts/publish.js
+```
+
+Works for one-off publishes without storing a token. Session expires after 2 hours.
 
 ## What `npm run release` does
 
