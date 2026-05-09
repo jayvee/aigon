@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-09T22:10:33.461Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-manual-nudge-action-never-appears
