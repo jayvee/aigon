@@ -19,13 +19,13 @@ Agent-installed hooks currently mix lightweight session notices with heavyweight
 
 ## Acceptance Criteria
 
-- [ ] Claude and Gemini installed templates (`templates/agents/cc.json`, `templates/agents/gg.json`) no longer run `aigon check-version` from `SessionStart`.
+- [ ] Claude, Gemini, and Cursor installed templates (`templates/agents/cc.json`, `templates/agents/gg.json`, `templates/agents/cu.json`) no longer run `aigon check-version` from their session-start hook. Codex / Kimi / OpenCode have no hook surface — covered by the dashboard follow-up noted in Out of Scope.
 - [ ] A new read-only notification command `aigon update-notice` exists in `lib/commands/setup.js`, registered alongside `check-version`. It accepts `--json` for Gemini-style hook output.
 - [ ] `aigon check-version` keeps its current behavior (write path) for direct CLI use; only the hook entrypoint changes. No new `--notify-only` flag is added (avoids two ways to do the same thing).
 - [ ] `update-notice` reports: project sync needed when `.aigon/version` differs from current CLI version; npm registry notice when cached state indicates a newer package; suggested commands (`npm update -g @senlabsai/aigon@next`, `aigon update`) for the user to run manually.
 - [ ] `update-notice` performs **no network calls**. It reads only the cached npm-update state written by `lib/npm-update-check.js`; if no cache exists it prints the version-comparison notice without an npm hint.
 - [ ] `update-notice` must not call (verified by static grep in tests): `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `install-agent`, `git add`, `git commit`, or any function that writes outside `~/.aigon/cache/`.
-- [ ] Claude `SessionStart` and Gemini `SessionStart` use `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`.
+- [ ] Claude `SessionStart`, Gemini `SessionStart`, and Cursor `sessionStart` (`templates/agents/cu.json` at `extras.hooks.content.hooks.sessionStart`) all use `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`. Cursor was previously missed in the spec — same write-path bug as cc/gg, same fix.
 - [ ] All installed hooks (`SessionStart`, `SessionEnd`/`AfterAgent`, `Stop`) always exit `0`. Failures are logged to stderr but never propagate as non-zero exit codes that block the agent session.
 - [ ] `aigon project-context` is audited: confirmed read-only (it reads `templates/generic/agents-md.md` and writes only to stdout). No timeout change required (existing 10s hook timeout is sufficient). No code change needed if the audit passes.
 - [ ] **Bug fix folded in:** the `Architecture overview: \`docs/architecture.md\`` line is removed from `templates/generic/agents-md.md` and the equivalent line is removed from `templates/generic/cursor-rule.mdc`. That path only exists in the Aigon monorepo, so every target repo has been receiving a broken pointer at session start. Removing the line is the full fix — there is no equivalent target-repo doc to substitute.
@@ -139,7 +139,9 @@ CLI hooks installed in agent settings:
 - **Gemini (`gg.json`)**
   - `SessionStart`: `aigon update-notice --json`, `aigon project-context --json` — both read-only, always exit 0
   - `AfterAgent`: `aigon check-agent-signal --json` (advisory, already exits 0), `aigon capture-gemini-telemetry` (best-effort, errors swallowed)
-- **Codex / Cursor / Kimi / OpenCode (`cx.json`, `cu.json`, `km.json`, `op.json`)**: no CLI hooks (unchanged — `cliHooks: null`).
+- **Cursor (`cu.json`)**
+  - `sessionStart` (`.cursor/hooks.json`): `aigon update-notice`, `aigon project-context` — both read-only, always exit 0
+- **Codex / Kimi / OpenCode (`cx.json`, `km.json`, `op.json`)**: their CLIs do not expose a hook framework — there is no event we can subscribe to. Users on these agents see no session-startup update notice. The follow-up in Out of Scope (dashboard surfaces update availability) is the universal coverage path for this gap.
 
 Universal lifecycle infrastructure (unchanged, not a "hook" in the agent-CLI sense):
 
@@ -158,6 +160,7 @@ Universal lifecycle infrastructure (unchanged, not a "hook" in the agent-CLI sen
 - Changing `agent-status` completion semantics.
 - Removing transcript-based telemetry collection.
 - Adding new dashboard UI for unsigned-agent enforcement (we rely on the existing surfacing; new UI is a follow-up if the gap proves real).
+- **Surfacing update availability in the dashboard** (the universal hookless-agent coverage). Codex, Kimi, and OpenCode have no CLI hook framework so users on those agents will never see a startup update notice from `update-notice`. The dashboard is the right home for a universal "update available" indicator since it is always-on and reads the same `lib/npm-update-check.js` cache. **File this as a separate follow-up feature** ("Dashboard surfaces aigon update availability"). Doing it inside F493 would conflate hook safety (this feature) with dashboard UX (a different module + frontend-design pass).
 - Publishing a new npm package (release management is its own workflow).
 
 ## Open Questions
