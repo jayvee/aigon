@@ -228,7 +228,12 @@
     "modelFlag": "--model",
     "effortFlag": "-c model_reasoning_effort=",
     "effortEnv": null,
-    "submitKey": "Enter"
+    "submitKey": "Enter",
+    "nudgeTransport": {
+      "submitKey": "Enter",
+      "submitAttempts": 2,
+      "retryDelayMs": 700
+    }
   },
   "placeholders": {
     "AGENT_ID": "cx",
