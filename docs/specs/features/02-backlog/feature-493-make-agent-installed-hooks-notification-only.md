@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-09T12:54:42.963Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Make agent installed hooks notification only
