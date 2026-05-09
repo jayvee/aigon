@@ -24,14 +24,14 @@ Three “versions” are real and independent:
 
 Npm users get an **advisory** registry check (`lib/npm-update-check.js`, `@senlabsai/aigon` dist-tags, 5‑minute cache) shown after sync work in `check-version`; it does not gate success.
 
-**Implication:** The product already mixes **semver pin (a)** with **content-ish signals (config hash)**. Migrations are keyed by versioned manifests (see F353 / `lib/migration.js`), not only by “trust the pin file” — but the pin still drives *when* `check-version` believed a full sync was needed.
+**Implication:** The product already mixes **semver pin (a)** with **content-ish signals (config hash)**. Migrations are keyed by versioned manifests (see F353 / `lib/migration.js`), not only by “trust the pin file” — but the pin still drives *when* `check-version` believed a full sync was needed. The right question is therefore not "pin or no pin"; it is "what durable sync record should exist, and which surfaces explain it?"
 
 ### Should `.aigon/version` exist? — Three models evaluated
 
 **(a) Keep per-repo semver pin (status quo)**
 
-- **Pros:** Committed pin is legible in PRs (“this repo moved to Aigon 2.65”); aligns with industry pattern of **project-level toolchain pins** (e.g. Volta’s `volta` block in `package.json`, workspace-scoped configs in pnpm — team reproducibility matters). Gives a stable hook for changelog surfacing (`getChangelogEntriesSince` on `update`). Worktree omission shows the pin is understood as **mainline repo state**, not every worktree clone.
-- **Cons:** Three-way confusion after F493 — **global CLI vs pin vs dashboard process** feels like “broken” unless explained. Semver mismatches fire even when templates didn’t meaningfully change (noise). Pins can lag while work continues (acceptable but needs UX).
+- **Pros:** Committed pin is legible in PRs ("this repo moved to Aigon 2.65"); aligns with industry patterns where project-local records control tool/runtime behavior. Corepack reads the nearest `package.json` `packageManager` field and runs the requested package-manager version; its README also recommends a versioned field for deterministic installs and supports hashes. Gives a stable hook for changelog surfacing (`getChangelogEntriesSince` on `update`). Worktree omission shows the pin is understood as **mainline repo state**, not every worktree clone.
+- **Cons:** Three-way confusion after F493 — **global CLI vs pin vs dashboard process** feels like "broken" unless explained. Semver mismatches fire even when templates didn't meaningfully change (noise). Pins can lag while work continues (acceptable but needs UX).
 
 **(b) Remove the pin**
 
@@ -40,10 +40,10 @@ Npm users get an **advisory** registry check (`lib/npm-update-check.js`, `@senla
 
 **(c) Hybrid: pin a manifest hash, not semver**
 
-- **Pros:** Sync runs when **delivered template / managed-file content** differs, not merely when patch bumps. Reduces needless churn and matches mental model (“drift = real difference”). Aligns with how package ecosystems think about lockfiles/content-addressed deps.
+- **Pros:** Sync runs when **delivered template / managed-file content** differs, not merely when patch bumps. Reduces needless churn and matches mental model ("drift = real difference"). Aligns with package-lock/Terraform patterns: npm lockfiles exist to reproduce an exact generated tree and expose readable source-control diffs; Terraform records provider selections and checksums in a repo lock file and only upgrades them when explicitly asked.
 - **Cons:** Requires defining the canonical hashed set (templates, agent JSON payloads, hooks recipes, `.aigon/docs` vendoring, etc.), invalidation rules, and a migration story for repos that partial-sync. Separate problem: **npm still publishes semver** — users need a lane to learn “new security fix” independent of hash equality.
 
-**Synthesis:** **Do not adopt (b) as sole model.** The repo needs a durable, introspectable “last synced generation” for teams and migrations. **Prefer retaining a pin-shaped artifact** — either classic **(a)** or **(c)** where the stored value is **content-derived** but still one field in `.aigon/`. Today’s **`config-hash` + semver** is a weak form of **(c)**; evolving toward a **single documented “sync generation”** (semver + aggregate template digest, or digest-only + separate “npm advisory”) would reduce conceptual sprawl.
+**Synthesis:** **Do not adopt (b) as sole model.** The repo needs a durable, introspectable "last synced generation" for teams and migrations. **Prefer retaining a pin-shaped artifact** — either classic **(a)** or **(c)** where the stored value is **content-derived** but still one field in `.aigon/`. Today's **`config-hash` + semver** is a weak form of **(c)**; evolving toward a **single documented "sync generation"** (semver + aggregate template digest, or digest-only + separate "npm advisory") would reduce conceptual sprawl.
 
 ### Multi-repo UX
 
@@ -53,19 +53,21 @@ Reasonable layered approach (no need to build everything at once):
 2. **`aigon update --all` (or `aigon sync-repos`)** — walks registry, `cd` each root, runs `update` with shared summary. Exit policy: aggregate report, non-zero if any repo failed (operator-friendly for CI/scripting).
 3. **Dashboard multi-repo “command center”** — materially higher cost: auth across paths, ambiguity of “which `.aigon`”, WebSocket/session model, conflict with single-repo invariant in `AGENTS.md`. **Defer** unless Pro / power-user tier justifies it; CLI + registry solves 80% for multi-repo engineers.
 
-Cross-repo UX should **reuse** npm advisory (`checkForUpdate`) **once per machine**, not once per repo, to avoid rate / noise issues (minor product tweak).
+Cross-repo UX should **reuse** npm advisory (`checkForUpdate`) **once per machine**, not once per repo, to avoid rate / noise issues (minor product tweak). The model should separate package-manager update semantics from repo sync: npm's global update command updates global packages, while Homebrew explicitly separates "update package definitions", "list outdated", and "upgrade". Aigon should mirror that clarity: **upgrade CLI/package**, **inspect repo drift**, then **sync one or all repos**.
 
 ### Dashboard: single-repo vs hub
 
 **Default:** Stay **single-repo by default** — workflow engine paths, snapshots, proxy registration are cwd-scoped; changing that is architectural.
 
-**Low-cost/high-value additions:** Persistent **telemetry banner**: “CLI vX · pinned vY · dashboard vZ” with **explicit “restart server”** when Z ≠ X. Optional link to changelog since pin. That addresses “dashboard open from stale process” **without** multi-repo coupling.
+**Low-cost/high-value additions:** Persistent **version-status banner**: "CLI vX · pinned vY · dashboard vZ" with **explicit "restart server"** when Z != X. Optional link to changelog since pin. That addresses "dashboard open from stale process" **without** multi-repo coupling.
 
 Large multi-repo rollup (“N/M behind”) belongs in **Pro or a dedicated “machine status” pane** feeding off the registry, not the core Kanban layout.
 
-### Hookless agents (Codex / Kimi / OpenCode)
+### Hook coverage gaps (Codex / Kimi / OpenCode)
 
-They miss `SessionStart` parity. **Minimal universal surfaces:**
+The research prompt is accurate for **Aigon today**: `templates/agents/cx.json`, `km.json`, and `op.json` do not install SessionStart-style update hooks, while cc/gg/cu do. Current upstream reality has changed for Codex: official OpenAI Codex docs now document hooks with `SessionStart`, a `features.codex_hooks = true` flag, cwd-aware command execution, and JSON output that can add developer context. That means Codex should no longer be treated as permanently hookless; Aigon is missing the integration.
+
+For Kimi/OpenCode, I did not find an equivalent already-wired Aigon hook path in the agent JSON configs. Until each agent's hook capability is confirmed and modeled in the agent registry, the **minimal universal surfaces** are:
 
 | Surface | Purpose |
 |---------|---------|
@@ -73,7 +75,7 @@ They miss `SessionStart` parity. **Minimal universal surfaces:**
 | **`aigon doctor` / `check-version`** | Document as weekly habit; doctor already central for repair narrative. |
 | **Optional IDE docs** — install skill text for cx/op/km | One line: run `aigon check-version`; run `aigon update` when advised. |
 
-No substitute for proactive notice except **dashboard** or **explicit user cron/alias**.
+For Codex specifically, add a follow-up feature to install a non-mutating `SessionStart` hook once `codex_hooks` support is gated and tested in Aigon's install surface. For the broader product, update awareness still cannot depend solely on hooks: some agents may never have them, and users can work through dashboard/CLI without launching an agent.
 
 ### Scenario walk-throughs (desired UX)
 
@@ -81,7 +83,7 @@ No substitute for proactive notice except **dashboard** or **explicit user cron/
 
 2. **Stale repo after three months:** Open project → prominent **pin vs CLI delta** + **npm advisory** (“registry newer than CLI?” separate line) + link to changelog since pin. **`aigon update`** is the decisive action; `doctor --fix` if migrations pending. No silent mutation at agent start.
 
-3. **Codex/Kimi/OpenCode-only:** Dashboard or **printed message on first `doctor`/`update`/`server start`** in that repo captures attention; onboarding skill lists the same.
+3. **Codex/Kimi/OpenCode-only:** Codex can gain hook parity with a targeted install feature; until that exists, dashboard or **printed message on first `doctor`/`update`/`server start`** in that repo captures attention. Kimi/OpenCode stay on dashboard/CLI surfaces unless hook support is confirmed.
 
 4. **Dashboard repo A, working in repo B:** **No automatic cross-repo signal** without registry UI — acceptable v1 limitation; user runs `check-version` in B or adopts future **machine-local status** command fed by registry.
 
@@ -93,12 +95,17 @@ No substitute for proactive notice except **dashboard** or **explicit user cron/
 
 ## Sources
 
-- Aigon implementation: [`lib/version.js`](https://github.com/senlabsai/aigon/blob/main/lib/version.js) (conceptual — local paths: `lib/version.js`, `lib/commands/setup.js` check-version/update, `lib/npm-update-check.js`, `lib/dashboard-server.js` startup log).
+- Aigon implementation: local paths `lib/version.js`, `lib/commands/setup.js` (`check-version` / `update`), `lib/npm-update-check.js`, `lib/dashboard-status-collector.js`, `templates/dashboard/js/settings.js`, `templates/dashboard/js/monitor.js`.
 - F493 scope (hook non-mutating, defer versioning UX): `docs/specs/features/03-in-progress/feature-493-make-agent-installed-hooks-notification-only.md`
 - Migration idempotency note vs `.aigon/version`: `docs/specs/features/05-done/feature-353-doctor-runs-pending-schema-migrations.md`
 - Historical auto-version-check design: `docs/specs/features/05-done/feature-28-auto-version-check.md`, research-07 artifacts under `docs/specs/research-topics/`
-- Industry patterns — **committed per-project toolchain config** (Volta): https://voltajs.com/guide/managing-project.html
-- Layered config precedence (comparison): https://pnpm.io/cli/config · https://hk.jdx.dev/configuration
+- npm global updates and outdated checks: https://docs.npmjs.com/cli/v8/commands/npm-update/ · https://docs.npmjs.com/cli/v8/commands/npm-outdated/
+- npm lockfile rationale (exact generated tree, committed diffs): https://docs.npmjs.com/cli/v6/configuring-npm/package-lock-json/
+- Terraform dependency lock behavior (repo lock file, explicit upgrade): https://developer.hashicorp.com/terraform/language/files/dependency-lock
+- Corepack project-local package-manager pinning and hashes: https://nodejs.org/download/release/v18.20.7/docs/api/corepack.html · https://github.com/nodejs/corepack
+- Angular CLI update command/migrations: https://angular.dev/cli/update
+- Homebrew update/outdated/upgrade split and pinning: https://docs.brew.sh/FAQ
+- OpenAI Codex CLI docs and hooks docs: https://developers.openai.com/codex/cli · https://developers.openai.com/codex/hooks
 
 ---
 
@@ -110,7 +117,7 @@ No substitute for proactive notice except **dashboard** or **explicit user cron/
 
 3. **Ship machine-local repo registry + `update --all` (CLI)** ahead of dashboard multi-repo; treat multi-repo dashboard as optional / Pro scope.
 
-4. **Hookless agents:** treat **dashboard** and **printed doctor/update output** as the universal channel; tighten install docs/skills accordingly.
+4. **Agent coverage:** add Codex SessionStart hook integration as a targeted parity feature, but keep **dashboard** and **printed doctor/update output** as the universal channel for Kimi/OpenCode and non-agent workflows.
 
 5. **Keep `update --pull`** as supported clone-upgrade with clear messaging beside npm installs.
 
@@ -125,4 +132,5 @@ No substitute for proactive notice except **dashboard** or **explicit user cron/
 | `update-all-repos-command` | `aigon update --all` walks the registry and runs project sync per root with aggregated success/failure report | medium | known-repos-registry |
 | `check-version-registry-npm-cache` | Deduplicate npm registry advisory across repos in one process/session to reduce redundant HTTPS checks | low | known-repos-registry (optional linkage) |
 | `sync-generation-manifest` | Replace or augment raw semver pin with a content hash / manifest digest so sync triggers only when managed outputs change (implements model **(c)** in a principled way) | low | dashboard-version-trinity-banner (for surfacing digest vs npm semver) |
-| `hookless-agent-version-onboarding` | Update cx/op/km skill + install snippets to prescribe `check-version`/`update` and point to dashboard banner | medium | dashboard-version-trinity-banner |
+| `codex-sessionstart-version-hook` | Install a non-mutating Codex `SessionStart` hook for `check-version` / project context once `codex_hooks` support is gated and tested | medium | dashboard-version-trinity-banner |
+| `hookless-agent-version-onboarding` | Update km/op skill + install snippets to prescribe `check-version`/`update` and point to dashboard banner | medium | dashboard-version-trinity-banner |
