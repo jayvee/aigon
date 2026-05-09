@@ -41,5 +41,6 @@ Worktrees are created in `../<repo>-worktrees/` to keep them grouped with the pr
 ## Prompt Suggestion
 
 End your response with the next command on its own line:
-- **Drive / Drive worktree:** `{{CMD_PREFIX}}feature-close <ID>`
+- **Drive (branch, solo):** `{{CMD_PREFIX}}feature-do <ID>`
+- **Drive worktree:** `{{CMD_PREFIX}}feature-close <ID>` (agent is already running in its terminal)
 - **Fleet:** `{{CMD_PREFIX}}feature-eval <ID>`
