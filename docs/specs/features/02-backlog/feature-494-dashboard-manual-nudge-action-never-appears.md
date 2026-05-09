@@ -1,5 +1,5 @@
 ---
-complexity: low
+complexity: medium
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-05-09T22:10:33.461Z", actor: "cli/feature-prioritise" }
 ---
@@ -42,13 +42,13 @@ Diff that introduced the bug (identical shape in both files):
 
 ## Acceptance Criteria
 
-- [ ] On a research card with at least one agent in a running tmux session, the entity-level `…` menu lists `Nudge agent…`. Tested with R48 in its current state (cx tmux session running, cu/cc completed).
-- [ ] On a feature card with at least one agent in a running tmux session, the entity-level `…` menu lists `Nudge agent…`.
+- [ ] On a research dashboard state with a real workflow snapshot containing at least one active agent and a dashboard agent row for that same id with `tmuxRunning: true`, `validActions` includes `research-nudge`, so the entity-level `…` menu can list `Nudge agent…`.
+- [ ] On a feature dashboard state with a real workflow snapshot containing at least one active agent and a dashboard agent row for that same id with `tmuxRunning: true`, `validActions` includes `feature-nudge`, so the entity-level `…` menu can list `Nudge agent…`.
 - [ ] The action remains hidden when no tmux session is running for any agent on the card (status quo for that case is correct).
-- [ ] The action remains hidden when `currentSpecState === 'done'` (status quo for that case is correct).
+- [ ] The action remains hidden when `currentSpecState === 'done'`, even if an agent row reports `tmuxRunning: true` (status quo for that case is correct).
 - [ ] No change to the auto-nudge / idle-ladder path — it continues to work as today.
-- [ ] Test: an integration test that builds a research dashboard state with one agent's `tmuxRunning: true` asserts `validActions` includes `research-nudge`. A second test with `tmuxRunning: false` for all agents asserts `research-nudge` is absent.
-- [ ] Test: equivalent integration test for `feature-nudge`.
+- [ ] Test: add or extend `tests/integration/workflow-read-model.test.js` with a research fixture whose snapshot has `agents.cx.status: 'running'` and whose dashboard agent row has `{ id: 'cx', tmuxRunning: true }`; assert `validActions` includes `research-nudge`. A second fixture with `tmuxRunning: false` for all agents asserts `research-nudge` is absent.
+- [ ] Test: add the equivalent integration coverage for `feature-nudge`, including the no-running-tmux negative case.
 
 ## Validation
 
@@ -56,6 +56,7 @@ Diff that introduced the bug (identical shape in both files):
 node -c lib/workflow-read-model.js
 node -c lib/feature-workflow-rules.js
 node -c lib/research-workflow-rules.js
+node tests/integration/workflow-read-model.test.js
 npm run test:iterate
 ```
 
@@ -102,6 +103,8 @@ Place it inside the existing `if (dashboardAgents && dashboardAgents.length > 0)
 
 The two callers (`getFeatureDashboardState`, `getResearchDashboardState`) both already pass `agents` (the dashboard's per-agent objects) into `enrichSnapshotWithInfraData`, so no caller change is required.
 
+Do not write `tmuxSessionStates` back to workflow snapshots or event logs. It is live dashboard infrastructure data and should exist only on the enriched action context used for `snapshotToDashboardActions`.
+
 ### Alternative considered
 
 Rewriting the guards to read `context.agents[id].tmuxRunning` instead of `context.tmuxSessionStates`. Smaller in one sense (touches only the two guards), but it would also require the enrich function to propagate `tmuxRunning` per agent — and it changes the field the guards rely on, which has cross-cutting implications (other places read `tmuxSessionStates`, e.g. `lib/state-queries.js`, `lib/dashboard-server.js:784`). The bridge in `enrichSnapshotWithInfraData` is the minimal-diff fix.
@@ -116,6 +119,7 @@ Rewriting the guards to read `context.agents[id].tmuxRunning` instead of `contex
 - Adding new tmux-state collection paths. The `tmuxRunning` boolean is already computed per agent in `lib/dashboard-status-collector.js` (research at line 1137; the equivalent feature path computes the same).
 - Changing any guard for a non-nudge action.
 - Snapshot schema changes (tmux state remains live-runtime; we just bridge it into the action context).
+- Manual smoke testing against the current R48 session. R48 is useful as an operator check, but the required coverage must be reproducible from test fixtures.
 
 ## Open Questions
 
