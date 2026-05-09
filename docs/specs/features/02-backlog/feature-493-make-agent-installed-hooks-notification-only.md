@@ -123,10 +123,28 @@ Implement Option C now.
 3. The notifier must not call `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `install-agent`, `git add`, or `git commit`. A unit test asserts this via grep.
 4. Update Claude/Gemini agent templates (`templates/agents/cc.json`, `templates/agents/gg.json`) so `SessionStart` calls `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`.
 5. Leave `project-context` unchanged. Audit confirms it is already read-only (template read → stdout). The only fix needed in this area is dropping the broken `docs/architecture.md` pointer from `templates/generic/agents-md.md` and `templates/generic/cursor-rule.mdc` (see Acceptance Criteria — that file is what the hook serves to every Claude/Gemini session in target repos).
-6. Drop `aigon check-agent-submitted` from Claude `Stop` entirely. Keep the command in `lib/commands/misc.js` for direct CLI/diagnostic use, but no installed hook invokes it. The hook today only enforces arena agents (`feature-<id>-<agent>-<slug>` branches); solo Drive-mode sessions are unaffected by either the current behavior or its removal. **Replacement signal:** the dashboard already surfaces unsigned agents on the feature card (existing behavior). No new dashboard work in this feature; if the gap proves real in practice, file a follow-up to add a passive nudge or `feature-close` precondition.
+6. Drop `aigon check-agent-submitted` from Claude `Stop` entirely. Keep the command in `lib/commands/misc.js` for direct CLI/diagnostic use, but no installed hook invokes it. The hook today only enforces arena agents (`feature-<id>-<agent>-<slug>` branches); solo Drive-mode sessions are unaffected by either the current behavior or its removal. **Replacement signal — already in place:** the universal shell trap (`lib/worktree.js:780-789`, `trap _aigon_cleanup EXIT`) auto-calls `aigon agent-status <successStatus>` on every agent's session exit (success/SIGINT/SIGTERM). It is on by default for all six supported agents (`lib/worktree.js:413-414`) and fires on actual exit rather than between assistant turns, making it strictly more reliable than the Stop hook. The `Stop` hook was a redundant secondary layer covering only 1 of 6 agents; dropping it removes nothing the shell trap doesn't already do. The dashboard's existing unsigned-agent surfacing remains as a passive UI fallback for the SIGKILL/crash case the shell trap can't catch (the orchestrator heartbeat sweep also handles this).
 7. Confirm `aigon check-agent-signal` (Gemini `AfterAgent`) is already advisory (it always exits 0 — verified in `lib/commands/misc.js`). No code change; verified by an integration test.
 8. Wrap telemetry hooks (`capture-session-telemetry`, `capture-gemini-telemetry`) so any thrown exception is caught, logged to stderr, and the process still exits 0.
 9. Add the tests listed in Acceptance Criteria (clean-tree assertion, JSON shape, static grep, npm-cache-failure swallowed).
+
+### Hooks remaining after this feature lands
+
+CLI hooks installed in agent settings:
+
+- **Claude (`cc.json`)**
+  - `SessionStart`: `aigon update-notice`, `aigon project-context` — both read-only, always exit 0
+  - `SessionEnd`: `aigon capture-session-telemetry` — best-effort, errors swallowed, always exit 0
+  - `Stop`: *(removed — was `aigon check-agent-submitted`)*
+- **Gemini (`gg.json`)**
+  - `SessionStart`: `aigon update-notice --json`, `aigon project-context --json` — both read-only, always exit 0
+  - `AfterAgent`: `aigon check-agent-signal --json` (advisory, already exits 0), `aigon capture-gemini-telemetry` (best-effort, errors swallowed)
+- **Codex / Cursor / Kimi / OpenCode (`cx.json`, `cu.json`, `km.json`, `op.json`)**: no CLI hooks (unchanged — `cliHooks: null`).
+
+Universal lifecycle infrastructure (unchanged, not a "hook" in the agent-CLI sense):
+
+- **Shell trap** (`lib/worktree.js:780-789`) — wraps every agent CLI; on exit auto-runs `aigon agent-status <successStatus>` (or `error`). On by default for all agents. This is the primary enforcement that the dropped `Stop` hook was a partial duplicate of.
+- **Heartbeat sidecar** (`lib/worktree.js:639-661`) — background `touch`-loop tied to the parent PID; consumed by `lib/workflow-heartbeat.js` to detect SIGKILL/crash cases the trap can't catch.
 
 ## Dependencies
 
