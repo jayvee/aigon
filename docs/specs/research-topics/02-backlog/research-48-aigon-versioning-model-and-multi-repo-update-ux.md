@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-09T13:30:54.488Z", actor: "cli/research-prioritise" }
 ---
 
 # Research: aigon-versioning-model-and-multi-repo-update-ux
