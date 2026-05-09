@@ -29,7 +29,7 @@ Agent-installed hooks currently mix lightweight session notices with heavyweight
 - [ ] All installed hooks (`SessionStart`, `SessionEnd`/`AfterAgent`, `Stop`) always exit `0`. Failures are logged to stderr but never propagate as non-zero exit codes that block the agent session.
 - [ ] `aigon project-context` is audited: confirmed read-only (it reads `templates/generic/agents-md.md` and writes only to stdout). No timeout change required (existing 10s hook timeout is sufficient). No code change needed if the audit passes.
 - [ ] **Bug fix folded in:** the `Architecture overview: \`docs/architecture.md\`` line is removed from `templates/generic/agents-md.md` and the equivalent line is removed from `templates/generic/cursor-rule.mdc`. That path only exists in the Aigon monorepo, so every target repo has been receiving a broken pointer at session start. Removing the line is the full fix — there is no equivalent target-repo doc to substitute.
-- [ ] Claude `Stop` hook drops `aigon check-agent-submitted` (the only currently-blocking hook). The command itself stays in `lib/commands/misc.js` for direct CLI/diagnostic use but is no longer invoked from any installed hook.
+- [ ] Claude `Stop` hook drops `aigon check-agent-submitted` (the only currently-blocking hook — see "What `check-agent-submitted` actually does" below). The command itself stays in `lib/commands/misc.js` for direct CLI/diagnostic use but is no longer invoked from any installed hook.
 - [ ] `aigon check-agent-signal` (Gemini `AfterAgent`) is confirmed advisory: code path always exits 0, never returns a blocking JSON response. Existing behavior is preserved.
 - [ ] Telemetry capture hooks (`capture-session-telemetry`, `capture-gemini-telemetry`) wrap their work in try/catch and always exit 0 even if capture fails.
 - [ ] Existing installs that still have `aigon check-version` baked into a stale `.claude/settings.json`/`.gemini/settings.json` keep working: `check-version` continues to exist as a CLI command. Hook templates are rewritten the next time `aigon update`/`install-agent` runs (no special migration step needed).
@@ -85,6 +85,23 @@ The risky part is `check-version`. In `lib/commands/setup.js`, `check-version` c
 
 That means an agent startup hook is currently a write path. This conflicts with the desired hook contract: hooks may enrich or warn, but they should not mutate repo state or block normal agent execution.
 
+### What `check-agent-submitted` actually does (plain English)
+
+The hook name is a fossil — `submitted` is a deprecated status. Here is what the code in `lib/commands/misc.js:687-732` actually does:
+
+1. Claude is exiting an agent worktree session (the `Stop` event fires).
+2. The hook checks the current branch. If the branch matches the **arena** pattern `feature-<id>-<agent>-<slug>` (e.g. `feature-493-cc-make-hooks-safe`), it identifies the feature ID and the agent ID. If the branch is a Drive-mode `feature-<id>-<slug>` or unrelated, the hook returns silently — no enforcement on solo or non-feature sessions.
+3. It reads that agent's status file in the **main** repo (the worktree path is resolved via `.aigon/worktree.json` or `AIGON_PROJECT_PATH`).
+4. It accepts these statuses as "this agent finished its task":
+   - `implementation-complete` — agent finished a `do` task (the modern equivalent of the old `submitted`)
+   - `revision-complete` — agent finished a `revise` pass after addressing review feedback
+   - `research-complete` — research agent finished its task
+   - `submitted` — legacy alias, kept for backward compat; `aigon agent-status` warns when used
+5. If the status is **not** one of those, the hook prints `⚠️ You haven't submitted your work…` to stderr and sets `process.exitCode = 1`. Claude then refuses to cleanly close the session, which is the user-visible nudge: "you forgot to mark your work done before exiting."
+6. The downstream consequence of *not* signaling: the dashboard does not know this agent is done, so the feature card sits with the agent shown as still-working; reviewer pickup, `feature-close`, and arena comparison all stall until the agent is marked complete (manually or via `force-agent-ready`).
+
+So the hook is a one-liner enforcement that **arena agents must call `aigon agent-status implementation-complete` (or `revision-complete` / `research-complete`) before their session exits**. Solo Drive-mode sessions are never affected. Dropping the hook removes that nudge for arena agents only; the existing dashboard surfacing and `force-agent-ready` remain as fallbacks. If the gap shows up in practice (agents repeatedly forget and reviewers stall), file a follow-up to either restore an advisory-only version of the hook or add a `feature-close` precondition.
+
 ### Options
 
 Option A: Remove all installed hooks.
@@ -123,7 +140,7 @@ Implement Option C now.
 3. The notifier must not call `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `install-agent`, `git add`, or `git commit`. A unit test asserts this via grep.
 4. Update Claude/Gemini agent templates (`templates/agents/cc.json`, `templates/agents/gg.json`) so `SessionStart` calls `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`.
 5. Leave `project-context` unchanged. Audit confirms it is already read-only (template read → stdout). The only fix needed in this area is dropping the broken `docs/architecture.md` pointer from `templates/generic/agents-md.md` and `templates/generic/cursor-rule.mdc` (see Acceptance Criteria — that file is what the hook serves to every Claude/Gemini session in target repos).
-6. Drop `aigon check-agent-submitted` from Claude `Stop` entirely. Keep the command in `lib/commands/misc.js` for direct CLI/diagnostic use, but no installed hook invokes it. **Replacement signal:** the dashboard already surfaces unsigned agents on its feature card (existing behavior). No new dashboard work in this feature; if the gap proves real in practice, file a follow-up to add a passive nudge or `feature-close` precondition.
+6. Drop `aigon check-agent-submitted` from Claude `Stop` entirely. Keep the command in `lib/commands/misc.js` for direct CLI/diagnostic use, but no installed hook invokes it. The hook today only enforces arena agents (`feature-<id>-<agent>-<slug>` branches); solo Drive-mode sessions are unaffected by either the current behavior or its removal. See "What `check-agent-submitted` actually does" above. **Replacement signal:** the dashboard already surfaces unsigned agents on the feature card (existing behavior). No new dashboard work in this feature; if the gap proves real in practice, file a follow-up to add a passive nudge or `feature-close` precondition.
 7. Confirm `aigon check-agent-signal` (Gemini `AfterAgent`) is already advisory (it always exits 0 — verified in `lib/commands/misc.js`). No code change; verified by an integration test.
 8. Wrap telemetry hooks (`capture-session-telemetry`, `capture-gemini-telemetry`) so any thrown exception is caught, logged to stderr, and the process still exits 0.
 9. Add the tests listed in Acceptance Criteria (clean-tree assertion, JSON shape, static grep, npm-cache-failure swallowed).
