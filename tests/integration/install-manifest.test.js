@@ -78,7 +78,7 @@ testAsync('install-agent manifest sha256 always matches on-disk content', () => 
     }
 }));
 
-testAsync('install-agent proceeds and overwrites modified file in non-interactive mode', () => withTempDirAsync('aigon-f422-warn-modified-', async (repo) => {
+testAsync('install-agent refreshes stale manifest entries without overwrite prompt', () => withTempDirAsync('aigon-f422-refresh-modified-', async (repo) => {
     const { spawnSync } = require('child_process');
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
@@ -91,20 +91,20 @@ testAsync('install-agent proceeds and overwrites modified file in non-interactiv
     fs.writeFileSync(absPath, '# hand-edited content by test');
     assert.ok(installManifestLib.getModifiedFiles(manifest, repo).length > 0, 'pre-condition: file is modified');
 
-    // Re-run — AIGON_NONINTERACTIVE=1 skips the prompt and proceeds
+    // Re-run: install-agent is a sync/update path, so it should not ask an
+    // overwrite question. It refreshes the install manifest after writing.
     const result = spawnSync(process.execPath, [CLI, 'install-agent', 'cc'], {
         cwd: repo,
         env: { ...process.env, ...GIT_SAFE_ENV, HOME: repo, USERPROFILE: repo, AIGON_NONINTERACTIVE: '1' },
         encoding: 'utf8',
     });
     const combined = (result.stdout || '') + (result.stderr || '');
-    // Warning must appear in stderr/stdout
-    assert.ok(
-        combined.includes('modified outside install'),
-        `output must warn about modified files: ${combined}`
-    );
-    // Install must complete (manifest must exist)
-    assert.ok(installManifestLib.readManifest(repo), 'manifest must exist after re-install');
+    assert.strictEqual(result.status, 0, `install-agent failed: ${combined}`);
+    assert.ok(!combined.includes('Proceed with overwrite'), `install-agent must not prompt for overwrite: ${combined}`);
+
+    const nextManifest = installManifestLib.readManifest(repo);
+    assert.ok(nextManifest, 'manifest must exist after re-install');
+    assert.strictEqual(installManifestLib.getModifiedFiles(nextManifest, repo).length, 0, 'manifest must be refreshed after re-install');
 }));
 
 testAsync('aigon uninstall --dry-run lists files without deleting', () => withTempDirAsync('aigon-f422-dryrun-', async (repo) => {
