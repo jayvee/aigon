@@ -10,6 +10,29 @@ The dashboard's manual `Nudge agent…` action (kind `FEATURE_NUDGE` / `RESEARCH
 
 The auto-nudge / idle-ladder path is unaffected (it uses `tmuxRunning` directly on the per-agent dashboard object). Only the **manual** menu item is broken.
 
+## Regression introduced by
+
+**Commit `ae207994` (2026-05-08):** `fix(dashboard): remove nudge from no-tmux mode, improve pending-completion UX` (Co-Authored-By: Claude Sonnet 4.6). The commit's stated intent was correct — *"avoids offering an action that has no target when running in solo Drive mode (no worktree/tmux)"* — but the implementation introduced a write-path-contract violation: the new guard read path consumes `context.tmuxSessionStates`, a field nothing in the dashboard's action-derivation pipeline writes.
+
+Diff that introduced the bug (identical shape in both files):
+
+```diff
+ guard: ({ context }) => {
+     const agents = Object.values(context.agents || {});
++    const tmuxStates = context.tmuxSessionStates || {};
+     return context.currentSpecState !== 'done'
+-        && agents.some(agent => ['running', 'idle', 'waiting', 'ready'].includes(agent.status));
++        && agents.some(agent => ['running', 'idle', 'waiting', 'ready'].includes(agent.status))
++        && Object.values(tmuxStates).some(state => state === 'running');
+ },
+```
+
+(The research-rules guard added the same check, with `'researching'` also accepted in the agent-status list.)
+
+**Why the regression was invisible to tests:** the existing tests for these guards likely passed `tmuxSessionStates` in their fixture context (so the check passes in tests) but the dashboard's runtime context is built from a workflow snapshot via `lib/workflow-snapshot-adapter.js:418` (`{...snapshot, entityType}`), which never carries tmux state. Snapshot fixtures in tests don't reflect this gap. The fix in this feature must include an integration-level test that exercises the actual dashboard path (read-model → adapter → guard), not just a fixture context.
+
+**Pattern this matches:** see `AGENTS.md § Write-Path Contract` and the F294 / b1db12d3 incident — a guard read path was added that assumes state nobody writes. The original commit should have either (a) added the producer in `enrichSnapshotWithInfraData` at the same time, or (b) read `context.agents[id].tmuxRunning` from a field that *is* already populated.
+
 ## User Stories
 
 - [ ] As an Aigon user, when I see an agent stuck running on a feature or research card, I can click `Nudge agent…` from the card menu, pick an agent + role, and send the agent a message — without dropping into the terminal.
@@ -99,4 +122,5 @@ None.
 ## Related
 
 - Discovered while running R48 (aigon-versioning-model-and-multi-repo-update-ux) — the user expected to nudge the still-running Codex agent and noticed no menu item.
+- Regression commit: `ae207994` (2026-05-08, "fix(dashboard): remove nudge from no-tmux mode, improve pending-completion UX").
 - Code: `lib/workflow-read-model.js`, `lib/feature-workflow-rules.js`, `lib/research-workflow-rules.js`, `lib/workflow-snapshot-adapter.js`, `lib/workflow-core/actions.js`, `lib/dashboard-status-collector.js`.
