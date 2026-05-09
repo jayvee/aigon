@@ -1,43 +1,40 @@
 ---
-complexity: medium
+complexity: low
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-05-09T12:54:42.963Z", actor: "cli/feature-prioritise" }
 ---
 
-# Feature: Make agent installed hooks notification only
+# Feature: Make session hooks non-mutating
 
 ## Summary
 
-Agent-installed hooks currently mix lightweight session notices with heavyweight write paths. Claude and Gemini startup hooks run `aigon check-version`, and `check-version` can call `aigon update`, rewrite managed project files, reinstall agents, run migrations, and auto-commit. That is too much authority for an agent-session hook: hook failures are noisy and fragile in clean Docker/Linux installs, while hook success can unexpectedly mutate a customer repo during agent startup. Preserve the useful session-visible update notice, but make installed hooks read-only, best-effort, and unable to modify project state.
+Agent-installed `SessionStart` hooks currently rewrite project files. `aigon check-version` (run on every Claude / Gemini / Cursor session start) silently calls `aigon update` when `.aigon/version` is stale, which reinstalls agents, runs migrations, and may auto-commit. That makes session startup a write path, which is fragile in clean Docker/Linux installs and surprising in customer repos.
+
+This feature makes hooks **non-mutating**. `check-version` keeps printing the same drift notice it already prints; it just stops auto-syncing afterward. The user runs `aigon update` themselves when they choose to. No new commands, no new versioning UI.
+
+The broader question — *how should aigon coordinate versions across the global CLI, N repos on a machine, and the dashboard?* — is deferred to a separate research topic. Bolting an `update-notice` command and a dashboard surface onto the current per-repo `.aigon/version` model would lock in a versioning UX before we've decided what model we want.
 
 ## User Stories
 
-- [ ] As an Aigon user starting Claude or Gemini, I see a clear notice when my project or global Aigon install needs attention.
+- [ ] As an Aigon user starting Claude, Gemini, or Cursor, I see a clear notice when this project is behind the installed CLI, and I decide when to sync.
 - [ ] As an Aigon user, starting an agent session never rewrites Aigon-managed files, reinstalls agents, runs migrations, or creates commits.
-- [ ] As an Aigon maintainer, installed hooks are safe in Docker/Linux/macOS and do not rely on `/bin/zsh` or login-shell behavior for correctness.
+- [ ] As an Aigon maintainer, installed hooks are safe in Docker/Linux/macOS clean-room installs.
 - [ ] As an Aigon maintainer, telemetry hooks are best-effort and cannot block or break the agent session.
 
 ## Acceptance Criteria
 
-- [ ] Claude, Gemini, and Cursor installed templates (`templates/agents/cc.json`, `templates/agents/gg.json`, `templates/agents/cu.json`) no longer run `aigon check-version` from their session-start hook. Codex / Kimi / OpenCode have no hook surface — covered by the dashboard follow-up noted in Out of Scope.
-- [ ] A new read-only notification command `aigon update-notice` exists in `lib/commands/setup.js`, registered alongside `check-version`. It accepts `--json` for Gemini-style hook output.
-- [ ] `aigon check-version` keeps its current behavior (write path) for direct CLI use; only the hook entrypoint changes. No new `--notify-only` flag is added (avoids two ways to do the same thing).
-- [ ] `update-notice` reports: project sync needed when `.aigon/version` differs from current CLI version; npm registry notice when cached state indicates a newer package; suggested commands (`npm update -g @senlabsai/aigon@next`, `aigon update`) for the user to run manually.
-- [ ] `update-notice` performs **no network calls**. It reads only the cached npm-update state written by `lib/npm-update-check.js`; if no cache exists it prints the version-comparison notice without an npm hint.
-- [ ] `update-notice` must not call (verified by static grep in tests): `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `install-agent`, `git add`, `git commit`, or any function that writes outside `~/.aigon/cache/`.
-- [ ] Claude `SessionStart`, Gemini `SessionStart`, and Cursor `sessionStart` (`templates/agents/cu.json` at `extras.hooks.content.hooks.sessionStart`) all use `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`. Cursor was previously missed in the spec — same write-path bug as cc/gg, same fix.
+- [ ] `check-version` (`lib/commands/setup.js`) no longer calls `commands['update']`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `upgradeAigonCli`, `install-agent`, `git add`, or `git commit`. It still prints the existing drift message (`🔄 Project sync needed (project: X, CLI: Y). Run \`aigon update\`.`) and the existing npm-update notice.
+- [ ] `aigon update` is unchanged. Its current write-path behavior stays for direct CLI use; `aigon update --pull` still works for clone-installed users.
+- [ ] All session-start hooks across `templates/agents/cc.json`, `templates/agents/gg.json`, and `templates/agents/cu.json` (`extras.hooks` block, `.cursor/hooks.json`) keep calling `aigon check-version` — the hook payload doesn't change. Only the command's behavior does.
 - [ ] All installed hooks (`SessionStart`, `SessionEnd`/`AfterAgent`, `Stop`) always exit `0`. Failures are logged to stderr but never propagate as non-zero exit codes that block the agent session.
-- [ ] `aigon project-context` is audited: confirmed read-only (it reads `templates/generic/agents-md.md` and writes only to stdout). No timeout change required (existing 10s hook timeout is sufficient). No code change needed if the audit passes.
+- [ ] Telemetry hooks (`capture-session-telemetry`, `capture-gemini-telemetry` in `lib/commands/misc.js`) wrap their work in try/catch and always exit 0 even if capture fails.
+- [ ] Claude `Stop` hook drops `aigon check-agent-submitted` from `templates/agents/cc.json`. The command stays in `lib/commands/misc.js` for direct CLI/diagnostic use but is no longer invoked from any installed hook. **Replacement signal — already in place:** the universal shell trap (`lib/worktree.js:780-789`, `trap _aigon_cleanup EXIT`) auto-calls `aigon agent-status <successStatus>` on every agent's session exit and is on by default for all six supported agents (`lib/worktree.js:413-414`). The Stop hook covered only 1 of 6 agents and fired between assistant turns rather than on actual exit, so dropping it removes nothing the shell trap doesn't already do.
+- [ ] `aigon check-agent-signal` (Gemini `AfterAgent`) is verified advisory: code path always exits 0, never returns a blocking JSON response. No code change required; verified by an integration test.
 - [ ] **Bug fix folded in:** the `Architecture overview: \`docs/architecture.md\`` line is removed from `templates/generic/agents-md.md` and the equivalent line is removed from `templates/generic/cursor-rule.mdc`. That path only exists in the Aigon monorepo, so every target repo has been receiving a broken pointer at session start. Removing the line is the full fix — there is no equivalent target-repo doc to substitute.
-- [ ] Claude `Stop` hook drops `aigon check-agent-submitted` (the only currently-blocking hook). The command itself stays in `lib/commands/misc.js` for direct CLI/diagnostic use but is no longer invoked from any installed hook.
-- [ ] `aigon check-agent-signal` (Gemini `AfterAgent`) is confirmed advisory: code path always exits 0, never returns a blocking JSON response. Existing behavior is preserved.
-- [ ] Telemetry capture hooks (`capture-session-telemetry`, `capture-gemini-telemetry`) wrap their work in try/catch and always exit 0 even if capture fails.
-- [ ] Existing installs that still have `aigon check-version` baked into a stale `.claude/settings.json`/`.gemini/settings.json` keep working: `check-version` continues to exist as a CLI command. Hook templates are rewritten the next time `aigon update`/`install-agent` runs (no special migration step needed).
 - [ ] Tests:
-  - [ ] Integration test runs `aigon update-notice` in a temp git repo with a clean tree and asserts `git status --porcelain` is empty before and after.
-  - [ ] Integration test runs `aigon update-notice --json` and asserts stdout is a single valid JSON object with at most a `systemMessage` key.
-  - [ ] Unit test asserts `update-notice` source does not import or reference `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations` (grep-style assertion against the function body).
-  - [ ] Integration test stubs `lib/npm-update-check.js` to throw and asserts `update-notice` still exits 0.
+  - [ ] Integration test runs `aigon check-version` in a clean temp git repo with a stale `.aigon/version` and asserts `git status --porcelain` is empty before and after.
+  - [ ] Static-grep test asserts `check-version` source body does not call `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, or `runPendingGlobalConfigMigrations`.
+  - [ ] Integration test stubs telemetry capture to throw and asserts the hook still exits 0.
 
 ## Validation
 
@@ -51,15 +48,15 @@ node -c lib/commands/misc.js
 npm run test:iterate
 
 # Read-only invariant smoke (manual sanity check during implementation):
-# In a clean clone, capture git state, run the new hook entrypoint, confirm no diff.
 ( cd "$(mktemp -d)" \
   && git init -q && git commit -q --allow-empty -m init \
+  && mkdir -p .aigon && echo "0.0.0" > .aigon/version \
   && BEFORE=$(git status --porcelain) \
-  && aigon update-notice --json \
+  && aigon check-version \
   && AFTER=$(git status --porcelain) \
   && [ "$BEFORE" = "$AFTER" ] && echo "✅ no writes" || echo "❌ writes detected" )
 
-# Pre-push gate (must pass before close)
+# Pre-push gate
 npm run test:deploy
 ```
 
@@ -67,86 +64,65 @@ npm run test:deploy
 
 - May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 - May add focused unit/integration tests for setup/version commands.
-- May update agent templates and installed-hook migration logic.
+- May edit agent templates (`cc.json`, `gg.json`, `cu.json`) and the two generic templates (`agents-md.md`, `cursor-rule.mdc`).
 
 ## Technical Approach
 
 ### Problem
 
-Current installed hooks:
+`templates/agents/cc.json`, `gg.json`, and `cu.json` (via `extras.hooks` → `.cursor/hooks.json`) all install a session-start hook that runs `aigon check-version`. In `lib/commands/setup.js`, `check-version` compares the CLI version with `.aigon/version` and, when they differ, calls `commands['update'](args)`. `update` rewrites managed project files, reinstalls detected agents, updates `.aigon/version`, and may auto-commit. The hook is therefore a write path. Hook failures are noisy in clean installs; hook successes mutate customer repos at session start.
 
-- Claude `SessionStart` runs `aigon check-version` and `aigon project-context` from `templates/agents/cc.json`.
-- Claude `SessionEnd` runs `aigon capture-session-telemetry`.
-- Claude `Stop` runs `aigon check-agent-submitted`.
-- Gemini `SessionStart` runs `aigon check-version --json` and `aigon project-context --json` from `templates/agents/gg.json`.
-- Gemini `AfterAgent` runs `aigon check-agent-signal --json` and `aigon capture-gemini-telemetry`.
+### Recommended fix
 
-The risky part is `check-version`. In `lib/commands/setup.js`, `check-version` compares the CLI version with `.aigon/version`, and when they differ it calls `commands['update'](args)`. `update` rewrites managed project files, reinstalls detected agents, updates `.aigon/version`, and may auto-commit the changes.
+Make `check-version` non-mutating in place. The two write branches in `lib/commands/setup.js` to remove:
 
-That means an agent startup hook is currently a write path. This conflicts with the desired hook contract: hooks may enrich or warn, but they should not mutate repo state or block normal agent execution.
+1. The version-mismatch branch (around `setup.js:1153-1168`) currently does:
+   ```
+   console.log("🔄 Project sync needed ...");
+   await commands['update'](args);
+   await runPendingMigrations(...);
+   ```
+   Replace with: keep the log line; append `"   Run \`aigon update\` to sync."`. Drop the `update` and `runPendingMigrations` calls.
 
-### Options
+2. The config-changed branch (around `setup.js:1181-1188`) currently does:
+   ```
+   console.log("🔄 Config change detected. Reinstalling agents...");
+   await commands['update'](args);
+   ```
+   Replace with: keep the log line; append `"   Run \`aigon update\` to apply."`. Drop the `update` call.
 
-Option A: Remove all installed hooks.
+Everything else in `check-version` stays — the npm registry notice, the origin-behind notice, the `--json` output shape, the `runGlobalConfigMigrations()` calls (which write to `~/.aigon/`, not the project, and are out of scope for "non-mutating in the project").
 
-- Pros: eliminates hook fragility immediately.
-- Cons: users lose session-visible update notices, startup project context, and best-effort telemetry capture.
-- Verdict: too blunt before replacing telemetry/context paths.
+The `Stop` hook removal, telemetry try/catch wrappers, broken-pointer fix, and `check-agent-signal` verification are independent mechanical edits that ship alongside.
 
-Option B: Keep current hooks but make shell execution more portable.
+### Why no new `update-notice` command
 
-- Pros: smaller implementation.
-- Cons: preserves the core design bug: `check-version` can still mutate project state from agent startup.
-- Verdict: insufficient on its own.
+We considered adding `aigon update-notice` as a separate read-only command and rewriting the hooks to call it. We rejected it because:
 
-Option C: Split notification from update and keep hooks read-only.
+- It introduces a second CLI surface for the same job, which invites drift.
+- The drift problem it makes more visible (per-repo `.aigon/version` vs global CLI vs dashboard runtime) is a model question, not a UI question. Layering UI over a confused model locks in the model.
 
-- Pros: users still see update notices in agent sessions; hooks cannot rewrite repos or block sessions; project sync stays explicit.
-- Cons: requires a new command path and tests.
-- Verdict: recommended.
-
-Option D: Move all hook behavior behind `aigon hook-run <event>`.
-
-- Pros: clean long-term API with centralized logging, JSON output, and compatibility handling.
-- Cons: larger migration; not necessary to make the next package safe.
-- Verdict: good follow-up, not required for this immediate fix.
-
-### Recommended Solution
-
-Implement Option C now.
-
-1. Add a new read-only notifier command `aigon update-notice` in `lib/commands/setup.js`. Do not add a `--notify-only` flag to `check-version` — two CLI surfaces for the same job invites drift.
-2. The notifier reports:
-   - project sync needed when `.aigon/version` differs from current CLI version
-   - npm update available when **cached** registry state (read from whatever cache file `lib/npm-update-check.js` already maintains) indicates a newer package — never makes a fresh network call from the hook path
-   - direct commands the user can run, such as `npm update -g @senlabsai/aigon@next` and `aigon update`
-3. The notifier must not call `commands['update']`, `upgradeAigonCli`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `install-agent`, `git add`, or `git commit`. A unit test asserts this via grep.
-4. Update Claude/Gemini agent templates (`templates/agents/cc.json`, `templates/agents/gg.json`) so `SessionStart` calls `aigon update-notice` (with `--json` for Gemini) instead of `aigon check-version`.
-5. Leave `project-context` unchanged. Audit confirms it is already read-only (template read → stdout). The only fix needed in this area is dropping the broken `docs/architecture.md` pointer from `templates/generic/agents-md.md` and `templates/generic/cursor-rule.mdc` (see Acceptance Criteria — that file is what the hook serves to every Claude/Gemini session in target repos).
-6. Drop `aigon check-agent-submitted` from Claude `Stop` entirely. Keep the command in `lib/commands/misc.js` for direct CLI/diagnostic use, but no installed hook invokes it. The hook today only enforces arena agents (`feature-<id>-<agent>-<slug>` branches); solo Drive-mode sessions are unaffected by either the current behavior or its removal. **Replacement signal — already in place:** the universal shell trap (`lib/worktree.js:780-789`, `trap _aigon_cleanup EXIT`) auto-calls `aigon agent-status <successStatus>` on every agent's session exit (success/SIGINT/SIGTERM). It is on by default for all six supported agents (`lib/worktree.js:413-414`) and fires on actual exit rather than between assistant turns, making it strictly more reliable than the Stop hook. The `Stop` hook was a redundant secondary layer covering only 1 of 6 agents; dropping it removes nothing the shell trap doesn't already do. The dashboard's existing unsigned-agent surfacing remains as a passive UI fallback for the SIGKILL/crash case the shell trap can't catch (the orchestrator heartbeat sweep also handles this).
-7. Confirm `aigon check-agent-signal` (Gemini `AfterAgent`) is already advisory (it always exits 0 — verified in `lib/commands/misc.js`). No code change; verified by an integration test.
-8. Wrap telemetry hooks (`capture-session-telemetry`, `capture-gemini-telemetry`) so any thrown exception is caught, logged to stderr, and the process still exits 0.
-9. Add the tests listed in Acceptance Criteria (clean-tree assertion, JSON shape, static grep, npm-cache-failure swallowed).
+Both questions are deferred to a research topic on the aigon versioning model (see Related).
 
 ### Hooks remaining after this feature lands
 
 CLI hooks installed in agent settings:
 
 - **Claude (`cc.json`)**
-  - `SessionStart`: `aigon update-notice`, `aigon project-context` — both read-only, always exit 0
+  - `SessionStart`: `aigon check-version`, `aigon project-context` — both read-only after this feature, always exit 0
   - `SessionEnd`: `aigon capture-session-telemetry` — best-effort, errors swallowed, always exit 0
   - `Stop`: *(removed — was `aigon check-agent-submitted`)*
 - **Gemini (`gg.json`)**
-  - `SessionStart`: `aigon update-notice --json`, `aigon project-context --json` — both read-only, always exit 0
+  - `SessionStart`: `aigon check-version --json`, `aigon project-context --json` — both read-only after this feature, always exit 0
   - `AfterAgent`: `aigon check-agent-signal --json` (advisory, already exits 0), `aigon capture-gemini-telemetry` (best-effort, errors swallowed)
 - **Cursor (`cu.json`)**
-  - `sessionStart` (`.cursor/hooks.json`): `aigon update-notice`, `aigon project-context` — both read-only, always exit 0
-- **Codex / Kimi / OpenCode (`cx.json`, `km.json`, `op.json`)**: their CLIs do not expose a hook framework — there is no event we can subscribe to. Users on these agents see no session-startup update notice. The follow-up in Out of Scope (dashboard surfaces update availability) is the universal coverage path for this gap.
+  - `sessionStart` (`.cursor/hooks.json`): `aigon check-version`, `aigon project-context` — both read-only after this feature, always exit 0
+- **Codex / Kimi / OpenCode (`cx.json`, `km.json`, `op.json`)**: their CLIs do not expose a hook framework — there is no event we can subscribe to. Users on these agents see no session-startup update notice. Closing that gap is part of the deferred versioning research.
 
-Universal lifecycle infrastructure (unchanged, not a "hook" in the agent-CLI sense):
+Universal lifecycle infrastructure (unchanged):
 
-- **Shell trap** (`lib/worktree.js:780-789`) — wraps every agent CLI; on exit auto-runs `aigon agent-status <successStatus>` (or `error`). On by default for all agents. This is the primary enforcement that the dropped `Stop` hook was a partial duplicate of.
-- **Heartbeat sidecar** (`lib/worktree.js:639-661`) — background `touch`-loop tied to the parent PID; consumed by `lib/workflow-heartbeat.js` to detect SIGKILL/crash cases the trap can't catch.
+- **Shell trap** (`lib/worktree.js:780-789`) — wraps every agent CLI; on exit auto-runs `aigon agent-status <successStatus>` (or `error`). On by default for all agents. This is the primary completion-signal enforcement; the dropped `Stop` hook was a partial duplicate.
+- **Heartbeat sidecar** (`lib/worktree.js:639-661`) — background `touch`-loop tied to the parent PID; consumed by `lib/workflow-heartbeat.js` for the SIGKILL/crash cases the trap can't catch.
 
 ## Dependencies
 
@@ -154,25 +130,24 @@ Universal lifecycle infrastructure (unchanged, not a "hook" in the agent-CLI sen
 
 ## Out of Scope
 
-- Replacing all hook behavior with a full `aigon hook-run <event>` framework (Option D — good follow-up, not required here).
-- Any change to the existing `aigon update` / `aigon check-version` write paths. They keep current behavior for direct CLI use; only the **hook entrypoint** changes.
-- Changing workflow engine state transitions.
-- Changing `agent-status` completion semantics.
+- New `aigon update-notice` command. Deferred — `check-version` itself is non-mutating after this feature.
+- Any change to the versioning model: per-repo `.aigon/version`, global CLI version, npm registry checks, dashboard runtime version. Deferred to research (see Related).
+- Multi-repo update UX (e.g. `aigon update --all`, known-repos registry). Deferred to research.
+- Dashboard surfacing of update availability. Deferred to research.
+- Replacement enforcement for the dropped `Stop` hook beyond confirming the shell trap covers it.
+- Any change to the existing `aigon update` write path. It stays as-is for direct CLI use.
+- Replacing all hook behavior with a full `aigon hook-run <event>` framework.
+- Changing workflow engine state transitions or `agent-status` completion semantics.
 - Removing transcript-based telemetry collection.
-- Adding new dashboard UI for unsigned-agent enforcement (we rely on the existing surfacing; new UI is a follow-up if the gap proves real).
-- **Surfacing update availability in the dashboard** (the universal hookless-agent coverage). Codex, Kimi, and OpenCode have no CLI hook framework so users on those agents will never see a startup update notice from `update-notice`. The dashboard is the right home for a universal "update available" indicator since it is always-on and reads the same `lib/npm-update-check.js` cache. **File this as a separate follow-up feature** ("Dashboard surfaces aigon update availability"). Doing it inside F493 would conflate hook safety (this feature) with dashboard UX (a different module + frontend-design pass).
-- Publishing a new npm package (release management is its own workflow).
+- Publishing a new npm package.
 
 ## Open Questions
 
-- (Resolved during spec review) Command name → `aigon update-notice` (no `check-version --notify-only` alias).
-- (Resolved during spec review) `Stop` enforcement → drop the hook; rely on existing dashboard surfacing of unsigned agents. File a follow-up only if a gap shows up in practice.
-- (Resolved during spec review) npm registry in hooks → cached state only, never a fresh network call.
-
-No remaining open questions. New questions surfacing during implementation should be raised in the implementer's reasoning log, not added back here.
+None. Direction was decided in the spec-review/spec-revise pass.
 
 ## Related
 
 - Incident: Docker clean-room install exposed fragile agent hook behavior and noisy shell errors.
-- Code: `templates/agents/cc.json`, `templates/agents/gg.json`, `templates/generic/agents-md.md`, `templates/generic/cursor-rule.mdc`, `lib/commands/setup.js` (`check-version`, `update`, `project-context`), `lib/commands/misc.js` (`check-agent-submitted`, `check-agent-signal`, `capture-*-telemetry`), `lib/npm-update-check.js`.
-- F421: vendored `docs/` → `.aigon/docs/` so `development_workflow.md` and per-agent notes do exist in target repos. Confirms why dropping `docs/architecture.md` is the right fix (no equivalent target-repo doc to substitute).
+- Research (to be filed alongside this revise pass): "Aigon versioning model and multi-repo update UX" — should `.aigon/version` exist? What's the right multi-repo story? Where does the dashboard fit?
+- Code touched: `lib/commands/setup.js` (`check-version`), `lib/commands/misc.js` (`capture-session-telemetry`, `capture-gemini-telemetry`, `check-agent-submitted` removal from cc Stop), `templates/agents/cc.json` (drop Stop block), `templates/agents/gg.json` (no behavior change — verified `check-agent-signal` advisory), `templates/agents/cu.json` (no payload change — `check-version` itself is now safe), `templates/generic/agents-md.md` (drop architecture line), `templates/generic/cursor-rule.mdc` (drop architecture line).
+- F421: vendored `docs/` → `.aigon/docs/` so `development_workflow.md` and per-agent notes do exist in target repos. Confirms why dropping `docs/architecture.md` is the full fix (no equivalent target-repo doc to substitute).
