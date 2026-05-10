@@ -125,10 +125,10 @@
         "label": "DeepSeek V3.2 via OpenRouter",
         "pricing": { "input": 0.252, "output": 0.378 },
         "notes": {
-          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Bench-passed in 6m52s on 2026-04-29 — slower than terminus but cheaper output."
+          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Bench-passed in 6m52s on 2026-04-29. ⚠️ Inherently slow: BenchLM rates it 'Slow' (35 tok/s median, 9 providers on OR); 10m bench timeout is marginal — timeouts on 2026-05-11 were traced to seed clone failures preceding the run, not model degradation. V3.2 has no EOL date; DeepSeek V4 is the recommended forward path but V3.2 remains active. Tool-call loop failures reported Dec 2025 (RooCode #9779). Re-test on clean seed before quarantine."
         },
         "score": { "implement": 3 },
-        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
       },
       {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
@@ -167,10 +167,10 @@
         "label": "Qwen3 235B (2507) via OpenRouter",
         "pricing": { "input": 0.07, "output": 0.1 },
         "notes": {
-          "implement": "Alibaba flagship MoE; 256K ctx; excellent cost/perf — strong general + code at sub-cent input."
+          "implement": "Alibaba flagship MoE; 262K ctx; excellent cost/perf at sub-cent input. ID note: '-07-25' is a date-encoded alias for '-2507' (July 2025); both resolve to the same model on OR — NOT a stale ID. 11 providers, 7.8x speed spread. Timeouts on 2026-05-11 traced to seed clone failures before run start, not model degradation. No deprecation or EOL notices as of May 2026."
         },
         "score": { "implement": 4 },
-        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
       },
       {
         "value": "openrouter/qwen/qwen3-coder-30b-a3b-instruct",
