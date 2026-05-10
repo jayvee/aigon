@@ -2,7 +2,7 @@
 
 ## Summary
 
-Close the remaining reliability gaps in the aigon server lifecycle without destabilising what already works. The server already has signal handlers, `server.close()` graceful shutdown, per-sweep error handling, and launchd/systemd restart-on-crash. This feature adds the **small number** of missing pieces that have bitten us in practice: SIGKILL fallback for the port-holder cleanup, backoff/jitter for launchd's restart loop, supervisor-loop heartbeat detection, and post-restart verification in `aigon update`. Every change must be additive — no existing code path should regress.
+Close the remaining reliability gaps in the aigon server lifecycle without destabilising what already works. The server already has signal handlers, `server.close()` graceful shutdown, per-sweep error handling, and launchd/systemd restart-on-crash. This feature adds the **small number** of missing pieces that have bitten us in practice: SIGKILL fallback for the port-holder cleanup, backoff/jitter for launchd's restart loop, supervisor-loop heartbeat detection, and post-restart verification in `aigon apply`. Every change must be additive — no existing code path should regress.
 
 ## Safety principle (non-negotiable)
 
@@ -12,7 +12,7 @@ Close the remaining reliability gaps in the aigon server lifecycle without desta
 
 - [ ] As a developer, when `aigon server start` runs but another process is stuck on port 4100 and ignoring SIGTERM, the port is force-freed via SIGKILL after a short grace period, instead of failing with EADDRINUSE
 - [ ] As a developer, if the supervisor loop silently stops sweeping (e.g. stalled I/O, unhandled rejection), `aigon server status` tells me — I don't discover it three days later when card statuses are all stale
-- [ ] As a developer, when `aigon update` restarts the server via launchd, I see a clear ✅ or ❌ based on whether the new process actually came up and is serving requests — not a silent "🔄 Server restarted via system service" that might be a lie
+- [ ] As a developer, when `aigon apply` restarts the server via launchd, I see a clear ✅ or ❌ based on whether the new process actually came up and is serving requests — not a silent "🔄 Server restarted via system service" that might be a lie
 - [ ] As a developer, if the persistent server crashes on startup (e.g. syntax error in a `lib/*.js` file I just edited), launchd's KeepAlive loop doesn't pin a CPU core respawning it 20 times a second — there's a small backoff so I have time to see logs and fix the issue
 
 ## Acceptance Criteria
@@ -33,13 +33,13 @@ Close the remaining reliability gaps in the aigon server lifecycle without desta
 - [ ] Backward compatible: if `sweepHealth` is missing (older server talking to newer CLI or vice versa), status command falls back to the current behavior
 - [ ] Manual test: `aigon server status` shows 🟢 within seconds of start; stays 🟢 during normal operation
 
-### AC3 — Post-restart verification in `aigon update`
+### AC3 — Post-restart verification in `aigon apply`
 - [ ] When `lib/commands/setup.js` calls `restartService()` during an update, it follows up with a health check: up to 10 attempts × 500ms polling the HTTP server's `/api/supervisor/status` endpoint (or `/` if the status endpoint is not reachable)
 - [ ] On success: prints `✅ Server restarted and responding on port <N>`
 - [ ] On timeout: prints `⚠️  Server was restarted via launchd/systemd but did not respond within 5s — check \`aigon server status\` and logs at ~/.aigon/logs/`
 - [ ] Update itself does NOT fail if the health check times out — restart is still best-effort (existing behavior preserved)
 - [ ] Same verification applies to the non-persistent path (kill + detached spawn) for consistency
-- [ ] Manual test: `aigon update` from the aigon repo — should print ✅ within 2-3s
+- [ ] Manual test: `aigon apply` from the aigon repo — should print ✅ within 2-3s
 
 ### AC4 — Crash-loop backoff for launchd
 - [ ] `lib/supervisor-service.js` macOS plist gains a `ThrottleInterval` key set to **10** (launchd standard; minimum enforced respawn delay in seconds)
@@ -182,7 +182,7 @@ Explicitly excluded to keep the blast radius small:
 - **Proxy reliability / EADDRINUSE on the proxy port** — separate concern (Caddy/aigon-proxy is its own module)
 - **Rewriting the supervisor loop** — `setInterval` + per-entity try-catch is fine; no architectural changes
 - **Changing signal delegation for `aigon server stop/restart`** — already shipped in the earlier fix
-- **Launchd/systemd service auto-upgrade on `aigon update`** — users reinstall the service manually if they want the new backoff settings
+- **Launchd/systemd service auto-upgrade on `aigon apply`** — users reinstall the service manually if they want the new backoff settings
 - **Metrics / telemetry endpoints** — scope creep
 - **New tests for existing passing behavior** — we keep the 13 existing tests green; the new functionality is primarily validated by manual lifecycle tests because most of it is system-integration code (launchd, signals, sockets) that's impractical to unit-test
 

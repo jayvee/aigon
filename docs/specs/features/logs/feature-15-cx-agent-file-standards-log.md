@@ -25,7 +25,7 @@ Agent: cx
   - `templates/agents/cx.json`: `extras.prompt.enabled: false`, `supportsAgentsMd: true`
   - `templates/agents/cu.json`: `supportsAgentsMd: true`
   - `templates/agents/cc.json`: `supportsAgentsMd: false`
-- Updated `aigon update` detection logic to infer installed agents from generated artifacts (docs/commands/settings/config files), and added migration notices when legacy `GEMINI.md` or `.codex/prompt.md` are found (no auto-delete).
+- Updated `aigon apply` detection logic to infer installed agents from generated artifacts (docs/commands/settings/config files), and added migration notices when legacy `GEMINI.md` or `.codex/prompt.md` are found (no auto-delete).
 - Updated guidance templates/docs to reference `AGENTS.md` for shared project instructions:
   - `templates/generic/docs/agent.md`
   - `templates/generic/commands/feature-implement.md`

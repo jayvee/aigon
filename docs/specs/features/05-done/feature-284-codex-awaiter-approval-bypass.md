@@ -51,9 +51,9 @@ bash scripts/check-test-budget.sh
 
 ### Likely fix shape
 1. **Config investigation** — run a short research task (or spec research) checking codex docs and config-schema for awaiter approval keys. Document findings in the spec before implementation.
-2. **Project config update** — once the key is identified, add it to the `.codex/config.toml` template in `templates/` and re-run `aigon install-agent cx` during `aigon update`.
+2. **Project config update** — once the key is identified, add it to the `.codex/config.toml` template in `templates/` and re-run `aigon install-agent cx` during `aigon apply`.
 3. **Worktree registration** — add `registerCodexTrust(worktreePath)` to `lib/worktree.js` that idempotently appends `[projects."<path>"] trust_level = "trusted"` to `~/.codex/config.toml` and optionally any awaiter/approval override. Call it from worktree-creation sites (`lib/commands/feature.js:1117` and wherever worktrees are built for research / evals). Mirror with `unregisterCodexTrust` at cleanup.
-4. **Backfill migration** — on `aigon update`, walk `~/.aigon/worktrees/**` two levels deep and append entries for any missing paths. Idempotent (skip entries that already exist).
+4. **Backfill migration** — on `aigon apply`, walk `~/.aigon/worktrees/**` two levels deep and append entries for any missing paths. Idempotent (skip entries that already exist).
 5. **Autonomous-mode verification** — confirm that AutoConductor-spawned cx sessions receive `--dangerously-bypass-approvals-and-sandbox` in practice; if not, fix the launch path.
 
 ### Why this isn't just "trust more paths"
@@ -71,7 +71,7 @@ F282 was already trusted and still prompted. The trust list stops the codex "Tru
 ## Open Questions
 - Is the right config key on the TOP-LEVEL (like `approval_policy`) or per-feature (like `[features] multi_agent_approval_mode = "auto"`)? Needs codex docs / schema check.
 - Does codex expose an env var that overrides awaiter approval at runtime? (Would be simpler than editing config.)
-- Should this live in `aigon install-agent cx` (per-project) or `aigon update` global migration (per-machine), or both?
+- Should this live in `aigon install-agent cx` (per-project) or `aigon apply` global migration (per-machine), or both?
 - If no codex-side config exists, is the right move to stop using awaiters in autonomous flows and refactor cx's launch to avoid them? (Would avoid the approval entirely at the cost of some flexibility.)
 
 ## Related

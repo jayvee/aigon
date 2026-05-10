@@ -29,7 +29,7 @@ for users and agents reading help output, templates, and command listings.
 - [ ] `agent-prompt-resolver.js` verb mapping updated (`review` → `code-review`, `review-check` → `code-review-check`)
 - [ ] Tests updated: `agent-prompt-resolver.test.js`, `command-registry-drift.test.js`, any lifecycle tests
 - [ ] `getLaunchMode()` in `templates/dashboard/js/actions.js` updated to match new action names
-- [ ] Existing installed repos: document migration path (re-run `aigon update` / `aigon install-agent`)
+- [ ] Existing installed repos: document migration path (re-run `aigon apply` / `aigon install-agent`)
 
 ## Out of scope
 

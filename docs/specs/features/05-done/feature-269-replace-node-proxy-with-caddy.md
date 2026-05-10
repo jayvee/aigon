@@ -21,7 +21,7 @@ Replace the custom Node.js proxy daemon (`lib/aigon-proxy.js`) with Caddy for `.
 - [ ] `aigon proxy start/stop/status` manages Caddy lifecycle (not the old Node.js daemon)
 - [ ] WebSocket upgrade works through Caddy (required for dashboard terminal relay)
 - [ ] The proxy is optional — without Caddy installed, everything works on raw `localhost:PORT`
-- [ ] Migration: `aigon update` detects old Node.js proxy, stops it, removes its launchd plist, cleans up `servers.json` and `proxy.pid`
+- [ ] Migration: `aigon apply` detects old Node.js proxy, stops it, removes its launchd plist, cleans up `servers.json` and `proxy.pid`
 
 ## Validation
 ```bash
@@ -75,7 +75,7 @@ http://cc-119.brewboard.localhost:4080 {
 - `addRoute(hostname, port)` / `removeRoute(hostname)` — modify Caddyfile and reload
 - Updated `aigon proxy install/start/stop/status/uninstall` — manages Caddy instead of Node daemon
 
-### Migration path (aigon update)
+### Migration path (aigon apply)
 1. Detect old proxy: check for `~/.aigon/dev-proxy/proxy.pid` or old launchd plist `/Library/LaunchDaemons/com.aigon.proxy.plist`
 2. Stop old proxy: kill PID, unload launchd plist
 3. Clean up: delete `servers.json`, `proxy.pid`, `proxy.log`, old launchd plist

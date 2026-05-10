@@ -108,7 +108,7 @@ The warning should use the same visual formatting as other aigon console output 
 |---|---|
 | `aigon-cli.js` | Add `AGENT_REQUIRED_COMMANDS`, `detectAgentContext()`, and warning injection at the start of each agent-required command handler |
 
-After editing the template, run `aigon update` to sync to working copies.
+After editing the template, run `aigon apply` to sync to working copies.
 
 ---
 

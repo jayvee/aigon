@@ -18,7 +18,7 @@ We want the final mental model to be: **agent sessions always run in tmux; `term
 ## User Stories
 
 - [ ] As a new user, I see one config knob (`terminalApp`) with three obvious values (`warp`, `iterm2`, `apple-terminal`) and no ambiguity about what controls what.
-- [ ] As an existing user on an older config, when I run `aigon update` / `aigon check-version` (triggered on session start), my `~/.aigon/config.json` is migrated in place — `tmuxApp` renamed to `terminalApp`, `terminal` key dropped, old value `"terminal"` rewritten to `"apple-terminal"` — with a backup and a clear one-line console notice.
+- [ ] As an existing user on an older config, when I run `aigon apply` / `aigon check-version` (triggered on session start), my `~/.aigon/config.json` is migrated in place — `tmuxApp` renamed to `terminalApp`, `terminal` key dropped, old value `"terminal"` rewritten to `"apple-terminal"` — with a backup and a clear one-line console notice.
 - [ ] As a user reading the `aigon init` help output, the example config uses the new field and values.
 - [ ] As a future contributor adding another global-config rename (say `aiAttributionDomain` → something), I have a `registerGlobalConfigMigration(version, fn)` API that works the same way the existing per-repo `registerMigration` does.
 
@@ -93,7 +93,7 @@ Rationale for **not** extending `lib/migration.js` directly: its current API ass
 
 `lib/commands/setup.js:1544 'check-version'` — the existing post-update hook. Run global migrations **before** per-repo migrations so the rest of the run sees the new config shape.
 
-`check-version` is already invoked by the SessionStart hook (we see `✅ Aigon is up to date (v2.53.1)` at session start), so every user gets the migration on their next session start after `aigon update` pulls the new version. No explicit user action needed — matches the user's "on relink" requirement.
+`check-version` is already invoked by the SessionStart hook (we see `✅ Aigon is up to date (v2.53.1)` at session start), so every user gets the migration on their next session start after `aigon apply` pulls the new version. No explicit user action needed — matches the user's "on relink" requirement.
 
 ### 3. Schema versioning
 

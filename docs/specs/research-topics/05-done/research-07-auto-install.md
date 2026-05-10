@@ -2,13 +2,13 @@
 
 ## Context
 
-When Aigon is updated (new features, bug fixes, template changes) in this repo, every repository that uses Aigon must be manually visited to run `aigon update`, and the resulting changes must be committed into each repo. With five or six active repositories, this is error-prone: repos can fall behind, run different Aigon versions, and require manual effort to stay in sync.
+When Aigon is updated (new features, bug fixes, template changes) in this repo, every repository that uses Aigon must be manually visited to run `aigon apply`, and the resulting changes must be committed into each repo. With five or six active repositories, this is error-prone: repos can fall behind, run different Aigon versions, and require manual effort to stay in sync.
 
 The current flow is:
 1. Make a change in this repo.
 2. Agent in this repo updates Aigon globally (`npm update -g aigon`)
 3. `cd` into each project repo
-4. Run `aigon update` to regenerate command files in the command line
+4. Run `aigon apply` to regenerate command files in the command line
 5. Typically run an ai agent in that repo, and ask it to commit the regenerated files
 6. Repeat for every repo
 
@@ -62,12 +62,12 @@ This creates version drift, forgotten repos, and unnecessary friction. We need a
 Both agents agreed that SessionStart hooks (supported by Claude Code, Cursor, and Gemini CLI) are the strongest trigger point. Both agreed generated files should stay committed. Both agreed a layered approach starting with the simplest possible mechanism.
 
 The minimal solution is two things:
-1. **`aigon check-version`** — compares the version stamp in `.aigon/version` against the locally installed CLI version (`aigon --version`). If they differ, runs `aigon update` to regenerate files. No network calls, no remote checking, no caching.
+1. **`aigon check-version`** — compares the version stamp in `.aigon/version` against the locally installed CLI version (`aigon --version`). If they differ, runs `aigon apply` to regenerate files. No network calls, no remote checking, no caching.
 2. **SessionStart hook wiring** — `aigon install-agent` writes a SessionStart hook for each agent (cc, cu, gg) that calls `aigon check-version` on every session start.
 
-This eliminates version drift with ~50 lines of code. Every time an agent starts in a project, it checks if generated files match the installed CLI. If not, it updates them automatically. No manual `aigon update` needed.
+This eliminates version drift with ~50 lines of code. Every time an agent starts in a project, it checks if generated files match the installed CLI. If not, it updates them automatically. No manual `aigon apply` needed.
 
-Remote version checking (GitHub, npm) and push-model (`aigon update --all`) are deferred as future enhancements if needed.
+Remote version checking (GitHub, npm) and push-model (`aigon apply --all`) are deferred as future enhancements if needed.
 
 ## Output
 

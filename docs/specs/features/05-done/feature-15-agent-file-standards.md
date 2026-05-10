@@ -16,7 +16,7 @@ The industry has converged on `AGENTS.md` (now under Linux Foundation AAIF, 60k+
 - [ ] `GEMINI.md` is no longer generated (Gemini reads AGENTS.md natively)
 - [ ] `.codex/prompt.md` is no longer generated (Codex reads AGENTS.md natively)
 - [ ] `CLAUDE.md` still generated (Claude doesn't read AGENTS.md) with added pointer to AGENTS.md
-- [ ] `aigon update` prints migration notices when old root files are detected
+- [ ] `aigon apply` prints migration notices when old root files are detected
 - [ ] All agent commands continue to install to their agent-specific locations (no change)
 - [ ] Agent doc template references AGENTS.md for project instructions
 

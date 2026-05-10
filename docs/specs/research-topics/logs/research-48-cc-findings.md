@@ -16,8 +16,8 @@ There are really **three conceptually distinct user-facing questions**, only one
 
 | Question | Scope | Today's signal | What the user actually does |
 |----------|-------|----------------|-----------------------------|
-| **Q1.** Is my Aigon CLI up to date? | machine-global | `lib/npm-update-check.js` (registry advisory, 5-min cache) | `npm update -g @senlabsai/aigon` (or `aigon update --pull` for clone installs) |
-| **Q2.** Are this repo's Aigon-managed files what the current CLI would write? | per-repo | `.aigon/version` semver compare, plus `.aigon/config-hash` for instructions | `aigon update` |
+| **Q1.** Is my Aigon CLI up to date? | machine-global | `lib/npm-update-check.js` (registry advisory, 5-min cache) | `npm update -g @senlabsai/aigon` (or `aigon apply --pull` for clone installs) |
+| **Q2.** Are this repo's Aigon-managed files what the current CLI would write? | per-repo | `.aigon/version` semver compare, plus `.aigon/config-hash` for instructions | `aigon apply` |
 | **Q3.** Is my running dashboard server the same code as my CLI binary? | per-process | none today; only the startup log line in `lib/dashboard-server.js:1852` | `aigon server restart` |
 
 Each question is independent of the others, has a different fix, and can be surfaced in the right place. The "three-way drift" anxiety dissolves once you stop trying to render it as one composite badge.
@@ -37,7 +37,7 @@ Each question is independent of the others, has a different fix, and can be surf
 
 **(a) Keep per-repo semver pin.** The status quo. The hidden cost cu undersells: every CLI patch bump that didn't touch a template still produces a "🔄 Project sync needed" line at the next session start, even though nothing meaningfully changed. With Aigon shipping multi-times-a-day during heavy iteration, this trains users to ignore the notice — which then bites them when a real template drift occurs. The pin's other claimed value (PR-visible "this repo moved to 2.65") is real but small: `git log` of `.aigon/version` rarely answers a useful question that `git log` of the templates wouldn't.
 
-**(b) Remove the pin entirely.** Loses the human-visible provenance and the "did anything change since X" hook (`getChangelogEntriesSince`). But cu over-weights this: in the npm-installed world, *every* tool has this problem and the answer is `package-lock.json` analogues, not a hand-maintained version file. The bigger objection to bare (b) is that **`aigon update` becomes a hidden write** — there's no longer a stamped reason to ever run it, but templates *do* still need to be re-emitted when the CLI changes. So pure (b) doesn't actually eliminate updates; it just hides them.
+**(b) Remove the pin entirely.** Loses the human-visible provenance and the "did anything change since X" hook (`getChangelogEntriesSince`). But cu over-weights this: in the npm-installed world, *every* tool has this problem and the answer is `package-lock.json` analogues, not a hand-maintained version file. The bigger objection to bare (b) is that **`aigon apply` becomes a hidden write** — there's no longer a stamped reason to ever run it, but templates *do* still need to be re-emitted when the CLI changes. So pure (b) doesn't actually eliminate updates; it just hides them.
 
 **(c) Hash-based pin.** The right direction. The codebase is already 70% there — `config-hash` exists; it just covers the wrong slice (only profile-derived instructions). Promote it to cover *all* CLI-emitted artifacts in the repo (templates, agent configs, vendored docs, hook payloads). Then "needs sync" fires iff content actually differs, which is what the user mental model expects.
 
@@ -62,7 +62,7 @@ For (1), cu proposes `~/.aigon/known-repos.json`. That's the obvious shape and m
 
 A lower-friction alternative: **filesystem-as-registry**. Touch `~/.aigon/repos/<sha256(repoPath)>` (a zero-byte marker file containing the repo path) on every aigon invocation that reads `.aigon/`. Auto-prunes by walking the directory and skipping markers whose stored path no longer exists. No JSON, no race, no schema migration. `aigon repos list` does the walk. Same idea as `~/.npm/_logs/` — filesystem as append-only event store.
 
-For (2), `aigon update --all` (or `aigon repos update`) is the obvious CLI. It walks the registry, runs `update` per-repo with aggregate exit code. Prereq: registry exists. Low-risk feature once (1) ships.
+For (2), `aigon apply --all` (or `aigon repos update`) is the obvious CLI. It walks the registry, runs `update` per-repo with aggregate exit code. Prereq: registry exists. Low-risk feature once (1) ships.
 
 For (3), the dashboard's single-repo invariant is load-bearing — workflow engine paths, snapshot routing, proxy registration are all `cwd`-scoped. Multi-repo dashboard is a much bigger change than a banner. **Defer** to a Pro / "machine status" surface. v1 should not touch the dashboard's repo scope.
 
@@ -72,7 +72,7 @@ The dashboard's right role here is **not** a "version trinity banner" (cu's fram
 
 Better: **two binary states, two actions**:
 
-1. **"This repo is out of sync with your CLI"** — fired by content digest mismatch. Action: `aigon update`. (Same surface as the F493 session-start notice, but always visible while dashboard is open.)
+1. **"This repo is out of sync with your CLI"** — fired by content digest mismatch. Action: `aigon apply`. (Same surface as the F493 session-start notice, but always visible while dashboard is open.)
 2. **"This dashboard is running older code than your CLI"** — fired by `runningProcessVersion < binaryVersion`. Action: `aigon server restart`.
 
 The npm-registry "your CLI itself is behind" notice already lands at CLI startup; it doesn't need a dashboard banner. (It could appear there too, but it's not the urgent signal — the user can install npm updates whenever.)
@@ -91,7 +91,7 @@ Options for closing this gap:
 
 Best-bang-for-buck: launcher prints drift notice on every agent start, regardless of which agent. That gives all six agents a consistent baseline; hooks become a finer-grained add-on for agents that support them, not the only path.
 
-### `aigon update --pull` for clone installs
+### `aigon apply --pull` for clone installs
 
 Keep first-class. Clone-installed users (Aigon contributors, dogfooders) are a meaningful tier. The `--pull` path is also the only way to test pre-release CLI changes without publishing. Messaging in `update` already differentiates `--pull` (CLI upgrade + project sync) from bare `update` (project sync only) — that distinction is correct as-is.
 
@@ -106,7 +106,7 @@ Walking the prompt's scenarios under the (d) + filesystem-registry + dashboard-a
 
 1. **`npm update -g` Monday, 8 repos.** Monday's npm update bumps the CLI. As the user works in each repo through the week, the first session-start in each (or first dashboard open) shows the digest-mismatch notice if templates actually changed. If only patch logic changed without template diffs, **no notice at all** — the user isn't pestered about non-events. At any time, `aigon repos update` (which walks the filesystem-marker registry) clears all 8 in one command. End state: zero ambient noise across the week.
 
-2. **3-month-old repo.** Open it. Dashboard banner appears: "Templates 12 generations behind. Run `aigon update`". Changelog link shows what shipped. CLI prints the same. `aigon update` syncs; if migrations needed, `doctor --fix` is suggested in the output. No silent mutation.
+2. **3-month-old repo.** Open it. Dashboard banner appears: "Templates 12 generations behind. Run `aigon apply`". Changelog link shows what shipped. CLI prints the same. `aigon apply` syncs; if migrations needed, `doctor --fix` is suggested in the output. No silent mutation.
 
 3. **cx/km/op only.** Agent launcher (wrap on entry) prints the digest-drift notice on every session start. Dashboard banner shows the same when open. No hook framework needed.
 
@@ -117,7 +117,7 @@ Walking the prompt's scenarios under the (d) + filesystem-registry + dashboard-a
 F493 makes hooks notification-only. The danger it surfaced — "user gets a confusing 'sync needed' message and doesn't know what to do" — is mitigated by:
 
 - Notice is **only** about real content drift (not patch-bump noise) once digest replaces semver as the trigger.
-- Notice always quotes the exact next command: `aigon update`.
+- Notice always quotes the exact next command: `aigon apply`.
 - Dashboard surfaces the same state, so users who ignore terminal noise still see it.
 - For long-untouched repos, the "what changed" link to changelog gives context.
 
@@ -158,11 +158,11 @@ Take a sequenced position on the four sub-questions:
 
 2. **Multi-repo registry: filesystem markers, not central JSON.** `~/.aigon/repos/<sha256(repoPath)>` zero-byte markers, written on aigon invocations that read `.aigon/`. Self-pruning on read. `aigon repos list` walks markers; `aigon repos update` does an `update` per repo with aggregated exit. Lower failure surface than JSON; no schema versioning needed.
 
-3. **Dashboard role: stay single-repo, add two minimal indicators.** "Templates out of sync" banner (digest-driven, action: `aigon update`) and "Server is older than CLI" banner (action: `aigon server restart`). Skip the "version trinity" multi-number badge — it's noise. Multi-repo dashboard belongs in a Pro / machine-status surface, deferred.
+3. **Dashboard role: stay single-repo, add two minimal indicators.** "Templates out of sync" banner (digest-driven, action: `aigon apply`) and "Server is older than CLI" banner (action: `aigon server restart`). Skip the "version trinity" multi-number badge — it's noise. Multi-repo dashboard belongs in a Pro / machine-status surface, deferred.
 
 4. **Hookless agents: wrap the launcher.** Mirror the F493 shell-trap pattern — the agent-start path prints the same drift notice to stderr before exec'ing the agent. Universal across all six agents; doesn't depend on the agent's hook capabilities. Dashboard banner is the secondary surface.
 
-5. **`aigon update --pull`: keep, with two guards.** (a) Detect non-git `ROOT_DIR` and refuse with a clear "this is an npm install — use `npm update -g @senlabsai/aigon`" message. (b) After successful `--pull`, prompt to restart any running dashboard if the dashboard surface changed.
+5. **`aigon apply --pull`: keep, with two guards.** (a) Detect non-git `ROOT_DIR` and refuse with a clear "this is an npm install — use `npm update -g @senlabsai/aigon`" message. (b) After successful `--pull`, prompt to restart any running dashboard if the dashboard surface changed.
 
 Sequencing for implementation: ship (1) and the digest extension first (it's the smallest fix with the largest noise reduction). Then ship (4) the launcher wrap (universal hookless coverage with one mechanism). Then (3) the dashboard banners. (2) the registry can come later once the single-repo story is solid; without it, users still have a working per-repo flow.
 
@@ -174,7 +174,7 @@ Sequencing for implementation: ship (1) and the digest extension first (it's the
 |--------------|-------------|----------|------------|
 | `content-digest-drift-detection` | Extend `.aigon/config-hash` to cover all CLI-emitted artifacts (templates, agent configs, hook payloads, vendored docs) and switch `check-version` drift trigger from semver compare to digest compare; `.aigon/version` stays as human-readable provenance only | high | none |
 | `agent-launcher-drift-notice` | When the agent-start path spawns any agent (cc, gg, cu, cx, km, op), print the digest-drift notice to stderr before exec — universal coverage that doesn't depend on per-agent hook frameworks | high | content-digest-drift-detection |
-| `dashboard-drift-and-restart-banners` | Two minimal dashboard indicators: "templates out of sync" (digest-driven, links `aigon update`) and "dashboard server older than CLI binary" (links `aigon server restart`); replaces the proposed "version trinity" multi-number display | high | content-digest-drift-detection |
+| `dashboard-drift-and-restart-banners` | Two minimal dashboard indicators: "templates out of sync" (digest-driven, links `aigon apply`) and "dashboard server older than CLI binary" (links `aigon server restart`); replaces the proposed "version trinity" multi-number display | high | content-digest-drift-detection |
 | `repos-filesystem-registry` | Touch `~/.aigon/repos/<sha256(repoPath)>` markers on aigon invocations that read `.aigon/`; self-pruning on read; `aigon repos list` walks markers — replaces a central JSON registry to avoid stale-entry / race-condition / schema-migration costs | medium | none |
 | `repos-update-all` | `aigon repos update` walks the filesystem-marker registry, runs `update` per repo, returns aggregated exit code — single command to clear post-`npm-update -g` backlog across all known repos | medium | repos-filesystem-registry |
-| `update-pull-clone-only-guard` | `aigon update --pull` detects non-git `ROOT_DIR` and refuses with a clear "use npm" message; after successful `--pull`, prompts to restart running dashboard if the dashboard surface changed | low | none |
+| `update-pull-clone-only-guard` | `aigon apply --pull` detects non-git `ROOT_DIR` and refuses with a clear "use npm" message; after successful `--pull`, prompts to restart running dashboard if the dashboard surface changed | low | none |

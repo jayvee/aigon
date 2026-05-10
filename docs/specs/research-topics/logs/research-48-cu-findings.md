@@ -15,12 +15,12 @@ Three “versions” are real and independent:
 | Layer | Source | Role |
 |--------|--------|------|
 | **CLI / package** | `getAigonVersion()` reads the **installed CLI’s** `package.json` (`lib/version.js`). | Defines which templates + command logic ship with the binary. |
-| **Per-repo stamp** | `.aigon/version` via `getInstalledVersion` / `setInstalledVersion` (`lib/version.js`). **Skipped in git worktrees** (avoids merge noise on feature-close). | Last version that ran `aigon update` successfully in **this repo root**. |
+| **Per-repo stamp** | `.aigon/version` via `getInstalledVersion` / `setInstalledVersion` (`lib/version.js`). **Skipped in git worktrees** (avoids merge noise on feature-close). | Last version that ran `aigon apply` successfully in **this repo root**. |
 | **Dashboard runtime** | Server logs include `require('../package.json').version` (`lib/dashboard-server.js` ~startup). | Whatever Node process was started — stale if server not restarted after upgrade. |
 
 `aigon check-version` (`lib/commands/setup.js`) compares CLI semver to `.aigon/version`; on mismatch it currently runs full `update` + migrations (F493 will make hooks **notice-only** so drift becomes visible without session-start writes). There is already a **second** drift signal: `.aigon/config-hash` vs `computeInstructionsConfigHash()` can force reinstall even when semver matches.
 
-`aigon update --pull` runs `upgradeAigonCli()` → `git pull` + `npm ci` in `ROOT_DIR` (`lib/version.js`), then normal project sync — **clone / dev install path**, distinct from npm global install.
+`aigon apply --pull` runs `upgradeAigonCli()` → `git pull` + `npm ci` in `ROOT_DIR` (`lib/version.js`), then normal project sync — **clone / dev install path**, distinct from npm global install.
 
 Npm users get an **advisory** registry check (`lib/npm-update-check.js`, `@senlabsai/aigon` dist-tags, 5‑minute cache) shown after sync work in `check-version`; it does not gate success.
 
@@ -50,7 +50,7 @@ Npm users get an **advisory** registry check (`lib/npm-update-check.js`, `@senla
 Reasonable layered approach (no need to build everything at once):
 
 1. **Machine-local registry** — e.g. `~/.aigon/known-repos.json` updated on `init`, `install-agent`, and successful `update` / `check-version` (read-only path could append **candidates**; writes only on explicit commands to avoid privacy surprises). This matches the research prompt’s direction.
-2. **`aigon update --all` (or `aigon sync-repos`)** — walks registry, `cd` each root, runs `update` with shared summary. Exit policy: aggregate report, non-zero if any repo failed (operator-friendly for CI/scripting).
+2. **`aigon apply --all` (or `aigon sync-repos`)** — walks registry, `cd` each root, runs `update` with shared summary. Exit policy: aggregate report, non-zero if any repo failed (operator-friendly for CI/scripting).
 3. **Dashboard multi-repo “command center”** — materially higher cost: auth across paths, ambiguity of “which `.aigon`”, WebSocket/session model, conflict with single-repo invariant in `AGENTS.md`. **Defer** unless Pro / power-user tier justifies it; CLI + registry solves 80% for multi-repo engineers.
 
 Cross-repo UX should **reuse** npm advisory (`checkForUpdate`) **once per machine**, not once per repo, to avoid rate / noise issues (minor product tweak). The model should separate package-manager update semantics from repo sync: npm's global update command updates global packages, while Homebrew explicitly separates "update package definitions", "list outdated", and "upgrade". Aigon should mirror that clarity: **upgrade CLI/package**, **inspect repo drift**, then **sync one or all repos**.
@@ -73,21 +73,21 @@ For Kimi/OpenCode, I did not find an equivalent already-wired Aigon hook path in
 |---------|---------|
 | **Dashboard banner** | Same drift line as hooked agents whenever user opens dashboard from that repo. |
 | **`aigon doctor` / `check-version`** | Document as weekly habit; doctor already central for repair narrative. |
-| **Optional IDE docs** — install skill text for cx/op/km | One line: run `aigon check-version`; run `aigon update` when advised. |
+| **Optional IDE docs** — install skill text for cx/op/km | One line: run `aigon check-version`; run `aigon apply` when advised. |
 
 For Codex specifically, add a follow-up feature to install a non-mutating `SessionStart` hook once `codex_hooks` support is gated and tested in Aigon's install surface. For the broader product, update awareness still cannot depend solely on hooks: some agents may never have them, and users can work through dashboard/CLI without launching an agent.
 
 ### Scenario walk-throughs (desired UX)
 
-1. **`npm update -g` Monday, eight repos:** One global upgrade. Across the week, first action in each repo: **non-blocking notice** (F493): “CLI ahead of pin — run `aigon update` when ready.” Optionally Monday night: **`aigon update --all`** from registry clears backlog. Rare: restart dashboard per repo session if server pinned old code.
+1. **`npm update -g` Monday, eight repos:** One global upgrade. Across the week, first action in each repo: **non-blocking notice** (F493): “CLI ahead of pin — run `aigon apply` when ready.” Optionally Monday night: **`aigon apply --all`** from registry clears backlog. Rare: restart dashboard per repo session if server pinned old code.
 
-2. **Stale repo after three months:** Open project → prominent **pin vs CLI delta** + **npm advisory** (“registry newer than CLI?” separate line) + link to changelog since pin. **`aigon update`** is the decisive action; `doctor --fix` if migrations pending. No silent mutation at agent start.
+2. **Stale repo after three months:** Open project → prominent **pin vs CLI delta** + **npm advisory** (“registry newer than CLI?” separate line) + link to changelog since pin. **`aigon apply`** is the decisive action; `doctor --fix` if migrations pending. No silent mutation at agent start.
 
 3. **Codex/Kimi/OpenCode-only:** Codex can gain hook parity with a targeted install feature; until that exists, dashboard or **printed message on first `doctor`/`update`/`server start`** in that repo captures attention. Kimi/OpenCode stay on dashboard/CLI surfaces unless hook support is confirmed.
 
 4. **Dashboard repo A, working in repo B:** **No automatic cross-repo signal** without registry UI — acceptable v1 limitation; user runs `check-version` in B or adopts future **machine-local status** command fed by registry.
 
-### `aigon update --pull`
+### `aigon apply --pull`
 
 **Keep first-class.** It is the **clone dogfood path** codified beside npm (`upgradeAigonCli`). Many contributors run from git checkout; starving this path pushes them toward ad-hoc scripts. Messaging can clarify tiers: **`--pull`** = developer clone; **`npm i -g`** = default consumer.
 
@@ -113,7 +113,7 @@ For Codex specifically, add a follow-up feature to install a non-mutating `Sessi
 
 1. **Retain a persistent per-repo sync record** — effectively **keep (a)** in the near term **or** plan a deliberate migration to **(c)** by **consolidating** semver + `config-hash` (+ optional template digest) into one documented “generation” stamp. Avoid **bare removal (b)** of `.aigon/version` without replacing its **team-visible** and **migration-baseline** roles.
 
-2. **After F493, invest in clarification UX, not silent hooks:** Dashboard + CLI banners for **CLI / pin / server runtime** divergence; shorten the path **`aigon update`** + **`aigon server restart`** when needed.
+2. **After F493, invest in clarification UX, not silent hooks:** Dashboard + CLI banners for **CLI / pin / server runtime** divergence; shorten the path **`aigon apply`** + **`aigon server restart`** when needed.
 
 3. **Ship machine-local repo registry + `update --all` (CLI)** ahead of dashboard multi-repo; treat multi-repo dashboard as optional / Pro scope.
 
@@ -129,7 +129,7 @@ For Codex specifically, add a follow-up feature to install a non-mutating `Sessi
 |--------------|-------------|----------|------------|
 | `dashboard-version-trinity-banner` | Show pinned `.aigon/version`, running CLI version, and dashboard process version with restart guidance when they diverge | high | none |
 | `known-repos-registry` | Maintain `~/.aigon/known-repos.json` (or successor) appended/updated from init, install-agent, and post-success update | high | none |
-| `update-all-repos-command` | `aigon update --all` walks the registry and runs project sync per root with aggregated success/failure report | medium | known-repos-registry |
+| `update-all-repos-command` | `aigon apply --all` walks the registry and runs project sync per root with aggregated success/failure report | medium | known-repos-registry |
 | `check-version-registry-npm-cache` | Deduplicate npm registry advisory across repos in one process/session to reduce redundant HTTPS checks | low | known-repos-registry (optional linkage) |
 | `sync-generation-manifest` | Replace or augment raw semver pin with a content hash / manifest digest so sync triggers only when managed outputs change (implements model **(c)** in a principled way) | low | dashboard-version-trinity-banner (for surfacing digest vs npm semver) |
 | `codex-sessionstart-version-hook` | Install a non-mutating Codex `SessionStart` hook for `check-version` / project context once `codex_hooks` support is gated and tested | medium | dashboard-version-trinity-banner |

@@ -62,7 +62,7 @@ Call sites still using `require('./utils')`:
 #### Extraction 3 — version → `lib/version.js` (new module)
 
 - [ ] **E3.1** — Create `lib/version.js`. Move version check / update / bump logic from utils.js
-- [ ] **E3.2** — Update call sites (likely `lib/commands/setup.js` via `aigon update`, and the SessionStart hook path)
+- [ ] **E3.2** — Update call sites (likely `lib/commands/setup.js` via `aigon apply`, and the SessionStart hook path)
 - [ ] **E3.3** — `lib/version.js` is < 80 LOC
 - [ ] **E3.4** — `lib/utils.js` shrinks further
 

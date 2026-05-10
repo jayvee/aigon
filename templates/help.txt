@@ -7,7 +7,7 @@ Usage: aigon <command> [arguments]
 Setup:
   init                              Initialize ./docs/specs directory structure
   install-agent <agents...>         Install agent configs ({{SUPPORTED_AGENT_INSTALL_IDS}})
-  update                            Update Aigon files to latest version
+  apply                             Apply Aigon files to latest version (re-vendor docs, refresh agent configs and slash commands)
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
   config <init|show|models>         Manage config and view model configuration
   profile [show|set|detect]         Manage project profile (web, api, ios, etc.)

@@ -74,7 +74,7 @@ Add a new check section in the doctor command (after the existing manifest/stage
 
 - Migrating existing workflow state between schema versions (that's a separate migration concern)
 - Bootstrapping agent status or effects — only lifecycle and spec state
-- Automatic detection on `aigon init` or `aigon update` (could be added later, but doctor is the right manual entry point first)
+- Automatic detection on `aigon init` or `aigon apply` (could be added later, but doctor is the right manual entry point first)
 
 ## Open Questions
 

@@ -17,7 +17,7 @@ Feature 29 introduced profile-aware `{{MANUAL_TESTING_GUIDANCE}}` (driven by `te
 - [x] For web/api profiles, expanded profile content instructs: start dev server → open browser → present checklist (via `templates/profiles/web|api/manual-testing-guidance.md`)
 - [x] For non-web profiles, expanded profile content instructs checklist-only paths where applicable (via the matching profile file under `templates/profiles/`)
 - [x] `node -c aigon-cli.js` passes with no syntax errors
-- [x] Running `aigon update` syncs template changes to agent working copies without errors
+- [x] Running `aigon apply` syncs template changes to agent working copies without errors
 
 ## Validation
 
@@ -36,12 +36,12 @@ Changes to `templates/generic/commands/feature-now.md`:
 
 The `{{MANUAL_TESTING_GUIDANCE}}` placeholder is defined in `PROFILE_PRESETS` / profile string files and injected by `getProfilePlaceholders()`—no CLI logic changes were required for the placeholder expansion itself.
 
-After template changes, run `aigon update` to sync working copies.
+After template changes, run `aigon apply` to sync working copies.
 
 ## Dependencies
 
 - Feature 29 (manual-testing-guidance) — profile files and `MANUAL_TESTING_GUIDANCE` / testing-step pipeline
-- `aigon update` to regenerate working copies
+- `aigon apply` to regenerate working copies
 
 ## Out of Scope
 

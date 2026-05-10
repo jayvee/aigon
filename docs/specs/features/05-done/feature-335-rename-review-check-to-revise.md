@@ -10,12 +10,12 @@ transitions:
 
 Aigon uses three different names for the same step — the author's decision (accept / revert / modify) after a reviewer has critiqued a spec or code. Commands and dashboard buttons call it `review-check`; autonomous-mode stages call it `counter-review`; docs mix both. We unify on **`revise`** (verb) and **`revision`** (stage noun), following the Constitutional-AI "critique → revise" lineage. The pairing reads cleanly: `review` is the reviewer's turn, `revise` is the author's turn.
 
-This is a **hard rename** — no deprecated aliases, no dual-path event handlers, no read-time shims. Old command names, shortcuts, and stage types are deleted outright. A one-shot versioned migration registered in `lib/migration.js` rewrites in-flight `.aigon/workflows/**/snapshot.json` entries on the next `aigon update`, riding the existing migration framework's backup/restore safety net. Changelog advertises the breaking change; usage is low enough that this is the right moment to take the hit.
+This is a **hard rename** — no deprecated aliases, no dual-path event handlers, no read-time shims. Old command names, shortcuts, and stage types are deleted outright. A one-shot versioned migration registered in `lib/migration.js` rewrites in-flight `.aigon/workflows/**/snapshot.json` entries on the next `aigon apply`, riding the existing migration framework's backup/restore safety net. Changelog advertises the breaking change; usage is low enough that this is the right moment to take the hit.
 
 ## User Stories
 
 - [ ] As an Aigon user, I see consistent terminology across the CLI, dashboard, and autonomous-mode progress display.
-- [ ] As an Aigon user, after `aigon update` I open an in-flight feature that was previously in `counter-review` stage and it opens cleanly, now labelled "Revision" — no manual recovery.
+- [ ] As an Aigon user, after `aigon apply` I open an in-flight feature that was previously in `counter-review` stage and it opens cleanly, now labelled "Revision" — no manual recovery.
 - [ ] As an Aigon user running `afrv <ID>`, I revise a feature after code review; the dashboard shows a **"Code Revise"** button only after ≥1 round of code review has completed.
 - [ ] As an Aigon user with a pending spec, I see a **"Spec Revise"** action only before code implementation begins.
 - [ ] As a user still typing `afsrc` / `afrc` / `arsrc`, the CLI hard-fails with "unknown command" and the changelog tells me the new names.
@@ -67,7 +67,7 @@ This is a **hard rename** — no deprecated aliases, no dual-path event handlers
 
 **Docs & changelog**
 - [ ] `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/autonomous-mode.md`, `docs/workflow-rules.md`, `docs/development_workflow.md`, `site/content/**` updated.
-- [ ] `CHANGELOG.md` entry at the top: **"BREAKING: `review-check` renamed to `revise`. Run `aigon update` to migrate in-flight features. Any scripts or docs referencing `feature-*-review-check` commands or the `afsrc`/`afrc`/`arsrc` shortcuts must be updated."**
+- [ ] `CHANGELOG.md` entry at the top: **"BREAKING: `review-check` renamed to `revise`. Run `aigon apply` to migrate in-flight features. Any scripts or docs referencing `feature-*-review-check` commands or the `afsrc`/`afrc`/`arsrc` shortcuts must be updated."**
 
 **Tests**
 - [ ] All integration tests updated to the new names; any test asserting old names either renamed or deleted.
@@ -91,7 +91,7 @@ bash scripts/check-test-budget.sh
 
 ## Technical Approach
 
-**Tone: hard rename.** Every occurrence of `review-check` / `counter-review` / `*-review-check-pending` is replaced — no compat shims, no dual-path registry entries, no keep-old-for-safety. The versioned migration in `lib/migration.js` is the only safety net, and it runs automatically on the user's next `aigon update`, with the framework's existing tarball backup covering rollback.
+**Tone: hard rename.** Every occurrence of `review-check` / `counter-review` / `*-review-check-pending` is replaced — no compat shims, no dual-path registry entries, no keep-old-for-safety. The versioned migration in `lib/migration.js` is the only safety net, and it runs automatically on the user's next `aigon apply`, with the framework's existing tarball backup covering rollback.
 
 **Sequence:**
 
@@ -134,7 +134,7 @@ bash scripts/check-test-budget.sh
 7. **Regenerate agent command files** via `aigon install-agent`.
 
 **Non-functional constraints:**
-- Migration must be idempotent so `aigon update` can safely run twice.
+- Migration must be idempotent so `aigon apply` can safely run twice.
 - Migration must handle missing files / empty repos gracefully (first-time users have nothing to migrate).
 - No break in the write-path contract (F294 lesson): every producer of the old strings is updated in the same change as every consumer. Grep for each old literal before committing — there should be zero hits outside the migration script itself and the CHANGELOG entry.
 

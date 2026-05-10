@@ -8,9 +8,9 @@ transitions:
 
 ## Summary
 
-Agent-installed `SessionStart` hooks currently rewrite project files. `aigon check-version` (run on every Claude / Gemini / Cursor session start) silently calls `aigon update` when `.aigon/version` is stale, which reinstalls agents, runs migrations, and may auto-commit. That makes session startup a write path, which is fragile in clean Docker/Linux installs and surprising in customer repos.
+Agent-installed `SessionStart` hooks currently rewrite project files. `aigon check-version` (run on every Claude / Gemini / Cursor session start) silently calls `aigon apply` when `.aigon/version` is stale, which reinstalls agents, runs migrations, and may auto-commit. That makes session startup a write path, which is fragile in clean Docker/Linux installs and surprising in customer repos.
 
-This feature makes hooks **non-mutating**. `check-version` keeps printing the same drift notice it already prints; it just stops auto-syncing afterward. The user runs `aigon update` themselves when they choose to. No new commands, no new versioning UI.
+This feature makes hooks **non-mutating**. `check-version` keeps printing the same drift notice it already prints; it just stops auto-syncing afterward. The user runs `aigon apply` themselves when they choose to. No new commands, no new versioning UI.
 
 The broader question — *how should aigon coordinate versions across the global CLI, N repos on a machine, and the dashboard?* — is deferred to a separate research topic. Bolting an `update-notice` command and a dashboard surface onto the current per-repo `.aigon/version` model would lock in a versioning UX before we've decided what model we want.
 
@@ -23,8 +23,8 @@ The broader question — *how should aigon coordinate versions across the global
 
 ## Acceptance Criteria
 
-- [ ] `check-version` (`lib/commands/setup.js`) no longer calls `commands['update']`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `upgradeAigonCli`, `install-agent`, `git add`, or `git commit`. It still prints the existing drift message (`🔄 Project sync needed (project: X, CLI: Y). Run \`aigon update\`.`) and the existing npm-update notice.
-- [ ] `aigon update` is unchanged. Its current write-path behavior stays for direct CLI use; `aigon update --pull` still works for clone-installed users.
+- [ ] `check-version` (`lib/commands/setup.js`) no longer calls `commands['update']`, `runPendingMigrations`, `runPendingGlobalConfigMigrations`, `upgradeAigonCli`, `install-agent`, `git add`, or `git commit`. It still prints the existing drift message (`🔄 Project sync needed (project: X, CLI: Y). Run \`aigon apply\`.`) and the existing npm-update notice.
+- [ ] `aigon apply` is unchanged. Its current write-path behavior stays for direct CLI use; `aigon apply --pull` still works for clone-installed users.
 - [ ] All session-start hooks across `templates/agents/cc.json`, `templates/agents/gg.json`, and `templates/agents/cu.json` (`extras.hooks` block, `.cursor/hooks.json`) keep calling `aigon check-version` — the hook payload doesn't change. Only the command's behavior does.
 - [ ] All installed hooks (`SessionStart`, `SessionEnd`/`AfterAgent`, `Stop`) always exit `0`. Failures are logged to stderr but never propagate as non-zero exit codes that block the agent session.
 - [ ] Telemetry hooks (`capture-session-telemetry`, `capture-gemini-telemetry` in `lib/commands/misc.js`) wrap their work in try/catch and always exit 0 even if capture fails.
@@ -82,14 +82,14 @@ Make `check-version` non-mutating in place. The two write branches in `lib/comma
    await commands['update'](args);
    await runPendingMigrations(...);
    ```
-   Replace with: keep the log line; append `"   Run \`aigon update\` to sync."`. Drop the `update` and `runPendingMigrations` calls.
+   Replace with: keep the log line; append `"   Run \`aigon apply\` to sync."`. Drop the `update` and `runPendingMigrations` calls.
 
 2. The config-changed branch (around `setup.js:1181-1188`) currently does:
    ```
    console.log("🔄 Config change detected. Reinstalling agents...");
    await commands['update'](args);
    ```
-   Replace with: keep the log line; append `"   Run \`aigon update\` to apply."`. Drop the `update` call.
+   Replace with: keep the log line; append `"   Run \`aigon apply\` to apply."`. Drop the `update` call.
 
 Everything else in `check-version` stays — the npm registry notice, the origin-behind notice, the `--json` output shape, the `runGlobalConfigMigrations()` calls (which write to `~/.aigon/`, not the project, and are out of scope for "non-mutating in the project").
 
@@ -97,7 +97,7 @@ The `Stop` hook removal, telemetry try/catch wrappers, broken-pointer fix, and `
 
 ### Why no new `update-notice` command
 
-We considered adding `aigon update-notice` as a separate read-only command and rewriting the hooks to call it. We rejected it because:
+We considered adding `aigon apply-notice` as a separate read-only command and rewriting the hooks to call it. We rejected it because:
 
 - It introduces a second CLI surface for the same job, which invites drift.
 - The drift problem it makes more visible (per-repo `.aigon/version` vs global CLI vs dashboard runtime) is a model question, not a UI question. Layering UI over a confused model locks in the model.
@@ -130,12 +130,12 @@ Universal lifecycle infrastructure (unchanged):
 
 ## Out of Scope
 
-- New `aigon update-notice` command. Deferred — `check-version` itself is non-mutating after this feature.
+- New `aigon apply-notice` command. Deferred — `check-version` itself is non-mutating after this feature.
 - Any change to the versioning model: per-repo `.aigon/version`, global CLI version, npm registry checks, dashboard runtime version. Deferred to research (see Related).
-- Multi-repo update UX (e.g. `aigon update --all`, known-repos registry). Deferred to research.
+- Multi-repo update UX (e.g. `aigon apply --all`, known-repos registry). Deferred to research.
 - Dashboard surfacing of update availability. Deferred to research.
 - Replacement enforcement for the dropped `Stop` hook beyond confirming the shell trap covers it.
-- Any change to the existing `aigon update` write path. It stays as-is for direct CLI use.
+- Any change to the existing `aigon apply` write path. It stays as-is for direct CLI use.
 - Replacing all hook behavior with a full `aigon hook-run <event>` framework.
 - Changing workflow engine state transitions or `agent-status` completion semantics.
 - Removing transcript-based telemetry collection.

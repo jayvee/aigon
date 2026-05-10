@@ -97,7 +97,7 @@ None.
 
 - Changing any command behaviour
 - Moving logic between files (that's feature 68)
-- Updating templates installed into other projects (separate `aigon update` concern)
+- Updating templates installed into other projects (separate `aigon apply` concern)
 - Adding new documentation pages
 
 ## Related

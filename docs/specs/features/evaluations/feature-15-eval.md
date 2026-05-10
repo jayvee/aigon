@@ -30,7 +30,7 @@ All 7 ACs met by cc and cx. gg meets ACs 1-4 and 6-7 but has a critical bug in A
 | 2. GEMINI.md no longer generated | ✅ | ✅ | ✅ |
 | 3. .codex/prompt.md no longer generated | ✅ | ✅ | ✅ |
 | 4. CLAUDE.md with pointer to AGENTS.md | ✅ | ✅ | ✅ |
-| 5. `aigon update` migration notices | ✅ | ✅ | ⚠️ Bug |
+| 5. `aigon apply` migration notices | ✅ | ✅ | ⚠️ Bug |
 | 6. Agent commands unchanged | ✅ | ✅ | ✅ |
 | 7. Agent doc references AGENTS.md | ✅ | ✅ | ✅ |
 
@@ -64,7 +64,7 @@ All 7 ACs met by cc and cx. gg meets ACs 1-4 and 6-7 but has a critical bug in A
   - Clean data-driven migration notice approach
   - Smallest core diff (+43/-4 in aigon-cli.js)
 - Weaknesses:
-  - **Critical bug**: did NOT rewrite agent detection in `update` — still checks `config.rootFile` which is now `null` for Gemini, so `aigon update` will fail to detect existing Gemini installations
+  - **Critical bug**: did NOT rewrite agent detection in `update` — still checks `config.rootFile` which is now `null` for Gemini, so `aigon apply` will fail to detect existing Gemini installations
   - Missing .gitignore update
   - Missing README.md, GUIDE.md updates
 

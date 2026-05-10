@@ -60,6 +60,7 @@ docs/specs/
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
 4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
+5. **Spec creation**: never write spec files directly to `docs/specs/` — always use `aigon feature-create <name>`. Direct writes produce snapshotless specs that appear on the board but cannot be started, tracked, or closed correctly.
 
 ## Pre-authorised Spec Notes
 
@@ -89,7 +90,6 @@ For features, there are two relevant layers:
 7. Update the implementation log in `./docs/specs/features/logs/`
 8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
 
-<!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Arena Mode Workflow
 
 1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
@@ -104,7 +104,6 @@ For features, there are two relevant layers:
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
-<!-- AIGON_LIGHT_OPTIONAL_END -->
 
 ## Before Completing a Feature
 
