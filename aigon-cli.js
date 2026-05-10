@@ -37,6 +37,7 @@ let COMMAND_ALIASES;
 let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 let createRecurringCommands, createScheduleCommands;
+let createBenchCommands;
 let createAgentLaunchCommands;
 let createSignalHealthCommands;
 let createAigonEvalCommands;
@@ -56,6 +57,7 @@ try {
     ({ createSetCommands } = require('./lib/commands/set'));
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
     ({ createScheduleCommands } = require('./lib/commands/schedule'));
+    ({ createBenchCommands } = require('./lib/commands/bench'));
     ({ createAgentLaunchCommands } = require('./lib/commands/agent-launch'));
     ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
     ({ createAigonEvalCommands } = require('./lib/commands/aigon-eval'));
@@ -87,6 +89,7 @@ const commands = {
     ...createSetCommands(),
     ...createRecurringCommands(),
     ...createScheduleCommands(),
+    ...createBenchCommands(),
     ...createAgentLaunchCommands(),
     ...createSignalHealthCommands(),
     ...createAigonEvalCommands(),

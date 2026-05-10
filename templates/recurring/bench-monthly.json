@@ -1,0 +1,7 @@
+{
+  "id": "bench-monthly",
+  "label": "Monthly benchmark refresh",
+  "schedule": "0 8 1 * *",
+  "command": ["bench-refresh", "--judge"],
+  "description": "Re-runs stale benchmark pairs and discovers new models on the 1st of each month."
+}
