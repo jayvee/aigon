@@ -14,12 +14,12 @@ All acceptance criteria met. Unified drift notice implemented across hooks (cc/g
 
 ## Key Decisions
 
-- **stdout not stderr for `--notice-only`**: spec validation tests use `| wc -c` and `| grep`, so notice must go to stdout. Hook output appearing in the terminal is the same from the user's perspective.
+- **`--notice-only` writes to stderr**: matches acceptance criteria (hooks/launcher). Validation pipes use `2>&1` so `wc -c` / `grep` still work.
 - **Version comparison as Layer 1 trigger (alongside digest)**: `AIGON_TEST_INSTALLED_VERSION=99.99.99` can't affect content digest (same template files), so version mismatch (`appliedVersion !== installedCli`) also triggers Layer 1. This is conservative but harmless — `aigon apply` is idempotent.
 - **Worktree guard in Layer 1**: worktrees don't have `.aigon/applied-digest` (write skipped since F497). Layer 1 would always fire in worktrees without the guard. Guard: `.aigon/worktree.json` presence → skip Layer 1.
 - **Npm check uses cache only** (`getCachedUpdateCheck`): no network call at session start. Layer 2 is silent if no 5-min cache exists.
 - **Dashboard runtime file** at `~/.aigon/dashboard-runtime.json` with `{ version, pid, startedAt }`. PID liveness checked via `process.kill(pid, 0)` before trusting the version.
-- **Launcher wrapper for cx/km/op**: added `aigon check-version --notice-only 2>/dev/null || true` in `buildAgentCommand` when `signals.cliHooks` is null. Hook-capable agents (cc, gg, cu) get it from their SessionStart hook template instead.
+- **Launcher wrapper for cx/km/op**: added `aigon check-version --notice-only || true` in `buildAgentCommand` when `signals.cliHooks` is null (stderr must not be discarded). Hook-capable agents (cc, gg, cu) get it from their SessionStart hook template instead.
 - **Hook timeout 30s → 15s**: `--notice-only` is purely synchronous local reads; 15s is more than enough.
 
 ## Gotchas / Known Issues
@@ -41,8 +41,30 @@ All acceptance criteria met. Unified drift notice implemented across hooks (cc/g
 
 ## Test Coverage
 
-- All three spec validation patterns verified via `node aigon-cli.js` in `/tmp/test-drift-498`:
-  - In-sync → zero bytes stdout ✓
+- All three spec validation patterns verified via `node aigon-cli.js` in `/tmp/test-drift-498` (pipe `2>&1` because `--notice-only` writes stderr):
+  - In-sync → zero bytes combined stdout+stderr ✓
   - `AIGON_TEST_INSTALLED_VERSION=99.99.99` → notice contains "applied v.*installed v99.99.99" ✓
   - Notice contains "aigon apply" ✓
 - `npm run test:iterate` passes clean (lint + integration + smoke E2E) ✓
+
+## Code Review
+
+**Reviewed by**: composer (Cursor)
+**Date**: 2026-05-10
+
+### Fixes Applied
+
+- Pending commit `fix(review): …` — stderr for `--notice-only`, prerelease-aware npm layer in `getRepoVersionStatus`, launcher no longer discards stderr, revert stray feature-501 folder move off this branch.
+
+### Validation
+
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+
+- None.
+
+### Notes
+
+- GG SessionStart dropped `check-version --json` in favour of `--notice-only` (matches feature 498 acceptance criteria). `project-context --json` unchanged.
+- Layer 2 now honours cached `prerelease-available` from `npm-update-check`, not only `update-available`.
