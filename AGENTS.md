@@ -203,7 +203,22 @@ Recent incidents — every one of these is a case of a read path paving over a m
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - CX: `.codex/prompt.md` with marker blocks; aigon-spawned Codex sessions inline template bodies directly
 
-**Install manifest** (F422): every file written by `install-agent` is recorded in `.aigon/install-manifest.json` with `{path, sha256, version, installedAt}`. On re-install, files whose sha256 differs from the manifest are warned about (prompt in interactive mode; `AIGON_NONINTERACTIVE=1` or `--force` skips). `aigon uninstall [--dry-run] [--force]` reads the manifest and deletes every tracked file; it never touches `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, or `.aigon/config.json`. Migration 2.61.0 (`migrate_initialize_install_manifest`) synthesizes the manifest for legacy repos. `aigon doctor` reports missing/modified/untracked files; `aigon doctor --fix` triggers the migration.
+**Install manifest** (F422): every file written by `install-agent` is recorded in `.aigon/install-manifest.json` with `{path, sha256, version, installedAt, templateSha?, templatePath?}`. On re-install, files whose sha256 differs from the manifest are warned about (prompt in interactive mode; `AIGON_NONINTERACTIVE=1` or `--force` skips). `aigon uninstall [--dry-run] [--force]` reads the manifest and deletes every tracked file; it never touches `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, or `.aigon/config.json`. Migration 2.61.0 (`migrate_initialize_install_manifest`) synthesizes the manifest for legacy repos. `aigon doctor` reports missing/modified/untracked files; `aigon doctor --fix` triggers the migration.
+
+### Agent install / template sync (F502)
+Templates in `templates/generic/commands/` are the source of truth; installed copies are produced by `aigon install-agent` and only refresh when that command runs. F502 adds three guard layers so installed copies never fall behind silently:
+
+1. **Layer 1 — startup drift warning.** Every `aigon` invocation does a fast template-vs-manifest check (mtime fingerprint cache at `.aigon/state/template-drift-cache.json`; cold-cache cost <50ms). When a template's sha256 differs from the `templateSha` recorded in the manifest entry, the CLI prints one line per affected agent: `⚠️  cc: 3 templates updated since install (...). Run aigon install-agent --all`. Suppress with `.aigon/config.json` `{"installDriftWarnings": false}` or env `AIGON_SKIP_TEMPLATE_DRIFT=1`.
+
+2. **Layer 2 — version-bump auto-reinstall.** When `package.json` `version` ≠ `manifest.aigonVersion`, `aigon` silently re-runs `install-agent` for every agent in `manifest.agents`. Hand-edited files (manifest sha != on-disk sha) are snapshotted before the reinstall and restored afterward — never silently overwritten. Reports `✓ aigon upgraded X → Y — refreshed N agents` plus a per-skipped-file list. Suppress with `AIGON_NO_AUTO_REINSTALL=1` or `.aigon/config.json` `{"autoReinstallOnVersionChange": false}`.
+
+3. **Layer 3 — CI lockstep test.** `tests/integration/install-manifest-lockstep.test.js` re-runs `install-agent --all` in a tmpdir and fails if the resulting manifest's `(path, sha256)` set diverges from the committed manifest. Catches the "edited a template, forgot to commit the regenerated install" case. Runs as part of `npm run test:core`.
+
+4. **Release-time guard.** `package.json` `prepublishOnly` chains `scripts/check-install-manifest-clean.js` before `check-pack.js`: re-runs `install-agent --all` and fails the publish if it produces a non-empty git diff (excluding `installedAt` timestamp ticks).
+
+**`aigon doctor --fix-templates`** lists every tracked file as `OK` / `STALE_TEMPLATE` / `HAND_EDITED`. Adding `--fix` refreshes stale files automatically (delete + re-install) and prompts `[r]efresh / [k]eep / [d]iff` per hand-edited file in interactive mode. Non-interactive runs (`--yes`, piped stdin) skip hand-edited files with a summary.
+
+**Safety contract — never silent overwrite.** Layers 2 and 3 both lean on the manifest's recorded `sha256`: a file is only considered safe to refresh when its on-disk sha matches the install-time sha. If the user edited the file, all auto-paths leave it alone. The only way an installed file gets overwritten without a prompt is when it matches the manifest exactly — i.e. the user has not touched it.
 
 **SessionStart version check (F493)**: Hooks call `aigon check-version`. It prints drift vs `.aigon/version`, optional origin/npm notices, and tells you to run `aigon apply` when you want to sync — it does **not** auto-run `aigon apply`, reinstall agents, run repo migrations, or auto-commit project files.
 

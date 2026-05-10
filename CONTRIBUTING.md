@@ -116,6 +116,20 @@ git commit -m "chore: refresh benchmark data for vX.Y.Z"
 
 **Why this matters:** benchmark JSONs in `.aigon/benchmarks/` are authoritative shipped artifacts, not per-user data. The models run provider-side, so the numbers are reproducible for any user calling the same provider models — there is no reason for users to re-run the sweep themselves. Every historical run is intentionally kept (no pruning); `git log .aigon/benchmarks/` gives a full record across releases.
 
+## Release checklist (template/install lockstep)
+
+`prepublishOnly` runs `scripts/check-install-manifest-clean.js`. It re-installs every agent against the current templates and **fails the publish if the result diverges from the committed `.aigon/install-manifest.json`** (semantically — `installedAt` timestamps are ignored). This catches the case where you edited a template but forgot to commit the regenerated install.
+
+If `prepublishOnly` blocks you with that error:
+
+```bash
+aigon install-agent --all
+git add .aigon/install-manifest.json .claude/ .cursor/ .gemini/ .agents/ .opencode/
+git commit -m "chore: refresh installed agent files for vX.Y.Z"
+```
+
+Skip the check (rare — local dry-runs only) with `AIGON_SKIP_PREPUBLISH_INSTALL_CHECK=1 npm publish`.
+
 ## Aigon Pro
 
 The commercial Pro tier lives in a separate private repo and is **not yet available for purchase**. PRs to aigon (this repo) should only touch open-source code. If a feature needs to coordinate with Pro, that's documented in `CLAUDE.md` and is rare — open an issue first.
