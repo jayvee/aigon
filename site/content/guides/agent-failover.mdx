@@ -6,7 +6,7 @@ description: Automatic and manual failover between agents when one hits its quot
 import { Callout } from 'nextra/components'
 
 <Callout type="info">
-**Aigon Pro feature.** Auto-failover and the manual "Failover now" button require `@aigon/pro`. The event vocabulary (`agent.token_exhausted`, `agent.failover_switched`) works in OSS, but `policy: switch` degrades to `policy: notify` without Pro loaded.
+**Aigon Pro feature.** Auto-failover and the manual "Failover now" button require `@senlabsai/aigon-pro`. The event vocabulary (`agent.token_exhausted`, `agent.failover_switched`) works in OSS, but `policy: switch` degrades to `policy: notify` without Pro loaded.
 </Callout>
 
 ## Why this exists
@@ -131,7 +131,7 @@ grep -E '"agent\.token_exhausted"|"agent\.failover_switched"' \
 
 ## Pro tier note
 
-- `policy: switch` and the "Failover now" dashboard button require `@aigon/pro`.
+- `policy: switch` and the "Failover now" dashboard button require `@senlabsai/aigon-pro`.
 - The event vocabulary (`agent.token_exhausted`, `agent.failover_switched`) and their projector branches are part of the OSS event schema and work without Pro — `events.jsonl` will still record exhaustion events.
 - Without Pro, `policy: switch` logs a one-line warning at supervisor startup (`agentFailover.policy=switch requires aigon-pro; falling back to notify`) and behaves as `notify`.
 

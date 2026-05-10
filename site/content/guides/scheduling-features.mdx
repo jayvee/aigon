@@ -6,7 +6,7 @@ description: Defer Start Autonomously to a wall time — same predefined workflo
 import { Callout } from "nextra/components";
 
 <Callout type="info">
-  **Aigon Pro feature.** One-shot scheduled kickoffs via [`aigon schedule`](/docs/reference/commands/infra/schedule) — including `feature_autonomous` and `research_start` jobs polled by the dashboard server — ship in **Aigon Pro**. In open-source Aigon the CLI prints a gate message and exits non-zero; install `@aigon/pro` when available for your organization. See [aigon.build/pro](/pro) for launch updates.
+  **Aigon Pro feature.** One-shot scheduled kickoffs via [`aigon schedule`](/docs/reference/commands/infra/schedule) — including `feature_autonomous` and `research_start` jobs polled by the dashboard server — ship in **Aigon Pro**. In open-source Aigon the CLI prints a gate message and exits non-zero; install `@senlabsai/aigon-pro` when available for your organization. See [aigon.build/pro](/pro) for launch updates.
 </Callout>
 
 Scheduling defers the **same kickoff** you would trigger from **Start Autonomously** (or the matching CLI) to an explicit **wall time** — it is not a partial or “reminder” start. For features, that means a **`feature_autonomous`** job still runs your chosen **predefined workflow** (named workflow definition, agents, stop-after, eval/review options, and so on) and autonomous mode carries that shape **through to completion** (through the stages your workflow defines), just beginning at `runAt` instead of immediately.

@@ -189,11 +189,17 @@ If a step fails, the dashboard shows a "Resolve & close" action that launches an
 
 ## Updating Aigon
 
+Two steps in two tools — npm owns CLI upgrades, `aigon apply` owns project file application:
+
 ```bash
-npm update -g @senlabsai/aigon@next
+npm update -g @senlabsai/aigon@next      # 1. upgrade the CLI
+aigon apply                              # 2. re-apply templates into this repo
+aigon apply --all                        # …or apply to every registered repo at once
 ```
 
-Inside any Aigon-enabled project, run `aigon update` to sync the latest agent slash commands and templates into your repo. Add `--pull` to also `git pull` the repo first. The dashboard does not auto-restart in user projects after `aigon update` — restart it manually with `aigon server restart` if you want the latest dashboard UI.
+After the npm upgrade, `aigon installed-notice` runs automatically and tells you which of your registered repos are behind. If the dashboard server is running, restart it (`aigon server restart`) to pick up new dashboard UI — or click `[ Restart now ]` on the dashboard's upgrade pill.
+
+See [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates) for the full flow.
 
 ## Manual setup (advanced)
 

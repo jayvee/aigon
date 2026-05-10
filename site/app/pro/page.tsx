@@ -492,7 +492,7 @@ export default function ProPage() {
             />
             <FeatureCard
               title="CLI + dashboard"
-              description="Same engine from terminal (`aigon backup push`) or Settings → Aigon Sync when the server runs with @aigon/pro linked."
+              description="Same engine from terminal (`aigon backup push`) or Settings → Aigon Sync when the server runs with @senlabsai/aigon-pro linked."
             />
             <FeatureCard
               title="Scheduled pushes"

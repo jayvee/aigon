@@ -10,13 +10,12 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
+const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 
 const quotaProbe = require('../../lib/quota-probe');
 const agentRegistry = require('../../lib/agent-registry');
 const quotaMidRun = require('../../lib/quota-mid-run-detector');
-const { sanitisePaneSample, postPauseAliveCounts, emittedDedupe, lastActivityByName } = quotaMidRun;
-const workflowEngine = require('../../lib/workflow-core');
+const { sanitisePaneSample, postPauseAliveCounts, lastActivityByName } = quotaMidRun;
 
 // --- Regex-level false-positive tests ---
 

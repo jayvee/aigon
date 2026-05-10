@@ -76,9 +76,17 @@ The dashboard, server, and supporting tooling that runs around your features.
 - [`repair`](/docs/reference/commands/infra/repair) — Repair safe drift without resetting work
 - [`next`](/docs/reference/commands/infra/next) — Suggest the most likely next workflow action
 - [`insights`](/docs/reference/commands/infra/insights) — Pro analytics: cost, quality, trends
-- **Aigon Sync (Pro)** — [`aigon backup`](/docs/guides/aigon-sync) / `aigon vault` and dashboard **Settings → Aigon Sync**; see the [Aigon Sync guide](/docs/guides/aigon-sync) (CLI reference ships in `@aigon/pro`)
+- **Aigon Sync (Pro)** — [`aigon backup`](/docs/guides/aigon-sync) / `aigon vault` and dashboard **Settings → Aigon Sync**; see the [Aigon Sync guide](/docs/guides/aigon-sync) (CLI reference ships in `@senlabsai/aigon-pro`)
 - [`deploy`](/docs/reference/commands/infra/deploy) — Deploy a feature preview
 - [`help`](/docs/reference/commands/infra/help) — Show available commands
+
+## Pro commands
+
+Commands that ship in the open-source CLI but gate on `@senlabsai/aigon-pro` being installed and activated. See [Installing Aigon Pro](/docs/guides/pro-installation).
+
+- [`pro activate`](/docs/reference/commands/pro/activate) — Save your Pro key to `~/.aigon/config.json`
+- [`pro status`](/docs/reference/commands/pro/status) — Show install / key / activation state
+- [`installed-notice`](/docs/reference/commands/pro/installed-notice) — Post-upgrade summary of which registered repos are behind
 
 ## Conventions
 

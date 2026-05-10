@@ -88,12 +88,12 @@ Use `$aigon-next` any time you want Codex to suggest the most likely next Aigon 
 ## Updating
 
 ```bash
-aigon update
+aigon apply
 ```
 
 Re-runs `install-agent` for all detected agents. Updates command templates, hooks, and Aigon-owned doc files. Never touches `CLAUDE.md`, `AGENTS.md`, or `README.md`.
 
-**Auto-update**: The `aigon check-version` SessionStart hook detects version mismatches and runs `aigon update` automatically.
+**When new templates are available**: SessionStart hooks (cc, gg, cu, codex) print a short notice telling you to run `aigon apply`. You decide when. See [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates).
 
 ## Project-specific instructions
 

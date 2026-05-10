@@ -1,12 +1,12 @@
 ---
 title: Aigon Sync
-description: Push portable Aigon state to a private Git vault — multi-machine sync via @aigon/pro (dashboard Settings → Aigon Sync).
+description: Push portable Aigon state to a private Git vault — multi-machine sync via @senlabsai/aigon-pro (dashboard Settings → Aigon Sync).
 ---
 
 import { Callout } from "nextra/components";
 
 <Callout type="info">
-  **Aigon Pro feature.** The vault engine (`aigon backup`, `aigon vault`), dashboard **Settings → Aigon Sync**, and deprecated `aigon sync` aliases ship in **`@aigon/pro`**. Open-source Aigon prints a gate notice for those commands when Pro is not installed. Ordinary backups — `git`, archives, clones, Time Machine — **do not** require Pro. See [aigon.build/pro](/pro).
+  **Aigon Pro feature.** The vault engine (`aigon backup`, `aigon vault`), dashboard **Settings → Aigon Sync**, and deprecated `aigon sync` aliases ship in **`@senlabsai/aigon-pro`**. Open-source Aigon prints a gate notice for those commands when Pro is not installed. Ordinary backups — `git`, archives, clones, Time Machine — **do not** require Pro. See [aigon.build/pro](/pro).
 </Callout>
 
 **Aigon Sync** is how you keep **portable Aigon state** in a **private Git repository** (the *vault*) so you can move between laptops or teammates without losing workflow metadata. It snapshots each registered project’s `.aigon/` tree (filtered) plus a stripped copy of `~/.aigon/config.json`, then pushes to a remote you control.
@@ -18,11 +18,11 @@ This is **not** “you can’t back up without Pro”: you can always copy repos
 The vault is a normal Git repo you configure once (`aigon backup configure <git-url>`). On **push**, Aigon rebuilds content from your machine, commits, and pushes. Typical layout includes:
 
 - **`projects/<name>/`** — portable subtree from each registered repo’s `.aigon/` (sessions, locks, and disposable caches are excluded)
-- **`settings/`** — sanitized global config plus workflow definitions paths as implemented by `@aigon/pro`
+- **`settings/`** — sanitized global config plus workflow definitions paths as implemented by `@senlabsai/aigon-pro`
 
 **Pull** restores compatible settings and project `.aigon/` slices onto machines where those repos exist.
 
-## CLI (requires `@aigon/pro`)
+## CLI (requires `@senlabsai/aigon-pro`)
 
 | Command | Purpose |
 |---------|---------|
@@ -44,7 +44,7 @@ With Pro installed and the dashboard running, open **[Settings](/docs/guides/das
 - Change the Git remote URL
 - Trigger **Sync now (push)** without opening a terminal
 
-If the panel shows an install message, ensure `@aigon/pro` is linked or installed and **`aigon server restart`** so the dashboard loads `dashboard/backup-sync.js` from Pro.
+If the panel shows an install message, ensure `@senlabsai/aigon-pro` is linked or installed and **`aigon server restart`** so the dashboard loads `dashboard/backup-sync.js` from Pro.
 
 ## Prerequisites
 
@@ -61,4 +61,4 @@ If the panel shows an install message, ensure `@aigon/pro` is linked or installe
 
 - **[Scheduling features](/docs/guides/scheduling-features)** — deferred kickoffs (separate from vault sync; shares portable `.aigon/state` concepts)
 - **[Dashboard](/docs/guides/dashboard)** — registering repos and running the server
-- **[Getting started](/docs/getting-started)** — linking `@aigon/pro` for beta builds
+- **[Getting started](/docs/getting-started)** — linking `@senlabsai/aigon-pro` for beta builds

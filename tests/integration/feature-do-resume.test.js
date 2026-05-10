@@ -1,53 +1,91 @@
 #!/usr/bin/env node
-// FEATURE 357: resume code path reads agentSessionId from sidecar and builds per-agent resume args.
+// F357: resume code path reads agentSessionId from sidecar and builds per-agent resume args.
 // Covers: readLatestSidecarWithSession (found/not-found/most-recent/agent-filter),
 //         resolveResumeArgs (cc/cx/gg flags, unsupported agents return null).
 'use strict';
-const a = require('assert'), fs = require('fs'), path = require('path'), os = require('os');
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { test, report } = require('../_helpers');
 const { readLatestSidecarWithSession, resolveResumeArgs } = require('../../lib/session-sidecar');
-const tmp = (pf) => fs.mkdtempSync(path.join(os.tmpdir(), pf));
-const mkp = p => fs.mkdirSync(p, { recursive: true });
-const ws = (repo, name, rec) => { const d = path.join(repo, '.aigon', 'sessions'); mkp(d); fs.writeFileSync(path.join(d, `${name}.json`), JSON.stringify(rec)); };
-const base = (repo, name, eid, ag, extras = {}) => ws(repo, name, Object.assign({ category: 'entity', sessionName: name, repoPath: repo, worktreePath: repo, createdAt: '2026-04-25T10:00:00.000Z', agent: ag, entityType: 'f', entityId: eid, role: 'do' }, extras));
 
-{ // found: returns sidecar with agentSessionId
-    const r = tmp('aigon-res-'), uuid = 'resume-uuid-1111-2222-3333-444455556666';
-    base(r, 'aigon-f07-cc-impl', '7', 'cc', { agentSessionId: uuid, agentSessionPath: `/fake/${uuid}.jsonl` });
-    const s = readLatestSidecarWithSession(r, 'f', '7', 'cc');
-    a.ok(s, 'should find sidecar'); a.strictEqual(s.agentSessionId, uuid);
-    fs.rmSync(r, { recursive: true, force: true });
+const mkp = (p) => fs.mkdirSync(p, { recursive: true });
+
+function writeSidecar(repo, name, entityId, agentId, extras = {}) {
+    const d = path.join(repo, '.aigon', 'sessions');
+    mkp(d);
+    fs.writeFileSync(path.join(d, `${name}.json`), JSON.stringify(Object.assign({
+        category: 'entity', sessionName: name, repoPath: repo, worktreePath: repo,
+        createdAt: '2026-04-25T10:00:00.000Z', agent: agentId, entityType: 'f', entityId, role: 'do',
+    }, extras)));
 }
 
-{ // not-found: sidecar without agentSessionId → null
-    const r = tmp('aigon-res-noid-');
-    base(r, 'aigon-f08-cc-old', '8', 'cc');
-    a.strictEqual(readLatestSidecarWithSession(r, 'f', '8', 'cc'), null, 'missing agentSessionId → null');
-    fs.rmSync(r, { recursive: true, force: true });
-}
+test('readLatestSidecarWithSession: returns sidecar when agentSessionId is present', () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-res-'));
+    try {
+        const uuid = 'resume-uuid-1111-2222-3333-444455556666';
+        writeSidecar(repo, 'aigon-f07-cc-impl', '7', 'cc', { agentSessionId: uuid, agentSessionPath: `/fake/${uuid}.jsonl` });
+        const s = readLatestSidecarWithSession(repo, 'f', '7', 'cc');
+        assert.ok(s, 'should find sidecar');
+        assert.strictEqual(s.agentSessionId, uuid);
+    } finally {
+        fs.rmSync(repo, { recursive: true, force: true });
+    }
+});
 
-{ // most-recent wins when multiple sidecars exist
-    const r = tmp('aigon-res-multi-');
-    base(r, 'aigon-f09-cc-old', '9', 'cc', { createdAt: '2026-04-24T08:00:00.000Z', agentSessionId: 'old-uuid' });
-    base(r, 'aigon-f09-cc-new', '9', 'cc', { createdAt: '2026-04-25T10:00:00.000Z', agentSessionId: 'new-uuid' });
-    const s = readLatestSidecarWithSession(r, 'f', '9', 'cc');
-    a.strictEqual(s.agentSessionId, 'new-uuid', 'should pick most recent');
-    fs.rmSync(r, { recursive: true, force: true });
-}
+test('readLatestSidecarWithSession: returns null when sidecar has no agentSessionId', () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-res-noid-'));
+    try {
+        writeSidecar(repo, 'aigon-f08-cc-old', '8', 'cc');
+        assert.strictEqual(readLatestSidecarWithSession(repo, 'f', '8', 'cc'), null, 'missing agentSessionId → null');
+    } finally {
+        fs.rmSync(repo, { recursive: true, force: true });
+    }
+});
 
-{ // agent filter: gg sidecar not returned for cc query
-    const r = tmp('aigon-res-agent-');
-    base(r, 'aigon-f10-gg-impl', '10', 'gg', { agentSessionId: 'gemini-id' });
-    a.strictEqual(readLatestSidecarWithSession(r, 'f', '10', 'cc'), null, 'cc query must not return gg sidecar');
-    a.ok(readLatestSidecarWithSession(r, 'f', '10', 'gg'), 'gg query should find the sidecar');
-    fs.rmSync(r, { recursive: true, force: true });
-}
+test('readLatestSidecarWithSession: most-recent sidecar wins when multiple exist', () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-res-multi-'));
+    try {
+        writeSidecar(repo, 'aigon-f09-cc-old', '9', 'cc', { createdAt: '2026-04-24T08:00:00.000Z', agentSessionId: 'old-uuid' });
+        writeSidecar(repo, 'aigon-f09-cc-new', '9', 'cc', { createdAt: '2026-04-25T10:00:00.000Z', agentSessionId: 'new-uuid' });
+        const s = readLatestSidecarWithSession(repo, 'f', '9', 'cc');
+        assert.strictEqual(s.agentSessionId, 'new-uuid', 'should pick most recent');
+    } finally {
+        fs.rmSync(repo, { recursive: true, force: true });
+    }
+});
 
-// resolveResumeArgs per agent
-{ const r = resolveResumeArgs('cc', 'test-uuid'); a.deepStrictEqual(r.appendArgs, ['--resume', 'test-uuid']); a.strictEqual(r.isSubcommand, false); }
-{ const r = resolveResumeArgs('cx', 'cx-id'); a.deepStrictEqual(r.prependArgs, ['resume', 'cx-id']); a.strictEqual(r.isSubcommand, true); }
-{ const r = resolveResumeArgs('gg', 'gg-id'); a.deepStrictEqual(r.appendArgs, ['--resume', 'gg-id']); a.strictEqual(r.isSubcommand, false); }
-a.strictEqual(resolveResumeArgs('cu', 'x'), null, 'cu: unsupported → null');
-a.strictEqual(resolveResumeArgs(null, 'x'), null, 'null agent → null');
-a.strictEqual(resolveResumeArgs('cc', null), null, 'null sessionId → null');
+test('readLatestSidecarWithSession: agent filter — gg sidecar not returned for cc query', () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-res-agent-'));
+    try {
+        writeSidecar(repo, 'aigon-f10-gg-impl', '10', 'gg', { agentSessionId: 'gemini-id' });
+        assert.strictEqual(readLatestSidecarWithSession(repo, 'f', '10', 'cc'), null, 'cc query must not return gg sidecar');
+        assert.ok(readLatestSidecarWithSession(repo, 'f', '10', 'gg'), 'gg query should find the sidecar');
+    } finally {
+        fs.rmSync(repo, { recursive: true, force: true });
+    }
+});
 
-console.log('  ✓ feature 357 feature-do-resume tests passed');
+test('resolveResumeArgs: cc and gg use --resume flag (appendArgs)', () => {
+    const cc = resolveResumeArgs('cc', 'test-uuid');
+    assert.deepStrictEqual(cc.appendArgs, ['--resume', 'test-uuid']);
+    assert.strictEqual(cc.isSubcommand, false);
+    const gg = resolveResumeArgs('gg', 'gg-id');
+    assert.deepStrictEqual(gg.appendArgs, ['--resume', 'gg-id']);
+});
+
+test('resolveResumeArgs: cx uses resume subcommand (prependArgs)', () => {
+    const r = resolveResumeArgs('cx', 'cx-id');
+    assert.deepStrictEqual(r.prependArgs, ['resume', 'cx-id']);
+    assert.strictEqual(r.isSubcommand, true);
+});
+
+test('resolveResumeArgs: unsupported agent or null inputs return null', () => {
+    assert.strictEqual(resolveResumeArgs('cu', 'x'), null, 'cu: unsupported → null');
+    assert.strictEqual(resolveResumeArgs(null, 'x'), null, 'null agent → null');
+    assert.strictEqual(resolveResumeArgs('cc', null), null, 'null sessionId → null');
+});
+
+report();

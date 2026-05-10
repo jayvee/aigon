@@ -1,53 +1,53 @@
 #!/usr/bin/env node
-// Feature 424: plan-mode flag on spec creation — draft agents launch in plan mode.
+// F424: plan-mode flag on spec creation — draft agents launch in plan mode.
 'use strict';
-const a = require('assert');
+
+const assert = require('assert');
+const { test, report } = require('../_helpers');
 const { getAgentCliConfig, getAgentLaunchFlagTokens } = require('../../lib/config');
 
-// (a) cc resolves planFlag and argv includes --permission-mode plan ahead of prompt
-const ccCli = getAgentCliConfig('cc');
-a.strictEqual(ccCli.planFlag, '--permission-mode plan', 'cc.planFlag must be --permission-mode plan');
-a.ok(ccCli.implementFlag, 'cc.implementFlag must still be set');
-a.ok(ccCli.implementFlag !== ccCli.planFlag, 'cc planFlag and implementFlag must differ');
+test('cc: planFlag is --permission-mode plan and differs from implementFlag', () => {
+    const ccCli = getAgentCliConfig('cc');
+    assert.strictEqual(ccCli.planFlag, '--permission-mode plan', 'cc.planFlag must be --permission-mode plan');
+    assert.ok(ccCli.implementFlag, 'cc.implementFlag must still be set');
+    assert.ok(ccCli.implementFlag !== ccCli.planFlag, 'cc planFlag and implementFlag must differ');
+});
 
-const ccTokens = getAgentLaunchFlagTokens('claude', ccCli.planFlag, { autonomous: false });
-a.deepStrictEqual(ccTokens, ['--permission-mode', 'plan'], 'cc plan tokens must split correctly');
+test('cc: plan tokens split correctly and precede the prompt in argv', () => {
+    const ccCli = getAgentCliConfig('cc');
+    const ccTokens = getAgentLaunchFlagTokens('claude', ccCli.planFlag, { autonomous: false });
+    assert.deepStrictEqual(ccTokens, ['--permission-mode', 'plan'], 'cc plan tokens must split correctly');
+    const ccArgv = [...ccTokens, 'draft the spec'];
+    assert.strictEqual(ccArgv[0], '--permission-mode', 'planFlag tokens precede the prompt');
+    assert.strictEqual(ccArgv[ccArgv.length - 1], 'draft the spec', 'prompt is last');
+});
 
-const prompt = 'draft the spec';
-const ccArgv = [...ccTokens, prompt];
-a.strictEqual(ccArgv[0], '--permission-mode', 'planFlag tokens precede the prompt');
-a.strictEqual(ccArgv[ccArgv.length - 1], prompt, 'prompt is last');
+test('cx: no planFlag — argv only has the sandbox bypass flag', () => {
+    const cxCli = getAgentCliConfig('cx');
+    assert.ok(cxCli.planFlag === null || cxCli.planFlag === '' || cxCli.planFlag === undefined, 'cx planFlag must be null/empty');
+    const cxTokens = getAgentLaunchFlagTokens('codex', cxCli.planFlag, { autonomous: false });
+    assert.deepStrictEqual(cxTokens, ['--dangerously-bypass-approvals-and-sandbox'], 'cx plan tokens must only have the sandbox bypass flag');
+});
 
-// (b) cx has no planFlag — argv is unchanged (no spurious flags)
-const cxCli = getAgentCliConfig('cx');
-a.ok(cxCli.planFlag === null || cxCli.planFlag === '' || cxCli.planFlag === undefined,
-    'cx planFlag must be null/empty');
-const cxTokens = getAgentLaunchFlagTokens('codex', cxCli.planFlag, { autonomous: false });
-a.deepStrictEqual(cxTokens, ['--dangerously-bypass-approvals-and-sandbox'], 'cx plan tokens must only have the sandbox bypass flag');
-const cxArgv = [...cxTokens, prompt];
-a.deepStrictEqual(cxArgv, ['--dangerously-bypass-approvals-and-sandbox', prompt], 'cx argv gets bypass flag but no plan flags');
+test('gg: no planFlag', () => {
+    const ggCli = getAgentCliConfig('gg');
+    assert.ok(ggCli.planFlag === null || ggCli.planFlag === '' || ggCli.planFlag === undefined, 'gg planFlag must be null/empty');
+});
 
-// gg also has no planFlag
-const ggCli = getAgentCliConfig('gg');
-a.ok(ggCli.planFlag === null || ggCli.planFlag === '' || ggCli.planFlag === undefined,
-    'gg planFlag must be null/empty');
+test('cu: planFlag is set and produces non-empty tokens', () => {
+    const cuCli = getAgentCliConfig('cu');
+    assert.ok(cuCli.planFlag, 'cu planFlag must be set');
+    const cuTokens = getAgentLaunchFlagTokens('agent', cuCli.planFlag, { autonomous: false });
+    assert.ok(cuTokens.length > 0, 'cu plan tokens must not be empty');
+});
 
-// cu has planFlag
-const cuCli = getAgentCliConfig('cu');
-a.ok(cuCli.planFlag, 'cu planFlag must be set');
-const cuTokens = getAgentLaunchFlagTokens('agent', cuCli.planFlag, { autonomous: false });
-a.ok(cuTokens.length > 0, 'cu plan tokens must not be empty');
+test('cc template: planFlag is plan-mode, implementFlag includes acceptEdits', () => {
+    const ccCli = getAgentCliConfig('cc');
+    assert.ok('implementFlag' in ccCli, 'cc.implementFlag key must exist for spec-review/revise paths');
+    assert.ok('planFlag' in ccCli, 'cc.planFlag key must exist alongside implementFlag');
+    const ccTemplate = require('../../templates/agents/cc.json');
+    assert.strictEqual(ccTemplate.cli.planFlag, '--permission-mode plan', 'cc template planFlag must be --permission-mode plan');
+    assert.ok(ccTemplate.cli.implementFlag.includes('acceptEdits'), 'cc template implementFlag must include acceptEdits');
+});
 
-// (c) spec-review launchers use implementFlag — verify getAgentCliConfig exposes both
-//     so entity-commands.js can still pick implementFlag for review/revise paths
-a.ok('implementFlag' in ccCli, 'cc.implementFlag key must exist for spec-review/revise paths');
-a.ok('planFlag' in ccCli, 'cc.planFlag key must exist alongside implementFlag');
-// planFlag from the template must be plan-mode, not acceptEdits
-const ccTemplatePlanFlag = require('../../templates/agents/cc.json').cli.planFlag;
-a.strictEqual(ccTemplatePlanFlag, '--permission-mode plan',
-    'cc template planFlag must be --permission-mode plan');
-const ccTemplateImplFlag = require('../../templates/agents/cc.json').cli.implementFlag;
-a.ok(ccTemplateImplFlag.includes('acceptEdits'),
-    'cc template implementFlag must include acceptEdits (for spec-review/revise)');
-
-console.log('  ✓ feature 424 plan-flag-draft tests passed');
+report();
