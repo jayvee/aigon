@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 244
+lines_removed: 10
+lines_changed: 254
+files_touched: 10
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 408
+output_tokens: 94219
+cache_creation_input_tokens: 217019
+cache_read_input_tokens: 16401985
+thinking_tokens: 0
+total_tokens: 16713631
+billable_tokens: 94627
+cost_usd: 7.1489
+sessions: 1
+model: "claude-sonnet-4-6"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 498 - apply-3-session-drift-notice
 Agent: cc
 
