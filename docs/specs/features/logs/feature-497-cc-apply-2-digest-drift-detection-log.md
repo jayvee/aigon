@@ -49,3 +49,25 @@ All 7 acceptance criteria met. Semver drift detection replaced with content-base
 - Unit integration test: `computeAppliedDigestDetailed`, `readAppliedDigest`, `writeAppliedDigest`, `buildDriftSummary` all verified via inline node -e tests (not test files — spec didn't require new test files).
 - Iterate gate (lint + scoped integration): passes clean.
 - Spec validation patterns (`grep -q "current"`, `grep -q "out of date"`) verified against output messages.
+
+## Code Review
+
+**Reviewed by**: Composer
+**Date**: 2026-05-10
+
+### Fixes Applied
+
+- `c99a91ac` fix(review): restore feature-501/502 specs touched out of scope on F497 branch — unrelated specs had been moved to inbox / deleted; restored from `main` so this branch only carries F497 implementation.
+
+### Validation
+
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+
+- None
+
+### Notes
+
+- Core F497 implementation (`computeAppliedDigest*`, `check-version` digest gate, `apply`/`install-agent` digest writes) reads consistent with the spec technical approach (template-source hashing + project config slice).
+- Reminder: digest intentionally does not hash installed agent output trees; deferred per implementation log — aligns with “hash what CLI sources would emit” rather than on-disk install artifacts.
