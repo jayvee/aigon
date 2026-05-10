@@ -27,6 +27,8 @@ Every benchmark pair currently spends 2-3 minutes on overhead before any AI work
 - [ ] `perf-bench --all` (without `--resume`) writes a new sweep state file at the start and updates it after each pair completes (including failures). State file path: `.aigon/benchmarks/sweep-<iso-timestamp>.state.json`.
 - [ ] Sweep state file schema: `{ seed, startedAt, completedAt, pairs: [{ agentId, modelValue, modelLabel, status: "pending"|"passed"|"failed", resultFile, completedAt }] }`.
 - [ ] The `--resume` flag without an existing state file prints an error and exits 1.
+- [ ] After each pair completes (success, failure, or timeout), `runBenchmark` calls `aigon sessions-close <featureId>` on the seed repo path before returning — so tmux sessions never accumulate between pairs and the last pair's session is always cleaned up.
+- [ ] After `runAllBenchmarks` finishes (normally or via unhandled error), a `finally` block calls `aigon sessions-close` on the seed path as a safety net for any session the per-pair cleanup missed.
 - [ ] `npm run test:quick` passes. A unit test verifies resume logic: given a state file with 3 pairs done and 2 pending, assert that only the 2 pending pairs are included in the run.
 
 ## Validation
@@ -49,6 +51,7 @@ aigon perf-bench brewboard --all --agents cc --dry-run
 
 | Step | Time | Eliminatable? |
 |---|---|---|
+| Kill previous pair's tmux session | ~2s | Moved to end-of-pair (currently missing for last pair) |
 | Delete remote branches (GitHub API) | ~20s | No — needed to keep worktree setup clean |
 | `git clone` from seed GitHub | ~45s | **Yes** — replaced by tarball extract |
 | `npm install --prefer-offline` | ~30s | **Yes** — node_modules baked into tarball |
