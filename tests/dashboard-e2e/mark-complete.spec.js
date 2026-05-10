@@ -91,6 +91,6 @@ test('mark-complete: renders menu item when signal missing; absent when present;
     ]);
     expect(markResp.status(), 'mark-complete should return 200').toBe(200);
     // Dashboard auto-refreshes after postMarkComplete; agent should show submitted
-    await expect(ipCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted'))
+    await expect(ipCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-ready'))
         .toBeVisible({ timeout: 8000 });
 });

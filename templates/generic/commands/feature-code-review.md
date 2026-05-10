@@ -191,10 +191,16 @@ Say: "Code review done. [N] fix(es) committed." (or "Code review done. Implement
 
 **CRITICAL — do NOT run `aigon feature-close`, `aigon feature-eval`, or any other command. Your job ends with the signal below. The implementing agent handles everything after this.**
 
-**Last action — run this and stop:**
+**Last action — run exactly one of these and stop:**
 
 ```bash
-aigon agent-status review-complete
+# Implementation looks good — no follow-up fixes needed:
+aigon agent-status review-complete --approve
+
+# Fixes are required from the implementing agent:
+aigon agent-status review-complete --request-revision
 ```
+
+The flag is required — there is no default. `--approve` advances the feature to `ready` (close-eligible). `--request-revision` opens a revision cycle for the implementing agent.
 
 **STOP. Do not suggest, offer, or run anything after `aigon agent-status review-complete`.**

@@ -222,7 +222,7 @@ Dashboard feature stages:
   Requires input: `agentPicker`
 - `in-progress -> in-evaluation`
   Action: `feature-eval`
-  Condition: fleet mode and all agents submitted
+  Condition: fleet mode and all agents ready
 - `in-evaluation -> done`
   Action: `feature-close`
 - `inbox -> paused`
@@ -244,7 +244,7 @@ From `in-progress`:
   Shown when agent is `idle`, `error`, or absent
 - `feature-attach`
   Per-agent
-  Shown when agent is `implementing` or `submitted` and tmux is running
+  Shown when agent is `implementing` or `ready` and tmux is running
 - `feature-open`
   Per-agent
   Shown when agent is `implementing` and tmux is not running
@@ -256,14 +256,14 @@ From `in-progress`:
   Shown when agent is `implementing` or `waiting`
 - `feature-close`
   Solo only
-  Shown when all agents are submitted
+  Shown when all agents are ready
 - `feature-review`
   Solo only
-  Shown when all agents are submitted
+  Shown when all agents are ready
   Invokes `aigon feature-code-review`
 - `feature-eval`
   Fleet only
-  Shown when all agents are submitted
+  Shown when all agents are ready
 - `feature-autonomous-start`
   Shown when no tmux sessions are running
 
@@ -308,7 +308,7 @@ Authority:
   Requires input: `agentPicker`
 - `in-progress -> in-evaluation`
   Action: `research-eval`
-  Condition: all agents submitted
+  Condition: all agents ready
 - `in-evaluation -> done`
   Action: `research-close`
 - `in-progress -> paused`
@@ -324,16 +324,16 @@ From `in-progress`:
   Shown when agent is `idle`, `error`, or absent
 - `research-attach`
   Per-agent
-  Shown when agent is `implementing` or `submitted` and tmux is running
+  Shown when agent is `implementing` or `ready` and tmux is running
 - `research-open`
   Per-agent
   Shown when agent is `implementing` and tmux is not running
 - `research-close`
   Solo only
-  Shown when all agents are submitted
+  Shown when all agents are ready
 - `research-eval`
   Fleet only
-  Shown when all agents are submitted
+  Shown when all agents are ready
 
 From `in-evaluation`:
 - `research-eval`

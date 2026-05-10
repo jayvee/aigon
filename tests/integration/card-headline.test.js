@@ -75,11 +75,11 @@ test('rule 3: awaitingInput supersedes a running drive agent', () => {
 test('rule 4: pendingCompletionSignal with !isWorking → Confirming <stage> (running)', () => {
     const agents = [{
         id: 'cc',
-        status: 'submitted',
+        status: 'ready',
         isWorking: false,
         pendingCompletionSignal: 'implementation-complete',
     }];
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
     assert.strictEqual(h.verb, 'Confirming implementation');
     assert.strictEqual(h.tone, 'running');
     assert.strictEqual(h.owner, 'cc');
@@ -144,7 +144,7 @@ test('rule 8: handoff (waiting after complete) → Starting <stage> (running)', 
         { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
         { type: 'review', status: 'waiting', agents: [{ id: 'gg' }] },
     ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, [], plan, 'in-progress', opts());
     assert.strictEqual(h.verb, 'Starting review');
     assert.strictEqual(h.owner, 'gg');
     assert.strictEqual(h.tone, 'running');
@@ -157,7 +157,7 @@ test('rule 8: all complete → Stopped at <last-stage> (ready)', () => {
         { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
         { type: 'review', status: 'complete', agents: [{ id: 'gg' }] },
     ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, [], plan, 'in-progress', opts());
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, [], plan, 'in-progress', opts());
     assert.strictEqual(h.verb, 'Stopped at review');
     assert.strictEqual(h.tone, 'ready');
 });
@@ -171,10 +171,10 @@ test('rule 9: drive implementing → Implementing with owner', () => {
     assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 9: drive submitted → ready / Implemented', () => {
-    const agents = [{ id: 'solo', status: 'submitted', isWorking: false }];
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implemented');
+test('rule 9: drive ready → ready / Ready', () => {
+    const agents = [{ id: 'solo', status: 'ready', isWorking: false }];
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
+    assert.strictEqual(h.verb, 'Ready');
     assert.strictEqual(h.tone, 'ready');
 });
 
@@ -187,11 +187,11 @@ test('rule 9: sessionEnded while implementing → Finished (unconfirmed)', () =>
 test('rule 9: idleLadder needs-attention upgrades tone to attention', () => {
     const agents = [{
         id: 'cc',
-        status: 'submitted',
+        status: 'ready',
         isWorking: false,
         idleLadder: { state: 'needs-attention', idleSec: 600 },
     }];
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
     assert.strictEqual(h.tone, 'attention');
     assert.ok(/agent silent/.test(h.detail || ''));
 });
@@ -199,11 +199,11 @@ test('rule 9: idleLadder needs-attention upgrades tone to attention', () => {
 test('rule 9: idleLadder idle on non-running agent → Idle with age', () => {
     const agents = [{
         id: 'cc',
-        status: 'submitted',
+        status: 'ready',
         isWorking: false,
         idleLadder: { state: 'idle', idleSec: 1200 },
     }];
-    const h = computeCardHeadline({}, { currentSpecState: 'submitted' }, agents, null, 'in-progress', opts());
+    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
     assert.strictEqual(h.verb, 'Idle');
     assert.strictEqual(h.age, 1200);
 });

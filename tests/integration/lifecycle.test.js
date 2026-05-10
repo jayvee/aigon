@@ -46,7 +46,7 @@ for (const [label, agentId, featureId] of [['cc', 'cc', '01'], ['solo', 'solo', 
         assert.ok(hasAction(actions, 'feature-close'));
         // feature-pause is gated to inbox/backlog only (commit aa88bf23 —
         // "hide Pause action for in-progress features"); after signalAgentReady
-        // the lifecycle is 'submitted' so Pause should NOT be valid.
+        // the lifecycle is still in-progress (implementing/ready) so Pause should NOT be valid.
         assert.ok(!hasAction(actions, 'feature-pause'), 'Pause must not be offered post-start');
         const closed = await engine.closeFeatureWithEffects(repo, featureId, async () => {});
         assert.strictEqual(closed.lifecycle, 'done');

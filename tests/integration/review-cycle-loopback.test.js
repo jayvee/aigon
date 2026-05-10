@@ -38,7 +38,7 @@ testAsync('loopback: cycle 2 no loopback → submitted, reviewCycles has cycle 1
     await engine.recordCodeRevisionStarted(repo, 'feature', '11', { revisionAgentId: 'cc', at: '2026-04-01T07:00:00Z' });
     await engine.recordCodeRevisionCompleted(repo, 'feature', '11', { revisionAgentId: 'cc', at: '2026-04-01T08:00:00Z' });
     const snap = readSnap(repo, '11');
-    assert.strictEqual(snap.currentSpecState, 'submitted');
+    assert.strictEqual(snap.currentSpecState, 'ready');
     assert.strictEqual(snap.reviewCycles.length, 1);
     assert.strictEqual(snap.reviewCycles[0].reviewer, 'cc');
 }));

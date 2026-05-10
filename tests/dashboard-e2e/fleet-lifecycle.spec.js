@@ -59,8 +59,8 @@ test('full fleet lifecycle: start (cc+gg) → both submit → eval → winner pi
     await page.waitForTimeout(500);
 
     // Assert both agents show submitted badges
-    await expect(ipCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted')).toBeVisible({ timeout: 5000 });
-    await expect(ipCard.locator('.kcard-agent.agent-gg .kcard-agent-status.status-submitted')).toBeVisible({ timeout: 5000 });
+    await expect(ipCard.locator('.kcard-agent.agent-cc .kcard-agent-status.status-ready')).toBeVisible({ timeout: 5000 });
+    await expect(ipCard.locator('.kcard-agent.agent-gg .kcard-agent-status.status-ready')).toBeVisible({ timeout: 5000 });
 
     // Assert feature-eval action is available (both agents ready → fleet eval unlocked)
     const evalBtn = ipCard.locator('.kcard-va-btn[data-va-action="feature-eval"]');

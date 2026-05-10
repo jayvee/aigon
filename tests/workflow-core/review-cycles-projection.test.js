@@ -32,6 +32,6 @@ test('machine: anotherCycleRequested loops to code_review_in_progress; missing g
     b.send({ type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: true, at: '2026-04-01T02:00:00Z' });
     b.send({ type: 'feature.code_revision.started', at: '2026-04-01T03:00:00Z' });
     b.send({ type: 'feature.code_revision.completed', at: '2026-04-01T04:00:00Z' });
-    assert.strictEqual(b.getSnapshot().value, 'submitted');
+    assert.strictEqual(b.getSnapshot().value, 'ready');
 });
 report();

@@ -8,7 +8,7 @@
     "docs/specs/research-topics/logs/research-991-gg-findings.md"
   ],
   "expectedSignals": ["implementing", "research-complete"],
-  "expectedFinalState": "submitted",
+  "expectedFinalState": "ready",
   "expectedFolder": "03-in-progress",
   "slaSeconds": 600,
   "timeoutMs": 300000

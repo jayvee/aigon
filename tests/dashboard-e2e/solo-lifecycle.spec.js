@@ -43,7 +43,7 @@ async function runSoloBranchMock({ repoPath, featureId, delays }) {
         cwd: repoPath, env: { ...process.env, ...GIT_SAFE_ENV },
     });
     await new Promise(r => setTimeout(r, delays.submitted));
-    runCli(['agent-status', 'submitted'], repoPath, {
+    runCli(['agent-status', 'implementation-complete'], repoPath, {
         AIGON_TEST_MODE: '1', AIGON_ENTITY_TYPE: 'feature', AIGON_ENTITY_ID: featureId,
         AIGON_AGENT_ID: 'solo', AIGON_PROJECT_PATH: repoPath, AIGON_FORCE_PRO: 'true',
     });
@@ -94,7 +94,7 @@ for (const s of SCENARIOS) {
             }
             await forceRefresh(page);
             await page.waitForTimeout(500);
-            const submittedBadge = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge} .kcard-agent-status.status-submitted`);
+            const submittedBadge = inProgressCard.locator(`.kcard-agent.agent-${s.agentBadge} .kcard-agent-status.status-ready`);
             await expect(submittedBadge).toBeVisible({ timeout: 8000 });
             // Solo mode (both variants): no eval action, only close.
             await expect(inProgressCard.locator('.kcard-va-btn[data-va-action="feature-eval"]')).toHaveCount(0);

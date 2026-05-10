@@ -3,7 +3,7 @@
 /**
  * E2E: Full feature lifecycle with four-layer assertions at every transition.
  *
- *   create → backlog → in-progress → submitted → closed
+ *   create → backlog → in-progress → ready → closed
  *
  * At each boundary we check four layers in order — DOM, spec-on-disk,
  * engine snapshot, and tmux pane content — so a failure points to the
@@ -32,7 +32,7 @@ const FEATURE_NAME = 'wf e2e feature';
 const FEATURE_DESC = 'wf-e2e-feature';
 
 test.describe('Workflow E2E (full lifecycle) @deploy', () => {
-    test('mock lifecycle: create → backlog → in-progress → submitted → closed', async ({ page }) => {
+    test('mock lifecycle: create → backlog → in-progress → ready → closed', async ({ page }) => {
         const ctx = readCtx();
         await gotoPipelineWithMockedSessions(page);
 
@@ -85,7 +85,7 @@ test.describe('Workflow E2E (full lifecycle) @deploy', () => {
         }
         expect(agentReady, 'cc agent status should reach ready/submitted in snapshot').toBe(true);
         const card = inProgressCol.locator('.kcard').filter({ hasText: FEATURE_NAME }).first();
-        const submittedBadge = card.locator('.kcard-agent.agent-cc .kcard-agent-status.status-submitted');
+        const submittedBadge = card.locator('.kcard-agent.agent-cc .kcard-agent-status.status-ready');
         await expect(submittedBadge).toBeVisible({ timeout: 8000 });
 
         // Phase 5 — CLOSE (solo skips review; in-progress → done). Drive the

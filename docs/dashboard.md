@@ -176,10 +176,10 @@ Both Monitor and Pipeline have a type toggle to filter by: All, Features, Resear
 ## Notifications
 
 The AIGON server sends macOS notifications (`osascript`) when:
-- An agent signals implementation complete (`submitted` status)
+- An agent signals implementation complete (`ready` status)
 - All agents on a feature are done (triggers auto-eval if enabled)
 - All research agents are done (ready for synthesis)
 
 ## Auto-Eval
 
-When enabled in global config, the AIGON server automatically spawns `aigon feature-eval <id>` in a detached tmux session when all fleet agents on a feature reach `submitted` status.
+When enabled in global config, the AIGON server automatically spawns `aigon feature-eval <id>` in a detached tmux session when all fleet agents on a feature reach `ready` status.

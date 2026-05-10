@@ -64,26 +64,26 @@ testAsync('recordCloseRecoveryStarted: moves lifecycle to close_recovery_in_prog
         agentId: 'cc',
         sessionName: 'aigon-f01-close-cc',
         source: 'dashboard',
-        returnSpecState: 'submitted',
+        returnSpecState: 'ready',
     });
     const snap = await wf.showFeature(repo, '01');
     assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
     assert.ok(snap.closeRecovery, 'closeRecovery context blob should be set');
     assert.strictEqual(snap.closeRecovery.agentId, 'cc');
-    assert.strictEqual(snap.closeRecovery.returnSpecState, 'submitted');
+    assert.strictEqual(snap.closeRecovery.returnSpecState, 'ready');
     // lastCloseFailure must persist as forensic detail across the recovery transition
     assert.ok(snap.lastCloseFailure, 'lastCloseFailure must persist into recovery');
 }));
 
-testAsync('recordCloseRecoveryEnded: returns lifecycle to submitted and clears closeRecovery', () => withTempRepo(async (repo) => {
+testAsync('recordCloseRecoveryEnded: returns lifecycle to ready and clears closeRecovery', () => withTempRepo(async (repo) => {
     writeSpec(repo, '02', 'recovery-end');
     await engine.startFeature(repo, '02', 'solo_branch', ['cc']);
     await engine.signalAgentReady(repo, '02', 'cc');
     await recordCloseFailure(repo, '02', 'CONFLICT (content): Merge conflict in a.js', 1);
-    await engine.recordCloseRecoveryStarted(repo, '02', { agentId: 'cc', returnSpecState: 'submitted' });
+    await engine.recordCloseRecoveryStarted(repo, '02', { agentId: 'cc', returnSpecState: 'ready' });
     await engine.recordCloseRecoveryEnded(repo, '02', { agentId: 'cc' });
     const snap = await wf.showFeature(repo, '02');
-    assert.strictEqual(snap.currentSpecState, 'submitted', 'recovery exit returns to submitted');
+    assert.strictEqual(snap.currentSpecState, 'ready', 'recovery exit returns to ready');
     assert.strictEqual(snap.closeRecovery, null);
     // lastCloseFailure default: do not auto-clear on recovery exit (cleared only by feature.closed)
     assert.ok(snap.lastCloseFailure, 'lastCloseFailure should not be cleared by recovery exit');
@@ -103,7 +103,7 @@ testAsync('recordCloseRecoveryEnded: restores returnSpecState implementing (proj
     assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
     await engine.recordCloseRecoveryEnded(repo, '05', { agentId: 'cc' });
     snap = await wf.showFeature(repo, '05');
-    assert.strictEqual(snap.currentSpecState, 'implementing', 'REGRESSION: ended must restore returnSpecState not hardcoded submitted');
+    assert.strictEqual(snap.currentSpecState, 'implementing', 'REGRESSION: ended must restore returnSpecState not hardcoded ready');
     assert.strictEqual(snap.closeRecovery, null);
 }));
 
@@ -112,7 +112,7 @@ testAsync('full round-trip: failed → recovery → retry close → done clears 
     await engine.startFeature(repo, '03', 'solo_branch', ['cc']);
     await engine.signalAgentReady(repo, '03', 'cc');
     await recordCloseFailure(repo, '03', 'CONFLICT (content): Merge conflict in b.js', 1);
-    await engine.recordCloseRecoveryStarted(repo, '03', { agentId: 'cc', returnSpecState: 'submitted' });
+    await engine.recordCloseRecoveryStarted(repo, '03', { agentId: 'cc', returnSpecState: 'ready' });
     let snap = await wf.showFeature(repo, '03');
     assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
     // Operator (or agent) fixes conflicts; close-with-effects retries successfully.
@@ -128,7 +128,7 @@ testAsync('snapshotToDashboardActions: close_recovery_in_progress + merge-confli
     await engine.startFeature(repo, '04', 'solo_branch', ['cc']);
     await engine.signalAgentReady(repo, '04', 'cc');
     await recordCloseFailure(repo, '04', 'CONFLICT (content): Merge conflict in c.js', 1);
-    await engine.recordCloseRecoveryStarted(repo, '04', { agentId: 'cc', returnSpecState: 'submitted' });
+    await engine.recordCloseRecoveryStarted(repo, '04', { agentId: 'cc', returnSpecState: 'ready' });
     const snap = await wf.showFeature(repo, '04');
     const actions = snapshotToDashboardActions('feature', '04', snap, 'in-progress');
     const hasResolve = actions.validActions.some(a => a.action === 'feature-resolve-and-close');

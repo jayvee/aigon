@@ -70,7 +70,7 @@ class MockAgent {
         // set explicitly — the CLI otherwise parses tmux session names and
         // collapses fleet agents (cc+gg) into 'solo'. AIGON_FORCE_PRO is
         // process-global and must be opted in explicitly too.
-        execSync(`node ${JSON.stringify(CLI_PATH)} agent-status submitted`, {
+        execSync(`node ${JSON.stringify(CLI_PATH)} agent-status implementation-complete`, {
             cwd: this.worktreePath, stdio: 'pipe',
             env: {
                 ...process.env, AIGON_TEST_MODE: '1',
@@ -166,7 +166,7 @@ class MockAgent {
             return;
         }
 
-        const targetStatus = this.profile === 'error-mid' ? 'error' : 'submitted';
+        const targetStatus = this.profile === 'error-mid' ? 'error' : 'implementation-complete';
         try {
             const statusPath = path.join(this.repoPath, '.aigon', 'state', `feature-${padded}-${this.agentId}.json`);
             const deadline = Date.now() + (this.delays.submitted || 10000) + (sleepSec * 1000) + 8000;
