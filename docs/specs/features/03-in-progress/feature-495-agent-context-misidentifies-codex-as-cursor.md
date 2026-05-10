@@ -14,19 +14,19 @@ This breaks any workflow that relies on `agent-context` to backfill `AIGON_AGENT
 
 ## User Stories
 
-- [ ] As a Codex local agent running Aigon commands through a shell wrapper, `aigon agent-context --id-only` resolves to `cx`, not `cu`.
-- [ ] As an Aigon reviewer, spec-review commits and `spec_review.submitted` events are attributed to the actual agent process, not to an incidental substring in the shell command line.
-- [ ] As an Aigon maintainer, adding short or generic agent CLI commands does not create false positives in process ancestry detection.
+- [x] As a Codex local agent running Aigon commands through a shell wrapper, `aigon agent-context --id-only` resolves to `cx`, not `cu`.
+- [x] As an Aigon reviewer, spec-review commits and `spec_review.submitted` events are attributed to the actual agent process, not to an incidental substring in the shell command line.
+- [x] As an Aigon maintainer, adding short or generic agent CLI commands does not create false positives in process ancestry detection.
 
 ## Acceptance Criteria
 
-- [ ] In a Codex session where the parent process chain contains an exact `codex` executable, `aigon agent-context --id-only` prints `cx` even when an intermediate shell command line contains `agent-context`.
-- [ ] `detectActiveAgentSession()` does not classify a parent shell as Cursor solely because its full command line contains the substring `agent` inside another token such as `agent-context`, `AIGON_AGENT_ID`, or `detectActiveAgentSession`.
-- [ ] Exact executable matches still work for all configured agent commands from `templates/agents/*.json` (`claude`, `codex`, `gemini`, `agent`, `kimi`, `opencode`).
-- [ ] Fuzzy command-line matching tokenizes argv/path basenames and rejects partial-token matches for short or generic commands such as `agent`; longer or distinctive commands may still match as standalone tokens.
-- [ ] When both an incidental fuzzy match and a deeper exact executable match are present in the ancestry, the exact executable match wins.
-- [ ] Regression test covers the observed failure shape: a synthetic parent chain with `zsh -c "aigon agent-context --id-only"` above `codex resume` resolves to `cx`.
-- [ ] Regression test covers the direct Cursor case: a parent process whose executable basename is exactly `agent` still resolves to `cu`.
+- [x] In a Codex session where the parent process chain contains an exact `codex` executable, `aigon agent-context --id-only` prints `cx` even when an intermediate shell command line contains `agent-context`.
+- [x] `detectActiveAgentSession()` does not classify a parent shell as Cursor solely because its full command line contains the substring `agent` inside another token such as `agent-context`, `AIGON_AGENT_ID`, or `detectActiveAgentSession`.
+- [x] Exact executable matches still work for all configured agent commands from `templates/agents/*.json` (`claude`, `codex`, `gemini`, `agent`, `kimi`, `opencode`).
+- [x] Fuzzy command-line matching tokenizes argv/path basenames and rejects partial-token matches for short or generic commands such as `agent`; longer or distinctive commands may still match as standalone tokens.
+- [x] When both an incidental fuzzy match and a deeper exact executable match are present in the ancestry, the exact executable match wins.
+- [x] Regression test covers the observed failure shape: a synthetic parent chain with `zsh -c "aigon agent-context --id-only"` above `codex resume` resolves to `cx`.
+- [x] Regression test covers the direct Cursor case: a parent process whose executable basename is exactly `agent` still resolves to `cu`.
 
 ## Validation
 
