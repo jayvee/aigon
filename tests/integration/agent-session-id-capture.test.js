@@ -18,14 +18,6 @@ const mkp = (p) => fs.mkdirSync(p, { recursive: true });
 const writeF = (p, c = '{}') => { mkp(path.dirname(p)); fs.writeFileSync(p, c); };
 const now = () => Date.now();
 
-function withHome(fn) {
-    const orig = process.env.HOME;
-    return (fh) => {
-        process.env.HOME = fh;
-        try { fn(fh); } finally { process.env.HOME = orig; }
-    };
-}
-
 test('cc: finds newest JSONL in project dir matched by slug', () => {
     const wt = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-cc-wt-'));
     const fh = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-cc-home-'));
