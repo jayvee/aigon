@@ -3,6 +3,8 @@ Agent: cc
 
 ## Status
 
+Implemented: runInitBootstrap() extracted from init, wired into apply on first run; init→deprecation shim; uninstall→remove with worktree guard, registry deregistration, --purge, --dry-run; help.txt/docs/tests updated; all iterate tests green.
+
 ## New API Surface
 
 ## Key Decisions
