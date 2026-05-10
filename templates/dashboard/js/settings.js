@@ -1562,7 +1562,7 @@
           perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
         }
       } else {
-        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Install <code>@aigon/pro</code> and restart the dashboard so <code>dashboard/benchmark-matrix.js</code> loads.</p>');
+        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/benchmark-matrix.js</code> loads.</p>');
       }
 
       // Version section
@@ -1610,7 +1610,7 @@
           detachedProViews['backup-sync-view'].innerHTML =
             '<div class="amp-empty" style="padding:28px 0;text-align:center">' +
             '<div style="font-size:15px;font-weight:600;margin-bottom:8px">Aigon Sync <span style="font-size:10px;opacity:0.7">(Pro)</span></div>' +
-            '<div style="color:var(--text-secondary);font-size:12px">Install <code>@aigon/pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
+            '<div style="color:var(--text-secondary);font-size:12px">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
             '</div>';
         }
         if (typeof renderScheduledFeatures === 'function') {
@@ -1618,7 +1618,7 @@
         } else if (detachedProViews['scheduled-features-view']) {
           detachedProViews['scheduled-features-view'].innerHTML =
             '<p class="settings-empty" style="margin-top:4px;font-size:12px;color:var(--text-tertiary)">' +
-            'Install <code>@aigon/pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
+            'Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
         }
       })();
 
