@@ -115,20 +115,32 @@
         "label": "DeepSeek V4 Pro via OpenRouter",
         "pricing": { "input": 0.435, "output": 0.87 },
         "notes": {
-          "implement": "Newest premium DeepSeek (Apr 2026); 1M context, 49B active params; advanced reasoning + long-horizon agent workflows. Bench-passed in 3m27s on 2026-04-29 — the fastest of the V4 candidates."
+          "implement": "Bench-passed in 3m27s on 2026-04-29. QUARANTINED 2026-05-11: triggered opencode compaction infinite loop bug (issue #22329 — open, unresolved). Thinking mode causes reasoning_content to be dropped by opencode on turn 2+, generating 400 errors and retries; combined with auto-compaction loop, produces 50-100+ tool_call turns on simple tasks. Confirmed: burned ~$20 of OpenRouter credits in under an hour on a footer-add benchmark. Do not run until opencode issue #22329 is resolved and tested."
         },
         "score": { "implement": 4 },
-        "lastRefreshAt": "2026-04-29T12:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-05-11",
+          "reason": "Triggers opencode compaction infinite loop (issue #22329, open). DeepSeek thinking mode + opencode auto-compaction = unbounded tool_call loop. A simple 3-turn footer task ran 50-100+ turns and burned ~$20 of OpenRouter credits. finish_reason never reaches 'stop'. Do not run until opencode #22329 is confirmed fixed.",
+          "evidence": "OpenRouter logs 2026-05-11T07:27 AEST: 15+ visible rows all finish_reason=tool_calls, input growing 7K→27K per call, multiple providers (NovitaAI/SiliconFlow/Parasail). GitHub: sst/opencode #22329 (DeepSeek compaction loop), #25000 (reasoning_content dropped).",
+          "supersededBy": ["openrouter/deepseek/deepseek-v3.1-terminus"]
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2",
         "label": "DeepSeek V3.2 via OpenRouter",
         "pricing": { "input": 0.252, "output": 0.378 },
         "notes": {
-          "implement": "DeepSeek Sparse Attention (DSA); configurable reasoning; 131K ctx. Stable production V3.2 (NOT the quarantined Speciale variant). Bench-passed in 6m52s on 2026-04-29. ⚠️ Inherently slow: BenchLM rates it 'Slow' (35 tok/s median, 9 providers on OR); 10m bench timeout is marginal — timeouts on 2026-05-11 were traced to seed clone failures preceding the run, not model degradation. V3.2 has no EOL date; DeepSeek V4 is the recommended forward path but V3.2 remains active. Tool-call loop failures reported Dec 2025 (RooCode #9779). Re-test on clean seed before quarantine."
+          "implement": "Bench-passed in 6m52s on 2026-04-29. QUARANTINED 2026-05-11: same opencode compaction loop as V4 Pro (issue #22329 affects all DeepSeek models). Also reported in RooCode #9779 (Dec 2025): empty assistant responses and tool-call loops in opencode. Inherently slow (35 tok/s median). Superseded by V3.1 Terminus which passed the bench and is not affected by the compaction loop."
         },
         "score": { "implement": 3 },
-        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-05-11",
+          "reason": "All DeepSeek models affected by opencode compaction infinite loop (issue #22329). Also has tool-call loop failures in opencode reported Dec 2025 (RooCode #9779). Slow by nature (35 tok/s median). Superseded by deepseek-v3.1-terminus which is unaffected.",
+          "evidence": "opencode GitHub issue #22329 (all DeepSeek models); RooCode #9779 Dec 2025; OpenRouter logs 2026-05-11 showing same finish_reason:tool_calls loop pattern.",
+          "supersededBy": ["openrouter/deepseek/deepseek-v3.1-terminus"]
+        }
       },
       {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
