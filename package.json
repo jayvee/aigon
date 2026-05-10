@@ -53,6 +53,7 @@
     "test:migration": "bash scripts/test-brewboard-migration.sh",
     "test:iterate": "node scripts/iterate-validate.js",
     "test:quick": "npm run test:iterate",
+    "test:related": "node scripts/test-related.js",
     "test:core": "npm run lint && node scripts/generate-workflow-diagrams.js --check && npm run test:integration && npm run test:workflow",
     "test:browser": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:browser:smoke": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list --grep @smoke",
