@@ -340,18 +340,6 @@
               }
             ]
           }
-        ],
-        "Stop": [
-          {
-            "matcher": ".*",
-            "hooks": [
-              {
-                "type": "command",
-                "command": "aigon check-agent-submitted",
-                "timeout": 5
-              }
-            ]
-          }
         ]
       }
     }
@@ -361,7 +349,7 @@
     "heartbeatSidecar": true,
     "cliHooks": {
       "heartbeatTouch": "PostToolUse",
-      "exitEnforcement": "Stop"
+      "exitEnforcement": null
     }
   },
   "failureDetectors": {
