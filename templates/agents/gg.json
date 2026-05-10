@@ -44,7 +44,7 @@
     "errorPatterns": [
       {
         "id": "google-resource-exhausted",
-        "match": "RESOURCE_EXHAUSTED|quota exceeded|(?:HTTP|status[\\s_-]?code|status|code|error)\\s*[:/]?\\s*429\\b|429\\b\\s+too\\s+many|(?<![a-z0-9\\-_])rate[\\s\\-_]?limit(?:ed|ing)?\\b|(?<![a-z0-9\\-_])too[\\s\\-_]many[\\s\\-_]requests?\\b",
+        "match": "RESOURCE_EXHAUSTED|quota exceeded|(?:HTTP(?:/[^\\s]*)?\\s*|(?:status|code|error)\\s*[:/]?\\s*)429\\b|429\\b\\s+too\\s+many|(?<![a-z0-9\\-_\"])rate[\\s\\-_]?limit(?:ed|ing)?\\b|(?<![a-z0-9\\-_\"])too[\\s\\-_]many[\\s\\-_]requests?\\b",
         "verdict": "depleted",
         "confidence": "high",
         "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?|\\d{10,13})"
