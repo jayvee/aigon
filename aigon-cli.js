@@ -181,8 +181,15 @@ async function maybeRunTemplateDriftLayers(cmd) {
             const installedAgents = installManifestLib.getInstalledAgents(manifest);
             if (installedAgents.length > 0) {
                 const beforeVersion = manifest.aigonVersion;
-                const skippedHandEdited = installManifestLib.getModifiedFiles(manifest, repoRoot)
-                    .map(m => m.path);
+                // Snapshot hand-edited files BEFORE reinstall and restore
+                // AFTER, so install-agent's overwrite path never silently
+                // clobbers user edits. Required by the F502 spec's safety
+                // contract ("never overwrite without consent").
+                const handEdited = installManifestLib.getModifiedFiles(manifest, repoRoot);
+                const snapshots = new Map();
+                for (const m of handEdited) {
+                    try { snapshots.set(m.path, fs.readFileSync(path.join(repoRoot, m.path))); } catch (_) { /* nop */ }
+                }
                 try {
                     // Silent reinstall: capture stdout, only summarise at the
                     // end so the user sees one line, not the per-agent log.
@@ -193,11 +200,17 @@ async function maybeRunTemplateDriftLayers(cmd) {
                     } finally {
                         process.stdout.write = origWrite;
                     }
+                    // Restore hand-edited content. Note: this leaves the
+                    // manifest sha != disk sha (the exact state that
+                    // doctor --fix-templates flags as HAND_EDITED).
+                    for (const [relPath, buf] of snapshots) {
+                        try { fs.writeFileSync(path.join(repoRoot, relPath), buf); } catch (_) { /* nop */ }
+                    }
                     process.stderr.write(`✓ aigon upgraded ${beforeVersion} → ${pkgVersion} — refreshed ${installedAgents.length} agent${installedAgents.length === 1 ? '' : 's'} (${installedAgents.join(', ')}).\n`);
-                    if (skippedHandEdited.length > 0) {
-                        process.stderr.write(`  Skipped ${skippedHandEdited.length} hand-edited file${skippedHandEdited.length === 1 ? '' : 's'} (run \`aigon doctor --fix-templates\` to review):\n`);
-                        skippedHandEdited.slice(0, 5).forEach(p => process.stderr.write(`    - ${p}\n`));
-                        if (skippedHandEdited.length > 5) process.stderr.write(`    (+${skippedHandEdited.length - 5} more)\n`);
+                    if (snapshots.size > 0) {
+                        process.stderr.write(`  Skipped ${snapshots.size} hand-edited file${snapshots.size === 1 ? '' : 's'} (run \`aigon doctor --fix-templates\` to review):\n`);
+                        [...snapshots.keys()].slice(0, 5).forEach(p => process.stderr.write(`    - ${p}\n`));
+                        if (snapshots.size > 5) process.stderr.write(`    (+${snapshots.size - 5} more)\n`);
                     }
                     return; // L1 already covered by the reinstall
                 } catch (_) { /* fall through to L1 */ }
