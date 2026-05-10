@@ -6,1261 +6,1645 @@
       "path": ".aigon/docs/agents/claude.md",
       "sha256": "cba3cd2af7532bed1ce440791f365744ad2adf9bc45766808f6b0628ff2a9a0e",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.528Z"
+      "installedAt": "2026-05-10T12:27:26.878Z"
     },
     {
       "path": ".aigon/docs/agents/codex.md",
       "sha256": "3eed4355679fbb5b022d5e8fcafd847c9a891383b2615e9cdff027165f113867",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.539Z"
+      "installedAt": "2026-05-10T12:27:26.878Z"
     },
     {
       "path": ".aigon/docs/agents/cursor.md",
       "sha256": "fcdd29d7b2155bf753dc166d0a216d614d0fa378111527ae91ae934a6477fc5f",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.539Z"
+      "installedAt": "2026-05-10T12:27:26.879Z"
     },
     {
       "path": ".aigon/docs/agents/gemini.md",
       "sha256": "04d23970dc0b451e70416068b42dce5fbda7ca0ac7294345ffb851105a3a9940",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.539Z"
+      "installedAt": "2026-05-10T12:27:26.880Z"
     },
     {
       "path": ".aigon/docs/agents/kimi.md",
-      "sha256": "030286a3d204bb8f7b52b677d93126de52ab680ad17972dc8d840cc1cfd27486",
+      "sha256": "689fd752a0453d59e00b448e5b2590e392abf05c78f87e297ca2a7e934364ba2",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.543Z"
+      "installedAt": "2026-05-10T12:27:26.880Z"
     },
     {
       "path": ".aigon/docs/agents/opencode.md",
-      "sha256": "638d2fab8ed51cb07794d57d1028520fe282f480ef3ddaaad505901df9ecb830",
+      "sha256": "63361d520b5b4aaabe55539130b68b7e3014e7d001370c15ee217e6cd9d876d7",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.543Z"
+      "installedAt": "2026-05-10T12:27:26.884Z"
     },
     {
       "path": ".aigon/docs/development_workflow.md",
       "sha256": "014fc1cb149c7413214adbb7fbb5a2fc76c867c83d4a481e8f519b144fa67e3a",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.543Z"
+      "installedAt": "2026-05-10T12:27:26.884Z"
     },
     {
       "path": ".aigon/docs/feature-sets.md",
       "sha256": "670ddb51aed288d3cff821bf10ccdbc8be53b966de2b6b9d378eab2b9138df0c",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.543Z"
+      "installedAt": "2026-05-10T12:27:26.884Z"
     },
     {
       "path": ".agents/skills/aigon-board/SKILL.md",
-      "sha256": "99a14b184676d5a553b28d88bfe142f08db2fe6d6c4b6f8e47dea2f537989e42",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.410Z"
+      "sha256": "685002ee47bc40502651cfbc8cbeec78420aa2fc694284f726ae3bddf34dbb80",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.895Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
     },
     {
       "path": ".agents/skills/aigon-dev-server/SKILL.md",
       "sha256": "3ff1b9fa0a8ddb7ab171012d744246f8e3835f9e32d464e2007495f1579de56c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.895Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
     },
     {
       "path": ".agents/skills/aigon-feature-autonomous-start/SKILL.md",
       "sha256": "c174cb6286ac418d3810ce47e003714a4b03bb0a4bfec89f2d585127bdc52976",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.895Z",
+      "templateSha": "9d9c929db136570a793581e4aca171873f3d0421e35de2ffbfd0fba86e286612",
+      "templatePath": "templates/generic/commands/feature-autonomous-start.md"
     },
     {
       "path": ".agents/skills/aigon-feature-cleanup/SKILL.md",
       "sha256": "2a690132ea7ee963ae73734ca8fa157eb06d5f6b202e0bc65680f1024bc0d200",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.896Z",
+      "templateSha": "08735301a7710be8f32cf7fa232f4eb2a4aed30ab8689f86501832958ce81266",
+      "templatePath": "templates/generic/commands/feature-cleanup.md"
     },
     {
       "path": ".agents/skills/aigon-feature-close/SKILL.md",
-      "sha256": "bd2e1578c65ea2eca5807debd28c706b1e0d120fa784c9f0e0f9d660531c9d9e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.414Z"
+      "sha256": "f5cd1dba7dc4fb5ccc562b143c4f53d843191380a503a69ea356d4d4e7ecfbd4",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.896Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
     },
     {
       "path": ".agents/skills/aigon-feature-code-review/SKILL.md",
-      "sha256": "284bff25bfdb7db3dfbedbad1b4375f1d30af56b4a3daeb8c50b59c4629314bc",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.414Z"
+      "sha256": "2a973539a3edd3a92dab033a3d1d327223de5b1480b05a492082099f8dc340ba",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.897Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".agents/skills/aigon-feature-code-revise/SKILL.md",
-      "sha256": "c9af2bb0e4e6e990a53357f18ab1fbb0a17068c6b1217f1d9ea532883a7893e1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.415Z"
+      "sha256": "6ca537dd221d9a803353f8498b6a686558a4261b01614d676423268e9e0a71d9",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.897Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
     },
     {
       "path": ".agents/skills/aigon-feature-create/SKILL.md",
-      "sha256": "ee472e2a89991795197138413a83580732f32469ce038f255e81574903af77bf",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.416Z"
+      "sha256": "52bf4b9a9894500275d251c9435d53573d19ac60f1ff60de43bd30fff9c6024b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.915Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
     },
     {
       "path": ".agents/skills/aigon-feature-do/SKILL.md",
-      "sha256": "fdbf3a37d7511f23d7dada8d5a11cc2a88626c2d8c1c82d861780332c1489a87",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.417Z"
+      "sha256": "4bfce53b6594b0ab30cc8a83d1a23e4a317acd9ec1d3094ea5936a70083d7adb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.916Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
     },
     {
       "path": ".agents/skills/aigon-feature-eval/SKILL.md",
-      "sha256": "3e422fbba322a85fc803ace6b7bc8cc1c5d102fe7244a67dc1218c829acdeded",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.418Z"
+      "sha256": "cbb84745a0dcce896d3952d6c4396eabe338a15722fcd63ada0b8d155946e653",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.916Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
     },
     {
       "path": ".agents/skills/aigon-feature-now/SKILL.md",
       "sha256": "fdaf83d434e9f2b77799a16c9e124e1189cfd2119c43cf8f43997493532735d6",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.926Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
     },
     {
       "path": ".agents/skills/aigon-feature-open/SKILL.md",
-      "sha256": "254a4eb4a820d354a8e8a1ca81733f9ec45ab7170286cdaae3bdf05d6433ae74",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.419Z"
+      "sha256": "3a07b84728942b856645b97b8cdc76ea8ee4884c922d2a160ec05b179d79f926",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.927Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
     },
     {
       "path": ".agents/skills/aigon-feature-prioritise/SKILL.md",
-      "sha256": "886172a25caef1149abf7dab122ff94f7f3993b2f9405c3b61d6f345b48fcee4",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.420Z"
+      "sha256": "331ac57bb7a773d08bca77769bbea6758c49d436df7c57b975f12ca0a9ed42f3",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.927Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
     },
     {
       "path": ".agents/skills/aigon-feature-push/SKILL.md",
       "sha256": "cb9b5ae70dc908ffcec364fce91d8c9fb1e188320f96e6c9514c0c630c359b7f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.930Z",
+      "templateSha": "d1326589e0ee1e0353ee9de3fa548db8d1d3a8c8be3c953649354eee90fe970e",
+      "templatePath": "templates/generic/commands/feature-push.md"
     },
     {
       "path": ".agents/skills/aigon-feature-reset/SKILL.md",
       "sha256": "33f1f0ea08b021567fc0c6828ce90a4c7d03bfa1a1079f7798598be8c2009e37",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.933Z",
+      "templateSha": "4dc9b00a0389e9c0817833b0c11dc04b6d8117719e2d790c3296101c31857e8c",
+      "templatePath": "templates/generic/commands/feature-reset.md"
     },
     {
       "path": ".agents/skills/aigon-feature-review/SKILL.md",
-      "sha256": "884a952c5c5f4df280ad97d4d1e3cbfefccdd1745b0898ae1ac1070e39da39b9",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.423Z"
+      "sha256": "b6aeeea2d0604f5941055851a815db9209d3aa5b2624c70ac1970f3e086fb777",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.934Z",
+      "templateSha": "c42961904316492aa1f76e2a9b4713f0504969b5459a70c28810783efee5c745",
+      "templatePath": "templates/generic/commands/feature-review.md"
     },
     {
       "path": ".agents/skills/aigon-feature-spec-review/SKILL.md",
-      "sha256": "2be352f72474a66ef4b78b6f0096946a080de995c6ae01c16b3c18e166f6adab",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.424Z"
+      "sha256": "3a5ad1a2e984da4fd662ad646dd0c6abb1229c342d7baa2de323bb466cad100d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.935Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".agents/skills/aigon-feature-spec-revise/SKILL.md",
       "sha256": "f17bf0f93f4e44e1e9b721a2253c2f0c6b1f690dac19fd01440fffe8d79f19b4",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.940Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
     },
     {
       "path": ".agents/skills/aigon-feature-start/SKILL.md",
-      "sha256": "1b4d38cae462e7706633771538ab02d66b9c68a73bbe2c16f861699b5ffa21bf",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.426Z"
+      "sha256": "69d5b7cb248def47faa16b9d959ca2323c606f15271832cc986707e0615b59ba",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.940Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
     },
     {
       "path": ".agents/skills/aigon-feature-transfer/SKILL.md",
       "sha256": "972033be5143baf1e8400338050aa86c16af36a244e2a22e9477528c37eb0127",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.940Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
     },
     {
       "path": ".agents/skills/aigon-feature-unprioritise/SKILL.md",
       "sha256": "7ee0a05b10d3580e7ac855fda81ec7034509ab6f9dd0334c3ed877eb02e0ff7d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.940Z",
+      "templateSha": "bbc66e814158a291b0b1353984baf8a5e291a5a823a40b46ac081cd0fedcc02f",
+      "templatePath": "templates/generic/commands/feature-unprioritise.md"
     },
     {
       "path": ".agents/skills/aigon-feedback-create/SKILL.md",
       "sha256": "739b8471774393921adb8f11d8d2376679418e7bc8acb081f5d45308815d159c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.941Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
     },
     {
       "path": ".agents/skills/aigon-feedback-list/SKILL.md",
       "sha256": "926b9944057d0835ed740b8aebd94706ec547e9c7c2a94d5882822f904ded684",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.941Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
     },
     {
       "path": ".agents/skills/aigon-feedback-triage/SKILL.md",
       "sha256": "c81a80f208cc766dc5718e9f90cf422bcb8e8a1ae15722b33f7a4517259befe1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.941Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
     },
     {
       "path": ".agents/skills/aigon-help/SKILL.md",
-      "sha256": "8b7078936ee5c5d4b2b3300c8fa6dbb7182179a39dbf54ed3e9b41c289028264",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.429Z"
+      "sha256": "6ce6590ebe91f5cbd5b2a2c03bd46046c8c7ec5f9e643ffff2545a2f218334a8",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.945Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
     },
     {
       "path": ".agents/skills/aigon-next/SKILL.md",
-      "sha256": "b1c333d279adbe33e742a1b6ff533342ffb9d6928014785efdee5acf4e726f47",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.429Z"
+      "sha256": "c655a72f8e03723f17bab55f73dbe5fb4329e0040e026e7826105a0d386f020b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.951Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".agents/skills/aigon-research-autopilot/SKILL.md",
-      "sha256": "9422119658ca83c89c059c40b37af65b9080b7009949e5b8fce3e92b3977798a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.430Z"
+      "sha256": "4c64a92a519d31537158646f1a9651b52f628346727b3894e9f9b33a05b68b51",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.952Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".agents/skills/aigon-research-close/SKILL.md",
       "sha256": "15df5d1e6bda8f550200c496a7fcf39e5ffcbd902836a5b85a19aad5b34e36ad",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.952Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
     },
     {
       "path": ".agents/skills/aigon-research-create/SKILL.md",
-      "sha256": "32ee8b4e9f70ae3e84436bb56239c86281a9f9dc2d72e0aa4c6dc01367161342",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.430Z"
+      "sha256": "9de791e07008b4d4558f5a85a73f56f492d422044d8577e27b274739af950afd",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.956Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
     },
     {
       "path": ".agents/skills/aigon-research-do/SKILL.md",
-      "sha256": "0d2cd3045807e2e2155a741095380a75ee90afb61f138f558b0d051110c8663e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.431Z"
+      "sha256": "d235069d7fa42d1a23b77535f1cb5aa8147038eecd1be7a8aa85eaef2834a062",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.967Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".agents/skills/aigon-research-eval/SKILL.md",
       "sha256": "3a31a9382f960414f61ffaccdfe5afa2574908bebfc2ac368fae9eddf38f27c6",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.967Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
     },
     {
       "path": ".agents/skills/aigon-research-open/SKILL.md",
-      "sha256": "79b675ab046514a70ff8ae2b353ab0e65573804a813d06dc19ca3b387e121ae2",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.432Z"
+      "sha256": "ebb3b980c7bed316ce16e03efeba0f8f13ad9c9525bec820d5e3989d95c03e33",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.968Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
     },
     {
       "path": ".agents/skills/aigon-research-prioritise/SKILL.md",
-      "sha256": "1fab765ae8a2156ba3ec2e0d9ca4251f0bd6ab03eeadd1036918a02a03113ed5",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.433Z"
+      "sha256": "032e0b648d42927cbe135456af8bda7902e6930bccad6f03edcbd3eba9538235",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.968Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
     },
     {
       "path": ".agents/skills/aigon-research-reset/SKILL.md",
       "sha256": "2cd8467d860213bc89c02178ab78ae241d7fd493257ca63ac1b44d282ed8a04e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.969Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
     },
     {
       "path": ".agents/skills/aigon-research-spec-review/SKILL.md",
-      "sha256": "02ed5f8373dd40ded911f0b38d71d81b4de61cfefce1abace07f1d4250a80454",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.434Z"
+      "sha256": "68fe67f5891b649e3ee4e66595541d0b3e73f253ac5f858ef7bc7434b9dc28db",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.969Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
     },
     {
       "path": ".agents/skills/aigon-research-spec-revise/SKILL.md",
       "sha256": "d35219c0686d2fbc584397f4953006ea7a8d37ac82ecdd92e5a2ab691bd187fe",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.973Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
     },
     {
       "path": ".agents/skills/aigon-research-start/SKILL.md",
-      "sha256": "787c68fea7953932179edce4ce92f5ac4a45dcc9dc44c9578ff1b6a5058de0b3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.436Z"
+      "sha256": "d14fd61b4ec2245bada22f334d36071aca1b8e63f22f4bf7484c928e93afe5f9",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.974Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
     },
     {
       "path": ".agents/skills/aigon-research-unprioritise/SKILL.md",
       "sha256": "425074a3366b77895703f65d9e265549e89f01ad948f3c51793a42afcd0bd9bc",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.974Z",
+      "templateSha": "2d41494b819a0707dda16b9136bab6ecc0885ac86978c72a857994aa7b094d8d",
+      "templatePath": "templates/generic/commands/research-unprioritise.md"
     },
     {
       "path": ".agents/skills/aigon-sessions-close/SKILL.md",
-      "sha256": "8e1e02c1d6e42329ee6b1d9f6706d7da7278529954723167c23376a1458d15ea",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.439Z"
+      "sha256": "b2130f8c047fa302be2851ab35a90471bac410439cc7e0ca4a17d4b155b22ff1",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.977Z",
+      "templateSha": "f483c8c0a159a80aa704725fa4732d2e34e41a3c9accd5d5be5eba7bd44d9b27",
+      "templatePath": "templates/generic/commands/sessions-close.md"
     },
     {
       "path": ".agents/skills/aigon-set-prioritise/SKILL.md",
-      "sha256": "06aaa476243464f60ddaa64cbcf93b94155e7d107ef127ce24ee558356351c49",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:58.439Z"
+      "sha256": "fbfdedc6f8174ebe77d9f44b75ede35113b2644473db6646b10bf0fa74e6e313",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.978Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     },
     {
       "path": ".agents/skills/restart-server/SKILL.md",
       "sha256": "f095fff6c8a98dd6c76055614711970930c3afe7304d12b6235f0e5def7717c3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.001Z"
     },
     {
       "path": ".agents/skills/seed-reset/SKILL.md",
       "sha256": "fe9db35238a2b727a022b80cdd0461dd869102d6a6a24f937067f6ac02e30a37",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.007Z"
     },
     {
       "path": ".agents/skills/start-docs/SKILL.md",
       "sha256": "953c75354f0aae7938b35b55c42cd4d0a7ea881ba8ba37907bf0d4f774c63b9a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z"
     },
     {
       "path": ".claude/commands/aigon/board.md",
       "sha256": "b561869dfa8ba9e84a17a9b319cfc3b50c5200814f8265a295e57bbcb8cddec7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
     },
     {
       "path": ".claude/commands/aigon/dev-server.md",
       "sha256": "e4ac0e73834f65567ab08638b8e7e203a657165035f3e47154c58af3e97b9d38",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
     },
     {
       "path": ".claude/commands/aigon/feature-autonomous-start.md",
       "sha256": "b3d7e19547197985941e468ac250cd454e70ec6ce2f4e28b47e2e0488c9cb2d3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "9d9c929db136570a793581e4aca171873f3d0421e35de2ffbfd0fba86e286612",
+      "templatePath": "templates/generic/commands/feature-autonomous-start.md"
     },
     {
       "path": ".claude/commands/aigon/feature-cleanup.md",
       "sha256": "d01d6dd07c8d32986cedb52c06138123fb9a832365cd629ab61082b4625caf9e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "08735301a7710be8f32cf7fa232f4eb2a4aed30ab8689f86501832958ce81266",
+      "templatePath": "templates/generic/commands/feature-cleanup.md"
     },
     {
       "path": ".claude/commands/aigon/feature-close.md",
       "sha256": "f1b3786823509453cae5581c98caed1fd79be5128fb6d2bfa5373a5bf3f4237b",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
     },
     {
       "path": ".claude/commands/aigon/feature-code-review.md",
-      "sha256": "986d839344f9c8c8918bbb754dba3523f476541efe3b36a6380f185ae78ae35b",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.926Z"
+      "sha256": "068f0d11bf7d74cc76521dddce5429aadddeae24ef8688b54b93664cc1a24ecd",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".claude/commands/aigon/feature-code-revise.md",
-      "sha256": "9b613728b60cbe22559b3c7e78df316e1051e0c050e7b479f8b190049238c9b0",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "5c841c17323e96c64c4948c2d4d2ed53b548015684f6252fe2bd33f9082cef62",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
     },
     {
       "path": ".claude/commands/aigon/feature-create.md",
       "sha256": "f226759402da28e81c3b088428af67b121577fa8c771c865bc3b62207e661e05",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
     },
     {
       "path": ".claude/commands/aigon/feature-do.md",
-      "sha256": "f5c14090b05e22f3f107998b2df682819329c82998bdefb75df8734915ba196b",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "5a762ee821493ddec52e30ab9f90b156b35033ee290bfc2c4760b300812eb41f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
     },
     {
       "path": ".claude/commands/aigon/feature-eval.md",
       "sha256": "fab2ea1c425eaf54abbae191d450cb24c8199416a418046ce03c308b77aad6f8",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
     },
     {
       "path": ".claude/commands/aigon/feature-now.md",
       "sha256": "594a0c5991fb0d7b298fb4188ef089c85999a456db391a013ac15bc928ce2693",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
     },
     {
       "path": ".claude/commands/aigon/feature-open.md",
       "sha256": "98358885fb0092e49fc6484edf7b934282e08bff7944ce5f02f9946801648e98",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
     },
     {
       "path": ".claude/commands/aigon/feature-prioritise.md",
       "sha256": "7dbd876439accfd9112f73e5078d30fd6a5e4ee0594e7871226ca0d2654d8542",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
     },
     {
       "path": ".claude/commands/aigon/feature-push.md",
       "sha256": "3df6330fb4450b7e4a47d53bab166c226b845538fdbced1fe1a7cc28a36e3949",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "d1326589e0ee1e0353ee9de3fa548db8d1d3a8c8be3c953649354eee90fe970e",
+      "templatePath": "templates/generic/commands/feature-push.md"
     },
     {
       "path": ".claude/commands/aigon/feature-reset.md",
       "sha256": "3f7d1b0aafb508864781cfd3e8abcbf6e0f2df2d8c0342da6b3494cc3fa0fa1e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "4dc9b00a0389e9c0817833b0c11dc04b6d8117719e2d790c3296101c31857e8c",
+      "templatePath": "templates/generic/commands/feature-reset.md"
     },
     {
       "path": ".claude/commands/aigon/feature-review.md",
       "sha256": "73371cc4b2006126876032af7154142c0535952422ecb9e1e10d7658c19fea1e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "c42961904316492aa1f76e2a9b4713f0504969b5459a70c28810783efee5c745",
+      "templatePath": "templates/generic/commands/feature-review.md"
     },
     {
       "path": ".claude/commands/aigon/feature-spec-review.md",
-      "sha256": "14a3fb2afe17131713afce7f272968beb0d295975938b17a802d943036f14b2c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.940Z"
+      "sha256": "59336d158d1f3900789b09e1f6821bcb5a72f35b9574678812d408c8907b7541",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".claude/commands/aigon/feature-spec-revise.md",
       "sha256": "06dfcef6534b4d0082a6c06d8f5975aa97d8483db671dc270d2d28129b8e7660",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
     },
     {
       "path": ".claude/commands/aigon/feature-start.md",
-      "sha256": "5fd69e7a6587ee1e61951e0f24e1f8afa3e4fd0a2deeedad8571f4d996bb3241",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "8d49bc8c4445eea56084ea52483d1b3bae6f96577a7e98501134f1115d45d7fc",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
     },
     {
       "path": ".claude/commands/aigon/feature-transfer.md",
       "sha256": "ad66ea74e80df66f956e046929835190fce3fee93fcc91b0c65e0329de1a48e8",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.008Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
     },
     {
       "path": ".claude/commands/aigon/feature-unprioritise.md",
       "sha256": "256774bef642f54994fd0114bccad516d79e5f52d41651e9b05bfe8e4e9a18a6",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "bbc66e814158a291b0b1353984baf8a5e291a5a823a40b46ac081cd0fedcc02f",
+      "templatePath": "templates/generic/commands/feature-unprioritise.md"
     },
     {
       "path": ".claude/commands/aigon/feedback-create.md",
       "sha256": "16b5321b6264b8efb23b4792ed3525484810a2c1a412f7c3cddaf45627c74736",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
     },
     {
       "path": ".claude/commands/aigon/feedback-list.md",
       "sha256": "74972f414cd8db735979bd2815029dd2a48461cc8788f3ba64ed950962341d4a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
     },
     {
       "path": ".claude/commands/aigon/feedback-triage.md",
       "sha256": "f0e4b5d005573d4fda5498d2db84e7627908a5cf142ca1d3651fc40aa0e15362",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
     },
     {
       "path": ".claude/commands/aigon/help.md",
       "sha256": "4226a0e57cffc29f62195995053ede94ac1124a7c121b714623cd6e2132aab81",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
     },
     {
       "path": ".claude/commands/aigon/next.md",
       "sha256": "e2cec1874aabebe5bc1e064bd07602c389b5accd77c3992ff494c14741952628",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.949Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".claude/commands/aigon/research-autopilot.md",
       "sha256": "8911a701342bfb6ab451e15db1940cfc78c407cb5cc99a87dd1983399209133a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.951Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".claude/commands/aigon/research-close.md",
       "sha256": "b3e7adef8754886df2a5467a7ceba8eff6485cfa53fbf7f1dd6edad1e43f43c7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
     },
     {
       "path": ".claude/commands/aigon/research-create.md",
       "sha256": "8548c0b29b9076f6826eef3148e51bfddb93cf127f1fe5b56cf40d25df054da0",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
     },
     {
       "path": ".claude/commands/aigon/research-do.md",
-      "sha256": "2c13e0edf99cb00827227bc58831ba090b2b2dbef4af347c09552071c7e30dde",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.954Z"
+      "sha256": "3a9e5d4ad8a2f4dbb6f275852d111430338d0305abeac78f6c07e47ee0e33252",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".claude/commands/aigon/research-eval.md",
       "sha256": "3afe6b655b095ed43afcb772a0f059c41c34b2de9c0551904386f382af9ffdd1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
     },
     {
       "path": ".claude/commands/aigon/research-open.md",
       "sha256": "e8cc22cca23035bb53ca06b61bb474756b2338df0c62ac121d08ff9a6824ea0d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
     },
     {
       "path": ".claude/commands/aigon/research-prioritise.md",
       "sha256": "2d5486b7edb7ae1c6e5d658d79eee0bfa70fe4900336e7c230cd603b72f88c84",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
     },
     {
       "path": ".claude/commands/aigon/research-reset.md",
       "sha256": "1bb6b0f7fd2698599a5a3cbe3dd2afed2f66457b52e63bb8e074e564007ce627",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
     },
     {
       "path": ".claude/commands/aigon/research-spec-review.md",
-      "sha256": "848fad4614e7b9b2cdefa4a71084a896514191d5058f1d0ec5c028086abc950c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.959Z"
+      "sha256": "30824f854e97dcc70f22e8fc2514c4dcd44f22db337fe6c24c9270e711a5b767",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
     },
     {
       "path": ".claude/commands/aigon/research-spec-revise.md",
       "sha256": "aa887f4dd54015db2936ff57853fa8591b7ee24f278c67ae4b61fe7598fc45dd",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
     },
     {
       "path": ".claude/commands/aigon/research-start.md",
       "sha256": "f6da9a91611a26c74b4d0ceae48708cbf749672cbfccde8b7006cfca25ae03ed",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
     },
     {
       "path": ".claude/commands/aigon/research-unprioritise.md",
       "sha256": "1f660e3f6afacb6aaa50b07dcef12c0611e878055ccd8d381c03599e778a586a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "2d41494b819a0707dda16b9136bab6ecc0885ac86978c72a857994aa7b094d8d",
+      "templatePath": "templates/generic/commands/research-unprioritise.md"
     },
     {
       "path": ".claude/commands/aigon/sessions-close.md",
       "sha256": "96b787357fc66b208185bfc39053c9bc5132260efc49dd6699e549321fa08ece",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.962Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "f483c8c0a159a80aa704725fa4732d2e34e41a3c9accd5d5be5eba7bd44d9b27",
+      "templatePath": "templates/generic/commands/sessions-close.md"
     },
     {
       "path": ".claude/commands/aigon/set-prioritise.md",
       "sha256": "f89a9305bb88d7e6293102655d2e0782d3de2f3423cbf44745bbf176593d8c9a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     },
     {
       "path": ".claude/skills/aigon/SKILL.md",
       "sha256": "167f86154e4ef724763e6fa672583d46278c1e2f99dba8cf3f6cd4fd77024aa7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z"
     },
     {
       "path": ".cursor/commands/aigon-board.md",
       "sha256": "79d6ebf0560096348b6a145d2ef30c716cb0fb1ead8d6ecd80cb7c3eca2bfc90",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
     },
     {
       "path": ".cursor/commands/aigon-dev-server.md",
       "sha256": "5025fa490241865cd0dd12f31b16651ab9dc6bbcb8e666a6774ecb4876a2a408",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-autonomous-start.md",
       "sha256": "012bdc088c44419fa23aacc5a6dc0f842d47209c1798d5728b6b59a4f25a102d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "9d9c929db136570a793581e4aca171873f3d0421e35de2ffbfd0fba86e286612",
+      "templatePath": "templates/generic/commands/feature-autonomous-start.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-cleanup.md",
       "sha256": "6e39d614898bb920d0cc276405b0a88093a3eec708aecd9050384b8288118e8a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.009Z",
+      "templateSha": "08735301a7710be8f32cf7fa232f4eb2a4aed30ab8689f86501832958ce81266",
+      "templatePath": "templates/generic/commands/feature-cleanup.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-close.md",
       "sha256": "2bb9dfe47fb1fd32b468f95bd376167184e1cb84e82795a09b07826ed8f60a2e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.010Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-code-review.md",
-      "sha256": "258b601646122f5c9646de336ae62818afd1b0de1b8e231f65898c8fda13ab96",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "29f8b4599b9360b3da281cf411c2f9830bf6b78614eaf6567aa4e9d4b15363ae",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.010Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-code-revise.md",
-      "sha256": "03f3124557bf83e6bc0430b8a718d662d7b818441c39dc2d2aea47f9dd6f667c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "45129cc0cb010b517ac9b7ef6881ff08b6e65be09e53667c0893f8ace7031902",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.010Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-create.md",
       "sha256": "35e76b5669ac958893fef400010cc0ddb75bdd83d21db5dec6df7016fed8e77f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.010Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-do.md",
-      "sha256": "893dca23f4f174e488652f46c65b444dd0476741308a8b36190261b8dc079985",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "2fc4b53ca8e0999bd2adcbc7caf0475b529f843941abc3b6e69d61c1345e852e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.015Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-eval.md",
       "sha256": "8d59107101ae243eef041fcb5137feab5bfa010337515fad31394958c22f5149",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.016Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-now.md",
       "sha256": "6aac023db28b4f7efd1d0b054967e6b08b254310e52a3ff9d20149947cc7ff6f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.016Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-open.md",
       "sha256": "e62539ff4ebd99f281db61ea8039113ae4f8a718c6cbb344fba5be0e50e77b3e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.016Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-prioritise.md",
       "sha256": "eb0536ce3d996c023a9cf372490ec05a0b5cd02a64ac0c609ddf59a2b375bffd",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.016Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-push.md",
       "sha256": "362202d97e5435139b0ec0252eaac12498ffadf03137eb5b316a8cb6654c5849",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.016Z",
+      "templateSha": "d1326589e0ee1e0353ee9de3fa548db8d1d3a8c8be3c953649354eee90fe970e",
+      "templatePath": "templates/generic/commands/feature-push.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-reset.md",
       "sha256": "c097821afc23758b5ab8b9c7596d4683926f9ad67bd25c99dbc21057e942d495",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "4dc9b00a0389e9c0817833b0c11dc04b6d8117719e2d790c3296101c31857e8c",
+      "templatePath": "templates/generic/commands/feature-reset.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-review.md",
       "sha256": "5a509ced5b47f8ef4e765c0adb774c5be4057019c1d3d49c6a1d514a2c3c89ea",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "c42961904316492aa1f76e2a9b4713f0504969b5459a70c28810783efee5c745",
+      "templatePath": "templates/generic/commands/feature-review.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-spec-review.md",
-      "sha256": "36b437bf368e7d5ce5038d1c8d220cda751be716f2e8eaf8651cd1acaf640e20",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "ae4b72fc7fb1a6f994db14a707f0c5bbe267ca58067266dd7aa0ff2f0139d01f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-spec-revise.md",
       "sha256": "e19737321ce23953acb1597dde7cd32d287583eb23cf7087ecac7a17705a3ab2",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-start.md",
-      "sha256": "98546c76b05364d5ab31439861d98a9bd5e9f9bf7dabc5bda2be00cdb400feef",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "12ab29b3895da51e86e0294bb4218f7d6ce19c02ecabaa3aed198ba64bb6d429",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-transfer.md",
       "sha256": "3873bba9cfb8579f4fcfd1c1ff1630ec3c6bd329e7235a4c81692d0b2f38b79c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
     },
     {
       "path": ".cursor/commands/aigon-feature-unprioritise.md",
       "sha256": "8ac3ebc6f1f0a73a713704c4acb3a8a2accb1e08d8856aad7042f274b305f725",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "bbc66e814158a291b0b1353984baf8a5e291a5a823a40b46ac081cd0fedcc02f",
+      "templatePath": "templates/generic/commands/feature-unprioritise.md"
     },
     {
       "path": ".cursor/commands/aigon-feedback-create.md",
       "sha256": "5d3655cbf817c3a1aa9a0cc9bab483df4239dc172995c18a77852cbefb2ec00a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
     },
     {
       "path": ".cursor/commands/aigon-feedback-list.md",
       "sha256": "b390cd3e9a43ca0346394899dae4260ee74c87a50f2f4b3a2e4a7753953c5a00",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
     },
     {
       "path": ".cursor/commands/aigon-feedback-triage.md",
       "sha256": "8e39d64f132487e8b80f22788bcadba1aac944540e1d3ff7104db81c2a59764a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
     },
     {
       "path": ".cursor/commands/aigon-help.md",
       "sha256": "a8338509a56b4a2ffb276005782469e58524a66c139c0b7532316f92a11a5291",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
     },
     {
       "path": ".cursor/commands/aigon-next.md",
-      "sha256": "68bf8cd0f53ef6e04468868b03ad0bae98b60f3696f431e82fd508a95e4d26ac",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "5246372fb2eb59ad479b66690f57e14b6e74f76b2cfbf776581c4958f5bc4d7f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.017Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".cursor/commands/aigon-research-autopilot.md",
-      "sha256": "ba9bdc5c28c9c48dc3710f056211b44fbcb8b688ba05610a5c614d6622abb9a9",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "c167845f3b4536f9f5db39f2825782072a784f8d7f70e24468471ee7990ccc7b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.018Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".cursor/commands/aigon-research-close.md",
       "sha256": "f7870d7a364697154d3fdea9d0c028a64f35c43bbaedfa3af93648b8d03ed7e9",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.018Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
     },
     {
       "path": ".cursor/commands/aigon-research-create.md",
       "sha256": "0958e75267696d88043d2b3c19877a12025a42093d768b4aaeba91a5538dd3c3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.018Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
     },
     {
       "path": ".cursor/commands/aigon-research-do.md",
-      "sha256": "c434126215e45185fefd91a8c43cd97f48b026a698ddded1745c97aae81b59ac",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "b683d699cbe35a2ab7629b76046636766c04d5deac9eceb5020137edf18a10af",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.018Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".cursor/commands/aigon-research-eval.md",
       "sha256": "9882b7295c45d487b5e46a5dfbd0326733fc54784d1c4e64a8ab4c4f422bde0a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.033Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
     },
     {
       "path": ".cursor/commands/aigon-research-open.md",
       "sha256": "206916ae16295e8fa66205714522558426ab24cd4c37f3929ee0bbb01ca9cadb",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.040Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
     },
     {
       "path": ".cursor/commands/aigon-research-prioritise.md",
       "sha256": "f94f1e9d04a94de1b566f956f7893691234620535de5e69340f3ec54c61888eb",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.040Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
     },
     {
       "path": ".cursor/commands/aigon-research-reset.md",
       "sha256": "6305ca389fc2550f77a3a585d1f9daa771ff94c194473ab505528a75d65b1a5a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.040Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
     },
     {
       "path": ".cursor/commands/aigon-research-spec-review.md",
-      "sha256": "78ea0150e66aa5bd02cd27916c775ad03ef6f1118b99c626e0ffaecf3329bec1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "0347c428eabbc6c0fe1cc25a5604a3e43e480191e715c7cea1e2257b3c83c358",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.041Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
     },
     {
       "path": ".cursor/commands/aigon-research-spec-revise.md",
       "sha256": "68d752eac810042f4237d04a43c0dd4cd84a631414a2738880a46a8e794d9632",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.041Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
     },
     {
       "path": ".cursor/commands/aigon-research-start.md",
       "sha256": "8ad437f164a6bce7e1352d50276763d7c9e47d59c9198e1e938badd5d89ef54a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.041Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
     },
     {
       "path": ".cursor/commands/aigon-research-unprioritise.md",
       "sha256": "88fe3e6ca704cee67243df473de4c006c8e4259b5010254592424d334c11cc4f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.048Z",
+      "templateSha": "2d41494b819a0707dda16b9136bab6ecc0885ac86978c72a857994aa7b094d8d",
+      "templatePath": "templates/generic/commands/research-unprioritise.md"
     },
     {
       "path": ".cursor/commands/aigon-sessions-close.md",
-      "sha256": "bfb41c5fcad762aeb2384023bedd5771405ecfd4b6dfac65fb6b3afa2cb371c1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "77d7633b9bfd537afb03be7c34f56d5d103aa0894f97629294640796e4a984ca",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.048Z",
+      "templateSha": "f483c8c0a159a80aa704725fa4732d2e34e41a3c9accd5d5be5eba7bd44d9b27",
+      "templatePath": "templates/generic/commands/sessions-close.md"
     },
     {
       "path": ".cursor/commands/aigon-set-prioritise.md",
       "sha256": "cd8eeeacafeb20c131d12c0ddde9475b56ddb579b2bc3c260f46fd34033eef34",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.049Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     },
     {
       "path": ".cursor/rules/aigon.mdc",
-      "sha256": "e59940f3ab55493177127a66b484535dcb5e82e51dd28a8ce7d79f61a8d559c5",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "3ccaad05eeebdc805483a8a061d4d509b6ef78d86df6da9269f49956319c1fb5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.049Z"
     },
     {
       "path": ".codex/config.toml",
-      "sha256": "415e87798c8da58b881b4d39074ed5e1485cf5472a495d180a6d0349e95a6754",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "f5a96a24a557018ad28663dfabb9e157d242145d670c2f95cd0f6bdf3266b33e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.049Z"
     },
     {
       "path": ".gemini/commands/ab.toml",
       "sha256": "51779656dbc673e95a2ccc9a6bd8430a42e54c669aedcbcf56412f26d77813a7",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.049Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
     },
     {
       "path": ".gemini/commands/ads.toml",
       "sha256": "23908ce342f0f5b9e4cf3aa2bbf3e06ac151a2867dad0af166569f9773d4205d",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.049Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
     },
     {
       "path": ".gemini/commands/afbc.toml",
       "sha256": "65309abe56acf514dca22c75908d4393cd76bf323517e5015042e304585fa8e1",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.049Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
     },
     {
       "path": ".gemini/commands/afbl.toml",
       "sha256": "eedcb115560c2d3569ad066023c959506a629bbdc266ada81fea1ed519c65239",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.049Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
     },
     {
       "path": ".gemini/commands/afbt.toml",
       "sha256": "336b4106b34311a6719da718d6ed8b06376aebf6532272569ccd727fe7222b35",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.055Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
     },
     {
       "path": ".gemini/commands/afc.toml",
       "sha256": "cd90585a741587b59278a4e10f368c2ceaed7f108bacfec8c74e61ef5017a62e",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.055Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
     },
     {
       "path": ".gemini/commands/afcl.toml",
       "sha256": "aeac705e67fe9143bdd9abd388045315e551026db3de7596a2851eff1ec00e1c",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.055Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
     },
     {
       "path": ".gemini/commands/afd.toml",
       "sha256": "2d87eaee7fcfa06d1ba066b8ac6d57b60fb47fdcefeee78d0248cfe052b49b3d",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
     },
     {
       "path": ".gemini/commands/afe.toml",
       "sha256": "4b7df6d99f966858849343ca94ac32ff91f34236041407f3ce319c0753b71fb2",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
     },
     {
       "path": ".gemini/commands/afn.toml",
       "sha256": "eb9cb93b193b5350190cf11e49f725e8e352707496c2a0e46840055f9cf5bfb3",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
     },
     {
       "path": ".gemini/commands/afo.toml",
       "sha256": "d4036b3042fb8d629b3b304dc09805dd6e01e862fec32e5e802272a70a6b8f5c",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
     },
     {
       "path": ".gemini/commands/afp.toml",
       "sha256": "8974d8e26e6cb480c415df90b791feabe5d59da46a822d227f58e9bb6dd9960e",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
     },
     {
       "path": ".gemini/commands/afr.toml",
-      "sha256": "35e926373802211c6e481ca8a2e140c28fad6f0b79a7c56e20879db9d7d6330d",
+      "sha256": "a0c00e71b8e2f035eec1b32500c230fb5b596b323c5294c49f3e7f656b7f82f0",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.056Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".gemini/commands/afrv.toml",
       "sha256": "a7a70ac3a8c6f9afe9e07634c384b5f89c92246e51be515f66c88c428436b1e8",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.057Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
     },
     {
       "path": ".gemini/commands/afs.toml",
       "sha256": "bae59da602b9b33f0773bbc7187548132ba17d427d4cbe80320c28ce51ba6538",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.057Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
     },
     {
       "path": ".gemini/commands/afsr.toml",
       "sha256": "d876000b98c7316d3542d8e2b0966971e9ee86fd9a272bf14a9ed107faea6866",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.057Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".gemini/commands/afsrv.toml",
       "sha256": "fecbf7125fb0225d65af715dfc9a7ad567d56824b245cf2fcd109821807ccf9d",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.057Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
     },
     {
       "path": ".gemini/commands/aft.toml",
       "sha256": "9f3cfa018a7d04ac6de524168f3cfeb83ebc34bee4f64a185751322865f4ff24",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.062Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
     },
     {
       "path": ".gemini/commands/ah.toml",
       "sha256": "20d9ea536ac5d89db780299a5cd3c006a1e77ad0e86c13675fb0ce5410118673",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.063Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
     },
     {
       "path": ".gemini/commands/aigon/board.toml",
       "sha256": "30a438618c814e52e2393f05ce30b3a73e3cf09f6c84a1a5224d5bbc1b6ecfe3",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.063Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
     },
     {
       "path": ".gemini/commands/aigon/dev-server.toml",
       "sha256": "bf3ba7450beff0fcd49382ae8711ce7272dfa51f637ce91010bae897b795a92f",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.063Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-autonomous-start.toml",
       "sha256": "5e8418c3bdedbf689903761ff736e788dd5b55e8d38b8c697fff20c92001a892",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.068Z",
+      "templateSha": "9d9c929db136570a793581e4aca171873f3d0421e35de2ffbfd0fba86e286612",
+      "templatePath": "templates/generic/commands/feature-autonomous-start.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-cleanup.toml",
       "sha256": "cc5329628384d7c69e4b4c5178524e1564919597aa436e2f77e3f5c3ee6581f4",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.081Z",
+      "templateSha": "08735301a7710be8f32cf7fa232f4eb2a4aed30ab8689f86501832958ce81266",
+      "templatePath": "templates/generic/commands/feature-cleanup.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-close.toml",
       "sha256": "6a8d0fc06f7cb964779aa3f9e2c7607a23b43b8d18b472eadf28c260ba60622d",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.082Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-code-review.toml",
-      "sha256": "b4d976a5e958f0067761e7708c09741f0a1c9db049bd83b377fd8e771071abfc",
+      "sha256": "0efa9c11a92ae2852d8ddae26ce7b5c0a14298c4a5c04cd9ddf16f5552c57288",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.082Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-code-revise.toml",
       "sha256": "77159a19fc347321c4f38edfe35116fbd2529544a75fa74c4f4e9e5a7cf068b5",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.546Z"
+      "installedAt": "2026-05-10T12:27:27.082Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-create.toml",
       "sha256": "51cbb786019846a087d4a416bcf4ed55941ac8ca693639663d2e8ce392b329ce",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.082Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-do.toml",
       "sha256": "00df3a74e3473b0c80a897cfdb9a760c9837e96fc14d3e88cd99b4729626f580",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.082Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-eval.toml",
       "sha256": "66e1990a401f08cd8c6136f037fcd449ee3f6a972dfc260879cd9100498100c3",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-now.toml",
       "sha256": "3b5525c4cc41f1004a532f3d93e3712bbaab09f3301cfde0312b95c2069786b4",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-open.toml",
       "sha256": "3131661680f4296070dc7bfd8879cec77255dae7b56a3537f07612c0b230178f",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-prioritise.toml",
       "sha256": "b87bd677ec967dcd3fef3a30c74b0509fbb0dac093b563ca81d239d1052a9ca0",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-push.toml",
       "sha256": "f8901b115717dad90f8dc53ae7c6d5524f555d5eccd31ac69f4816de04e09535",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "d1326589e0ee1e0353ee9de3fa548db8d1d3a8c8be3c953649354eee90fe970e",
+      "templatePath": "templates/generic/commands/feature-push.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-reset.toml",
       "sha256": "4fbbdd7de7485236e30361b84d329fb2836c52a76ad06315958b43e9cbb4ef97",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.083Z",
+      "templateSha": "4dc9b00a0389e9c0817833b0c11dc04b6d8117719e2d790c3296101c31857e8c",
+      "templatePath": "templates/generic/commands/feature-reset.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-review.toml",
       "sha256": "c0a6ddc7a94380c92a41a1855bc44b4a1bebe80ae553bb701c3ef342059a2924",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "c42961904316492aa1f76e2a9b4713f0504969b5459a70c28810783efee5c745",
+      "templatePath": "templates/generic/commands/feature-review.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-spec-review.toml",
       "sha256": "19b1f68590811a12f70e3b7b6c0be816d1ce02244a1b5270270c65684a562614",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-spec-revise.toml",
       "sha256": "93152ee7f502289adcfa7aef795e1341cbd9c10f24a3f02a18aa96939aba1fb1",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-start.toml",
       "sha256": "fce3cebf8ef8b05df7a4b3217f32e9c7b0201b77dffcd147d63b572bdaf99f43",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-transfer.toml",
       "sha256": "f37eef5c66795b001ac9af563a4980c71f5c5fb19ac64deb45c769c0fe4827b7",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
     },
     {
       "path": ".gemini/commands/aigon/feature-unprioritise.toml",
       "sha256": "cbe8338e06232e6a8a49ef7d458a3c0d1f2d920c75d5d42b419ded8f27270a90",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.547Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "bbc66e814158a291b0b1353984baf8a5e291a5a823a40b46ac081cd0fedcc02f",
+      "templatePath": "templates/generic/commands/feature-unprioritise.md"
     },
     {
       "path": ".gemini/commands/aigon/feedback-create.toml",
       "sha256": "bf33e036e8c95d5fd0310a19bbad7e39da1561c4d3e6d9101514561cb04c5c05",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
     },
     {
       "path": ".gemini/commands/aigon/feedback-list.toml",
       "sha256": "130dacbb1fe6f020f9805e0f0c951f6262874bb701e391b3b2c22950c133a9b3",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
     },
     {
       "path": ".gemini/commands/aigon/feedback-triage.toml",
       "sha256": "d4d001f0d60592da72451a10a6c3e9196b84d725c954ef19609c4a3f5ecbb1bb",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.084Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
     },
     {
       "path": ".gemini/commands/aigon/help.toml",
       "sha256": "f435a551c3cf0d92195df7694ea8e946681dffd30bb8506141244d9633a938b6",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
     },
     {
       "path": ".gemini/commands/aigon/next.toml",
       "sha256": "9fbf0e100049b6cefb3636cc127c409f0fa926c91b2fd856957ecef7e8f20a55",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".gemini/commands/aigon/research-autopilot.toml",
       "sha256": "33df2ef4b831945b2e153ccb4fd397c3128669b1fa1e070f1053c02fcaa6da43",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".gemini/commands/aigon/research-close.toml",
       "sha256": "3169854ba1093d4faaf54b7d9e1511391c3d1ff0758e5992d5c809e5ec8c7d03",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
     },
     {
       "path": ".gemini/commands/aigon/research-create.toml",
       "sha256": "264b74c86611d63f4519901838362ec1a2120366ec5d9276040db00931574a1d",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
     },
     {
       "path": ".gemini/commands/aigon/research-do.toml",
       "sha256": "2258d4c8124c92705a859469937e593410117efa6e5e327bd76d8dc3b6dcbfdd",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".gemini/commands/aigon/research-eval.toml",
       "sha256": "25d7e18d1701b8134367779b2de28c9a50e0d2e96984c6769f02a3878bf42605",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
     },
     {
       "path": ".gemini/commands/aigon/research-open.toml",
       "sha256": "4020a2161d780df97d9b33b26c9c7f771b41e8aebb334c2f320240894ae004ad",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
     },
     {
       "path": ".gemini/commands/aigon/research-prioritise.toml",
       "sha256": "d2a9212a5281015a45a29d739dc6db1c9df8d47050ecb58c7db4432da546c534",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
     },
     {
       "path": ".gemini/commands/aigon/research-reset.toml",
       "sha256": "c7013bd6eb7c98bd3fbe5c3470fa43cad41c77503dd93998e33b321d1c048193",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.085Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
     },
     {
       "path": ".gemini/commands/aigon/research-spec-review.toml",
       "sha256": "89f730ef3dbad20d0f3cd88fe12ae67dfa1987305efef92f6bc68a8769943484",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.086Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
     },
     {
       "path": ".gemini/commands/aigon/research-spec-revise.toml",
       "sha256": "bd58be19be2285e33ac653568d949913aa0fa7d759adb774b06c1c226459bcf3",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.086Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
     },
     {
       "path": ".gemini/commands/aigon/research-start.toml",
       "sha256": "2b43bad24691c37060cc4662c14e350618f305affb3e19d8765d593765cf9f03",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.086Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
     },
     {
       "path": ".gemini/commands/aigon/research-unprioritise.toml",
       "sha256": "ef9b959481e76c406a0edf939735371a52429bd7a6a85400338cfd3bade0f586",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.086Z",
+      "templateSha": "2d41494b819a0707dda16b9136bab6ecc0885ac86978c72a857994aa7b094d8d",
+      "templatePath": "templates/generic/commands/research-unprioritise.md"
     },
     {
       "path": ".gemini/commands/aigon/sessions-close.toml",
       "sha256": "fe50b0dcb750099a9fe90bf05eb5e0097f8dbcdfb94b70d9e7cfcf589070b7da",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.086Z",
+      "templateSha": "f483c8c0a159a80aa704725fa4732d2e34e41a3c9accd5d5be5eba7bd44d9b27",
+      "templatePath": "templates/generic/commands/sessions-close.md"
     },
     {
       "path": ".gemini/commands/aigon/set-prioritise.toml",
       "sha256": "975d29cef670f3217eb589a0c7766bd73eb732294088168c4bbbbe34193b5667",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.087Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     },
     {
       "path": ".gemini/commands/an.toml",
       "sha256": "ff2198bfb21aaa366c143b652a0d3798f2a4d5bc616d5fdaae9fccebfd6242ab",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".gemini/commands/arap.toml",
       "sha256": "4d1875de8de576d0a4cdc0cf65168a99af72b6bb0e3f0afc7a391832d50f3fd7",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".gemini/commands/arc.toml",
       "sha256": "5de4cff78a6b184fb6d36510e7d301da77f2ea87e1dc1e38279ef870741eb2c5",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
     },
     {
       "path": ".gemini/commands/arcl.toml",
       "sha256": "c97b031eb6bb348f1fc6374af00e3d2eb91fb256cd547dea9d88294f57587a56",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
     },
     {
       "path": ".gemini/commands/ard.toml",
       "sha256": "70bc6bb640feb2a8548d3e2ac2f1d7bd71c9fc5133c80c75929ea522a90ad36b",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".gemini/commands/are.toml",
       "sha256": "1a7241a2e92fce7750cb553e9d6dae2c50f736e85bcc960fcbc3f8748bd19b01",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
     },
     {
       "path": ".gemini/commands/aro.toml",
       "sha256": "84d9e39898d1f2882247bf33cfc60e83ce750e31c4f83e99666408a0db8cfb40",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.548Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
     },
     {
       "path": ".gemini/commands/arp.toml",
       "sha256": "aadc5e3cf5e5d84abc587b48858b9374e4353644b91cabaf5fee4b7a1fca249b",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
     },
     {
       "path": ".gemini/commands/arr.toml",
       "sha256": "d50d9d940ef8e85d028ed6b33312237f7890715fae8e101f060e84a0749553be",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
     },
     {
       "path": ".gemini/commands/ars.toml",
       "sha256": "aaefc50068fadca3574ed2fde59882573b77cfc3138364a1a008a7840eef0458",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
     },
     {
       "path": ".gemini/commands/arsr.toml",
       "sha256": "4204fa61811fd42c697429b579c20fa02c7041d515e654ee80559ede62124314",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
     },
     {
       "path": ".gemini/commands/arsrv.toml",
       "sha256": "1be37aba91f8ad76a4b6f0dc1b83c442f3fd9cbd303797d90ae9d34bcf1e6ebc",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
     },
     {
       "path": ".gemini/commands/asp.toml",
       "sha256": "787e4ed02c7bba76f42750288486cad0cc324519fd155658493f006fd72bf542",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     },
     {
       "path": ".gemini/commands/restart-server.toml",
       "sha256": "bd4de1668d9c7ae9d654df817f03c6c61c28e588f41efc848b4c7b6529340d6a",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z"
     },
     {
       "path": ".gemini/commands/seed-reset.toml",
       "sha256": "91a9465f2794292041e0e6ad647698d67a188e813fb030d9c3fe418362e7b9a2",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z"
     },
     {
       "path": ".gemini/commands/start-docs.toml",
       "sha256": "12da0f70a8713197b8c4b9c057c3b88c265aa77253936f4262445e263c0b60ef",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z"
     },
     {
       "path": ".gemini/settings.json",
-      "sha256": "ce310c5e0cb126db1ed38faa197e6e62137b5750c4b3d42133397fca602e45b4",
+      "sha256": "0230eb3ae2af82dfb00b63eba91ec9ff8b1b2ff0bfc31c9473e4b0138c3169e1",
       "version": "2.64.0-beta.6",
-      "installedAt": "2026-05-10T09:22:18.549Z"
+      "installedAt": "2026-05-10T12:27:27.088Z"
     },
     {
       "path": ".gemini/settings.json.orig",
@@ -1270,9 +1654,9 @@
     },
     {
       "path": ".claude/settings.json",
-      "sha256": "34770f405f58381655be774a7ca1e860b03c377d6e511198a2bc71e366570e21",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "cb688b4f5068a73a6b8c108b2950745149ba138b5b2c2d8f2b844bed90642608",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z"
     },
     {
       "path": ".claude/settings.local.json",
@@ -1282,39 +1666,1125 @@
     },
     {
       "path": ".claude/commands/afr.md",
-      "sha256": "e9e736d494bbf2fa923135e7e1db30c903a605453cc303d639cdc4efa299408e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.928Z"
+      "sha256": "25e7895de9cab4e4301e3d2355c176280c9ef2e9f29d73d53b4969864676bbf2",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
     },
     {
       "path": ".claude/commands/afsr.md",
-      "sha256": "fbcd957d9b35865c1783ff933341cb441d8e49d5038aec6d7dbb8889118f2f49",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.940Z"
+      "sha256": "7e36ee3b79234ae85e51c1b40386036e979feff7b4c8adcdf427b741e6506e8b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
     },
     {
       "path": ".claude/commands/an.md",
       "sha256": "1904360f51c827ed6e0fdd0e2486932812fd58d1024b53c7800aea771d05a9a9",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.950Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
     },
     {
       "path": ".claude/commands/arap.md",
       "sha256": "ac0ea259b74e6f2a3bb889be7dd0989479d38a86325c8115039dd8b714f38ed7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.952Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
     },
     {
       "path": ".claude/commands/ard.md",
-      "sha256": "dfa95d7cb9c833efb893797b35da34985e2ed8f3cef7c4fa3e88c701280ef78d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.955Z"
+      "sha256": "23cb162ad8f519a2c9263c1ad32f92418556600c33d07a75c7490a404b17380f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
     },
     {
       "path": ".claude/commands/arsr.md",
-      "sha256": "3cddcaf34641e22097a511323ecc755114f0b091f710522b385e70261d3f43ca",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.960Z"
+      "sha256": "e6cc297a2d0084fa7f41029169a24ec747d31ed82286d0025320dda9cfce7765",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
+    },
+    {
+      "path": ".claude/commands/ab.md",
+      "sha256": "d002f59a0ad6925a85fbd2f678d3b3981a66685ba3c3b58926fc10dbbe0a3b34",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
+    },
+    {
+      "path": ".claude/commands/ads.md",
+      "sha256": "bc0bc3e6f9f9f01eede898964c171b74fb2a4ed5f93ec591484f45f6c0cdffd5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
+    },
+    {
+      "path": ".claude/commands/afcl.md",
+      "sha256": "72a1fba1b8630d8b447770d36fee82495d5fc4da7017ffcee456846af2cebe07",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
+    },
+    {
+      "path": ".claude/commands/afrv.md",
+      "sha256": "c606ff93e8c239617d649e8215a719d3fce63b179b3cebab21be438374db1f06",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
+    },
+    {
+      "path": ".claude/commands/afc.md",
+      "sha256": "3597ab7bc7b9cb66eec52eb1f47bbd0f98221c091c3304295f9280a648071573",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
+    },
+    {
+      "path": ".claude/commands/afd.md",
+      "sha256": "e5bfe57f4120898e4813c56bfb911764f3568d4541a4ed03c16b92850d96d96e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
+    },
+    {
+      "path": ".claude/commands/afe.md",
+      "sha256": "754bdff089d6fa65ed4113373cec1345367218e0d934d66a298c5c94baa39ff8",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
+    },
+    {
+      "path": ".claude/commands/afn.md",
+      "sha256": "49816292adf7a78fb51ab1f7d4c66141e4d7ada6a9c89a92acb50006c6b90bf1",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
+    },
+    {
+      "path": ".claude/commands/afo.md",
+      "sha256": "3d5d1cb0dca6de1d0953ac2aecf615285359164e73869eafb0518b203d69ef88",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
+    },
+    {
+      "path": ".claude/commands/afp.md",
+      "sha256": "6dc66fa3ac9dd16333762e4c195aef6f0a7f26d8e73cef1f1e00fc26bf14f7ce",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
+    },
+    {
+      "path": ".claude/commands/afsrv.md",
+      "sha256": "46240eeef996b73ea8f17a74540d7e873624c6d446b98b8aea77e412fce4b4e8",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
+    },
+    {
+      "path": ".claude/commands/afs.md",
+      "sha256": "9dcd918cd1a2a5b447f9389f9295beb992c4bf76aaa70d7a451a371357072d14",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
+    },
+    {
+      "path": ".claude/commands/aft.md",
+      "sha256": "354c0d8d1c25c419db8df8bf43c881aaf300fd6380959c21e03e96140131b89f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
+    },
+    {
+      "path": ".claude/commands/afbc.md",
+      "sha256": "b39bd4998dfb0a29c6c39e3d2b02c846a1434f5cf8e3b41af26767d75b30daba",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
+    },
+    {
+      "path": ".claude/commands/afbl.md",
+      "sha256": "de7e2e6057363e69e22c8e06d51814f509c42d1bcfacce05df5a9783176aa58a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
+    },
+    {
+      "path": ".claude/commands/afbt.md",
+      "sha256": "b6998e6ae7b0f28d15b05c153cb1c7418de41f786f8ec85aef412898de85a744",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
+    },
+    {
+      "path": ".claude/commands/ah.md",
+      "sha256": "25e96d25324aca04aa9fed575d5e3a26eeb63f204536413569b9b7d32a8264a9",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
+    },
+    {
+      "path": ".claude/commands/arcl.md",
+      "sha256": "0fda3625f2c2e08943ac34a870a54c0788916e57fdd0c3a6e48bb49094ff5b3f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
+    },
+    {
+      "path": ".claude/commands/arc.md",
+      "sha256": "aa53a4bedeabcceb60b7171cd964989241311d42343dc4d7a059c26876932e4d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
+    },
+    {
+      "path": ".claude/commands/are.md",
+      "sha256": "5309c3ed87d7ade8ad7d2e16b047daa36d0b42f849a310af8d4605ddd5243ec2",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
+    },
+    {
+      "path": ".claude/commands/aro.md",
+      "sha256": "c50ccb4920c93cb973f7fb2bdca23cfbc5de3a23c2f11da0aad92f4b5c1c5e7b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
+    },
+    {
+      "path": ".claude/commands/arp.md",
+      "sha256": "89ee7414011fb53df0332a95f03bd98670ee4d9f25366b31c29700a6bde69a5c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
+    },
+    {
+      "path": ".claude/commands/arr.md",
+      "sha256": "b88cf05f595d167841bae82fbb38b3bf7dc5f70cad599e48df754f2ae4aa82ce",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
+    },
+    {
+      "path": ".claude/commands/arsrv.md",
+      "sha256": "4071fd69a14565bbc367fbe53514374ea4879c60cd5c5e15882b840010fe3afe",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
+    },
+    {
+      "path": ".claude/commands/ars.md",
+      "sha256": "ae69d55cc0beef2d9f40deb35716d0843b89fefe8613ba7c0cb0b8746d693265",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
+    },
+    {
+      "path": ".claude/commands/asp.md",
+      "sha256": "1f3a3ef3badeb32dbf555a2d08bc1dbfd0f47b79ee57adba481e2189d0e4979e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
+    },
+    {
+      "path": ".cursor/aigon-ab.md",
+      "sha256": "79d6ebf0560096348b6a145d2ef30c716cb0fb1ead8d6ecd80cb7c3eca2bfc90",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.089Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
+    },
+    {
+      "path": ".cursor/aigon-ads.md",
+      "sha256": "5025fa490241865cd0dd12f31b16651ab9dc6bbcb8e666a6774ecb4876a2a408",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
+    },
+    {
+      "path": ".cursor/aigon-afcl.md",
+      "sha256": "2bb9dfe47fb1fd32b468f95bd376167184e1cb84e82795a09b07826ed8f60a2e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
+    },
+    {
+      "path": ".cursor/aigon-afr.md",
+      "sha256": "29f8b4599b9360b3da281cf411c2f9830bf6b78614eaf6567aa4e9d4b15363ae",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
+    },
+    {
+      "path": ".cursor/aigon-afrv.md",
+      "sha256": "45129cc0cb010b517ac9b7ef6881ff08b6e65be09e53667c0893f8ace7031902",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
+    },
+    {
+      "path": ".cursor/aigon-afc.md",
+      "sha256": "35e76b5669ac958893fef400010cc0ddb75bdd83d21db5dec6df7016fed8e77f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
+    },
+    {
+      "path": ".cursor/aigon-afd.md",
+      "sha256": "2fc4b53ca8e0999bd2adcbc7caf0475b529f843941abc3b6e69d61c1345e852e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.090Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
+    },
+    {
+      "path": ".cursor/aigon-afe.md",
+      "sha256": "8d59107101ae243eef041fcb5137feab5bfa010337515fad31394958c22f5149",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
+    },
+    {
+      "path": ".cursor/aigon-afn.md",
+      "sha256": "6aac023db28b4f7efd1d0b054967e6b08b254310e52a3ff9d20149947cc7ff6f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
+    },
+    {
+      "path": ".cursor/aigon-afo.md",
+      "sha256": "e62539ff4ebd99f281db61ea8039113ae4f8a718c6cbb344fba5be0e50e77b3e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
+    },
+    {
+      "path": ".cursor/aigon-afp.md",
+      "sha256": "eb0536ce3d996c023a9cf372490ec05a0b5cd02a64ac0c609ddf59a2b375bffd",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
+    },
+    {
+      "path": ".cursor/aigon-afsr.md",
+      "sha256": "ae4b72fc7fb1a6f994db14a707f0c5bbe267ca58067266dd7aa0ff2f0139d01f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
+    },
+    {
+      "path": ".cursor/aigon-afsrv.md",
+      "sha256": "e19737321ce23953acb1597dde7cd32d287583eb23cf7087ecac7a17705a3ab2",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
+    },
+    {
+      "path": ".cursor/aigon-afs.md",
+      "sha256": "12ab29b3895da51e86e0294bb4218f7d6ce19c02ecabaa3aed198ba64bb6d429",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
+    },
+    {
+      "path": ".cursor/aigon-aft.md",
+      "sha256": "3873bba9cfb8579f4fcfd1c1ff1630ec3c6bd329e7235a4c81692d0b2f38b79c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
+    },
+    {
+      "path": ".cursor/aigon-afbc.md",
+      "sha256": "5d3655cbf817c3a1aa9a0cc9bab483df4239dc172995c18a77852cbefb2ec00a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.091Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
+    },
+    {
+      "path": ".cursor/aigon-afbl.md",
+      "sha256": "b390cd3e9a43ca0346394899dae4260ee74c87a50f2f4b3a2e4a7753953c5a00",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.096Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
+    },
+    {
+      "path": ".cursor/aigon-afbt.md",
+      "sha256": "8e39d64f132487e8b80f22788bcadba1aac944540e1d3ff7104db81c2a59764a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
+    },
+    {
+      "path": ".cursor/aigon-ah.md",
+      "sha256": "a8338509a56b4a2ffb276005782469e58524a66c139c0b7532316f92a11a5291",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
+    },
+    {
+      "path": ".cursor/aigon-an.md",
+      "sha256": "5246372fb2eb59ad479b66690f57e14b6e74f76b2cfbf776581c4958f5bc4d7f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
+    },
+    {
+      "path": ".cursor/aigon-arap.md",
+      "sha256": "c167845f3b4536f9f5db39f2825782072a784f8d7f70e24468471ee7990ccc7b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
+    },
+    {
+      "path": ".cursor/aigon-arcl.md",
+      "sha256": "f7870d7a364697154d3fdea9d0c028a64f35c43bbaedfa3af93648b8d03ed7e9",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
+    },
+    {
+      "path": ".cursor/aigon-arc.md",
+      "sha256": "0958e75267696d88043d2b3c19877a12025a42093d768b4aaeba91a5538dd3c3",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
+    },
+    {
+      "path": ".cursor/aigon-ard.md",
+      "sha256": "b683d699cbe35a2ab7629b76046636766c04d5deac9eceb5020137edf18a10af",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.097Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
+    },
+    {
+      "path": ".cursor/aigon-are.md",
+      "sha256": "9882b7295c45d487b5e46a5dfbd0326733fc54784d1c4e64a8ab4c4f422bde0a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
+    },
+    {
+      "path": ".cursor/aigon-aro.md",
+      "sha256": "206916ae16295e8fa66205714522558426ab24cd4c37f3929ee0bbb01ca9cadb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
+    },
+    {
+      "path": ".cursor/aigon-arp.md",
+      "sha256": "f94f1e9d04a94de1b566f956f7893691234620535de5e69340f3ec54c61888eb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
+    },
+    {
+      "path": ".cursor/aigon-arr.md",
+      "sha256": "6305ca389fc2550f77a3a585d1f9daa771ff94c194473ab505528a75d65b1a5a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
+    },
+    {
+      "path": ".cursor/aigon-arsr.md",
+      "sha256": "0347c428eabbc6c0fe1cc25a5604a3e43e480191e715c7cea1e2257b3c83c358",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
+    },
+    {
+      "path": ".cursor/aigon-arsrv.md",
+      "sha256": "68d752eac810042f4237d04a43c0dd4cd84a631414a2738880a46a8e794d9632",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
+    },
+    {
+      "path": ".cursor/aigon-ars.md",
+      "sha256": "8ad437f164a6bce7e1352d50276763d7c9e47d59c9198e1e938badd5d89ef54a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
+    },
+    {
+      "path": ".cursor/aigon-asp.md",
+      "sha256": "cd8eeeacafeb20c131d12c0ddde9475b56ddb579b2bc3c260f46fd34033eef34",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-board.md",
+      "sha256": "2765f4dede5ad28c7a8c390bf7681da7b1af9a1b135317c40062aa5c70fbffa5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
+    },
+    {
+      "path": ".opencode/aigon-ab.md",
+      "sha256": "7368a71f23ef4a9cb51c316e44f9dda80d3e8e139358532c262de093fd7a52fc",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.098Z",
+      "templateSha": "2d694f2839cd98b0fa6d6a4e5313e6f56c2418a89733f474f62d97519e801e01",
+      "templatePath": "templates/generic/commands/board.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-dev-server.md",
+      "sha256": "e4ac0e73834f65567ab08638b8e7e203a657165035f3e47154c58af3e97b9d38",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
+    },
+    {
+      "path": ".opencode/aigon-ads.md",
+      "sha256": "bc0bc3e6f9f9f01eede898964c171b74fb2a4ed5f93ec591484f45f6c0cdffd5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "060b646d0d08408b3c6b7a24ee20d63d6fc31cf438a605954ebc0747a1897c89",
+      "templatePath": "templates/generic/commands/dev-server.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-autonomous-start.md",
+      "sha256": "290a1ea21ae77087ff7347b169e98635d5f7e4e174c29535d6a17b626ad3f9bc",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "9d9c929db136570a793581e4aca171873f3d0421e35de2ffbfd0fba86e286612",
+      "templatePath": "templates/generic/commands/feature-autonomous-start.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-cleanup.md",
+      "sha256": "7304594cb083148e2a1fa09119acc95d66dce349b2aebe40fb3d3dd434bb8892",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "08735301a7710be8f32cf7fa232f4eb2a4aed30ab8689f86501832958ce81266",
+      "templatePath": "templates/generic/commands/feature-cleanup.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-close.md",
+      "sha256": "fbe565c303a832607ec43f73bd458983f3e9d646ce6b3892480a3458ebfd3a9c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
+    },
+    {
+      "path": ".opencode/aigon-afcl.md",
+      "sha256": "36df241f4a0fc1580dccfa9fe69aa82f68a3e4f760e2b4c46ac4a6aedf4af49e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "61d6a5fc33c146a6f0e78706a317d1b6206e2e32ddba443d5d70f741bf361c2c",
+      "templatePath": "templates/generic/commands/feature-close.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-code-review.md",
+      "sha256": "afb804faf5a360246d756176bfa4b0c45287784041468ad13fe2d4656aa40c35",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.099Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
+    },
+    {
+      "path": ".opencode/aigon-afr.md",
+      "sha256": "77c98f037fdf1aa6176a34ccc5deb9e12b11715a14a0cdf94d38576dd4e24598",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.101Z",
+      "templateSha": "32efdce6cc0d8f50e2b1d9c729e92396718fadf96cbaeb6b5b671806b7b316c1",
+      "templatePath": "templates/generic/commands/feature-code-review.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-code-revise.md",
+      "sha256": "12c9aca6144dff10767ec295a3a8d13e62ad4a6a49b9d2ecc2bef0c6cc2ed248",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.102Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
+    },
+    {
+      "path": ".opencode/aigon-afrv.md",
+      "sha256": "72c5b790529cdd94d4d9146ae4d2626d40425b642ff3788642877896ba7c791d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.102Z",
+      "templateSha": "37301807c24709747137854a425ae8534d16798c35a21c425e9bf27e6a3d6655",
+      "templatePath": "templates/generic/commands/feature-code-revise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-create.md",
+      "sha256": "3e87a48baa94a1a8f3228a1744881236d649f2408c99461adb5897c1f587bd0c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.103Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
+    },
+    {
+      "path": ".opencode/aigon-afc.md",
+      "sha256": "23d38e5714d4725e390e91ed210096e6beee3d921239b309c8b3a0e6c8f564bb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.103Z",
+      "templateSha": "d17b02b6a584353293ba2bc421ebf33029fb3281ec27a6942dbc8ecb20d6715d",
+      "templatePath": "templates/generic/commands/feature-create.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-do.md",
+      "sha256": "6778bd59bf08e653530490f4e586ee80c2eb39bfa64d2d1bd9def36392921610",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.103Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
+    },
+    {
+      "path": ".opencode/aigon-afd.md",
+      "sha256": "d3236651857959ea43abb0c267b3dde41abe004351195305411e556211d64f7e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.103Z",
+      "templateSha": "661125f11e26ff5b12c0b90de3d752e688c6d1b67c7160c303ccd9b153447248",
+      "templatePath": "templates/generic/commands/feature-do.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-eval.md",
+      "sha256": "b0eff110ae84cbaaa3bd083a0b979aae141287334cdc8d53d538714bb9d962a2",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.107Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
+    },
+    {
+      "path": ".opencode/aigon-afe.md",
+      "sha256": "0119a0a366085f42c462a8db861e53b260948073a775c337db6591417ec8e247",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "b31b18407d2b147ac1cbd78d043895404109ff586d49b61ffbe070cddf824c40",
+      "templatePath": "templates/generic/commands/feature-eval.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-now.md",
+      "sha256": "be3fd1335768d76a9d08ba387f5b267e0c530a79c12b17aa3cde4b24fb358759",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
+    },
+    {
+      "path": ".opencode/aigon-afn.md",
+      "sha256": "34b9af183a8b27b115307d8d5c1ff831440002dd0b49b73a068968883403eaf5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "b418a2d44cfc79411b46c94a545a1f2c07dc8665788b1ba7d66e9b0d594dadc3",
+      "templatePath": "templates/generic/commands/feature-now.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-open.md",
+      "sha256": "a20a82c2e1401b105266c9f9441b4ed953e4e485cb627057487e7573ced8701b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
+    },
+    {
+      "path": ".opencode/aigon-afo.md",
+      "sha256": "e06fd37f087d788d864e8f9656a52a667eaee613f820d1dca66427b6138a587a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "5b06bf7560746131189ab3e3e070cde2ae293cd1be60f38ef8bb4c5bd3589c84",
+      "templatePath": "templates/generic/commands/feature-open.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-prioritise.md",
+      "sha256": "c2e38467c9593f65538735507dee499a9927d9c09d38f9c7e7bd6c654dc421a0",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
+    },
+    {
+      "path": ".opencode/aigon-afp.md",
+      "sha256": "02b972e553c2c989f1bb2ceefd5ece1ed1b833f9fa7935feabfe609b27b5a6ac",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "d8b384c5a2a3a47f48c5e20021a56e1952f53799fd3ac8b8b41985924d3207e3",
+      "templatePath": "templates/generic/commands/feature-prioritise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-push.md",
+      "sha256": "435bb2f631b3778c3390e12eed46f9902f04387ab299c71a8036e9eb54f7eb7b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "d1326589e0ee1e0353ee9de3fa548db8d1d3a8c8be3c953649354eee90fe970e",
+      "templatePath": "templates/generic/commands/feature-push.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-reset.md",
+      "sha256": "a2e989695fda3a46d997c8cc7ad5dcbca9b0a5be1c9a3eaadb591d9bdbdad558",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "4dc9b00a0389e9c0817833b0c11dc04b6d8117719e2d790c3296101c31857e8c",
+      "templatePath": "templates/generic/commands/feature-reset.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-review.md",
+      "sha256": "dcea3a31efc65faddb7fe1710134f139b4e6d29b39590b42dc98deb39d1b6905",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.108Z",
+      "templateSha": "c42961904316492aa1f76e2a9b4713f0504969b5459a70c28810783efee5c745",
+      "templatePath": "templates/generic/commands/feature-review.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-spec-review.md",
+      "sha256": "8379e1b8820c9da2aaa361f1504196a3aa7d80674e847c6911587c60085f3295",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
+    },
+    {
+      "path": ".opencode/aigon-afsr.md",
+      "sha256": "a3e7ebd7fb314cc189ed10cb0e9865921daf38ada83d9ae764b2ff8ac86403c5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "469276d675edb34215a9a7d1cedcbbd6b964be6c8e099f38db3208d2428efceb",
+      "templatePath": "templates/generic/commands/feature-spec-review.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-spec-revise.md",
+      "sha256": "8866821ead8bff575fa6be69a6a625f3823f7e59c15730600b42150d5b1862fb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
+    },
+    {
+      "path": ".opencode/aigon-afsrv.md",
+      "sha256": "8e260e93550c1c7a3c0509cbf036f133e1377f1767b39d77e6165a133a9365a6",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "90dd452564b2b5224bee850d165a79b0ec2d9e74002b017e3b5d98eb7a7c590a",
+      "templatePath": "templates/generic/commands/feature-spec-revise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-start.md",
+      "sha256": "b8aff7019527043f2899d93170cc674898c0f04b21b66ee783bffd3aeda08aeb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
+    },
+    {
+      "path": ".opencode/aigon-afs.md",
+      "sha256": "f735d78470888e162da7d6aa7511e93a7a54c878bc9be90b7bdf9617bf09b9fe",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "fbe4ea4838cf2279a4658106e4da8197db4e69f5d920365e9a38370e83626021",
+      "templatePath": "templates/generic/commands/feature-start.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-transfer.md",
+      "sha256": "d0bebdd680cb51651ede125f6a0bf2c67dcaf00b84a1444936a9521f1cbb35cb",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
+    },
+    {
+      "path": ".opencode/aigon-aft.md",
+      "sha256": "5747ec09269b3245eef260ce2c0d2a095efb4922a86be4040d95e066abc19d12",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "61487067a4ad142c6ff6c78899dfd2f4abe00b15595567d108e270cc92d690c9",
+      "templatePath": "templates/generic/commands/feature-transfer.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feature-unprioritise.md",
+      "sha256": "2ddfd0744bd8575ac6db3711c7c2b9e4fd2b7beacba2c5f73b4f22c686ce256f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "bbc66e814158a291b0b1353984baf8a5e291a5a823a40b46ac081cd0fedcc02f",
+      "templatePath": "templates/generic/commands/feature-unprioritise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feedback-create.md",
+      "sha256": "2a651df93facbca2fed7726553a2c2e7e61bb38415d19d6329150ebb36d11c89",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
+    },
+    {
+      "path": ".opencode/aigon-afbc.md",
+      "sha256": "31bef8346671a02e6c8f5a94b0808312fc00d5c63457d977df39fba8805afae1",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "125ef0b7d0ea4dbd3a42ecb2d0feb3448d5d315f936e27ad7a7e17730d66729d",
+      "templatePath": "templates/generic/commands/feedback-create.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feedback-list.md",
+      "sha256": "d6c8091bc061b1e784611657d90aa77d058a0f4d1cd116c88ab415fa29663d73",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.109Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
+    },
+    {
+      "path": ".opencode/aigon-afbl.md",
+      "sha256": "f66759c3a5e3c74d47db43143dd71769e5509fb5bda21f3fcbbfc7c5d057021c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.111Z",
+      "templateSha": "d50e3b2ba1731914288ca29ea64b10d52f2c9a07c23b9a160ebf3e8a07217cc7",
+      "templatePath": "templates/generic/commands/feedback-list.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-feedback-triage.md",
+      "sha256": "d5d9ee3e57df42cf2b0fa2cfd8907935bdf0b1c7025cc05c9b961f76384ef3f4",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.111Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
+    },
+    {
+      "path": ".opencode/aigon-afbt.md",
+      "sha256": "9a179baf7bdfeb502b9361e94371f3d1783c449b16ead2b10921ddcb54503239",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.111Z",
+      "templateSha": "92edb5b8acaa4cdd7af027d9098ca4cd29f971b24cf8eaf436ad07841336361d",
+      "templatePath": "templates/generic/commands/feedback-triage.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-help.md",
+      "sha256": "81917db5aa58fb05a4c97f34501c3178d0bbc7036a468d4e72d1125fdd377531",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.114Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
+    },
+    {
+      "path": ".opencode/aigon-ah.md",
+      "sha256": "830f5c7db181e955bea907c85de07f9091c22ea727e4e0b2ccec387d61fe8a9f",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.115Z",
+      "templateSha": "0a6233034bdd2b8089cc604822f0aa5fb4cd0cd2b581d44a68331b819681eee9",
+      "templatePath": "templates/generic/commands/help.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-next.md",
+      "sha256": "2b8c953b92da14f0f5d15157a5d133eed306d7ab651835e475d326e19a03e913",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.115Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
+    },
+    {
+      "path": ".opencode/aigon-an.md",
+      "sha256": "b249426a5570245a16bf625159613d7e90b7106db1ba12028c6064000dc66d51",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.115Z",
+      "templateSha": "0f91ae6e867c23eac3e977e66e4620cce4affbdd0e24a57bb75096ec72fed356",
+      "templatePath": "templates/generic/commands/next.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-autopilot.md",
+      "sha256": "73d2ec5c4a8a231c6528454338f1756a745360c76c6c24ab571e08174dada000",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.115Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
+    },
+    {
+      "path": ".opencode/aigon-arap.md",
+      "sha256": "319359089475d25779e22ea276eb19cfc56b9c7d141597968c718239acafbcb7",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.115Z",
+      "templateSha": "ebad9222960a6e683419b3af3276ed08b46e20a753cb3daca3c1589764d549b6",
+      "templatePath": "templates/generic/commands/research-autopilot.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-close.md",
+      "sha256": "dcffb4cd454decfa1e7efceefd7e2c8a079f86b0870195c51c4125a808760b7c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
+    },
+    {
+      "path": ".opencode/aigon-arcl.md",
+      "sha256": "182e16c15d9b21c26fe3ebf951ec2da61d9e53be809380f156a3584e0eddcaad",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "e4e3c33be1d02fed9bb5c0a40b6c6345cbb83a08713e34a22bee9dbf6d94844f",
+      "templatePath": "templates/generic/commands/research-close.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-create.md",
+      "sha256": "0e4c5ab9d1526b112510fa0a13aa82e0915e651777f270c67287d44c09df3dc5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
+    },
+    {
+      "path": ".opencode/aigon-arc.md",
+      "sha256": "666506a925ec65d57845d227723dcf381402ed20d05b6d62f73d77ad4661f442",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "6ff6ab9628e6028346bcfea8581cb5220cbb26358dff9099f71a343a6fdc49f4",
+      "templatePath": "templates/generic/commands/research-create.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-do.md",
+      "sha256": "52a017f29e3143c8692a03a5afd0ebc36fcb97db3a5937d4201a20eae5db926c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
+    },
+    {
+      "path": ".opencode/aigon-ard.md",
+      "sha256": "fee750ef807b265a575084bbe288df7435ad722a7f7a079242cc3ea3ba7004c8",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "ec33c89566fb33677249a02c95f8fa1d740be8b64d9cc965cf43f060d03458ac",
+      "templatePath": "templates/generic/commands/research-do.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-eval.md",
+      "sha256": "f0a90e7c842713e93032a18568d01ddd0a49981b1d8156310862641d8965cc60",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
+    },
+    {
+      "path": ".opencode/aigon-are.md",
+      "sha256": "ee8785ae8c81f0ed77d8783e9009ad189d50b69acc4fd01301a194db851e4632",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.116Z",
+      "templateSha": "e73893cef1259d4ee3fa57633e8876b4fb19d943a958c9b568b208f5f39244bb",
+      "templatePath": "templates/generic/commands/research-eval.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-open.md",
+      "sha256": "6dc02dab5df79c9fbcfd83091df9d257ea76884d9ed2a89fb34b4bda9967e31c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.117Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
+    },
+    {
+      "path": ".opencode/aigon-aro.md",
+      "sha256": "b963d359fcc4f71c0e6ecd71c42beca270ded038fcb073713e0b3c44a1353c5a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.119Z",
+      "templateSha": "baf2fb708403a8213c1565af68376cdf48dfa91e9a70caa252bfe5429a89d34d",
+      "templatePath": "templates/generic/commands/research-open.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-prioritise.md",
+      "sha256": "7e3d33dcaa0d3c152a721be9ad2949da9deaccfe7a98356833b0cc8a8f849a3b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.119Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
+    },
+    {
+      "path": ".opencode/aigon-arp.md",
+      "sha256": "0a26ee4f170c2689111c3d1f8a5fe62545326ed093fbca460702d112150fa453",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.119Z",
+      "templateSha": "4230667249883fe07cf151d9fd4ff21e495f3231e159b94c91e71fdb3d12cae0",
+      "templatePath": "templates/generic/commands/research-prioritise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-reset.md",
+      "sha256": "ff05426fe20594b6d3c5aaf5b75dfa53f9b1ae31cfe70489deb27cec62f5f13c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
+    },
+    {
+      "path": ".opencode/aigon-arr.md",
+      "sha256": "aa7d03ab0bdaa7b0ff4476fac247dcb56d647b56fa67f7e0f2f0dd2724c16cf1",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "872a8cf130411b2cac8471a4decfac3e834a9c0bc4f44a71074af1622f04b091",
+      "templatePath": "templates/generic/commands/research-reset.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-spec-review.md",
+      "sha256": "b90d9f3fe8239d2493b02ba27850554502e4e12d365529470c924cad34d12d79",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
+    },
+    {
+      "path": ".opencode/aigon-arsr.md",
+      "sha256": "7aaa263f9a9bcd1b00d8cad7368b4a7732250b977d00b98f16f6c2df373e3518",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "105eb57b275164c1e2a3a5624bb924b7c1c714222c8c59773649e7b502f7c32a",
+      "templatePath": "templates/generic/commands/research-spec-review.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-spec-revise.md",
+      "sha256": "27878e44497e5a0bc401e4e8ee954a70d01a100967e07caa594b78c157209a77",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
+    },
+    {
+      "path": ".opencode/aigon-arsrv.md",
+      "sha256": "0e147676834e8c6970a76b68201aecb34ce55e55070bad983e80997146c96291",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "238533f83c7dd7309c8af80dbed89aaafda2e3daac5b7a59c24f0bc3b605a47f",
+      "templatePath": "templates/generic/commands/research-spec-revise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-start.md",
+      "sha256": "6ad23793deea87819f32359238ad88ba0e7f2c791593c17189b95d4a1363474c",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
+    },
+    {
+      "path": ".opencode/aigon-ars.md",
+      "sha256": "10a1b52e52c7e1f65407482bfb502c8641da77298d51f529a5d60964db74ca6e",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "606ac45d7254fb47972f74ceed32e6054606f547370311908df6ee975136e68d",
+      "templatePath": "templates/generic/commands/research-start.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-research-unprioritise.md",
+      "sha256": "86f9dc3a73659a33acb087a188a065e5c048af43998998e27ded0d069dbca887",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "2d41494b819a0707dda16b9136bab6ecc0885ac86978c72a857994aa7b094d8d",
+      "templatePath": "templates/generic/commands/research-unprioritise.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-sessions-close.md",
+      "sha256": "fea056d6730a4ae2c0397fa2af051e183f96a5f11bb041a685d8a7d39560b59d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "f483c8c0a159a80aa704725fa4732d2e34e41a3c9accd5d5be5eba7bd44d9b27",
+      "templatePath": "templates/generic/commands/sessions-close.md"
+    },
+    {
+      "path": ".opencode/commands/aigon-set-prioritise.md",
+      "sha256": "cc7849083c940492d26b198d5e45d378306ec311d75606e86195cfa8a5028728",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
+    },
+    {
+      "path": ".opencode/aigon-asp.md",
+      "sha256": "11240ae14667c2d7abe227170ad5490587d7f6a951e839c87b419223e34bf418",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:27.120Z",
+      "templateSha": "bbef3fe4ac71451f315c6abb630ab58cb8a9580a21b0c99cc492373913909238",
+      "templatePath": "templates/generic/commands/set-prioritise.md"
     }
-  ]
+  ],
+  "agents": [
+    "cc",
+    "gg",
+    "cx",
+    "cu",
+    "op",
+    "km"
+  ],
+  "agentInstalls": {
+    "cc": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:26.646Z"
+    },
+    "gg": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:11.404Z"
+    },
+    "cx": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:11.416Z"
+    },
+    "cu": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:11.426Z"
+    },
+    "op": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:11.438Z"
+    },
+    "km": {
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T12:27:11.454Z"
+    }
+  }
 }

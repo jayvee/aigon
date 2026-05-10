@@ -40,7 +40,7 @@
   },
   "scripts": {
     "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true",
-    "prepublishOnly": "node scripts/check-pack.js",
+    "prepublishOnly": "node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
     "release": "node scripts/publish.js",
     "ship": "node scripts/ship.js",
     "ship:share": "node scripts/ship.js share",
