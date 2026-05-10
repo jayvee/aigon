@@ -12,7 +12,14 @@ IMAGE_NAME="${AIGON_DOCKER_IMAGE:-aigon-published-pro-clean-room}"
 CONTAINER_NAME="${AIGON_DOCKER_CONTAINER:-aigon-published-pro-test}"
 AIGON_PACKAGE="${AIGON_PACKAGE:-@senlabsai/aigon@next}"
 PRO_PACKAGE="${AIGON_PRO_PACKAGE:-@senlabsai/aigon-pro@beta}"
-AIGON_PRO_KEY="${AIGON_PRO_KEY:-***REDACTED***}"
+AIGON_PRO_KEY="${AIGON_PRO_KEY:-}"
+if [[ -z "$AIGON_PRO_KEY" ]]; then
+  echo "[published-pro] FAIL: AIGON_PRO_KEY is required." >&2
+  echo "[published-pro]       Export your Pro beta key before running, e.g." >&2
+  echo "[published-pro]         export AIGON_PRO_KEY=<your-key>" >&2
+  echo "[published-pro]         bash $0" >&2
+  exit 2
+fi
 
 log() { printf '[published-pro] %s\n' "$*"; }
 fail() {

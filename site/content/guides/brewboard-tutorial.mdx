@@ -47,14 +47,14 @@ git remote remove origin        # prevent accidental pushes — this is a local 
 npm install
 ```
 
-### Initialize Aigon
+### Bring Aigon into the repo
 
 ```bash
-aigon init
+aigon apply
 aigon install-agent cc          # swap for gg, cx, or cu if you prefer
 ```
 
-`aigon init` creates the `docs/specs/` folder structure and rebuilds the pre-seeded feature manifests. `install-agent` writes slash commands, hooks, and permissions for your chosen agent.
+`aigon apply` creates the `docs/specs/` folder structure on first run and rebuilds the pre-seeded feature manifests. `install-agent` writes slash commands, hooks, and permissions for your chosen agent.
 
 ### Start the dashboard server
 

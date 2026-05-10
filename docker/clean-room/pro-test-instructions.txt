@@ -24,7 +24,8 @@ docker run --rm -it -v ~/src/aigon:/home/dev/src/aigon -v ~/src/aigon-pro:/home/
 
 STEP 4 - Inside container: automated check
 -------------------------------------------
-AIGON_PRO_KEY=***REDACTED*** bash ~/src/aigon/docker/clean-room/smoke-test.sh --scenario 3
+(Substitute your real Pro beta key for <your-pro-key> — never commit the real value)
+AIGON_PRO_KEY=<your-pro-key> bash ~/src/aigon/docker/clean-room/smoke-test.sh --scenario 3
 
 
 STEP 5 - Inside container: manual checks
@@ -37,7 +38,7 @@ aigon pro activate wrongkey
 
 aigon insights 2>&1 | head -3
 
-aigon pro activate ***REDACTED***
+aigon pro activate <your-pro-key>
 
 
 EXPECTED RESULTS

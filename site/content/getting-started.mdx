@@ -197,7 +197,7 @@ aigon apply                              # 2. re-apply templates into this repo
 aigon apply --all                        # …or apply to every registered repo at once
 ```
 
-After the npm upgrade, `aigon installed-notice` runs automatically and tells you which of your registered repos are behind. If the dashboard server is running, restart it (`aigon server restart`) to pick up new dashboard UI — or click `[ Restart now ]` on the dashboard's upgrade pill.
+After the npm upgrade, `aigon installed-notice` runs automatically and tells you which of your registered repos are behind. The dashboard does not auto-restart — run `aigon server restart` (or click `[ Restart now ]` on the dashboard's upgrade pill) if you want the latest dashboard UI.
 
 See [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates) for the full flow.
 

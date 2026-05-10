@@ -35,9 +35,11 @@ The script exits 0 on success and non-zero with a stage-tagged error on any must
 
 ## Manual mode
 
-This is a single linear flow. Run **every** command in order — don't skip ahead, don't substitute. Each block is copy-paste ready.
+You are testing the **new-user experience**: install Aigon, run `aigon setup`, and let the wizard drive the rest. The whole point is to exercise the wizard end-to-end, not to reinvent what it does.
 
-### Step 1: Pack the current source (on your Mac, before launching the container)
+Run every block in order. Each is copy-paste ready.
+
+### Step 1 — Pack the current source (on your Mac)
 
 ```bash
 cd ~/src/aigon
@@ -45,15 +47,13 @@ rm -f senlabsai-aigon-*.tgz
 npm pack
 ```
 
-You should see `senlabsai-aigon-<version>.tgz` in the repo root. This is what the container will install — so it contains every uncommitted change in your working tree at pack time.
+This produces `senlabsai-aigon-<version>.tgz` in the repo root. The container installs from this tarball, so every uncommitted change you have locally is what gets tested.
 
-> **Why this and not `npm install -g @senlabsai/aigon@next`?** Installing from `@next` would test the *published* version, not the changes you just made. Always pack locally for testing.
+> Why not `npm install -g @senlabsai/aigon@next`? That installs the *published* package, not your local changes. Always pack locally.
 
-### Step 2: Build the container image and launch (on your Mac)
+### Step 2 — Launch the container (on your Mac)
 
 ```bash
-cd ~/src/aigon
-docker build -t aigon-clean-room docker/clean-room/
 docker run --rm -it \
   -v ~/src/aigon:/home/dev/src/aigon \
   -p 4102:4100 \
@@ -61,18 +61,19 @@ docker run --rm -it \
   aigon-clean-room bash
 ```
 
-You are now `dev` inside Ubuntu 24.04 with nothing pre-installed. Every command from here on runs **inside the container** until you `exit`.
+You're now at `dev@clean-room:~$` inside Ubuntu 24.04 — nothing pre-installed. Every command from here runs **inside the container** until you `exit`.
 
-### Step 3: Install system prerequisites
+### Step 3 — Install the bare minimum for Aigon to run
+
+The wizard verifies Node and Git; it doesn't install them itself. Install them first:
 
 ```bash
 sudo apt-get update -qq
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-  nodejs git tmux lsof build-essential python3
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs git build-essential python3
 ```
 
-### Step 4: Install Aigon from the packed tarball
+### Step 4 — Install Aigon from your packed tarball
 
 ```bash
 TGZ=$(ls /home/dev/src/aigon/senlabsai-aigon-*.tgz | head -1)
@@ -80,50 +81,43 @@ sudo npm install -g "$TGZ"
 aigon --version
 ```
 
-`aigon --version` should print whatever version is in `package.json` on your Mac.
+### Step 5 — Run the setup wizard
 
-### Step 5: Clone the demo repo
-
-```bash
-git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
-cd ~/src/brewboard
-npm install
-```
-
-### Step 6: Bring Aigon into the repo
+**This is the actual test.** Everything from here is `aigon setup` doing its job — driving the new-user flow.
 
 ```bash
-aigon apply
-aigon install-agent cc gg
-aigon board
-aigon doctor
+aigon setup
 ```
 
-`aigon apply` bootstraps `.aigon/`, the kanban folder layout, hooks, and the workflow engine on first run — and refreshes templates thereafter. `install-agent cc gg` writes Claude Code and Gemini slash commands and configs (no login required to test the install path).
+The wizard walks you through 8 steps. Adapt to the Linux container as follows:
 
-### Step 7: Start the server and open the dashboard
+| Wizard step | What to answer |
+|---|---|
+| 1. Prerequisites | Accept offers to install `tmux` and `gh`. The wizard will prompt for git identity if not set — give it any name / email. |
+| 2. Terminal preference | macOS-only — should be skipped automatically on Linux. |
+| 3. Agent install | Multi-select. Pick `cc gg` (Claude Code + Gemini). The wizard installs the npm CLIs; **skip the auth flows** — you're testing install, not login. If the auth prompt blocks, hit Ctrl-C on just that sub-prompt; the wizard continues. |
+| 4. Optional seed clone | **Say yes.** This clones brewboard-seed, runs `aigon apply` inside it, and registers it. This is the real apply + bootstrap test. |
+| 5. Repo scan | Decline (no extra repos in `~/src` to register). |
+| 6. Dashboard server | **Say yes — start it.** |
+| 7. Brewboard demo | **Decline** — the demo runs an actual autonomous agent, which needs real credentials. Run it later if you've injected creds (see Optional section below). |
+| 8. Aigon Pro vault | Decline. |
+
+When the wizard finishes you have a fully set-up container.
+
+### Step 6 — Verify the result
 
 ```bash
-nohup aigon server start > ~/server.log 2>&1 &
-sleep 3
-aigon server add ~/src/brewboard
+aigon --version            # your local source version
+aigon doctor               # green for node, git, tmux; reports the registered brewboard
+aigon board                # shows seeded brewboard features
+ls ~/src/brewboard/.aigon  # apply wrote applied-digest, version, install-manifest, config
 ```
 
-Open **http://localhost:4102** in your Mac browser. The host port 4102 maps to port 4100 inside the container.
+Then open **http://localhost:4102** in your Mac browser — the dashboard should load and show `brewboard` in the Pipeline view.
 
-### Step 8: Verify
+### Step 7 — Tear down
 
-Tick these off in the container shell + browser:
-
-- [ ] `node --version` prints v22.x
-- [ ] `aigon --version` prints your local source version
-- [ ] `aigon board` shows seeded brewboard features
-- [ ] `aigon doctor` reports green for Node, git, tmux
-- [ ] Dashboard at `http://localhost:4102` loads and shows `brewboard` in the Pipeline view
-
-### Step 9: Tear down
-
-Type `exit` in the container. The container is `--rm` so it cleans itself up automatically — nothing on your Mac is mutated.
+Type `exit` in the container. The `--rm` flag means it cleans itself up — nothing on your Mac is touched.
 
 ---
 
@@ -176,7 +170,7 @@ docker run --rm -it \
 ### Step 3 — Run Scenario 3 (automated)
 
 ```bash
-AIGON_PRO_KEY=***REDACTED*** bash ~/src/aigon/docker/clean-room/smoke-test.sh --scenario 3
+AIGON_PRO_KEY=$AIGON_PRO_KEY bash ~/src/aigon/docker/clean-room/smoke-test.sh --scenario 3
 ```
 
 Checks: aigon installs, aigon-pro installs from tarball, key activates, `aigon pro status` shows both green.
@@ -188,7 +182,7 @@ aigon pro status                   # Package ✅  Key ✅  Pro is active
 aigon insights | head -3           # should return data, not a gate message
 aigon pro activate wrongkey
 aigon insights 2>&1 | head -3      # should show: 🔒 ... is a Pro feature.
-aigon pro activate ***REDACTED***   # restore correct key
+aigon pro activate $AIGON_PRO_KEY   # restore correct key
 ```
 
 ### Environment variables
