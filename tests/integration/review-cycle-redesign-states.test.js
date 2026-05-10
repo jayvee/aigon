@@ -139,7 +139,7 @@ test('machine: code review complete routes to revision or submitted', () => {
     clean.start();
     clean.send({ type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' });
     clean.send({ type: 'feature.code_review.completed', reviewerId: 'gg', requestRevision: false, at: '2026-04-01T02:00:00Z' });
-    assert.strictEqual(clean.getSnapshot().value, 'submitted');
+    assert.strictEqual(clean.getSnapshot().value, 'ready');
 });
 test('projector: accepts legacy review_requested and new code review events', () => {
     // REGRESSION: legacy review_requested event logs must project like new code review starts.
@@ -156,7 +156,7 @@ test('projector: accepts legacy review_requested and new code review events', ()
         { type: 'feature.code_revision.completed', revisionAgentId: 'cc', at: '2026-04-01T03:00:00Z' },
     ]);
     assert.strictEqual(legacyCtx.currentSpecState, 'code_review_in_progress');
-    assert.strictEqual(newCtx.currentSpecState, 'submitted');
+    assert.strictEqual(newCtx.currentSpecState, 'ready');
     assert.strictEqual(newCtx.codeReview.revisionAgentId, 'cc');
     assert.strictEqual(newCtx.codeReview.revisionCompletedAt, '2026-04-01T03:00:00Z');
 });

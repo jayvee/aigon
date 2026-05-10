@@ -346,7 +346,7 @@
     .kcard-agent-status.status-waiting{color:#FCD34D}
     .kcard-agent-status.status-complete{color:#86EFAC}
     .kcard-agent-status.status-failed{color:#FB7185}
-    .kcard-agent-status.status-submitted{color:#86EFAC}
+    .kcard-agent-status.status-ready{color:#86EFAC}
     .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
     .kcard-agent-status.status-flagged{color:#FB923C}
     .kcard-agent-status.status-needs-attention{color:#fbbf24;font-weight:600}
@@ -734,7 +734,7 @@
     .agent-detail-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
     .agent-detail-id{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text-primary)}
     .agent-detail-status{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--border-subtle);background:rgba(120,120,120,.12);color:var(--text-secondary)}
-    .agent-detail-status.status-submitted{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
+    .agent-detail-status.status-ready{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#86efac}
     .agent-detail-status.status-waiting{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#fcd34d}
     .agent-detail-status.status-error{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#fca5a5}
     .agent-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}

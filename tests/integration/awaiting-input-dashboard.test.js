@@ -22,7 +22,7 @@ testAsync('dashboard payload: awaitingInput + anyAwaitingInput (feature + resear
         ast.writeAwaitingInput(repo, '99', 'cc', 'Pick A or B');
         ast.writeAwaitingInput(repo, '88', 'cc', 'Choose features', 'research');
         clearTierCache(repo);
-        const response = { summary: { implementing: 0, waiting: 0, submitted: 0, error: 0, total: 0 } };
+        const response = { summary: { implementing: 0, waiting: 0, ready: 0, error: 0, total: 0 } };
         const st = collectRepoStatus(repo, response);
         assert.ok(st);
         const f = st.features.find((x) => String(x.id) === '99');

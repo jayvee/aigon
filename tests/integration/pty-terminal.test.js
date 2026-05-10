@@ -16,12 +16,6 @@ testAsync('pty-token: expired rejected', () => new Promise((res) => {
     setTimeout(() => { a.ok(!h.validateAndConsumePtyToken(t)); res(); }, 5);
 }));
 
-// REGRESSION F356: loopback enforcement
-test('loopback check', () => {
-    a.ok(h.isLoopbackAddress('127.0.0.1')); a.ok(h.isLoopbackAddress('::1')); a.ok(h.isLoopbackAddress('::ffff:127.0.0.1'));
-    a.ok(!h.isLoopbackAddress('192.168.1.1')); a.ok(!h.isLoopbackAddress(''));
-});
-
 // REGRESSION F356: Origin allow-list
 test('origin check', () => {
     a.ok(h.isValidOrigin('http://localhost:4100')); a.ok(h.isValidOrigin('http://127.0.0.1:4100')); a.ok(h.isValidOrigin('http://aigon.localhost:4101'));

@@ -93,7 +93,7 @@ test.describe('F492 autonomous stage track', () => {
                 ],
             },
             autonomousSession: { sessionName: 'mock-f900-auto-stopped', running: false, status: 'completed' },
-            agents: [{ id: 'cc', status: 'submitted', tmuxRunning: false, runtimeAgentId: 'cc' }],
+            agents: [{ id: 'cc', status: 'ready', tmuxRunning: false, runtimeAgentId: 'cc' }],
         });
         await mountWithStatus(page, payload);
 

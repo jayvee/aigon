@@ -4,7 +4,7 @@
   "finalSpecPath": "docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md",
   "allowedFiles": ["eval-fixture.txt"],
   "expectedSignals": ["implementing", "implementation-complete"],
-  "expectedFinalState": "submitted",
+  "expectedFinalState": "ready",
   "expectedFolder": "03-in-progress",
   "slaSeconds": 600,
   "timeoutMs": 300000
