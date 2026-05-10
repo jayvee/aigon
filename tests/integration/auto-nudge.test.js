@@ -42,6 +42,34 @@ testAsync('auto-nudge idle ladder: T1 chip, one T2 nudge, T3 escalation', () => 
     assert.strictEqual(events.filter(e => e.kind === 'signal-abandoned' && e.source === 'auto-nudge-escalated').length, 1);
 }));
 
+testAsync('auto-nudge resets nudged flag on dispatch failure so the next sweep can retry', () => withTempDirAsync('aigon-auto-nudge-retry-', async (repo) => {
+    // Intentionally do NOT call _resetForTests() — this test runs concurrently with the
+    // T1/T2/T3 test via testAsync, and clearing the shared sessionState mid-flight wipes
+    // the sibling test's state. The temp-dir repoPath gives this test a unique session key.
+    let calls = 0;
+    const deps = {
+        loadProjectConfig: () => ({ autoNudge: { enabled: true, idleVisibleSec: 1, idleAutoNudgeSec: 2, idleEscalateSec: 30 } }),
+        sendNudge: async () => {
+            calls += 1;
+            if (calls === 1) throw new Error('Nudge text not found in pane after delivery');
+            return { ok: true };
+        },
+    };
+
+    const first = autoNudge.computeIdleLadder(repo, baseInput(), { ...deps, nowMs: Date.parse('2026-04-29T00:00:02.100Z') });
+    assert.strictEqual(first.state, 'idle-nudged');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.strictEqual(calls, 1);
+
+    const second = autoNudge.computeIdleLadder(repo, baseInput(), { ...deps, nowMs: Date.parse('2026-04-29T00:00:02.500Z') });
+    assert.strictEqual(second.state, 'idle-nudged', 'second sweep should re-dispatch after the first failed');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.strictEqual(calls, 2);
+
+    const events = signalHealth.readSignalEvents({ repoPath: repo, since: '2000-01-01', agent: 'cx' });
+    assert.strictEqual(events.filter(e => e.kind === 'signal-abandoned' && e.source === 'auto-nudge-dispatch-failed').length, 1);
+}));
+
 test('auto-nudge is on by default, opt-out via enabled:false, and skips quota-paused agents', () => withTempDir('aigon-auto-nudge-default-', (repo) => {
     autoNudge._resetForTests();
     let nudges = 0;
