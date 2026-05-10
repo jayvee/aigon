@@ -66,22 +66,6 @@ h6:hover > .subheading-anchor,
   color: hsl(0 0% 94%) !important;
 }
 
-/* Heading anchors: text is inside <a>, don't dim it. */
-:is(h2, h3, h4) > a[href^="#"] {
-  opacity: 1 !important;
-  text-decoration: none;
-  color: inherit !important;
-}
-
-/* Show link icon on heading hover */
-:is(h2, h3, h4):hover > svg {
-  opacity: 0.5 !important;
-}
-
-:is(h2, h3, h4) > svg:hover {
-  opacity: 1 !important;
-}
-
 /* Landing page — subtle gradient overlay on Nextra's native bg */
 .landing-gradient-dark {
   background:
@@ -129,4 +113,24 @@ h6:hover > .subheading-anchor,
   background: rgba(213, 95, 42, 0.12);
   border-color: rgba(213, 95, 42, 0.3);
   color: #d55f2a;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Docs sidebar — widen the sidebar so long guide titles wrap less.
+   Nextra 4 default is ~256px; we bump to 288px and tighten label padding.
+   ──────────────────────────────────────────────────────────────────── */
+:root {
+  --nextra-sidebar-width: 18rem;
+}
+
+@media (min-width: 1024px) {
+  .nextra-sidebar {
+    width: var(--nextra-sidebar-width);
+    flex-shrink: 0;
+  }
+  /* Reduce horizontal padding on links so the text column inside is wider */
+  .nextra-sidebar a,
+  .nextra-sidebar button {
+    padding-inline: 0.625rem;
+  }
 }
