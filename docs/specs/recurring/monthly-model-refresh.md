@@ -21,7 +21,7 @@ Follow the `aigon-model-refresh` slash command from start to finish.
 - [ ] Benchmarks run for any newly added models: `aigon perf-bench brewboard --all --agents op`
 - [ ] Every timeout or error researched (web search) — classified as TRANSIENT INFRA, MODEL DEGRADED, DEPRECATED, or ROUTING BROKEN
 - [ ] Registry updated: notes, scores, and quarantine entries reflect research findings
-- [ ] Report written to `docs/reports/model-refresh-{{YYYY-MM}}.md`
+- [ ] Report written to `.aigon/reports/model-refresh-{{YYYY-MM}}.md`
 - [ ] Server restarted: `aigon server restart`
 - [ ] Changes committed
 
@@ -39,7 +39,7 @@ not sufficient evidence to quarantine or un-quarantine a model.
 
 ### Report template
 
-Write `docs/reports/model-refresh-{{YYYY-MM}}.md`:
+Write `.aigon/reports/model-refresh-{{YYYY-MM}}.md`:
 
 ```markdown
 # Model refresh — {{YYYY-MM}}
@@ -75,5 +75,5 @@ Write `docs/reports/model-refresh-{{YYYY-MM}}.md`:
 - Run `aigon perf-bench brewboard --all --agents op` (will reset brewboard seed, run benchmarks)
 - Run web searches to research model status
 - Run `aigon server restart` after JSON edits
-- Write `docs/reports/model-refresh-{{YYYY-MM}}.md`
+- Write `.aigon/reports/model-refresh-{{YYYY-MM}}.md`
 - Commit with message `chore(model-refresh): {{YYYY-MM}} registry update`

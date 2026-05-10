@@ -9,7 +9,7 @@ complexity: medium
 
 ## Summary
 
-Audit the codebase and surface the **top three highest-leverage simplifications** that would make the project more maintainable, readable, understandable to AI agents, extensible, and performant. Produce a ranked report at `docs/reports/simplifications-{{YYYY-MM}}.md` **and** auto-file each of the three as a separate inbox feature via `aigon feature-create`. The user triages with `afp` — the audit task itself does not prioritise, start, or implement anything.
+Audit the codebase and surface the **top three highest-leverage simplifications** that would make the project more maintainable, readable, understandable to AI agents, extensible, and performant. Produce a ranked report at `.aigon/reports/simplifications-{{YYYY-MM}}.md` **and** auto-file each of the three as a separate inbox feature via `aigon feature-create`. The user triages with `afp` — the audit task itself does not prioritise, start, or implement anything.
 
 ## Acceptance Criteria
 
@@ -17,9 +17,9 @@ Audit the codebase and surface the **top three highest-leverage simplifications*
 - [ ] Collect candidate simplifications with concrete file/line references
 - [ ] Score each candidate on the five dimensions (maintainability, readability, AI-agent understandability, extensibility, performance) using the rubric below
 - [ ] Pick the **top three** by total score, breaking ties by leverage (i.e., how much downstream code or future change is unblocked)
-- [ ] Write `docs/reports/simplifications-{{YYYY-MM}}.md` using the report template below
+- [ ] Write `.aigon/reports/simplifications-{{YYYY-MM}}.md` using the report template below
 - [ ] For **each** of the three picks, run `aigon feature-create "<short-kebab-name>" --description "<one-sentence summary; see report section N for full rationale>"`. Use a name like `simplify-<area>-{{YYYY-MM}}` so the inbox stays tidy
-- [ ] Commit the report and the three new spec files together: `git add docs/reports/simplifications-{{YYYY-MM}}.md docs/specs/features/01-inbox/ && git commit -m "chore: top-3 simplifications report + inbox specs {{YYYY-MM}}"`
+- [ ] Commit the three new spec files: `git add docs/specs/features/01-inbox/ && git commit -m "chore: top-3 simplifications inbox specs {{YYYY-MM}}"` — report is gitignored
 - [ ] Close the feature (no eval step needed — see Pre-authorised)
 
 ## Signals to look for
@@ -79,7 +79,7 @@ After the report is written, file each of the three picks as a feature spec in `
 For each pick, run:
 
 ```sh
-aigon feature-create "simplify-<short-area>-{{YYYY-MM}}" --description "<one-sentence summary>. See docs/reports/simplifications-{{YYYY-MM}}.md § <section> for scoring and proposed change."
+aigon feature-create "simplify-<short-area>-{{YYYY-MM}}" --description "<one-sentence summary>. See .aigon/reports/simplifications-{{YYYY-MM}}.md § <section> for scoring and proposed change."
 ```
 
 Naming guidance:
@@ -91,7 +91,7 @@ If `feature-create` fails for any pick (e.g. duplicate name from a previous mont
 
 ## Report template
 
-Write the report to `docs/reports/simplifications-{{YYYY-MM}}.md`:
+Write the report to `.aigon/reports/simplifications-{{YYYY-MM}}.md`:
 
 ```markdown
 # Top-3 simplifications — {{YYYY-MM}}
@@ -159,5 +159,5 @@ Anything that scored well but didn't make the top 3 — list as a single line ea
 ## Pre-authorised
 
 - Skip eval step: this is a reporting task with no code changes requiring review beyond the per-pick feature flow that follows.
-- Write to `docs/reports/simplifications-{{YYYY-MM}}.md` and run `aigon feature-create` up to 3 times.
-- Commit with message `chore: top-3 simplifications report + inbox specs {{YYYY-MM}}`.
+- Write to `.aigon/reports/simplifications-{{YYYY-MM}}.md` and run `aigon feature-create` up to 3 times.
+- Commit with message `chore: top-3 simplifications inbox specs {{YYYY-MM}}` (report is gitignored, do not add it).

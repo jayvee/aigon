@@ -71,6 +71,10 @@ site/.vercel/
 .scan/reports/
 .scan/raw/
 
+# Recurring feature reports — contain user/fleet-specific data, never commit
+docs/reports/
+.aigon/reports/
+
 # E2E test forensics log — written on every run, inspect locally
 docker/clean-room/last-run.log
 senlabs-aigon-*.tgz
