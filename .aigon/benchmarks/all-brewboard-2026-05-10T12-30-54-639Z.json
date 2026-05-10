@@ -1,0 +1,90 @@
+{
+  "pairs": [
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "modelLabel": "Gemini 2.5 Flash",
+      "ok": true,
+      "totalMs": 48488,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3.1-pro-preview",
+      "modelLabel": "Gemini 3.1 Pro Preview",
+      "ok": true,
+      "totalMs": 57830,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "modelLabel": "Gemini 2.5 Pro",
+      "ok": true,
+      "totalMs": 67818,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3-flash-preview",
+      "modelLabel": "Gemini 3 Flash Preview (free fallback)",
+      "ok": true,
+      "totalMs": 46956,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    }
+  ],
+  "timestamp": "2026-05-10T12:30:54.642Z"
+}

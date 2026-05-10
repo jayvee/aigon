@@ -225,6 +225,56 @@
         "lastRefreshAt": "2026-04-29T00:00:00.000Z"
       },
       {
+        "value": "openrouter/qwen/qwen3-coder",
+        "label": "Qwen3 Coder 480B via OpenRouter",
+        "pricing": { "input": 0.22, "output": 1.80 },
+        "notes": {
+          "implement": "Alibaba flagship purpose-built coder; 480B MoE (35B active params); probed PASS in 5.4s. Distinct from the quarantined qwen3-coder-30b-a3b; this is the full-size flagship variant at very low cost."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/mistralai/codestral-2508",
+        "label": "Codestral 2508 via OpenRouter",
+        "pricing": { "input": 0.3, "output": 0.90 },
+        "notes": {
+          "implement": "Mistral code-specialist (Aug 2025 build); tuned for code completion and generation; probed PASS in 3.1s. Cheapest Mistral agentic-coding option."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/mistralai/devstral-medium-2507",
+        "label": "Devstral Medium (2507) via OpenRouter",
+        "pricing": { "input": 0.4, "output": 2.0 },
+        "notes": {
+          "implement": "Mid-tier Devstral (Jul 2025); fills the gap between devstral-small and devstral-2512; probed PASS in 5.3s. Note: openrouter/mistralai/devstral-medium fails (wrong ID) — use this 2507-suffixed form."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/x-ai/grok-4-fast",
+        "label": "Grok 4 Fast via OpenRouter",
+        "pricing": { "input": 0.2, "output": 0.50 },
+        "notes": {
+          "implement": "xAI Grok 4 Fast; very cheap at $0.20/$0.50; probed PASS in 5.5s. Distinct from the quarantined grok-code-fast-1 (different model family/routing). Grok 4 family replaces the Grok Code Fast line."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/x-ai/grok-4.1-fast",
+        "label": "Grok 4.1 Fast via OpenRouter",
+        "pricing": { "input": 0.2, "output": 0.50 },
+        "notes": {
+          "implement": "xAI Grok 4.1 Fast; latest iteration of the Grok 4 Fast family; probed PASS in 6.2s. Same pricing as grok-4-fast; benchmarking both to track iteration quality."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+      },
+      {
         "value": "openrouter/nvidia/nemotron-3-super-120b-a12b",
         "label": "Nemotron 3 Super 120B via OpenRouter",
         "pricing": { "input": 0.09, "output": 0.45 },
