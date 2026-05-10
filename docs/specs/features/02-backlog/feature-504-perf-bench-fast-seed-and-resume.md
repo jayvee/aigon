@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-10T11:47:06.751Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: perf-bench-fast-seed-and-resume
