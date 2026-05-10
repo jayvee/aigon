@@ -1,23 +1,25 @@
 ---
-title: "init"
-description: "Initialize Aigon in the current Git repository."
+title: "init (deprecated)"
+description: "Deprecated — use aigon apply instead."
 ---
 
-# `aigon init`
+# `aigon init` (deprecated)
 
-Initializes the current Git repository for Aigon.
+`aigon init` is deprecated. Use [`aigon apply`](./apply) instead.
+
+`aigon apply` does everything `init` did, and more: it also initializes the repo on first run *and* keeps Aigon files up to date on subsequent runs — so there is only one verb to remember.
 
 ```bash
-cd /path/to/project
+# Before (deprecated)
 aigon init
+
+# After
+aigon apply
 ```
 
-`init` creates the spec folders under `docs/specs/`, creates `.aigon/` runtime config/state scaffolding, installs project git hooks, allocates a port block, detects a project profile, and bootstraps the workflow engine for new specs.
-
-Run it once per repository before installing agents or creating features.
+`aigon init` still works but prints a deprecation warning. It will be removed in a future release.
 
 ## See also
 
+- [`apply`](./apply)
 - [`install-agent`](./install-agent)
-- [`config`](/docs/reference/commands/infra/config)
-- [File Structure](/docs/reference/file-structure)

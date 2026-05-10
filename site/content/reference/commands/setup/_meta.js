@@ -1,8 +1,8 @@
 export default {
   setup: "setup",
-  init: "init",
   "install-agent": "install-agent",
   apply: "apply",
+  remove: "remove",
   update: "update",
   doctor: "doctor",
   "seed-reset": "seed-reset",

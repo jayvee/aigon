@@ -1,0 +1,55 @@
+---
+title: "remove"
+description: "Remove Aigon-managed files from the current Git repository."
+---
+
+# `aigon remove`
+
+Removes all Aigon-managed files from the current Git repository and deregisters it from the dashboard.
+
+```bash
+aigon remove              # interactive confirmation
+aigon remove --force      # skip confirmation prompt
+aigon remove --dry-run    # preview what would be removed
+aigon remove --purge      # also remove all of .aigon/ runtime state
+```
+
+`remove` reads `.aigon/install-manifest.json` and deletes every file listed there (agent commands, skills, hooks, vendored docs, and similar Aigon-owned artifacts). It then removes the repo from the global registry so `aigon apply --all` and the dashboard's multi-repo view stop listing it.
+
+`docs/specs/`, `AGENTS.md`, `CLAUDE.md`, `README.md`, and all other project files are **never touched**.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Print the files and registry entry that would be removed, but make no changes |
+| `--force` | Skip the confirmation prompt and modified-file safety warning |
+| `--purge` | After removing manifest-tracked files, also recursively delete `.aigon/` (workflows, state, sessions, config, applied-digest) |
+| `--help` | Print this flag summary |
+
+## Safety checks
+
+- **Worktree guard** — refuses to run inside a worktree (`.aigon/worktree.json` present), because removal would mutate the main repo. Run `aigon remove` from the main repo instead.
+- **Modified-file warning** — if any Aigon-managed file has been customized, `remove` lists them and aborts unless `--force` is passed.
+
+## What `--purge` removes
+
+Without `--purge`, the following are preserved after removal: `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json`. This lets you re-apply Aigon later without losing spec history or conductor state.
+
+With `--purge`, the entire `.aigon/` directory is deleted. Use this when you are done with Aigon in this repo entirely.
+
+## Uninstalling Aigon globally
+
+`aigon remove` only removes Aigon from the current repository. To uninstall the Aigon CLI from your machine entirely:
+
+```bash
+npm uninstall -g @senlabsai/aigon
+```
+
+For a complete step-by-step guide including proxy removal, dashboard service uninstall, and per-agent CLI cleanup, see [Uninstalling Aigon completely](/docs/guides/uninstalling-aigon).
+
+## See also
+
+- [`apply`](./apply)
+- [`doctor`](./doctor)
+- [`install-agent`](./install-agent)
