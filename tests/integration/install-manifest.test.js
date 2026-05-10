@@ -19,8 +19,8 @@ function runInstallAgent(repo, extraArgs = []) {
     }).toString();
 }
 
-function runUninstall(repo, extraArgs = []) {
-    return execFileSync(process.execPath, [CLI, 'uninstall', ...extraArgs], {
+function runRemove(repo, extraArgs = []) {
+    return execFileSync(process.execPath, [CLI, 'remove', ...extraArgs], {
         cwd: repo,
         env: { ...process.env, ...GIT_SAFE_ENV, HOME: repo, USERPROFILE: repo, AIGON_NONINTERACTIVE: '1' },
         stdio: 'pipe',
@@ -107,12 +107,12 @@ testAsync('install-agent refreshes stale manifest entries without overwrite prom
     assert.strictEqual(installManifestLib.getModifiedFiles(nextManifest, repo).length, 0, 'manifest must be refreshed after re-install');
 }));
 
-testAsync('aigon uninstall --dry-run lists files without deleting', () => withTempDirAsync('aigon-f422-dryrun-', async (repo) => {
+testAsync('aigon remove --dry-run lists files without deleting', () => withTempDirAsync('aigon-f422-dryrun-', async (repo) => {
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
     const manifest = installManifestLib.readManifest(repo);
 
-    const output = runUninstall(repo, ['--dry-run']);
+    const output = runRemove(repo, ['--dry-run']);
     assert.ok(output.includes('dry-run'), `output should mention dry-run: ${output}`);
 
     // Files must still exist
@@ -123,11 +123,11 @@ testAsync('aigon uninstall --dry-run lists files without deleting', () => withTe
     assert.ok(installManifestLib.readManifest(repo), 'manifest must still exist after --dry-run');
 }));
 
-testAsync('aigon uninstall removes manifest files, preserves runtime state', () => withTempDirAsync('aigon-f422-uninstall-', async (repo) => {
+testAsync('aigon remove removes manifest files, preserves runtime state', () => withTempDirAsync('aigon-f422-remove-', async (repo) => {
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
     const manifest = installManifestLib.readManifest(repo);
-    assert.ok(manifest.files.length > 0, 'must have files to uninstall');
+    assert.ok(manifest.files.length > 0, 'must have files to remove');
 
     // Create some runtime state that must NOT be deleted
     const runtimeDirs = ['.aigon/workflows', '.aigon/state', '.aigon/sessions'];
@@ -137,7 +137,7 @@ testAsync('aigon uninstall removes manifest files, preserves runtime state', () 
     }
     fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), '{}');
 
-    runUninstall(repo, ['--force']);
+    runRemove(repo, ['--force']);
 
     // Runtime state preserved
     for (const d of runtimeDirs) {
@@ -146,7 +146,7 @@ testAsync('aigon uninstall removes manifest files, preserves runtime state', () 
     assert.ok(fs.existsSync(path.join(repo, '.aigon', 'config.json')), '.aigon/config.json must be preserved');
 
     // Manifest itself should be gone
-    assert.strictEqual(installManifestLib.readManifest(repo), null, 'manifest must be deleted after uninstall');
+    assert.strictEqual(installManifestLib.readManifest(repo), null, 'manifest must be deleted after remove');
 }));
 
 testAsync('migration 2.61.0 synthesizes manifest for legacy repo', () => withTempDirAsync('aigon-f422-mig-', async (repo) => {

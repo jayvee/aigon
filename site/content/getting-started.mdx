@@ -49,7 +49,7 @@ You only need two things on your machine before `npm install` will work — **No
 1. **Prerequisites** — verifies Node, npm, Git, GitHub CLI (`gh`), and tmux are installed; offers to install missing optional ones (`gh`, `tmux`); prompts for Git identity if not configured; runs `gh auth login` if needed.
 2. **Terminal preference** (macOS only) — pick from iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux uses tmux for persistent sessions and can auto-detect GNOME Terminal / Kitty / xterm for foreground launches.
 3. **Agent install** — multi-select from Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, and Kimi. Aigon installs each binary you select; for Claude Code, Gemini, and Codex it also runs the auth flow (Cursor / OpenCode / Kimi need to be authenticated separately).
-4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon init` and `aigon update`, and registers it with the dashboard.
+4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon apply`, and registers it with the dashboard.
 5. **Repo scan** — scans your `~/src` directory for Git repositories and offers to register them with the dashboard (so they show up on the kanban without you running `aigon server add` yourself).
 6. **Dashboard server** — opt-in start. The wizard does NOT start the server by default; you have to confirm.
 7. **Brewboard demo** — opt-in walkthrough that drives an autonomous feature against the seed repo.
@@ -61,11 +61,11 @@ Once the wizard has finished, point Aigon at any Git repository:
 
 ```bash
 cd /path/to/your/project
-aigon init
+aigon apply
 aigon install-agent cc gg          # Install Claude Code + Gemini agents
 ```
 
-`aigon init` writes the kanban folder structure under `docs/specs/`, installs project git hooks, allocates a port block for that repo, and bootstraps the workflow engine. The kanban has six lanes — features and research move through `01-inbox` → `02-backlog` → `03-in-progress` → `04-in-evaluation` → `05-done`, with `06-paused` for paused work.
+`aigon apply` is the one verb you run to bring Aigon into a repo and to keep it current. On first run it writes the kanban folder structure under `docs/specs/`, installs project git hooks, allocates a port block, and bootstraps the workflow engine. On subsequent runs it re-vendors docs and refreshes agent configs. The kanban has six lanes — features and research move through `01-inbox` → `02-backlog` → `03-in-progress` → `04-in-evaluation` → `05-done`, with `06-paused` for paused work.
 
 `aigon install-agent` writes per-agent slash commands and config into your repo. Pass any combination of these codes:
 
