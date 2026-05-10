@@ -1,0 +1,74 @@
+---
+title: "apply"
+description: "Initialize Aigon in a repo on first run, then keep Aigon files up to date."
+---
+
+# `aigon apply`
+
+`apply` is the one verb you run to bring Aigon into a repository and to keep it current.
+
+```bash
+cd /path/to/project
+aigon apply
+```
+
+On **first run** (no `.aigon/` directory present), `apply` bootstraps the repo:
+
+- Creates the spec folder structure under `docs/specs/` (features, research, feedback with all lane subdirectories)
+- Writes `docs/specs/README.md`
+- Ensures `.aigon/.board-map.json` and `.env.local` are in `.gitignore`
+- Installs the project pre-commit hook
+- Allocates a base port block (on profiles where dev servers are enabled)
+- Bootstraps workflow-engine snapshots for any pre-existing specs (seed-clone case)
+- Creates `~/.aigon/worktrees/<repo>/` and seeds agent trust
+
+After bootstrap, normal apply logic runs: registers the repo in the global registry, refreshes templates for any installed agents, and writes `.aigon/version` + `.aigon/applied-digest`.
+
+On **subsequent runs** (`.aigon/` already present), `apply` runs only the template-refresh path — no banner, no bootstrap, no next-step hint.
+
+## What apply does on a fresh repo
+
+When you run `aigon apply` in a new Git repo, the output looks like:
+
+```
+✨ First-time setup: bringing Aigon into this repo…
+ACTION: Initializing Aigon in ./docs/specs ...
+✅ ./docs/specs directory structure created.
+…
+Next: aigon install-agent cc gg cx cu
+```
+
+The next-step hint lists only the agent CLIs that are already on your PATH.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--all` | Apply to every repo registered in `~/.aigon/config.json`, skipping repos already at the current digest |
+| `--no-commit` | Print the `git add` + `git commit` command instead of running it |
+
+## Preconditions
+
+- Must be run inside a Git repository (`.git/` present). In non-git directories, `apply` exits non-zero with a clear error.
+- Worktrees (`.aigon/worktree.json` present) skip bootstrap, digest write, version write, and registry write.
+
+## Replacing `aigon init`
+
+`aigon init` is deprecated. `aigon apply` replaces it entirely — it handles both first-time initialization and ongoing updates, so there is only one verb to remember.
+
+```bash
+# Deprecated
+aigon init
+aigon apply  # separate second step
+
+# Current
+aigon apply  # one command does both
+```
+
+`aigon init` still works but prints a deprecation warning. It will be removed in a future release.
+
+## See also
+
+- [`remove`](./remove) — remove Aigon-managed files from a repo
+- [`install-agent`](./install-agent) — install agent commands, skills, and hooks
+- [`doctor`](./doctor) — detect and repair project state drift

@@ -56,7 +56,6 @@ Apply-pipeline drift hardening (F497–F500, F502), benchmarking workflow upgrad
 
 ### Added
 
-<<<<<<< Updated upstream
 #### Autonomous mode dashboard liveness (F492)
 
 - **Vertical autonomous stage track** — every in-progress autonomous card renders an `AUTONOMOUS PLAN` block listing each stage on its own row with a status marker (`✓` complete / `●` running / `○` waiting / `!` failed). Completed stages inline the agent that ran them as an audit trail (`✓ Implement · CC`). Conductor peek button (`👁`) sits in the section header and opens the orchestrator's tmux session.
@@ -98,14 +97,10 @@ Apply-pipeline drift hardening (F497–F500, F502), benchmarking workflow upgrad
 - **`@senlabsai/aigon` package scope (F416)** — package renamed from `@aigon/cli` to `@senlabsai/aigon` ahead of npm publish.
 - **KM nudge via `/skill: send-keys`** — keyboard-maestro nudge path now uses Claude's `/skill: send-keys` slash command instead of `tmux paste-buffer`, eliminating the buffer-eating side effect on long messages.
 - **Research card nudge follow-ups** — research entities surface up to three recent nudges as chips on the card.
-=======
-- **Pro installation guide** — new docs page at `/docs/guides/pro-installation` covering GitHub PAT setup, `.npmrc` configuration, package install, and `pro.register(api)` wiring, plus a troubleshooting table for common 401/404/git errors.
->>>>>>> Stashed changes
 - **Node 24 CI matrix** — added `24.x` to the `node-version` matrix in `.github/workflows/test.yml`.
 
 ### Changed
 
-<<<<<<< Updated upstream
 - **`Pause` action gated to inbox/backlog only** — engine-event Pause path was offering Pause on every implementing/submitted card; restricted to pre-start lifecycles to match the bypass-machine entry above it.
 - **Dashboard server emits `feature.autonomousPlan` on list payloads** — list/detail split previously dropped the `stages` array; F492's stage track requires it on the kanban view, so the API now ships a lightweight stages-only shape (`{ mode, workflowSlug, error, stages }`) on list rows. List/detail-split test updated with a shape allow-list invariant rather than absence assertion.
 - **Headline tone for stage handoffs flipped to running (green)** — `Starting <stage>` reads as active autonomous progression rather than a yellow "gate" awaiting user action.
@@ -128,10 +123,6 @@ Apply-pipeline drift hardening (F497–F500, F502), benchmarking workflow upgrad
 
 - **`feature-491-card-shell-deferred-followups`** — blank spec, never written; superseded by F492.
 
-=======
-- **README Pro section** — updated from "not yet available" to private beta status with a link to the installation guide.
-
->>>>>>> Stashed changes
 ## [2.63.0] — 2026-04-30
 
 Dashboard performance overhaul (F459, F460, F467–F469, F471), agent quota
