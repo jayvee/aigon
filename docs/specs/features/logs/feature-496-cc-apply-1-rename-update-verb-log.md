@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 451
+lines_removed: 429
+lines_changed: 880
+files_touched: 59
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 234
+output_tokens: 61886
+cache_creation_input_tokens: 276698
+cache_read_input_tokens: 12133766
+thinking_tokens: 0
+total_tokens: 12472584
+billable_tokens: 62120
+cost_usd: 11.4231
+sessions: 2
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 496 - apply-1-rename-update-verb
 Agent: cc
 
