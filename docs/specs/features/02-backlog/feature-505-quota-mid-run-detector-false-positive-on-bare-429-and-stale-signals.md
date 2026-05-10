@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-10T12:41:57.462Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: quota-mid-run-detector-false-positive-on-bare-429-and-stale-signals
