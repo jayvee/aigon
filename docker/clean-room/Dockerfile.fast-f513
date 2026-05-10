@@ -1,0 +1,24 @@
+# Pre-warmed image for the F513 quick smoke test.
+# Node 22 + build tools + git are pre-installed so each container run only
+# does `npm install -g <tarball>` and the test itself (~30s total).
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      sudo ca-certificates curl git \
+      build-essential python3 && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash dev && \
+    echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir -p /home/dev/src && \
+    chown dev:dev /home/dev/src
+
+WORKDIR /home/dev
+USER dev
+
+CMD ["/bin/bash"]

@@ -196,10 +196,16 @@ clone_brewboard() {
 }
 
 install_aigon_into_repo() {
-  step "Install aigon into the repo"
+  step "Apply aigon into the repo (first-run bootstrap)"
   cd "$BREWBOARD_DIR"
-  aigon init 2>&1 || true
-  pass "aigon init"
+  local apply_out
+  apply_out="$(aigon apply 2>&1 || true)"
+  echo "$apply_out" | tail -20
+  if echo "$apply_out" | grep -q "First-time setup"; then
+    pass "aigon apply printed first-time-setup banner"
+  else
+    fail "aigon apply did not print 'First-time setup' banner on a fresh repo"
+  fi
 
   step "Install agents (cc + gg)"
   aigon install-agent cc gg --force 2>&1 || true

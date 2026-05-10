@@ -35,72 +35,110 @@ The script exits 0 on success and non-zero with a stage-tagged error on any must
 
 ## Manual mode
 
-### Step 0: Launch the container
+This is a single linear flow. Run **every** command in order — don't skip ahead, don't substitute. Each block is copy-paste ready.
 
-Run from the aigon repo root (`~/src/aigon`):
+### Step 1: Pack the current source (on your Mac, before launching the container)
+
+```bash
+cd ~/src/aigon
+rm -f senlabsai-aigon-*.tgz
+npm pack
+```
+
+You should see `senlabsai-aigon-<version>.tgz` in the repo root. This is what the container will install — so it contains every uncommitted change in your working tree at pack time.
+
+> **Why this and not `npm install -g @senlabsai/aigon@next`?** Installing from `@next` would test the *published* version, not the changes you just made. Always pack locally for testing.
+
+### Step 2: Build the container image and launch (on your Mac)
 
 ```bash
 cd ~/src/aigon
 docker build -t aigon-clean-room docker/clean-room/
-docker run --rm -it -v ~/src/aigon:/home/dev/src/aigon -p 4102:4100 --hostname clean-room aigon-clean-room bash
+docker run --rm -it \
+  -v ~/src/aigon:/home/dev/src/aigon \
+  -p 4102:4100 \
+  --hostname clean-room \
+  aigon-clean-room bash
 ```
 
-You are now `dev` inside Ubuntu 24.04. Nothing is pre-installed.
+You are now `dev` inside Ubuntu 24.04 with nothing pre-installed. Every command from here on runs **inside the container** until you `exit`.
 
-### Step 1: Inject your credentials (from a second terminal on your Mac)
+### Step 3: Install system prerequisites
 
 ```bash
-bash scripts/docker-inject-creds.sh $(docker ps -qf ancestor=aigon-clean-room)
+sudo apt-get update -qq
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+  nodejs git tmux lsof build-essential python3
 ```
 
-This copies `~/.claude.json`, `~/.claude/settings.json`, Gemini, Codex, and GitHub CLI credentials into the container. Skip anything you don't have.
-
-### Step 2: Install system prerequisites
+### Step 4: Install Aigon from the packed tarball
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git tmux lsof build-essential python3
-```
-
-### Step 3: Install Aigon from npm
-
-```bash
-sudo npm install -g @senlabsai/aigon@next
+TGZ=$(ls /home/dev/src/aigon/senlabsai-aigon-*.tgz | head -1)
+sudo npm install -g "$TGZ"
 aigon --version
 ```
 
-Or to test from local source instead:
+`aigon --version` should print whatever version is in `package.json` on your Mac.
+
+### Step 5: Clone the demo repo
 
 ```bash
-cd ~/src/aigon && npm ci --ignore-scripts && sudo npm link
+git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
+cd ~/src/brewboard
+npm install
 ```
 
-### Step 4: Clone the test repo
+### Step 6: Bring Aigon into the repo
 
 ```bash
-git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard && cd ~/src/brewboard && npm install
+aigon apply
+aigon install-agent cc gg
+aigon board
+aigon doctor
 ```
 
-### Step 5: Initialise Aigon in the repo
+`aigon apply` bootstraps `.aigon/`, the kanban folder layout, hooks, and the workflow engine on first run — and refreshes templates thereafter. `install-agent cc gg` writes Claude Code and Gemini slash commands and configs (no login required to test the install path).
+
+### Step 7: Start the server and open the dashboard
 
 ```bash
-aigon init && aigon install-agent cc gg && aigon board && aigon doctor
+nohup aigon server start > ~/server.log 2>&1 &
+sleep 3
+aigon server add ~/src/brewboard
 ```
 
-### Step 6: Start the server and open the dashboard
+Open **http://localhost:4102** in your Mac browser. The host port 4102 maps to port 4100 inside the container.
 
-```bash
-nohup aigon server start > /dev/null 2>&1 & sleep 2 && aigon server add ~/src/brewboard
-```
+### Step 8: Verify
 
-Open **http://localhost:4102** in your Mac browser (note: host port 4102 maps to container 4100).
+Tick these off in the container shell + browser:
 
-### Verification checklist
-
-- [ ] `node --version` prints 18+
-- [ ] `aigon --version` prints a version
+- [ ] `node --version` prints v22.x
+- [ ] `aigon --version` prints your local source version
 - [ ] `aigon board` shows seeded brewboard features
-- [ ] `aigon doctor` passes Node, git, tmux checks
-- [ ] Dashboard at localhost:4102 shows brewboard in the Pipeline view
+- [ ] `aigon doctor` reports green for Node, git, tmux
+- [ ] Dashboard at `http://localhost:4102` loads and shows `brewboard` in the Pipeline view
+
+### Step 9: Tear down
+
+Type `exit` in the container. The container is `--rm` so it cleans itself up automatically — nothing on your Mac is mutated.
+
+---
+
+## Optional: inject your real agent credentials
+
+**Skip this section unless** you specifically want to also test that the agent CLIs can talk to Anthropic/Google with your real account — e.g. for running an actual feature autonomously inside the container. The install / apply / remove / dashboard flow above does **not** need it.
+
+After Step 2 (container is running) and **from a second terminal on your Mac**:
+
+```bash
+cd ~/src/aigon
+bash scripts/docker-inject-creds.sh $(docker ps -qf ancestor=aigon-clean-room)
+```
+
+This copies `~/.claude.json`, `~/.claude/settings.json`, Gemini, Codex, and GitHub CLI credentials into the container. Skip silently for anything you don't have configured on your Mac.
 
 ---
 
