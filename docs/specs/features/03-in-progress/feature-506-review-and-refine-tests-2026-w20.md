@@ -62,19 +62,18 @@ If a grouping scheme is already in place from a prior run, validate it still map
 
 ## Run Log
 
-<!-- Append a new entry here at the top of this section before closing the feature. -->
-<!-- Format:
-### 2026-W20 — <ISO date>
-- Baseline: <N tests, Ts duration> (coverage: <X%> if available)
-- After:    <N tests, Ts duration> (coverage: <X%> if available)
-- Deltas:   <±tests, ±duration, ±coverage>
-- Deleted:  <one line per file/group>
-- Merged:   <one line per file/group>
-- Rewritten: <one line per file/group>
-- Added:    <one line per missing-coverage gap filled>
-- Deferred for human: <items above the 20% threshold or unclear judgment calls>
-- Commits:  <short SHAs in order>
--->
+### 2026-W20 — 2026-05-11
+- Baseline: 86 files (85 integration + 1 workflow), ~19.5s; no coverage metrics
+- After:    89 files (88 integration + 1 workflow), ~22s
+- Deltas:   +3 test files, +~2.5s; 9 files rewritten to standard helpers; 1 file split; 4 infra bugs fixed
+- Deleted:  none
+- Merged:   misc-command-wrapper.test.js → split: budget-parser tests moved to budget-poller.test.js
+- Rewritten: spec-recommendation, stats-aggregate, plan-flag-draft, rank-agents-for-operation, benchmark-judge, feature-close-restart, feature-close-scan-target, agent-session-id-capture, feature-do-resume (all converted from bare-assert to test()/report() pattern)
+- Added:    probe-ttl-cache.test.js (7 tests), spec-review-state.test.js (16 tests), budget-poller.test.js (8 tests, split from misc-command-wrapper)
+- Infra bugs fixed: merge conflict in lib/commands/misc.js (bench ignoreStaleness), merge conflict in lib/perf-bench.js (probe stdio), setup.js docs-manifest recording bug (F502 lockstep), install-manifest.json regenerated, 4 site conflict resolutions, lint errors in quota-classifier
+- Tooling: fixed dead smoke file ref (recurring-instance → action-scope), added npm run test:related
+- Deferred for human: none (no test exceeded 20% deletion threshold)
+- Commits:  976a85dd f9fd7f4a 9d32e0eb 86ba24d3
 
 ## Pre-authorised
 
