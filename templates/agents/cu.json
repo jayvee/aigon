@@ -101,8 +101,8 @@
         "hooks": {
           "sessionStart": [
             {
-              "command": "aigon check-version",
-              "timeout": 30
+              "command": "aigon check-version --notice-only",
+              "timeout": 15
             },
             {
               "command": "aigon project-context",
