@@ -1,0 +1,22 @@
+---
+title: "update"
+description: "Refresh installed Aigon templates and agent integration files in a project."
+---
+
+# `aigon update`
+
+Refreshes Aigon-managed project files after upgrading the Aigon package.
+
+```bash
+aigon update
+aigon update --pull
+```
+
+`update` re-runs migrations and reinstalls detected agent integrations using the current package templates. With `--pull`, it runs `git pull` first, then syncs Aigon files.
+
+Use this after `npm update -g @senlabsai/aigon@next` or when the dashboard reports that a project install is stale.
+
+## See also
+
+- [`install-agent`](./install-agent)
+- [`doctor`](./doctor)
