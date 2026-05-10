@@ -54,7 +54,7 @@ All acceptance criteria met. Unified drift notice implemented across hooks (cc/g
 
 ### Fixes Applied
 
-- Pending commit `fix(review): …` — stderr for `--notice-only`, prerelease-aware npm layer in `getRepoVersionStatus`, launcher no longer discards stderr, revert stray feature-501 folder move off this branch.
+- `76d0863b` fix(review): stderr drift notice, npm prerelease layer, revert stray feature-501 move
 
 ### Validation
 
