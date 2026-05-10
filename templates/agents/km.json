@@ -101,7 +101,11 @@
     "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,
-    "submitKey": "Enter"
+    "submitKey": "Enter",
+    "nudgeTransport": {
+      "useSendKeys": true,
+      "submitKey": "Enter"
+    }
   },
   "placeholders": {
     "AGENT_ID": "km",
