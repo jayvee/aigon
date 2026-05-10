@@ -8,7 +8,7 @@ transitions:
 
 ## Summary
 
-Collapse `aigon init` and `aigon apply` into a single verb: **`aigon apply`**. When invoked in a Git repo that does not yet contain `.aigon/`, `apply` runs the bootstrap that `init` does today (spec folder layout, gitignore entries, pre-commit hook, port-block allocation, workflow-snapshot bootstrap, worktree base + agent trust) *before* the normal template-refresh logic — no separate verb, no "are you sure?" prompt. Then expose the inverse operation under a name that pairs naturally with `apply`: **`aigon remove`**. The existing per-repo cleanup logic (today's `aigon uninstall`) is renamed to `aigon remove`, extended to deregister from the global repo registry and (optionally) purge `.aigon/` runtime state, and documented in the public command reference. There is no deprecation alias for `uninstall` — it is renamed cleanly.
+Collapse `aigon init` and `aigon apply` into a single verb: **`aigon apply`**. When invoked in a Git repo that does not yet contain `.aigon/`, `apply` runs the bootstrap that `init` does today (spec folder layout, gitignore entries, pre-commit hook, port-block allocation, workflow-snapshot bootstrap, worktree base + agent trust) *before* the normal template-refresh logic — no separate verb, no "are you sure?" prompt. Then expose the inverse operation under a name that pairs naturally with `apply`: **`aigon remove`**. The existing per-repo cleanup logic (today's `aigon uninstall`) is renamed to `aigon remove`, extended to deregister from the global repo registry and (optionally) purge `.aigon/` runtime state, and documented in the public command reference. `aigon uninstall` is deleted outright (no deprecation alias — it was undocumented) and replaced with a helpful error redirect.
 
 Net effect: the verb pair is **`aigon apply`** (bring Aigon into a repo, keep it current) and **`aigon remove`** (take it back out). The two-verb mental model (`init` then `apply`) is retired, and the confusing "`uninstall` sounds like it removes the global CLI" footgun is gone.
 
@@ -19,7 +19,7 @@ Net effect: the verb pair is **`aigon apply`** (bring Aigon into a repo, keep it
 - [ ] As an existing user, `aigon apply` keeps doing what it does today — refreshing templates and writing the applied-digest. The bootstrap path is silent on already-initialised repos.
 - [ ] As a user who decides Aigon isn't for me (or for *this* repo), I run `aigon remove` to remove every file Aigon wrote, with `--purge` to also wipe runtime state under `.aigon/`. My spec history (`docs/specs/`), `AGENTS.md`, `CLAUDE.md`, and `README.md` are never touched.
 - [ ] As a user who reads `aigon --help` for the first time, the verb that mirrors `apply` is `remove`. I don't have to wonder whether `uninstall` means "uninstall the CLI globally" — there is no such verb in Aigon's vocabulary (`npm uninstall -g @senlabsai/aigon` is the canonical CLI uninstall).
-- [ ] As a user running `aigon init` out of habit (or from a stale script / blog post), the command still works for one release cycle but prints a deprecation note pointing me at `aigon apply`.
+- [ ] As a user running `aigon init` out of habit (or from a stale script / blog post), the command still works for two release cycles but prints a deprecation note pointing me at `aigon apply`.
 - [ ] As a user running `aigon apply` from a worktree (`.aigon/worktree.json` present), the worktree-skip behaviour is preserved — no digest write, no bootstrap, no registry mutation. Same as today.
 - [ ] As a user running `aigon apply` in a non-Git directory, I get a clear error telling me to `git init` first; nothing is created. (Previously `aigon init` had the same precondition.)
 
@@ -59,12 +59,14 @@ Net effect: the verb pair is **`aigon apply`** (bring Aigon into a repo, keep it
 - [ ] `aigon remove` refuses to run in a worktree (`.aigon/worktree.json` present) with: `Refusing to remove from a worktree — would affect the main repo. Run \`aigon remove\` in the main repo (\`<resolved path>\`).`
 - [ ] `aigon remove` does **not** delete `docs/specs/` under any flag. Spec history is user data. (Codify the invariant in tests.)
 - [ ] `aigon remove` does not modify `AGENTS.md`, `CLAUDE.md`, `README.md`, or any non-Aigon source file. The existing manifest-driven approach ensures this; codify in tests.
+- [ ] `aigon remove --force` bypasses the confirmation prompt and executes immediately.
+- [ ] `aigon remove --dry-run` prints the list of files that would be removed and the registry entry that would be deleted, but makes no changes.
 - [ ] `aigon remove --help` prints the flag summary and a one-liner reminding the user: `To uninstall the Aigon CLI globally, run: npm uninstall -g @senlabsai/aigon — see "Uninstalling Aigon completely" in the docs.`
 
 ### Doctor: catch partial states
 
-- [ ] `aigon doctor` detects the "`.aigon/` exists but spec folder structure is missing" partial-bootstrap state and offers `aigon apply` as the fix. (Most likely produced by a half-finished old `init` or by manual deletion.)
-- [ ] `aigon doctor` detects the "`.aigon/install-manifest.json` references files that no longer exist" state (already partly handled) and recommends `aigon apply` to re-emit them.
+- [ ] `aigon doctor` detects the "`.aigon/` exists but spec folder structure is missing" partial-bootstrap state, prints it in the report, and suggests running `aigon apply` as the fix. `doctor --fix` does **not** auto-run `apply`.
+- [ ] `aigon doctor` detects the "`.aigon/install-manifest.json` references files that no longer exist" state (already partly handled), prints it in the report, and suggests `aigon apply` to re-emit them. `doctor --fix` does **not** auto-run `apply`.
 
 ## Validation
 
@@ -148,7 +150,7 @@ In `lib/commands/setup.js`, the existing `'apply'` handler (around line 1283) ge
 }
 ```
 
-Factor the body of today's `'init'` handler (`lib/commands/setup.js:140–238`) into a pure helper `runInitBootstrap(repoPath)` in the same file (or a new `lib/commands/setup/bootstrap.js`). The `'init'` handler then shrinks to the deprecation shim that forwards to `'apply'`.
+Factor the body of today's `'init'` handler (`lib/commands/setup.js:140–238`) into a pure helper `runInitBootstrap(repoPath)` in `lib/commands/setup.js`. Keep it in the same file unless the extracted helper exceeds ~80 lines, in which case move it to `lib/commands/setup/bootstrap.js`. The `'init'` handler then shrinks to the deprecation shim that forwards to `'apply'`.
 
 ### Init handler — deprecation shim
 
@@ -183,7 +185,7 @@ Then three additive changes inside the renamed handler:
    const worktreeMarker = path.join(removeRepoRoot, '.aigon', 'worktree.json');
    if (fs.existsSync(worktreeMarker)) {
      const wt = JSON.parse(fs.readFileSync(worktreeMarker, 'utf8'));
-     console.error(`Refusing to remove from a worktree — would affect the main repo.`);
+     console.error('Refusing to remove from a worktree — would affect the main repo.');
      console.error(`Run \`aigon remove\` in the main repo (${wt.mainRepo}).`);
      process.exit(1);
    }
@@ -240,7 +242,7 @@ Then three additive changes inside the renamed handler:
 
 ### Telemetry
 
-Emit a single event on first-time bootstrap (the path where `isFirstTime === true`) so we can count merged-apply adoption: `aigon_apply.first_time_bootstrap` with `{ repoPath, profile, hadPreexistingSpecs }`. Reuses the existing telemetry hook in `lib/telemetry.js`.
+Emit a single event on first-time bootstrap (the path where `isFirstTime === true`) so we can count merged-apply adoption: `aigon_apply.first_time_bootstrap` with `{ repoPath, profile, hadPreexistingSpecs }`. Call `telemetry.recordEvent('aigon_apply', 'first_time_bootstrap', payload)` from `lib/telemetry.js` (or the equivalent `recordTelemetryEvent` helper exported by that module).
 
 ### Tests
 
@@ -253,6 +255,7 @@ New integration tests under `tests/integration/`:
 - `init-deprecation.test.js` — `aigon init` prints the deprecation warning and forwards.
 - `remove-default.test.js` — manifest files removed, spec folder preserved, registry entry removed.
 - `remove-purge.test.js` — `--purge` also removes `.aigon/`.
+- `remove-dry-run.test.js` — `--dry-run` prints deletions but touches no files and leaves the registry intact.
 - `remove-worktree-refusal.test.js` — worktree remove errors and changes nothing.
 - `remove-then-apply.test.js` — full cycle: bootstrap → remove → bootstrap is idempotent.
 - `uninstall-alias-error.test.js` — `aigon uninstall` exits non-zero with the "Did you mean: aigon remove?" hint.
