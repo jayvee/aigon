@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`@senlabsai/aigon` package scope (F416)** — package renamed from `@aigon/cli` to `@senlabsai/aigon` ahead of npm publish.
 - **KM nudge via `/skill: send-keys`** — keyboard-maestro nudge path now uses Claude's `/skill: send-keys` slash command instead of `tmux paste-buffer`, eliminating the buffer-eating side effect on long messages.
 - **Research card nudge follow-ups** — research entities surface up to three recent nudges as chips on the card.
+- **Pro installation guide** — new docs page at `/docs/guides/pro-installation` covering GitHub PAT setup, `.npmrc` configuration, package install, and `pro.register(api)` wiring, plus a troubleshooting table for common 401/404/git errors.
 - **Node 24 CI matrix** — added `24.x` to the `node-version` matrix in `.github/workflows/test.yml`.
 
 ### Changed
@@ -79,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **`feature-491-card-shell-deferred-followups`** — blank spec, never written; superseded by F492.
+
+- **README Pro section** — updated from "not yet available" to private beta status with a link to the installation guide.
 
 ## [2.63.0] — 2026-04-30
 
