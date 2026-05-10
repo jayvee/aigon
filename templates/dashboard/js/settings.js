@@ -1566,27 +1566,38 @@
       }
 
       // Version section
-      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed version and npm registry update status.');
+      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed Aigon CLI version, npm registry update status, and Aigon Pro install + activation state.');
       const uc = (state.data || {}).updateCheck;
       const stateLabels = { latest: 'up to date', 'update-available': 'update available', 'prerelease-available': 'prerelease available', unavailable: 'unavailable' };
       const stateCls = { latest: 'state-latest', 'update-available': 'state-update', 'prerelease-available': 'state-prerelease', unavailable: 'state-unavailable' };
       const ucState = (uc && uc.state) || 'unavailable';
-      function vRow(label, value) {
+      function vRow(label, value, opts) {
+        opts = opts || {};
         const row = document.createElement('div');
         row.className = 'version-row';
-        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-value">' + escHtml(value || '—') + '</span>';
+        const valueStyle = opts.muted ? ' style="color:var(--text-tertiary)"' : '';
+        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-value"' + valueStyle + '>' + escHtml(value || '—') + '</span>';
+        return row;
+      }
+      function vBadgeRow(label, badgeClass, badgeText) {
+        const row = document.createElement('div');
+        row.className = 'version-row';
+        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-state-badge ' + badgeClass + '">' + escHtml(badgeText) + '</span>';
         return row;
       }
       const vPanel = document.createElement('div');
       vPanel.className = 'version-info settings-panel';
+
+      // ── Aigon CLI ────────────────────────────────────────────────
+      const cliHeader = document.createElement('div');
+      cliHeader.className = 'version-subheader';
+      cliHeader.textContent = 'Aigon CLI';
+      vPanel.appendChild(cliHeader);
       vPanel.appendChild(vRow('Installed', (uc && uc.current) || '—'));
       if (uc) {
         if (uc.latestStable) vPanel.appendChild(vRow('Latest stable', uc.latestStable));
         if (uc.latestNext) vPanel.appendChild(vRow('Latest next', uc.latestNext));
-        const stateRow = document.createElement('div');
-        stateRow.className = 'version-row';
-        stateRow.innerHTML = '<span class="version-label">Status</span><span class="version-state-badge ' + (stateCls[ucState] || 'state-unavailable') + '">' + escHtml(stateLabels[ucState] || ucState) + '</span>';
-        vPanel.appendChild(stateRow);
+        vPanel.appendChild(vBadgeRow('Status', stateCls[ucState] || 'state-unavailable', stateLabels[ucState] || ucState));
         if (ucState === 'update-available' || ucState === 'prerelease-available') {
           vPanel.appendChild(vRow('Upgrade command', uc.upgradeCommand));
         }
@@ -1597,6 +1608,52 @@
         checking.innerHTML = '<span class="version-label">Status</span><span class="version-value" style="color:var(--text-tertiary)">Checking…</span>';
         vPanel.appendChild(checking);
       }
+
+      // ── Aigon Pro ────────────────────────────────────────────────
+      const proHeader = document.createElement('div');
+      proHeader.className = 'version-subheader';
+      proHeader.textContent = 'Aigon Pro';
+      vPanel.appendChild(proHeader);
+      const proStatus = (state.data || {}).proStatus || null;
+      if (!proStatus) {
+        vPanel.appendChild(vRow('Status', 'Checking…', { muted: true }));
+      } else {
+        // Package @senlabsai/aigon-pro: installed (vX.Y.Z) / not installed
+        const pkgValue = proStatus.packageInstalled
+          ? (proStatus.version ? '✅ installed (v' + proStatus.version + ')' : '✅ installed')
+          : '❌ not installed';
+        vPanel.appendChild(vRow('Package @senlabsai/aigon-pro', pkgValue));
+        const keyValue = proStatus.keyPresent ? '✅ present' : '❌ not set';
+        vPanel.appendChild(vRow('Pro key (~/.aigon/config.json)', keyValue));
+
+        let proBadgeClass = 'state-unavailable';
+        let proBadgeText = 'not installed';
+        if (proStatus.active) {
+          proBadgeClass = 'state-latest';
+          proBadgeText = 'active';
+        } else if (proStatus.packageInstalled && !proStatus.keyPresent) {
+          proBadgeClass = 'state-update';
+          proBadgeText = 'installed (not activated)';
+        } else if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
+          proBadgeClass = 'state-update';
+          proBadgeText = 'installed (inactive in this process)';
+        }
+        vPanel.appendChild(vBadgeRow('Status', proBadgeClass, proBadgeText));
+
+        if (!proStatus.packageInstalled) {
+          vPanel.appendChild(vRow('Install', 'npm install -g @senlabsai/aigon-pro'));
+        }
+        if (proStatus.packageInstalled && !proStatus.keyPresent) {
+          vPanel.appendChild(vRow('Activate', 'aigon pro activate <your-key>'));
+        }
+        if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
+          vPanel.appendChild(vRow('Note', 'Restart the dashboard: aigon server restart'));
+        }
+        if (proStatus.resolvedPath) {
+          vPanel.appendChild(vRow('Resolved from', proStatus.resolvedPath, { muted: true }));
+        }
+      }
+
       versionSection.appendChild(vPanel);
 
       reposRoot.appendChild(area);

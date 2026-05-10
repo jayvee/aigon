@@ -59,7 +59,8 @@ Logs are written to `~/.aigon/logs/server-stdout.log` and `~/.aigon/logs/server-
 |----------|-------------|
 | Process crashes | launchd/systemd restarts it automatically |
 | Mac/Linux reboots | Starts on login |
-| `aigon update` | Kills and respawns the server to pick up code changes |
+| `aigon apply` | Re-applying templates does not restart the server. Restart manually if you want new dashboard UI to load |
+| `npm update -g @senlabsai/aigon` | The persistent service auto-recovers after the CLI binary changes |
 | You edit `lib/*.js` (Aigon development) | Run `aigon server restart` manually |
 | Config changes (`.aigon/config.json`) | No restart needed — config is read on each request |
 | New repo registered (`aigon server add`) | No restart needed — picked up on next poll |
@@ -94,7 +95,7 @@ The server always runs on port **4100**. This is not currently configurable.
 | Port 4100 in use | Check what's using it: `lsof -i :4100`. Stop the other process or stop the aigon server with `aigon server stop` |
 | Server running but stale UI | Run `aigon server restart` to pick up code changes |
 | Persistent service not starting on login | Verify the plist exists: `ls ~/Library/LaunchAgents/com.aigon.server.plist` and check logs: `cat ~/.aigon/logs/server-stderr.log` |
-| `aigon update` didn't restart server | The persistent service auto-recovers — launchd detects the process died and relaunches it. `aigon update` now also polls the server after restart and prints `✅ Server restarted and responding on port <N>` or `⚠️` if it didn't respond within 5s |
+| Dashboard server still showing old UI after `npm update` | Run `aigon server restart` — or click `[ Restart now ]` on the dashboard's chrome pill. `aigon apply` does *not* restart the server (that is a separate verb from re-applying templates). |
 | Service crash-looping after a bad edit | Both launchd and systemd now wait 10s between respawns. On Linux, systemd will stop trying after 5 rapid crashes within 60s — fix the issue, then `systemctl --user reset-failed aigon-server && systemctl --user start aigon-server`. After upgrading aigon, re-run `aigon server start --persistent` to pick up the new throttle settings (existing installs are not auto-rewritten) |
 | Supervisor sweep stale | `aigon server status` now shows `Supervisor: running 🟢 healthy` / `🟡 stale` / `🔴 dead` based on how recently the supervisor loop completed a sweep. If it's stale or dead, restart the server with `aigon server restart` |
 | Server shows wrong repos | Run `aigon server list` to verify registered repos. Add missing ones with `aigon server add` |
@@ -110,6 +111,6 @@ aigon server add ~/src/my-project
 # Check health
 aigon server status
 
-# Restart after an aigon update
+# Restart after npm upgrade (to pick up new dashboard UI)
 aigon server restart
 ```

@@ -247,7 +247,7 @@ aigon server remove ~/src/old-project   # Unregister a repo
 ```bash
 aigon server start --persistent   # Install as system service (recommended, one-time)
 aigon server start                # Start in foreground (alternative)
-aigon server restart              # Restart (e.g. after aigon update)
+aigon server restart              # Restart (e.g. after `npm update -g @senlabsai/aigon`)
 aigon server status               # Check health, PID, uptime
 aigon server stop                 # Stop the server
 aigon server open                 # Open in browser
@@ -255,7 +255,32 @@ aigon server open                 # Open in browser
 
 ### When to restart
 
-The server auto-restarts on crash and after `aigon update`. You only need to manually restart if you're developing Aigon itself and editing `lib/*.js` files. Config changes and new repo registrations are picked up automatically without a restart.
+The server auto-restarts on crash. You need to restart manually after `npm update -g @senlabsai/aigon` (so the dashboard process picks up the new code), or if you are developing Aigon itself and editing `lib/*.js` files. Config changes and new repo registrations are picked up automatically without a restart.
+
+## Upgrade pill (chrome)
+
+When a newer Aigon is available on npm, the dashboard's running code is behind the installed CLI, or one of your registered repos is behind on `aigon apply`, the dashboard chrome shows a slim pill that walks you through the upgrade arc in three phases:
+
+1. **Phase 1 — npm has newer**: `↑ aigon vX.Y available  [ Show ]`. Expand for the `npm update` command to copy.
+2. **Phase 2 — restart the dashboard**: `✓ aigon vX.Y installed. Restart the dashboard to use it.  [ Restart now ]`. The button calls `POST /api/server/restart`; the page reconnects when the WebSocket comes back up.
+3. **Phase 3 — re-apply to your repos**: `↻ Re-apply aigon vX.Y to your repos.  [ Show repos ▾ ]`. Expand to see every registered repo with per-row `[ Preview ]` and `[ Re-apply ]`, plus an aggregate `[ Re-apply all N stale repos ]` (runs `aigon apply --all`).
+
+No phase auto-advances — every transition requires an explicit click. The pill is **absent** from the DOM when everything is current. See [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates) for the full flow.
+
+## Settings → Version
+
+**Settings → Version** mirrors the data the upgrade pill uses, plus Pro state:
+
+| Row | What it shows |
+|---|---|
+| Installed | Aigon CLI version currently on disk |
+| Latest stable / Latest next | Latest registry versions from the cached npm check |
+| Status | `up to date` / `update available` / `prerelease available` / `unavailable` |
+| Upgrade command | The `npm update -g @senlabsai/aigon` line to copy |
+| Pro package | Whether `@senlabsai/aigon-pro` is installed (and the resolved version) |
+| Pro key | Whether `proKey` is present in `~/.aigon/config.json` |
+| Pro status | `active`, `installed (not activated)`, or `not installed` |
+| Registry error | Last npm registry error, if any |
 
 ## Remote access
 
