@@ -39,7 +39,7 @@
     "aigon": "aigon-cli.js"
   },
   "scripts": {
-    "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true",
+    "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true && node ./aigon-cli.js installed-notice || true",
     "prepublishOnly": "node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
     "release": "node scripts/publish.js",
     "ship": "node scripts/ship.js",
