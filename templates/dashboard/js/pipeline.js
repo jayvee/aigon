@@ -626,9 +626,12 @@
       const runtimeId = agent.runtimeAgentId || agent.id;
       const slotId = agent.id;
       const runtimeName = AGENT_DISPLAY_NAMES[runtimeId] || runtimeId;
-      const displayName = runtimeId !== slotId
-        ? runtimeName + ' (was ' + (AGENT_DISPLAY_NAMES[slotId] || slotId) + ')'
-        : runtimeName;
+      const isSwapped = runtimeId !== slotId;
+      const slotDisplayName = AGENT_DISPLAY_NAMES[slotId] || slotId;
+      const displayName = runtimeName;
+      const swappedFromHtml = isSwapped
+        ? '<div class="kcard-agent-was" title="Originally ' + escHtml(slotDisplayName) + '">was ' + escHtml(slotDisplayName) + '</div>'
+        : '';
       const entityType = pipelineType === 'research' ? 'research' : 'feature';
       const s = buildAgentStatusHtml(agent, { showDevLink: true, entityType });
       const devServerLink = buildDevServerLinkHtml(s.devServerUrl);
@@ -805,6 +808,7 @@
           peekBtn +
           devSlot +
         '</div>' +
+        swappedFromHtml +
         quotaChipHtml +
         statusRowHtml +
         (actionsHtml ? '<div class="kcard-agent-actions">' + actionsHtml + '</div>' : '') +

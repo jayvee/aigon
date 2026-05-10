@@ -336,6 +336,7 @@
     .kcard-gh-logo{width:12px;height:12px;vertical-align:-1px;margin-right:3px;opacity:.7}
     .kcard-agent-header{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0}
     .kcard-agent-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;letter-spacing:.03em}
+    .kcard-agent-was{font-size:10px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;margin:-1px 0 3px 0;line-height:1.2}
     .kcard-agent-triplet{font-size:9px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;padding:1px 5px;border:1px solid var(--border-subtle);border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
     .kcard-agent-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
     .kcard-agent-status-row.is-idle-ladder{opacity:.72}
