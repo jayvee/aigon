@@ -1,0 +1,105 @@
+{
+  "pairs": [
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+      "ok": true,
+      "totalMs": 91617,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter",
+      "ok": true,
+      "totalMs": 209121,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "ok": true,
+      "totalMs": 185355,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "ok": true,
+      "totalMs": 469884,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "ok": false,
+      "error": "feature-start failed (exit 1)"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "ok": true,
+      "totalMs": 68143,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "ok": false,
+      "error": "feature-start failed (exit 1)"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-coder",
+      "modelLabel": "Qwen3 Coder 480B via OpenRouter",
+      "ok": true,
+      "totalMs": 247722,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/codestral-2508",
+      "modelLabel": "Codestral 2508 via OpenRouter",
+      "ok": true,
+      "totalMs": 443051,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-medium-2507",
+      "modelLabel": "Devstral Medium (2507) via OpenRouter",
+      "ok": true,
+      "totalMs": 112476,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/x-ai/grok-4-fast",
+      "modelLabel": "Grok 4 Fast via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/x-ai/grok-4.1-fast",
+      "modelLabel": "Grok 4.1 Fast via OpenRouter",
+      "ok": false,
+      "error": "Timed out waiting for op to signal implementation-complete"
+    }
+  ],
+  "timestamp": "2026-05-10T21:48:21.096Z"
+}

@@ -1,0 +1,61 @@
+{
+  "pairs": [
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "ok": true,
+      "costUsd": null,
+      "tokenUsage": null
+    }
+  ],
+  "timestamp": "2026-05-10T22:08:19.382Z"
+}

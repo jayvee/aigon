@@ -1,0 +1,107 @@
+{
+  "seed": "brewboard",
+  "startedAt": "2026-05-10T20:53:19.193Z",
+  "completedAt": "2026-05-10T21:48:21.096Z",
+  "pairs": [
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T20:55:19.979Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T20:59:17.158Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:02:46.944Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:11:00.709Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "status": "failed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:11:08.525Z",
+      "error": "feature-start failed (exit 1)"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:12:38.747Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "status": "failed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:12:55.191Z",
+      "error": "feature-start failed (exit 1)"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-coder",
+      "modelLabel": "Qwen3 Coder 480B via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:17:33.228Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/codestral-2508",
+      "modelLabel": "Codestral 2508 via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:25:21.543Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-medium-2507",
+      "modelLabel": "Devstral Medium (2507) via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:27:44.804Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/x-ai/grok-4-fast",
+      "modelLabel": "Grok 4 Fast via OpenRouter",
+      "status": "failed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:38:01.816Z",
+      "error": "Timed out waiting for op to signal implementation-complete"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/x-ai/grok-4.1-fast",
+      "modelLabel": "Grok 4.1 Fast via OpenRouter",
+      "status": "failed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T21:48:21.090Z",
+      "error": "Timed out waiting for op to signal implementation-complete"
+    }
+  ]
+}

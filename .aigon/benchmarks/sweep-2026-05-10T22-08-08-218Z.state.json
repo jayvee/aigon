@@ -1,0 +1,63 @@
+{
+  "seed": "brewboard",
+  "startedAt": "2026-05-10T22:08:08.219Z",
+  "completedAt": "2026-05-10T22:08:19.383Z",
+  "pairs": [
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.1-terminus",
+      "modelLabel": "DeepSeek V3.1 Terminus via OpenRouter (default)",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:10.226Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-chat-v3.1",
+      "modelLabel": "DeepSeek V3.1 via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:11.721Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v4-pro",
+      "modelLabel": "DeepSeek V4 Pro via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:13.117Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/deepseek/deepseek-v3.2",
+      "modelLabel": "DeepSeek V3.2 via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:14.648Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/qwen/qwen3-235b-a22b-07-25",
+      "modelLabel": "Qwen3 235B (2507) via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:16.270Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-small-2507",
+      "modelLabel": "Devstral Small (2507) via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:17.855Z"
+    },
+    {
+      "agentId": "op",
+      "modelValue": "openrouter/mistralai/devstral-2512",
+      "modelLabel": "Devstral 2 (2512) via OpenRouter",
+      "status": "passed",
+      "resultFile": null,
+      "completedAt": "2026-05-10T22:08:19.382Z"
+    }
+  ]
+}
