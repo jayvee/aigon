@@ -23,7 +23,7 @@ This breaks any workflow that relies on `agent-context` to backfill `AIGON_AGENT
 - [ ] In a Codex session where the parent process chain contains an exact `codex` executable, `aigon agent-context --id-only` prints `cx` even when an intermediate shell command line contains `agent-context`.
 - [ ] `detectActiveAgentSession()` does not classify a parent shell as Cursor solely because its full command line contains the substring `agent` inside another token such as `agent-context`, `AIGON_AGENT_ID`, or `detectActiveAgentSession`.
 - [ ] Exact executable matches still work for all configured agent commands from `templates/agents/*.json` (`claude`, `codex`, `gemini`, `agent`, `kimi`, `opencode`).
-- [ ] Fuzzy command-line matching, if retained, tokenizes argv/path basenames and rejects partial-token matches for short commands like `agent`.
+- [ ] Fuzzy command-line matching tokenizes argv/path basenames and rejects partial-token matches for short or generic commands such as `agent`; longer or distinctive commands may still match as standalone tokens.
 - [ ] When both an incidental fuzzy match and a deeper exact executable match are present in the ancestry, the exact executable match wins.
 - [ ] Regression test covers the observed failure shape: a synthetic parent chain with `zsh -c "aigon agent-context --id-only"` above `codex resume` resolves to `cx`.
 - [ ] Regression test covers the direct Cursor case: a parent process whose executable basename is exactly `agent` still resolves to `cu`.
@@ -65,7 +65,7 @@ Prefer exact process executable matching over fuzzy argument matching across the
 3. Second pass, only if no exact match exists: evaluate fuzzy matches against tokenized argv/path basenames, not raw substrings.
 4. Treat short/common command keys such as `agent` as exact-token-only; never match them inside larger tokens.
 
-This keeps Cursor detection working when the executable is actually `agent`, while preventing shell command text from shadowing a deeper Codex process.
+This keeps Cursor detection working when the executable is actually `agent`, while preventing shell command text from shadowing a deeper Codex process. The existing env-var fallbacks (`CURSOR_TRACE_ID`, `OPENAI_CODEX_CLI`, `GEMINI_CLI`) remain unchanged and operate only when the ancestry walk finds no match.
 
 ### Test strategy
 
@@ -76,6 +76,7 @@ The test fixtures should include:
 - Shell wrapper false positive: `zsh` args contain `aigon agent-context --id-only`; parent is `codex resume`; result is `cx`.
 - Cursor exact executable: `commBase === 'agent'`; result is `cu`.
 - Partial-token guard: `zsh` args contain `AIGON_AGENT_ID` with no real agent process; result is not `cu`.
+- Interpreter-wrapped agent: `commBase === 'node'` with args containing `claude`; result is `cc` (confirms the tokenized second pass still resolves interpreter-launched agents).
 
 ## Dependencies
 
