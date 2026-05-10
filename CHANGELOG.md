@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.64.0-beta.6] — 2026-05-11
+
+Apply-pipeline drift hardening (F497–F500, F502), benchmarking workflow upgrades (F503, F504), engine cleanup (F501), and a quota-detector false-positive fix (F505).
+
+### Added
+
+#### Apply pipeline — drift detection and upgrade flow (F497–F500)
+
+- **Digest-based drift detection (F497)** — `aigon` now decides whether a repo needs re-applying by comparing the on-disk content digest of CLI-emitted artifacts against `.aigon/applied-digest`, not by comparing semver in `.aigon/version` against the installed CLI. Every CLI patch bump used to fire "🔄 Project sync needed" even when no template actually changed; drift now fires *only* when re-apply would produce different bytes. `.aigon/version` is retained as a human-readable provenance stamp with no semantic load.
+- **Unified, named-both-sides drift notice (F498)** — single drift surface across agent SessionStart hooks (cc, gg, cu, **codex** — newly possible since `codex_hooks` shipped), a launcher wrapper for hookless agents (km, op), and `aigon check-version`. Notices always name *both sides* (`applied v2.63, installed v2.67`) and quote the exact next command. Silent when current.
+- **Three-phase dashboard upgrade pill (F499)** — chrome status pill walks the user from "newer aigon on npm" → "restart server" → "re-apply to N repos" with one observation + one action per phase. Backed by new `/api/version-status`, `/api/apply/preview`, and `/api/server/restart` endpoints. Per-repo diff preview before any apply runs (no silent mutation).
+- **Multi-repo registry + `aigon apply --all` (F500)** — uses the existing `~/.aigon/config.json` `repos` array (already auto-populated by `autoRegisterRepoIfNeeded()`). `aigon apply` now self-registers without a running server. New `npm postinstall` hook on `@senlabsai/aigon` lists which known repos are behind after a CLI upgrade. The dashboard's Phase 3 pill lists every stale repo, not just the current one.
+
+#### Template install drift guard (F502)
+
+- **Four-layer guard against installed-command drift** — three problems were converging: stale installed copies in `.claude/commands/`, `.cursor/commands/`, `.gemini/commands/`, `.agents/skills/`; no detection of post-install hand-edits; no auto-propagation when templates change.
+  1. **Startup drift warning** with content-based detection (manifest SHA vs on-disk SHA).
+  2. **Version-bump auto-reinstall** that preserves hand edits.
+  3. **Install-manifest lockstep CI test** — fails the build if `templates/generic/commands/*.md` and the manifest disagree.
+  4. **`prepublishOnly` hook** — blocks publish when manifest is out of lockstep.
+- **`aigon doctor --fix-templates`** — operator-loud repair path for drift detected by the guards.
+- **Drift guard layers documented** in `AGENTS.md` and `CONTRIBUTING.md`.
+
+#### Benchmarking
+
+- **`aigon bench-refresh` (F503)** — monthly refresh command with two jobs: (1) **model discovery** — fetches catalogues from OpenRouter, Gemini, and Anthropic APIs, diffs against each agent's `modelOptions` in template JSONs, appends genuinely new models; (2) **smart staleness-based re-run** — only benchmarks pairs whose last result is older than a per-agent threshold (default 30 days for gg/op; 60 days for cc/cx). `--dry-run` previews discovery + intended runs without changing anything. Designed to be called by the Pro recurring-feature scheduler but works standalone.
+- **Perf-bench fast seed + resume (F504)** — `aigon bench-snapshot brewboard` tarballs a fully-provisioned seed repo (incl. `node_modules` and `.git`) so resets extract from a local file instead of `git clone` + `npm install`, cutting per-pair overhead from ~2-3 min to ~15-20s. `perf-bench --all --resume` writes a sweep-state file so an interrupted run picks up where it left off rather than restarting from pair 1. New `bench-mode` env signal so paths know they are running under bench.
+
+### Changed
+
+- **Phantom `submitted` state removed from the engine (F501)** — `submitted` was a phantom: across features 481→500 (last 19), zero agents reached `status: submitted`, zero events recorded `"submitted"` as a status value, and only one feature (F495) ever landed at `lifecycle: submitted` (and that one bypassed the CLI). Real flows go `implementing → ready → done`. Removed `submitted` as a first-class state from the engine, types, projector, paths, agent-status enum, dashboard render meta, card-headline mapper, autonomous gates, eval gates, AGENTS.md, agent-facing docs, and tests/fixtures. The transient `code_review_complete (no revision) → submitted → done-eligible` arc is replaced with a direct `code_review_complete (approve) → ready` transition.
+- **`aigon agent-status review-complete --approve` / `--request-revision`** — the CLI no longer hard-codes `requestRevision: true`; reviewers can express clean approvals without bypassing the engine. AGENTS.md guidance updated to remove the engine-bypass instruction that was training cu (and others) to act through `submitted`.
+- **Conductor stays alive on quota-paused in solo mode** — extends F482's `switch`-mode behaviour to solo runs; the conductor no longer exits prematurely when an autonomous run hits a quota limit, allowing the auto-resume path to land cleanly.
+- **KM nudge auto-installs skills in worktree** — keyboard-maestro nudges now auto-install the required skills inside the worktree and use Claude's `/skill: send-keys` slash command end-to-end (extends the beta.4 path).
+- **Tighter `errorPatterns` regex in cc/gg/cx agent JSONs** — see F505 below; bare-`429` matches are no longer treated as quota signals.
+- **Thin feature-set bundle border-left** — dropped from 3px to 1px for a quieter card grouping.
+
+### Fixed
+
+- **Quota mid-run detector false positives on bare `429` (F505)** — `cc.json` quota.errorPatterns regex (`rate.{0,3}limit|429|too many requests|...`) had no word boundaries and no HTTP/status context, so any tmux pane line containing `429` (diff hunk line numbers, version strings like `v4.29.x`, file sizes, fragments of the regex pattern itself when an agent reads `templates/agents/*.json`) emitted a `kind: paused, patternId: anthropic-rate-limit` signal that persisted on the snapshot indefinitely. Concrete incident 2026-05-10: F502 was actively implementing — fresh tokens, `agents.cc.status: running` — but the dashboard showed Quota Paused for 13+ minutes after the trigger line `429 +                                // F502: snapshot upstream template sha so drift`. Fix tightens the regex to require boundaries + status context, adds a sanitiser, and adds heartbeat-based auto-clear so a stale paused signal evaporates when the agent demonstrably keeps working.
+- **Budget poller drops bogus `↻ 1` / `↻ M` artefacts** — tmux-wrapped "Resets" lines were being parsed as separate budget rows; the poller now merges wrapped lines before extraction.
+- **Dashboard peek button visible after agent swap** — the `👁` orchestrator-tmux button was disappearing when the active agent changed mid-run.
+
 ## [2.64.0-beta.4] — 2026-05-07
 
 ### Added
@@ -54,7 +97,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`@senlabsai/aigon` package scope (F416)** — package renamed from `@aigon/cli` to `@senlabsai/aigon` ahead of npm publish.
 - **KM nudge via `/skill: send-keys`** — keyboard-maestro nudge path now uses Claude's `/skill: send-keys` slash command instead of `tmux paste-buffer`, eliminating the buffer-eating side effect on long messages.
 - **Research card nudge follow-ups** — research entities surface up to three recent nudges as chips on the card.
-- **Pro installation guide** — new docs page at `/docs/guides/pro-installation` covering GitHub PAT setup, `.npmrc` configuration, package install, and `pro.register(api)` wiring, plus a troubleshooting table for common 401/404/git errors.
 - **Node 24 CI matrix** — added `24.x` to the `node-version` matrix in `.github/workflows/test.yml`.
 
 ### Changed
@@ -80,8 +122,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **`feature-491-card-shell-deferred-followups`** — blank spec, never written; superseded by F492.
-
-- **README Pro section** — updated from "not yet available" to private beta status with a link to the installation guide.
 
 ## [2.63.0] — 2026-04-30
 
