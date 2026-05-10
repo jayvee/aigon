@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 273
+lines_removed: 178
+lines_changed: 451
+files_touched: 56
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 488
+output_tokens: 160738
+cache_creation_input_tokens: 537103
+cache_read_input_tokens: 100480043
+thinking_tokens: 0
+total_tokens: 101178372
+billable_tokens: 161226
+cost_usd: 172.8534
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 501 - remove-phantom-submitted-state-and-fix-review-complete-cli
 Agent: cc
 
