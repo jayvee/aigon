@@ -41,7 +41,7 @@
     "errorPatterns": [
       {
         "id": "openai-quota-exceeded",
-        "match": "exceeded your current quota|insufficient_quota|rate.{0,3}limit|429|too many requests|used\\s+\\d+\\s+of\\s+your\\s+\\d+\\s+messages",
+        "match": "exceeded your current quota|insufficient_quota|(?:HTTP|status[\\s_-]?code|status|code|error)\\s*[:/]?\\s*429\\b|429\\b\\s+too\\s+many|(?<![a-z0-9\\-_])rate[\\s\\-_]?limit(?:ed|ing)?\\b|(?<![a-z0-9\\-_])too[\\s\\-_]many[\\s\\-_]requests?\\b|used\\s+\\d+\\s+of\\s+your\\s+\\d+\\s+messages",
         "verdict": "depleted",
         "confidence": "high",
         "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
