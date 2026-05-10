@@ -38,7 +38,7 @@ Current command families:
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
-| `lib/commands/setup.js` | `init`, `install-agent`, `uninstall`, `check-version`, `update`, `project-context`, `doctor` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `uninstall`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
 
 ### The ctx pattern
@@ -159,8 +159,8 @@ Current shared modules:
   `parseHooksFile`, `getDefinedHooks`, `executeHook`, `runPreHook`, `runPostHook`
 - `lib/analytics.js` (~889 lines): usage analytics — log parsing, completion series, autonomy trend
   `collectAnalyticsData`, `parseLogFrontmatterFull`, `buildCompletionSeries`, `buildWeeklyAutonomyTrend`
-- `lib/version.js` (~154 lines): version management — reads/writes installed version, compares, upgrades CLI
-  `getAigonVersion`, `getInstalledVersion`, `compareVersions`, `upgradeAigonCli`
+- `lib/version.js` (~154 lines): version management — reads/writes installed version, semver compare, changelog excerpts, origin-behind hint for CLI checkout
+  `getAigonVersion`, `getInstalledVersion`, `compareVersions`, `getChangelogEntriesSince`, `checkAigonCliOrigin`
 - `lib/spec-crud.js` (~247 lines): spec file operations — find, move, create, modify, section-read
   `findFile`, `findUnprioritizedFile`, `moveFile`, `modifySpecFile`, `getNextId`, `createSpecFile`, `readSpecSection`
 - `lib/cli-parse.js` (~256 lines): CLI option parsing + YAML/frontmatter helpers — stateless, no I/O

@@ -71,7 +71,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/utils.js` | ~183 | Cross-cutting re-exports (config, proxy, dashboard, worktree, templates, git) + feedback constants, dev-server URL, terminal title, safeWrite |
 | `lib/hooks.js` | ~146 | Hook lifecycle: parseHooksFile, getDefinedHooks, executeHook, runPreHook, runPostHook |
 | `lib/analytics.js` | ~889 | Analytics: collectAnalyticsData, parseLogFrontmatterFull, buildCompletionSeries, buildWeeklyAutonomyTrend |
-| `lib/version.js` | ~154 | Version management: getAigonVersion, compareVersions, upgradeAigonCli, checkAigonCliOrigin |
+| `lib/version.js` | ~154 | Version management: getAigonVersion, compareVersions, getChangelogEntriesSince, checkAigonCliOrigin |
 | `lib/spec-crud.js` | ~247 | Spec file CRUD: findFile, moveFile, modifySpecFile, getNextId, createSpecFile, readSpecSection |
 | `lib/cli-parse.js` | ~256 | CLI option parsing + YAML helpers: parseCliOptions, parseFrontMatter, serializeYamlScalar, slugify, escapeRegex |
 | `lib/deploy.js` | ~65 | Deploy command resolution and execution: resolveDeployCommand, runDeployCommand |

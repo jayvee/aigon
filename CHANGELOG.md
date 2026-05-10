@@ -217,7 +217,7 @@ brewboard-seed install-contract refresh queued behind it (F423, backlog).
 
 ### Added
 
-- **`.aigon/install-manifest.json`** — tracks every file written by `install-agent` / `update`. Each entry: `{ path, sha256, version, installedAt }`. Written by the existing `safeWrite` / `safeWriteWithStatus` helpers — no separate writer path to keep in sync.
+- **`.aigon/install-manifest.json`** — tracks every file written by `install-agent` / `apply`. Each entry: `{ path, sha256, version, installedAt }`. Written by the existing `safeWrite` / `safeWriteWithStatus` helpers — no separate writer path to keep in sync.
 - **`aigon uninstall [--dry-run]`** — uses the manifest to remove aigon-owned files cleanly (only files aigon wrote, leaving any user additions in the same dirs alone). `--dry-run` prints the list without deleting; the regular path prompts for confirmation.
 - **2.61.0 migration** — backfills the manifest for legacy installs by scanning the standard install-path roots (`.aigon/docs/`, `.agents/`, `.claude/{commands/aigon,skills}/`, `.cursor/{commands,rules}/`, `.codex/`, `.gemini/`, plus alias files directly under `.claude/`) and hashing each file with the current `aigonVersion`. Idempotent: skips silently if `.aigon/install-manifest.json` already exists.
 
@@ -237,7 +237,7 @@ shipped in `lib/migration.js`. ~110 commits since v2.55.0 (also cut today).
 
 #### Docs layout (F421)
 
-- **Vendored docs at `.aigon/docs/`** — `install-agent` and `update` now write `development_workflow.md`, `feature-sets.md`, and per-agent notes (`agents/<id>.md`) under `.aigon/docs/` instead of co-mingling with the consumer's `docs/` folder. The consumer's own `docs/` is never touched.
+- **Vendored docs at `.aigon/docs/`** — `install-agent` and `apply` now write `development_workflow.md`, `feature-sets.md`, and per-agent notes (`agents/<id>.md`) under `.aigon/docs/` instead of co-mingling with the consumer's `docs/` folder. The consumer's own `docs/` is never touched.
 - **`doctor --fix` 2.60.0 migration** — moves legacy `docs/development_workflow.md`, `docs/feature-sets.md`, and pristine `docs/agents/<id>.md` (anything carrying the `<!-- AIGON_START -->` marker) into `.aigon/docs/`. Edited copies are left in place with a manual-merge warning. Idempotent.
 
 #### Onboarding (F416, F418, F426)
@@ -272,7 +272,7 @@ shipped in `lib/migration.js`. ~110 commits since v2.55.0 (also cut today).
 
 ### Migration notes
 
-- Existing repos pick up the new layout automatically on the next `aigon install-agent` or `aigon update` run (the 2.60.0 migration runs first).
+- Existing repos pick up the new layout automatically on the next `aigon install-agent` or `aigon apply` run (the 2.60.0 migration runs first).
 - If `docs/development_workflow.md` was hand-edited, the migration leaves it in place and prints a warning — reconcile manually, then move it to `.aigon/docs/`.
 - The `aigon onboarding` alias is preserved this release; scripts that call it will continue to work but should switch to `aigon setup`.
 
@@ -341,7 +341,7 @@ PTY terminal in the dashboard, agent lifecycle signal rename (F404), research-co
 
 The author-turn step after a reviewer critiques a spec or code is now called **revise** (verb) / **revision** (stage). Commands, shortcuts, stage types, and dashboard buttons all use the new vocabulary.
 
-**Run `aigon update` to migrate in-flight features.** The migration rewrites `.aigon/workflows/**/snapshot.json` entries automatically; you do not need to touch your data manually.
+**Run `aigon apply` to migrate in-flight features.** The migration rewrites `.aigon/workflows/**/snapshot.json` entries automatically; you do not need to touch your data manually.
 
 **Commands and shortcuts renamed (old names removed — no aliases):**
 
@@ -356,7 +356,7 @@ The author-turn step after a reviewer critiques a spec or code is now called **r
 
 Dashboard buttons: "Check Spec Review" → **"Spec Revise"**; "Check Code Review" → **"Code Revise"**.
 
-Autonomous-mode stage type `counter-review` → `revision`. Workflow definition files with `"type": "counter-review"` are rewritten by `aigon update`.
+Autonomous-mode stage type `counter-review` → `revision`. Workflow definition files with `"type": "counter-review"` are rewritten by `aigon apply`.
 
 ## [2.54.1] - 2026-04-23
 
@@ -547,7 +547,7 @@ Single-source-of-truth refactor, spec-review workflow, and a hard-fought round o
 
 ### Added
 - **`aigon deploy` command** with `deployAfterDone` integration (feature 36) — automatic deploy after a feature reaches done state.
-- **Auto-commit on `aigon update`** — keeps update transitions atomic.
+- **Auto-commit on `aigon apply`** — keeps apply transitions atomic.
 - **Multi-agent telemetry normalisation** — common schema for sessions across cc, gg, cx so cross-agent cost reporting works (feature 151).
 - **Security scan merge gate** with gitleaks + semgrep, severity thresholds, diff-aware (features 119, 120, 133).
 
@@ -643,7 +643,7 @@ Single-source-of-truth refactor, spec-review workflow, and a hard-fought round o
 ### Added
 - **Base port configuration** — reads PORT from `.env.local` or `.env` and derives arena agent ports as PORT+1 (cc), PORT+2 (gg), PORT+3 (cx), PORT+4 (cu)
 - `readBasePort()` helper to parse PORT from env files (checks `.env.local` first, then `.env`)
-- `showPortSummary()` displays port configuration during `init`, `update`, `install-agent`, and `profile show`
+- `showPortSummary()` displays port configuration during `init`, `apply`, `install-agent`, and `profile show`
 - Warning during `feature-setup` when no PORT found for web/api profiles
 - Port label echo in arena split panes (`🔌 Claude — Port 3401`) so each pane shows its port on launch
 
@@ -703,7 +703,7 @@ Single-source-of-truth refactor, spec-review workflow, and a hard-fought round o
 ## [2.3.0] - 2026-01-30
 
 ### Added
-- Automatic cleanup of deprecated slash commands during `install-agent` and `update`
+- Automatic cleanup of deprecated slash commands during `install-agent` and `apply`
 - Scans each agent's command directory for stale aigon-managed files and removes them
 - Reports removed commands with a cleanup message
 
