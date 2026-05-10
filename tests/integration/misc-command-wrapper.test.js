@@ -180,6 +180,47 @@ test('parseClaudeStatus handles pct on separate progress-bar line (new Claude fo
     assert.strictEqual(r3.session.pct_used, 0, 'fully available defaults to 0% used');
 });
 
+// REGRESSION: tmux soft-wrap breaks "Resets …" mid-token → bogus resets_at ("1", "M") on dashboard.
+test('parseClaudeStatus merges wrapped Resets continuation lines', () => {
+    const { parseClaudeStatus } = require('../../lib/budget-poller');
+
+    const wrappedTime = `
+  Current session
+  █  89% used
+  Resets 1
+  1:50am (Australia/Melbourne)
+
+  Current week (all models)
+  █  57% used
+  Resets May
+  11 at 9:05am (Australia/Melbourne)
+`;
+    const r = parseClaudeStatus(wrappedTime);
+    assert.strictEqual(r.session.resets_at, '11:50am', 'session reset time');
+    assert.strictEqual(r.session.tz, 'Australia/Melbourne');
+    assert.strictEqual(r.week_all.resets_at, '9:05am');
+    assert.strictEqual(r.week_all.resets_date, 'May 11');
+});
+
+// REGRESSION: truncated capture at EOF must not emit bogus resets_at ("1") — omit reset label, keep %.
+test('parseClaudeStatus drops incomplete Resets when continuation never arrives', () => {
+    const { parseClaudeStatus } = require('../../lib/budget-poller');
+    const raw = `
+  Current session
+  █  89% used
+  Resets 1
+
+  Current week (all models)
+  █  57% used
+  Resets M
+`;
+    const r = parseClaudeStatus(raw);
+    assert.strictEqual(r.session.pct_used, 89);
+    assert.strictEqual(r.session.resets_at, null);
+    assert.strictEqual(r.week_all.pct_used, 57);
+    assert.strictEqual(r.week_all.resets_at, null);
+});
+
 // REGRESSION: GET /api/budget gg — parse Gemini CLI /model "Model usage" rows (Flash / Flash Lite / Pro).
 test('parseGeminiModelUsage extracts tier pct and reset labels', () => {
     const { parseGeminiModelUsage, parseGeminiFooterPlanQuota, stripAnsi } = require('../../lib/budget-poller');
