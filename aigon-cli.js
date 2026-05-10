@@ -141,6 +141,79 @@ if (shouldNotifyUpdates) {
     checkForUpdate({ unref: true }).catch(() => {}); // fire-and-forget
 }
 
+// F502 Layer 1+2: template-vs-installed drift detection at CLI startup.
+// Layer 1 prints a one-line warning per affected agent; Layer 2 silently
+// re-runs install-agent on aigon version bump. Both bail out cheaply when
+// the template fingerprint hasn't changed (mtime cache).
+const TEMPLATE_DRIFT_SKIP = new Set([
+    '--version', '-v', 'version', '--help', '-h', 'help',
+    'install-agent', 'uninstall', 'doctor', 'setup', 'global-setup',
+    'check-version', 'check-prerequisites', 'apply', 'update',
+    'agent-context', 'sync-heartbeat', 'session-hook', 'agent-status',
+]);
+async function maybeRunTemplateDriftLayers(cmd) {
+    if (TEMPLATE_DRIFT_SKIP.has(cmd)) return;
+    if (process.env.AIGON_SKIP_TEMPLATE_DRIFT === '1') return;
+    let driftLib, installManifestLib, fs, path;
+    try {
+        driftLib = require('./lib/template-drift');
+        installManifestLib = require('./lib/install-manifest');
+        fs = require('fs');
+        path = require('path');
+    } catch (_) { return; }
+    const repoRoot = process.cwd();
+    if (!fs.existsSync(path.join(repoRoot, '.aigon', 'install-manifest.json'))) return;
+
+    // Read project config opt-outs (default both layers ON).
+    let projectCfg = {};
+    try {
+        projectCfg = JSON.parse(fs.readFileSync(path.join(repoRoot, '.aigon', 'config.json'), 'utf8'));
+    } catch (_) { /* missing config is fine */ }
+
+    // Layer 2: version-change auto-reinstall (silent).
+    try {
+        const manifest = installManifestLib.readManifest(repoRoot);
+        const pkgVersion = require('./package.json').version;
+        const autoReinstall = projectCfg.autoReinstallOnVersionChange !== false;
+        if (autoReinstall
+            && process.env.AIGON_NO_AUTO_REINSTALL !== '1'
+            && manifest && manifest.aigonVersion && manifest.aigonVersion !== pkgVersion) {
+            const installedAgents = installManifestLib.getInstalledAgents(manifest);
+            if (installedAgents.length > 0) {
+                const beforeVersion = manifest.aigonVersion;
+                const skippedHandEdited = installManifestLib.getModifiedFiles(manifest, repoRoot)
+                    .map(m => m.path);
+                try {
+                    // Silent reinstall: capture stdout, only summarise at the
+                    // end so the user sees one line, not the per-agent log.
+                    const origWrite = process.stdout.write.bind(process.stdout);
+                    process.stdout.write = () => true;
+                    try {
+                        await commands['install-agent']([...installedAgents]);
+                    } finally {
+                        process.stdout.write = origWrite;
+                    }
+                    process.stderr.write(`✓ aigon upgraded ${beforeVersion} → ${pkgVersion} — refreshed ${installedAgents.length} agent${installedAgents.length === 1 ? '' : 's'} (${installedAgents.join(', ')}).\n`);
+                    if (skippedHandEdited.length > 0) {
+                        process.stderr.write(`  Skipped ${skippedHandEdited.length} hand-edited file${skippedHandEdited.length === 1 ? '' : 's'} (run \`aigon doctor --fix-templates\` to review):\n`);
+                        skippedHandEdited.slice(0, 5).forEach(p => process.stderr.write(`    - ${p}\n`));
+                        if (skippedHandEdited.length > 5) process.stderr.write(`    (+${skippedHandEdited.length - 5} more)\n`);
+                    }
+                    return; // L1 already covered by the reinstall
+                } catch (_) { /* fall through to L1 */ }
+            }
+        }
+    } catch (_) { /* L2 best-effort */ }
+
+    // Layer 1: warn about stale templates.
+    if (projectCfg.installDriftWarnings === false) return;
+    try {
+        const { byAgent } = driftLib.detectStaleTemplates(repoRoot);
+        const lines = driftLib.formatDriftWarning(byAgent);
+        for (const line of lines) process.stderr.write(line + '\n');
+    } catch (_) { /* never fail the CLI */ }
+}
+
 async function main() {
     if (resolvedCommand === '--version' || resolvedCommand === '-v' || resolvedCommand === 'version') {
         console.log(require('./package.json').version);
@@ -151,6 +224,8 @@ async function main() {
         commands.help();
         return;
     }
+
+    await maybeRunTemplateDriftLayers(resolvedCommand);
 
     const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI && !process.env.AIGON_SKIP_FIRST_RUN;
     if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {
