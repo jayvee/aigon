@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-10T10:38:09.307Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: monthly-benchmark-refresh-with-model-discovery
