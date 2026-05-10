@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-10T10:17:12.272Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: remove-phantom-submitted-state-and-fix-review-complete-cli
