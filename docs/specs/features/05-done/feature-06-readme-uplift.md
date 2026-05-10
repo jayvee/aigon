@@ -23,7 +23,7 @@ Comprehensive overhaul of the README.md to reflect the current state of Aigon, i
 - [ ] **Slash commands as primary** — all workflow examples default to slash command syntax (e.g. `/aigon:feature-create dark-mode`) with CLI equivalents shown as secondary/reference
 - [ ] **Cursor CLI support** documented — explain `agent` CLI command and Cursor's `composer` model are now supported, show in agent table
 - [ ] **Installation & Setup** updated:
-  - How to update Aigon (`aigon update`) with explanation of AIGON_START/END marker system that preserves custom content
+  - How to update Aigon (`aigon apply`) with explanation of AIGON_START/END marker system that preserves custom content
   - Screenshot placeholders for multi-agent install output
 - [ ] **Project-specific agent instructions** — section explaining how to add custom instructions outside `<!-- AIGON_START/END -->` markers in CLAUDE.md, GEMINI.md, etc.
 - [ ] **Sample Workflow Chat** reviewed and updated — ensure it reflects current command naming and slash command style

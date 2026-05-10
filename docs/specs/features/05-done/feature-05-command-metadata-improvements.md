@@ -20,7 +20,7 @@ Improve slash command UX across agents by: (1) moving Claude Code commands into 
 - [ ] Templates emit appropriate `args` frontmatter for CX (per-command, not hardcoded `feature_id` for all)
 - [ ] `feature-done`, `feature-cleanup`, and `worktree-open` templates emit `disable-model-invocation: true` for CC
 - [ ] `aigon install-agent cc` produces correctly structured output
-- [ ] `aigon update` works correctly with the new directory structure
+- [ ] `aigon apply` works correctly with the new directory structure
 
 ## Technical Approach
 
@@ -45,7 +45,7 @@ Improve slash command UX across agents by: (1) moving Claude Code commands into 
 ## Open Questions
 
 - What is the exact CC slash menu format for subdirectory commands — `/project:aigon:feature-create` or something else? Needs verification.
-- Should `aigon update` clean up old flat commands from `.claude/commands/` during migration?
+- Should `aigon apply` clean up old flat commands from `.claude/commands/` during migration?
 
 ## Related
 

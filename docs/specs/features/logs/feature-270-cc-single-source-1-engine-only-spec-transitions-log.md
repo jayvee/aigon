@@ -34,7 +34,7 @@ auto-corrected at transition time. Reset paths (`feature-reset`,
 filesystem moves intentionally.
 
 ## Progress
-- Removed silent auto-bootstrap from `aigon update` (was calling
+- Removed silent auto-bootstrap from `aigon apply` (was calling
   `bootstrapMissingWorkflowSnapshots` on every update). Replaced with a
   warning that points to `aigon doctor --fix`.
 - `feature-close` (`lib/feature-close.js closeEngineState`): replaced silent
@@ -97,7 +97,7 @@ filesystem moves intentionally.
 - `migrateEntityLifecycleIfNeeded` is now only reachable through
   `migrateActiveEntities` (doctor's explicit bootstrap path). No normal
   lifecycle command calls it any more.
-- `aigon update` no longer silently bootstraps; it warns + points to
+- `aigon apply` no longer silently bootstraps; it warns + points to
   doctor, matching the spec.
 - Drift-correction fallbacks in `feature-eval`, `feature-close`, and
   `entityCloseFinalize` all now log visible `⚠️ Drift:` warnings before

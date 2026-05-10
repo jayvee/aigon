@@ -23,7 +23,7 @@ Three incremental improvements to CC slash command UX, identified by research-03
 - [x] Updated `formatCommandOutput()` to emit `argument-hint` and `disable-model-invocation` for CC, per-command `args` for CX
 - [x] Added `migrateOldFlatCommands()` to clean up old flat commands during upgrade
 - [x] Verified all 4 agents install correctly (`cc`, `gg`, `cx`, `cu`)
-- [x] Verified `aigon update` works with new directory structure
+- [x] Verified `aigon apply` works with new directory structure
 - [x] User tested and confirmed working
 
 ## Decisions

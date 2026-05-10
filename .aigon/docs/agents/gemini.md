@@ -149,9 +149,9 @@ Before running `/aigon:feature-close`, always:
 These are recurring mistakes that derail Gemini sessions. Check yourself against this list before and during every task.
 
 ### 1. Using the wrong workspace for the task
-**Symptom**: You commit feature work to `main`, or you treat a research session like a feature branch task.
+**Symptom**: You commit feature *implementation* to `main`, or you treat a research session like a feature branch task.
 **Prevention**: Check both `pwd` and `git branch --show-current` before you start.
-- For feature work, do NOT work on `main`; use the feature branch or worktree created by Aigon.
+- For feature *implementation*, do NOT work on `main`; use the feature branch or worktree created by Aigon. (Workflow scaffolding such as `feature-create` / `research-create` writing a fresh inbox spec on `main` is fine — implementation is what stays off `main`.)
 - For research work, staying on `main` is normal unless Aigon launched a separate session.
 **Recovery**: If you worked in the wrong place, tell the user immediately — do not try to hide it.
 

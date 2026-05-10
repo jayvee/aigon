@@ -127,4 +127,4 @@ Tests must NOT use the global `~/.aigon` paths — set `process.cwd()` (or pass 
 
 - Set: standalone
 - Closely related to F341 (introduced `MISSING_MIGRATION` and migration 2.56.0) and F296 (closed the `feature-create` snapshot-bootstrap gap with shared write-path helpers). Same pattern: producer must catch up to read-model expectations.
-- Pairs naturally with future feature: extend `aigon doctor` to also run **global config migrations** (`lib/global-config-migration.js`) — currently only `aigon update` triggers them. Out of scope for this spec; worth its own.
+- Pairs naturally with future feature: extend `aigon doctor` to also run **global config migrations** (`lib/global-config-migration.js`) — currently only `aigon apply` triggers them. Out of scope for this spec; worth its own.

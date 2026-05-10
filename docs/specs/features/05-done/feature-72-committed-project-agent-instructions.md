@@ -18,7 +18,7 @@ This feature introduces a committed project instructions file (`docs/aigon-proje
 - [ ] If `docs/aigon-project.md` does not exist, behaviour is unchanged (empty scaffold as today)
 - [ ] The content from `docs/aigon-project.md` replaces the generic scaffold comment block (not appended after it)
 - [ ] Re-running `install-agent` re-reads `docs/aigon-project.md` and updates the pre-marker content — it does not accumulate duplicate copies
-- [ ] `aigon update` also re-reads `docs/aigon-project.md` when it re-runs `install-agent`
+- [ ] `aigon apply` also re-reads `docs/aigon-project.md` when it re-runs `install-agent`
 - [ ] `docs/aigon-project.md` is NOT gitignored (committed with the project)
 - [ ] The aigon project itself ships a `docs/aigon-project.md` with accurate, current instructions covering: dashboard start/restart, test command, syntax check, template sync after editing commands
 
@@ -61,7 +61,7 @@ This is the Aigon library itself. When editing commands or templates:
 - **Source of truth**: `templates/generic/commands/`
 - **Working copies**: `.claude/commands/`, `.cursor/commands/`, etc. (gitignored, generated)
 
-After editing templates, run `aigon update` or `aigon install-agent cc` to sync changes to the working copies.
+After editing templates, run `aigon apply` or `aigon install-agent cc` to sync changes to the working copies.
 
 ## Dashboard Development
 

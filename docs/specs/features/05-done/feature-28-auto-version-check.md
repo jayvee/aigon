@@ -2,7 +2,7 @@
 
 ## Summary
 
-Automatically check and update Aigon-generated files when an agent session starts. When a user opens Claude, Cursor, or Gemini CLI in a project, a SessionStart hook compares the project's `.aigon/version` against the locally installed CLI version. If they differ, it runs `aigon update` to regenerate command files — eliminating the need to manually visit each repo after upgrading Aigon.
+Automatically check and update Aigon-generated files when an agent session starts. When a user opens Claude, Cursor, or Gemini CLI in a project, a SessionStart hook compares the project's `.aigon/version` against the locally installed CLI version. If they differ, it runs `aigon apply` to regenerate command files — eliminating the need to manually visit each repo after upgrading Aigon.
 
 ## User Stories
 - [ ] As a developer with multiple repos, I want Aigon to auto-update when I start an agent session so I never run stale commands
@@ -12,13 +12,13 @@ Automatically check and update Aigon-generated files when an agent session start
 - [ ] New `aigon check-version` command exists
 - [ ] `check-version` compares `.aigon/version` vs `aigon --version` (local CLI only)
 - [ ] If versions match: prints "Aigon is up to date (vX.Y.Z)" and exits 0
-- [ ] If versions differ: runs `aigon update` automatically, prints summary of what changed
-- [ ] If `.aigon/version` doesn't exist (fresh clone): runs `aigon update`
+- [ ] If versions differ: runs `aigon apply` automatically, prints summary of what changed
+- [ ] If `.aigon/version` doesn't exist (fresh clone): runs `aigon apply`
 - [ ] `aigon install-agent cc` writes a SessionStart hook into `.claude/settings.json`
 - [ ] `aigon install-agent gg` writes a SessionStart hook into `.gemini/settings.json`
 - [ ] `aigon install-agent cu` writes a SessionStart hook into `.cursor/hooks.json` (or equivalent)
 - [ ] Hooks are additive — existing hooks in the settings file are preserved
-- [ ] `aigon update` continues to call `install-agent` for detected agents (existing behavior), which re-wires hooks if needed
+- [ ] `aigon apply` continues to call `install-agent` for detected agents (existing behavior), which re-wires hooks if needed
 - [ ] Hook only fires on new session start (not resume/compact)
 
 ## Validation
@@ -123,7 +123,7 @@ Follow the same pattern as permissions: read existing settings, check if an Aigo
 ## Out of Scope
 - Remote version checking (GitHub, npm registry)
 - Version pinning / update policies
-- Push model (`aigon update --all`)
+- Push model (`aigon apply --all`)
 - Project registry
 - Codex support (no hook system available)
 

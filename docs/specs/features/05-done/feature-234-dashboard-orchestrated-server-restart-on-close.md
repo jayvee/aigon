@@ -231,7 +231,7 @@ After the fix ships, anyone whose dashboard died from this bug just needs `aigon
 - Replacing `spawnSync` with async `spawn` for `/api/action` dispatch. That's a separate concern (event-loop responsiveness during long actions). It became less urgent once the false-negative toast is fixed by this feature, since that was the user-visible symptom of "frozen" UI. Worth its own feature later if responsiveness during a 60s close is still annoying.
 - Hot-reload of `lib/*.js` modules without restarting the server process. Tempting but requires invalidating Node's require cache and is fragile. The full process restart is fine.
 - Cancellation of in-flight actions ("stop the close I just started"). Useful but separable.
-- Generalising the restart marker to other CLI commands that might need to restart the server (`aigon update`, `aigon install-agent`). The current `restartServerIfLibChanged` is the only known entry point; other commands can adopt the same pattern if/when they need it.
+- Generalising the restart marker to other CLI commands that might need to restart the server (`aigon apply`, `aigon install-agent`). The current `restartServerIfLibChanged` is the only known entry point; other commands can adopt the same pattern if/when they need it.
 - Replacing `http-proxy` with a different library.
 
 ## Open Questions

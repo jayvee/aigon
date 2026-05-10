@@ -38,7 +38,7 @@ Aigon integrates with agents through a template system:
 1. Source templates in `templates/generic/commands/` (18 commands)
 2. Agent configs in `templates/agents/{id}.json` define output format, placeholders, directory structure
 3. `aigon install-agent` generates agent-specific files (Markdown, TOML, plain text)
-4. Generated files are gitignored; re-generated on `aigon update`
+4. Generated files are gitignored; re-generated on `aigon apply`
 5. `<!-- AIGON_START/END -->` markers preserve user content during regeneration
 
 All generated commands delegate to the `aigon` CLI for actual logic. The commands are instruction wrappers, not self-contained logic.
@@ -266,7 +266,7 @@ This workflow spans multiple agents, multiple git branches, multiple directories
 
 ### Risks of Plugin Migration
 
-1. **Fragmentation of maintenance**: Updating `templates/generic/commands/feature-do.md` currently propagates to all 4 agents via `aigon update`. Per-agent plugins need separate release cycles.
+1. **Fragmentation of maintenance**: Updating `templates/generic/commands/feature-do.md` currently propagates to all 4 agents via `aigon apply`. Per-agent plugins need separate release cycles.
 2. **Loss of cross-agent identity**: Aigon's arena mode only makes sense as a unified concept. Per-agent plugins obscure this.
 3. **Plugin sandbox restrictions**: Aigon creates git worktrees, spawns terminal sessions, writes to arbitrary project directories, and modifies agent settings. Plugin sandboxes may restrict these operations.
 4. **Dependency inversion**: Today Aigon controls installation. With plugins, each agent's plugin system controls installation, and Aigon loses ability to ensure consistent cross-agent setup.
@@ -309,7 +309,7 @@ These shims add no logic. They are discovery vehicles.
 |---|---|---|
 | `aigon init` | Yes | No |
 | `aigon install-agent` | Yes | No |
-| `aigon update` | Yes | No |
+| `aigon apply` | Yes | No |
 | `aigon config` | Yes | No |
 | `aigon feature-create` | Yes (core logic) | Yes (thin tool) |
 | `aigon feature-setup` | Yes (core logic) | Yes (thin tool) |

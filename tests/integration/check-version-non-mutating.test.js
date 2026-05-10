@@ -56,7 +56,7 @@ test('check-version leaves .aigon/ unchanged with stale .aigon/version', () => w
     assert.strictEqual(afterFiles, beforeFiles, 'check-version must not add files to .aigon/');
     assert.strictEqual(versionAfter, '0.0.0', 'check-version must not update .aigon/version');
     const output = result.stdout.toString() + result.stderr.toString();
-    assert.ok(output.includes('aigon update'), 'check-version should prompt the user to run aigon update');
+    assert.ok(output.includes('aigon apply'), 'check-version should prompt the user to run aigon apply');
 }));
 
 // Integration: capture-session-telemetry exits 0 even when capture throws internally

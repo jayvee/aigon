@@ -70,7 +70,7 @@ each AC independently testable, every change reversible.
 - **Docs**: updated `site/content/reference/commands/infra/server.mdx`:
   - Added a "throttles crash loops" bullet to the persistent-mode feature list.
   - Added two new troubleshooting rows for crash-looping services and stale
-    sweep health, plus a note on the new `aigon update` health-check output.
+    sweep health, plus a note on the new `aigon apply` health-check output.
 
 ## Decisions
 
@@ -92,7 +92,7 @@ each AC independently testable, every change reversible.
   server uses to bind. Using the registry entry would have meant racing the
   restart (entry might be stale or missing while the new process boots).
 - **Did NOT bump installed services automatically**: explicitly per the spec —
-  rewriting an in-use plist/unit during `aigon update` is exactly the kind of
+  rewriting an in-use plist/unit during `aigon apply` is exactly the kind of
   surprise the safety principle exists to avoid. Users opt in via
   `aigon server start --persistent`.
 
@@ -119,12 +119,12 @@ After merging, verify each AC by hand from the main repo:
    2. In another terminal: `aigon server restart`
    3. Expect: `[server] force-killing stale port holder PID <n>` followed by a
       successful start (no EADDRINUSE)
-3. **AC3 — post-restart health check via `aigon update`**:
-   1. From the aigon repo: `aigon update`
+3. **AC3 — post-restart health check via `aigon apply`**:
+   1. From the aigon repo: `aigon apply`
    2. Expect: `🔄 Server restarted via system service.` followed within ~2-3s
       by `✅ Server restarted and responding on port 4100`
    3. Negative path: deliberately break a `lib/*.js` syntax error, run
-      `aigon update` → expect the `⚠️` warning (and then revert the break)
+      `aigon apply` → expect the `⚠️` warning (and then revert the break)
 4. **AC4 — launchd/systemd backoff**:
    1. `aigon server start --persistent` to install the new plist/unit
    2. macOS: `plutil -p ~/Library/LaunchAgents/com.aigon.server.plist | grep ThrottleInterval`
@@ -149,7 +149,7 @@ No mid-flight scope changes or pushback.
 **Date**: 2026-04-06
 
 ### Findings
-- `waitForServerHealthy()` treated any HTTP 4xx as success, which could let `aigon update` report a healthy restart even when `/api/supervisor/status` was missing or another process was answering on the configured port.
+- `waitForServerHealthy()` treated any HTTP 4xx as success, which could let `aigon apply` report a healthy restart even when `/api/supervisor/status` was missing or another process was answering on the configured port.
 
 ### Fixes Applied
 - `0905fd6b` — `fix(review): tighten update restart health probe`

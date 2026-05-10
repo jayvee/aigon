@@ -10,10 +10,10 @@ Agent: cx
 
 ## Plan
 - Extend core path config with a first-class `feedback` entity and lifecycle folders.
-- Update `aigon init` and `aigon update` so feedback directories are scaffolded automatically.
+- Update `aigon init` and `aigon apply` so feedback directories are scaffolded automatically.
 - Add a feedback template with YAML front matter covering required + optional schema fields.
 - Add user-facing schema documentation under `docs/specs/feedback/`.
-- Validate behavior in a temp project using `aigon init` and `aigon update`.
+- Validate behavior in a temp project using `aigon init` and `aigon apply`.
 
 ## Progress
 - Added `PATHS.feedback` in `aigon-cli.js` with folders:

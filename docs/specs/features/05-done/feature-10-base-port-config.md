@@ -13,7 +13,7 @@ When multiple Aigon-managed projects run agent worktrees simultaneously, their d
 - [ ] Arena agent ports are derived as PORT+1 (cc), PORT+2 (gg), PORT+3 (cx), PORT+4 (cu)
 - [ ] Worktrees created with `aigon feature-setup` write the correct derived PORT to `.env.local`
 - [ ] `aigon profile show` displays the port configuration with source
-- [ ] `aigon init`, `aigon update`, and `aigon install-agent` show a port summary
+- [ ] `aigon init`, `aigon apply`, and `aigon install-agent` show a port summary
 - [ ] When no PORT is in `.env`, falls back to profile defaults and suggests setting one
 
 ## Technical Approach
@@ -48,7 +48,7 @@ Or when no PORT in `.env`:
    💡 Set PORT in .env to avoid clashes with other projects
 ```
 
-Called during `aigon init`, `aigon update`, `aigon install-agent`, and `aigon profile show`.
+Called during `aigon init`, `aigon apply`, `aigon install-agent`, and `aigon profile show`.
 
 ### Example `.env`
 

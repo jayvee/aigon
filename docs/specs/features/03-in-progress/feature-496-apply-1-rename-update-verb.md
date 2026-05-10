@@ -10,24 +10,24 @@ transitions:
 
 ## Summary
 
-Rename `aigon update` to `aigon apply` and delete the `--pull` flag entirely. The current verb collides semantically with `npm update -g @senlabsai/aigon` — users cannot tell whether `aigon update` upgrades the CLI binary or re-applies aigon's managed files into a repo. The new verb pair makes the boundary unambiguous: **npm owns CLI upgrades**, **`aigon apply` owns project file application**. This is the foundational naming fix that the rest of the `apply-model` set builds on.
+Rename `aigon apply` to `aigon apply` and delete the `--pull` flag entirely. The current verb collides semantically with `npm update -g @senlabsai/aigon` — users cannot tell whether `aigon apply` upgrades the CLI binary or re-applies aigon's managed files into a repo. The new verb pair makes the boundary unambiguous: **npm owns CLI upgrades**, **`aigon apply` owns project file application**. This is the foundational naming fix that the rest of the `apply-model` set builds on.
 
 ## User Stories
 
 - [ ] As a customer, when I run `aigon apply`, I know it re-applies aigon's managed files into this repo (slash commands, agent configs, hooks, vendored docs) — not that it upgrades aigon itself.
 - [ ] As a customer, when I want to upgrade aigon itself, I run `npm update -g @senlabsai/aigon` — there is no aigon CLI verb that competes with npm.
-- [ ] As a customer who runs `aigon update` out of habit, I see a one-line deprecation warning and the command still works (redirects to `aigon apply`) for one release cycle.
+- [ ] As a customer who runs `aigon apply` out of habit, I see a one-line deprecation warning and the command still works (redirects to `aigon apply`) for one release cycle.
 - [ ] As a customer reading docs or `aigon --help`, the verb `update` is no longer mentioned anywhere except the deprecation note; `apply` is the canonical verb.
 
 ## Acceptance Criteria
 
-- [ ] `aigon apply` is a working top-level verb that does what `aigon update` does today (re-vendor `.aigon/docs/`, refresh `.claude/`, `.cursor/`, `.codex/`, `.gemini/` slash commands and agent configs, remove deprecated commands, run migrations, auto-commit unless `--no-commit`).
-- [ ] `aigon update` still works for one release cycle but prints a single deprecation warning to stderr: `⚠ "aigon update" is deprecated, use "aigon apply" — this alias will be removed in a future release.` Then redirects to the apply handler.
+- [ ] `aigon apply` is a working top-level verb that does what `aigon apply` does today (re-vendor `.aigon/docs/`, refresh `.claude/`, `.cursor/`, `.codex/`, `.gemini/` slash commands and agent configs, remove deprecated commands, run migrations, auto-commit unless `--no-commit`).
+- [ ] `aigon apply` still works for one release cycle but prints a single deprecation warning to stderr: `⚠ "aigon apply" is deprecated, use "aigon apply" — this alias will be removed in a future release.` Then redirects to the apply handler.
 - [ ] The `--pull` flag is removed. `upgradeAigonCli()` is deleted from `lib/version.js`. All `pullFlag` conditional branches in `lib/commands/setup.js` are deleted.
-- [ ] If a user runs `aigon update --pull` or `aigon apply --pull`, they get an error: `--pull is not supported. Upgrade aigon with: npm update -g @senlabsai/aigon`.
-- [ ] All 166 references to `aigon update` are swept: docs (158), lib (7), AGENTS.md (1). Each becomes `aigon apply` except where it's documenting the deprecation alias itself.
-- [ ] Slash command templates in `templates/generic/commands/*.md` that previously invoked `aigon update` now invoke `aigon apply`.
-- [ ] Agent JSON configs in `templates/agents/*.json` that reference `aigon update` in hook commands or instructions now reference `aigon apply`.
+- [ ] If a user runs `aigon apply --pull` or `aigon apply --pull`, they get an error: `--pull is not supported. Upgrade aigon with: npm update -g @senlabsai/aigon`.
+- [ ] All 166 references to `aigon apply` are swept: docs (158), lib (7), AGENTS.md (1). Each becomes `aigon apply` except where it's documenting the deprecation alias itself.
+- [ ] Slash command templates in `templates/generic/commands/*.md` that previously invoked `aigon apply` now invoke `aigon apply`.
+- [ ] Agent JSON configs in `templates/agents/*.json` that reference `aigon apply` in hook commands or instructions now reference `aigon apply`.
 - [ ] `aigon --help` lists `apply`, not `update`. The deprecated alias is hidden from help.
 - [ ] One-line addition to `CONTRIBUTING.md` for contributors: "If you've pulled new aigon source, run `git pull && npm ci` in your aigon checkout, then `aigon apply --all` in your test repos."
 
@@ -38,11 +38,11 @@ node --check aigon-cli.js
 node --check lib/commands/setup.js
 node --check lib/version.js
 # Smoke: deprecation alias still works
-aigon update --help 2>&1 | grep -q "deprecated"
+aigon apply --help 2>&1 | grep -q "deprecated"
 # Smoke: --pull is rejected with the right message
 aigon apply --pull 2>&1 | grep -q "npm update -g @senlabsai/aigon"
-# Verify zero remaining `aigon update` references outside the deprecation alias path
-grep -rn "aigon update" docs/ lib/ AGENTS.md README.md | grep -v "deprecated" | grep -v "alias" | wc -l
+# Verify zero remaining `aigon apply` references outside the deprecation alias path
+grep -rn "aigon apply" docs/ lib/ AGENTS.md README.md | grep -v "deprecated" | grep -v "alias" | wc -l
 # Expected: 0 (or only the deprecation handler itself)
 ```
 
@@ -56,7 +56,7 @@ grep -rn "aigon update" docs/ lib/ AGENTS.md README.md | grep -v "deprecated" | 
 
 ```js
 'update': async (args = []) => {
-  console.error('⚠ "aigon update" is deprecated, use "aigon apply" — this alias will be removed in a future release.');
+  console.error('⚠ "aigon apply" is deprecated, use "aigon apply" — this alias will be removed in a future release.');
   return commands['apply'](args.filter(a => a !== '--pull'));
 },
 'apply': async (args = []) => {
@@ -71,11 +71,11 @@ grep -rn "aigon update" docs/ lib/ AGENTS.md README.md | grep -v "deprecated" | 
 
 **Delete `upgradeAigonCli()`** from `lib/version.js` and any imports of it. This was clone-install-only convenience that has no place in the product CLI.
 
-**Doc sweep.** Use `grep -rln "aigon update" docs/ lib/ AGENTS.md` then `sed`-replace per file with manual review of each. Watch for context — the deprecation note itself must keep "aigon update" verbatim.
+**Doc sweep.** Use `grep -rln "aigon apply" docs/ lib/ AGENTS.md` then `sed`-replace per file with manual review of each. Watch for context — the deprecation note itself must keep "aigon apply" verbatim.
 
-**Slash command template sweep.** Files in `templates/generic/commands/*.md` that currently say "Run `aigon update`" become "Run `aigon apply`". These templates regenerate into customer repos via `aigon install-agent`, so customers pick up the new verb on their next install/apply.
+**Slash command template sweep.** Files in `templates/generic/commands/*.md` that currently say "Run `aigon apply`" become "Run `aigon apply`". These templates regenerate into customer repos via `aigon install-agent`, so customers pick up the new verb on their next install/apply.
 
-**Agent JSON sweep.** `templates/agents/*.json` may contain `aigon update` in hook commands (SessionStart hook payloads installed for cc/gg/cu). Replace with `aigon apply` and bump the install-manifest version so agents re-install on next `aigon apply`.
+**Agent JSON sweep.** `templates/agents/*.json` may contain `aigon apply` in hook commands (SessionStart hook payloads installed for cc/gg/cu). Replace with `aigon apply` and bump the install-manifest version so agents re-install on next `aigon apply`.
 
 ## Dependencies
 

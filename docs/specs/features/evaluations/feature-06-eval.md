@@ -46,7 +46,7 @@ See: `./docs/specs/features/04-in-evaluation/feature-06-readme-uplift.md`
 **Weaknesses:**
 - ❌ **Empty implementation log** — Critical failure to document decisions and progress (required by spec)
 - ⚠️ **Screenshot placeholders missing** — Only added one image reference (`aigon-specs-folder-structure.png`), spec required 9 placeholders
-- ⚠️ **Update workflow incomplete** — Mentioned `aigon update` but didn't explain AIGON_START/END markers in detail
+- ⚠️ **Update workflow incomplete** — Mentioned `aigon apply` but didn't explain AIGON_START/END markers in detail
 - ⚠️ **Slash command tables incomplete** — Didn't add `research-open` and `worktree-open` to agent command tables
 - ⚠️ **No workflow examples section** — Didn't add dedicated examples for solo/arena/research/worktree modes as specified
 
@@ -62,7 +62,7 @@ See: `./docs/specs/features/04-in-evaluation/feature-06-readme-uplift.md`
 - ✅ **All missing commands added** — `research-open` and `worktree-open` in all four agent tables
 - ✅ **Full screenshot placeholders** — All 9 required images with proper markdown syntax
 - ✅ **"Why Aigon?" section** — Clear positioning of vendor independence and context-in-repo
-- ✅ **Update workflow documented** — Complete explanation of `aigon update` and AIGON_START/END markers
+- ✅ **Update workflow documented** — Complete explanation of `aigon apply` and AIGON_START/END markers
 - ✅ **Project-specific instructions** — New section explaining how to extend configs outside markers
 - ✅ **Workflow examples added** — Dedicated section with solo, arena, research, and worktree examples
 - ✅ **"Aigon builds Aigon"** — Points readers to `docs/specs/` in this repo
@@ -112,7 +112,7 @@ See: `./docs/specs/features/04-in-evaluation/feature-06-readme-uplift.md`
 | "Aigon builds Aigon" | ✅ Yes | ✅ Yes | ✅ Yes |
 | Slash commands as primary | ⚠️ Partial | ✅ Complete | ✅ Complete |
 | Cursor CLI support documented | ⚠️ Not visible | ✅ Yes | ✅ Yes |
-| Update workflow (aigon update) | ⚠️ Incomplete | ✅ Complete | ✅ Complete |
+| Update workflow (aigon apply) | ⚠️ Incomplete | ✅ Complete | ✅ Complete |
 | Project-specific instructions | ⚠️ Not found | ✅ New section | ✅ Documented |
 | Sample Workflow Chat updated | ⚠️ Unclear | ✅ Yes | ⚠️ Unclear |
 | Additional workflow examples | ❌ Missing | ✅ Complete | ⚠️ Simplified |
@@ -158,7 +158,7 @@ Cursor's implementation is **flawless**. It meets every single acceptance criter
 3. **All screenshot placeholders** — 9 required images with proper paths
 4. **Complete slash command coverage** — All four agents updated with missing `research-open` and `worktree-open`
 5. **Workflow examples** — Dedicated section with solo, arena, research, worktree examples
-6. **Update workflow** — Complete explanation of `aigon update` and marker system
+6. **Update workflow** — Complete explanation of `aigon apply` and marker system
 7. **Cursor CLI documented** — `agent` command and composer model in agent table
 8. **Maintainable** — Incremental additions preserve structure, easier to maintain
 

@@ -18,15 +18,15 @@ Aigon has three independent version facts:
 | Repo sync stamp | `.aigon/version`, read/written by `getInstalledVersion()` / `setInstalledVersion()`. | The last Aigon version that synced managed files in this repository. |
 | Dashboard process version | Running Node process, surfaced from package metadata during server startup and indirectly through dashboard status. | The version of the already-running server, which can lag behind a newly upgraded CLI until restart. |
 
-`aigon check-version` currently compares the CLI version to `.aigon/version` and, before F493, auto-runs `aigon update` on mismatch. F493 intentionally makes that hook path non-mutating, so users will start seeing drift that was previously hidden by automatic writes. There is already a second content-ish signal in the repo: `.aigon/config-hash`, which detects instruction/config changes even when semver did not change. That means the product is already halfway between "version pin" and "content generation hash"; the model needs clarification rather than another notice command.
+`aigon check-version` currently compares the CLI version to `.aigon/version` and, before F493, auto-runs `aigon apply` on mismatch. F493 intentionally makes that hook path non-mutating, so users will start seeing drift that was previously hidden by automatic writes. There is already a second content-ish signal in the repo: `.aigon/config-hash`, which detects instruction/config changes even when semver did not change. That means the product is already halfway between "version pin" and "content generation hash"; the model needs clarification rather than another notice command.
 
-`aigon update --pull` is a separate clone-installed path: `upgradeAigonCli()` runs `git pull` and `npm ci` in the Aigon source checkout, then runs normal project sync. Npm-installed users instead use npm's global package update path and then sync each repo.
+`aigon apply --pull` is a separate clone-installed path: `upgradeAigonCli()` runs `git pull` and `npm ci` in the Aigon source checkout, then runs normal project sync. Npm-installed users instead use npm's global package update path and then sync each repo.
 
 ### Should `.aigon/version` Exist?
 
 **Option A: keep the per-repo semver pin.**
 
-Pros: It is simple, git-visible, and useful in support/debugging: the repo can answer "what generation of Aigon last synced these managed files?" It also powers changelog ranges in `aigon update`. This matches common project-local tooling records: Corepack uses a project `packageManager` field to select a package-manager version, and package-lock/Terraform lock files keep committed records of generated dependency selections.
+Pros: It is simple, git-visible, and useful in support/debugging: the repo can answer "what generation of Aigon last synced these managed files?" It also powers changelog ranges in `aigon apply`. This matches common project-local tooling records: Corepack uses a project `packageManager` field to select a package-manager version, and package-lock/Terraform lock files keep committed records of generated dependency selections.
 
 Cons: After F493, users can see three version numbers at once. A semver mismatch can also be noisy when a patch release did not materially change generated files.
 
@@ -51,7 +51,7 @@ Aigon already has a global repo list through `readConductorReposFromGlobalConfig
 Recommended layering:
 
 1. Add a repo-sync status primitive that reports, per repo: CLI version, repo sync stamp, dashboard runtime if applicable, config-hash drift, and whether generated content would change.
-2. Add `aigon update --all` over the known repo registry, with an aggregate report and non-zero exit when any repo fails.
+2. Add `aigon apply --all` over the known repo registry, with an aggregate report and non-zero exit when any repo fails.
 3. Keep the dashboard primarily single-repo. Add a small "machine status" or Pro-level rollup later if users need "N of M repos behind".
 
 The UX should distinguish package update from repo sync. npm's `npm update -g` updates global packages; Homebrew separates refreshing formulae, checking outdated packages, and upgrading. Aigon should use the same conceptual split: upgrade Aigon CLI/package, inspect repo drift, then sync one repo or all known repos.
@@ -66,10 +66,10 @@ The right minimum dashboard improvement is a visible version-status surface:
 
 It should show clear next actions:
 
-- CLI newer than repo sync: run `aigon update`.
+- CLI newer than repo sync: run `aigon apply`.
 - Dashboard process older than CLI: restart the Aigon server.
 - npm registry newer than CLI: run the npm upgrade command, then sync repos.
-- Config/template digest drift: run `aigon update` even if semver matches.
+- Config/template digest drift: run `aigon apply` even if semver matches.
 
 This solves the confusing "dashboard server was started on v2.63, CLI is v2.65, repo is v2.64" scenario without turning the dashboard into a multi-repo orchestrator.
 
@@ -90,11 +90,11 @@ Minimum universal channel:
 
 **User runs `npm update -g @senlabsai/aigon` on Monday and has eight repos.**
 
-The CLI updates once. Each repo remains at its prior sync generation until the user explicitly syncs it. `aigon check-version` and the dashboard show non-blocking drift in any repo the user opens. `aigon update --all` gives a single way to clear all registered repos.
+The CLI updates once. Each repo remains at its prior sync generation until the user explicitly syncs it. `aigon check-version` and the dashboard show non-blocking drift in any repo the user opens. `aigon apply --all` gives a single way to clear all registered repos.
 
 **User opens a repo untouched for three months.**
 
-They should see: current CLI version, repo sync generation, available npm version if newer, changelog since repo sync, and one explicit command: `aigon update`. If migrations are pending or state is malformed, point to `aigon doctor --fix`.
+They should see: current CLI version, repo sync generation, available npm version if newer, changelog since repo sync, and one explicit command: `aigon apply`. If migrations are pending or state is malformed, point to `aigon doctor --fix`.
 
 **User uses only Codex/Kimi/OpenCode.**
 
@@ -104,14 +104,14 @@ Codex can eventually receive a generated SessionStart hook. Until then, the dash
 
 Core dashboard should not pretend to be global. Repo B gets signals only when the user runs Aigon there or opens that repo's dashboard. A future registry-backed machine-status view can show cross-repo drift, but it should be additive.
 
-### `aigon update --pull`
+### `aigon apply --pull`
 
 Keep it first-class. It is the contributor/dogfood path for clone-installed Aigon and should remain supported alongside npm installs. Improve wording so users understand:
 
 - `npm update -g @senlabsai/aigon` upgrades packaged installs.
-- `aigon update --pull` upgrades clone installs.
-- `aigon update` syncs the current repo to the installed/checked-out CLI.
-- `aigon update --all` syncs all known repos.
+- `aigon apply --pull` upgrades clone installs.
+- `aigon apply` syncs the current repo to the installed/checked-out CLI.
+- `aigon apply --all` syncs all known repos.
 
 ## Sources
 
@@ -131,11 +131,11 @@ Keep it first-class. It is the contributor/dogfood path for clone-installed Aigo
 
 Keep a repo-local sync record. Do not remove `.aigon/version` until there is a replacement sync-generation manifest that preserves human-readable semver, content drift detection, and migration/changelog support.
 
-Ship clarification UX before structural rewrites: a dashboard/CLI version-status surface that names all three facts, plus explicit next commands. Then add known-repo status and `aigon update --all`. Keep dashboard multi-repo orchestration as later/optional scope.
+Ship clarification UX before structural rewrites: a dashboard/CLI version-status surface that names all three facts, plus explicit next commands. Then add known-repo status and `aigon apply --all`. Keep dashboard multi-repo orchestration as later/optional scope.
 
 Treat Codex as a new hook-parity opportunity, not as permanently hookless. Keep dashboard/CLI notices as the universal fallback for Kimi, OpenCode, and non-agent workflows.
 
-Keep `aigon update --pull` as the supported clone-install upgrade path, with clearer messaging beside npm install guidance.
+Keep `aigon apply --pull` as the supported clone-install upgrade path, with clearer messaging beside npm install guidance.
 
 ## Suggested Features
 
@@ -144,7 +144,7 @@ Keep `aigon update --pull` as the supported clone-install upgrade path, with cle
 | `repo-sync-generation-status` | Add a shared read model that reports CLI version, repo sync stamp, dashboard runtime version, config-hash drift, and generated-content drift for one repo. | high | none |
 | `dashboard-version-status-banner` | Show repo sync, CLI, dashboard process, and npm registry update status with explicit update/restart commands. | high | repo-sync-generation-status |
 | `known-repos-sync-status` | Formalize the known-repos registry and expose per-repo sync status for CLI/dashboard consumers. | high | repo-sync-generation-status |
-| `update-all-known-repos` | Add `aigon update --all` to sync every known repo with aggregate success/failure reporting. | medium | known-repos-sync-status |
+| `update-all-known-repos` | Add `aigon apply --all` to sync every known repo with aggregate success/failure reporting. | medium | known-repos-sync-status |
 | `sync-generation-manifest` | Replace or augment `.aigon/version` with a manifest digest so drift is based on managed output changes, not semver alone. | medium | repo-sync-generation-status |
 | `codex-sessionstart-check-version-hook` | Install and test a non-mutating Codex `SessionStart` hook for check-version/project-context parity. | medium | dashboard-version-status-banner |
 | `hookless-agent-version-guidance` | Update Kimi/OpenCode installed instructions to point users to dashboard/check-version/update while hook support remains absent or unconfirmed. | low | dashboard-version-status-banner |

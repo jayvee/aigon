@@ -19,7 +19,7 @@
 | **Git `post-checkout` hook** | `git checkout`/`git switch` | All (requires Husky or manual `.git/hooks/`) | Low |
 | **Git `post-merge` hook** | After `git pull`/`git merge` | All | Low |
 | **launchd/cron** | Scheduled interval | All (background, macOS-only for launchd) | High |
-| **`npx aigon update`** | Manual invocation | All (requires npm) | Low |
+| **`npx aigon apply`** | Manual invocation | All (requires npm) | Low |
 
 **Best option:** Agent SessionStart hooks provide the most targeted trigger — they fire exactly when an agent needs up-to-date command files. Three of four supported agents (Claude Code, Cursor, Gemini CLI) now have `SessionStart` hooks with nearly identical configuration.
 
@@ -72,13 +72,13 @@ All three major agent CLIs now support session-start hooks:
 - **Status:** No hook system. [Issue #2109](https://github.com/openai/codex/issues/2109) (449 upvotes) is open; a community [PR #9796](https://github.com/openai/codex/pull/9796) was rejected (no unsolicited features policy).
 - **Workarounds:** AGENTS.md instruction, shell wrapper, or `codex exec` non-interactive mode.
 
-### 3. Push Model: `aigon update --all`
+### 3. Push Model: `aigon apply --all`
 
 **Current state:** Aigon already has a project registry at `~/.aigon/ports.json` (`{ "appId": { basePort, path } }`) used for dev proxy port allocation. This registry tracks all Aigon-enabled projects on the machine.
 
-**Feasibility:** High. A new `aigon update --all` command could:
+**Feasibility:** High. A new `aigon apply --all` command could:
 1. Read `~/.aigon/ports.json` to get all project paths
-2. For each project, `cd` into it and run the equivalent of `aigon update`
+2. For each project, `cd` into it and run the equivalent of `aigon apply`
 3. Optionally auto-commit with a conventional message
 
 **Trade-offs:**
@@ -88,7 +88,7 @@ All three major agent CLIs now support session-start hooks:
 - **Con:** Projects may have uncommitted changes or be on feature branches
 - **Con:** `ports.json` only tracks projects that have used `dev-server`; not all Aigon projects
 
-**Enhancement needed:** A proper project registry (separate from ports.json) that tracks all Aigon-enabled projects, populated during `aigon update` or `aigon install-agent`.
+**Enhancement needed:** A proper project registry (separate from ports.json) that tracks all Aigon-enabled projects, populated during `aigon apply` or `aigon install-agent`.
 
 ### 4. Committed vs Ephemeral Generated Files
 
@@ -142,7 +142,7 @@ Researched how 8 tools handle this decision:
 **Pin format:** Start with exact version only. The existing `compareVersions()` function in aigon-cli.js (line 2607) handles equality checks. Semver ranges (`^2.27.0`, `~2.27.0`) add complexity and can be deferred.
 
 **Enforcement flow:**
-1. `aigon update` writes current CLI version to `.aigon/config.json` as `aigon_version`
+1. `aigon apply` writes current CLI version to `.aigon/config.json` as `aigon_version`
 2. On any `aigon` command that writes files: compare pin vs CLI version, warn on mismatch
 3. `--force` flag bypasses pin and re-pins to current version
 
@@ -157,7 +157,7 @@ Researched how 8 tools handle this decision:
 
 | Scenario | Recommended Behavior |
 |----------|---------------------|
-| **Uncommitted changes to generated files** | Warn and abort; suggest `aigon update --force` or committing first |
+| **Uncommitted changes to generated files** | Warn and abort; suggest `aigon apply --force` or committing first |
 | **Active feature branch** | Warn about branch; proceed if user confirms (generated files should be branch-agnostic) |
 | **Merge conflicts in generated files** | Always regenerate; generated files should never be manually resolved |
 
@@ -179,12 +179,12 @@ Researched how 8 tools handle this decision:
 ```json
 {
   "devDependencies": { "aigon": "github:jayvee/aigon#v2.27.0" },
-  "scripts": { "prepare": "aigon update" }
+  "scripts": { "prepare": "aigon apply" }
 }
 ```
 This would give automatic regeneration on `npm install` for Node projects.
 
-**npx caveats:** `npx aigon update` uses cached versions (not always latest). Must use `npx aigon@latest update` for guaranteed freshness, but even that has known bugs ([npm/cli#5262](https://github.com/npm/cli/issues/5262)).
+**npx caveats:** `npx aigon apply` uses cached versions (not always latest). Must use `npx aigon@latest update` for guaranteed freshness, but even that has known bugs ([npm/cli#5262](https://github.com/npm/cli/issues/5262)).
 
 ### 8. How Other Tools Solve Distribution
 
@@ -245,7 +245,7 @@ This would give automatic regeneration on `npm install` for Node projects.
 **The "Version Gate + SessionStart Hook" pattern** — two complementary features:
 
 **Part 1 — Version Gate (local, zero-network, ~30 lines):**
-1. `aigon update` writes `aigon_version` to `.aigon/config.json`
+1. `aigon apply` writes `aigon_version` to `.aigon/config.json`
 2. On any file-writing command: compare pin vs CLI version, warn on mismatch
 3. Uses existing `compareVersions()` and `loadProjectConfig()` — no new dependencies
 
@@ -253,7 +253,7 @@ This would give automatic regeneration on `npm install` for Node projects.
 1. `aigon install-agent` writes a SessionStart hook into each agent's settings
 2. Hook runs `aigon check-version` which compares local CLI vs project pin
 3. If outdated: prints a notice that becomes agent context
-4. If `--auto-update` flag: runs `aigon update` automatically
+4. If `--auto-update` flag: runs `aigon apply` automatically
 
 **Together:** Every agent session starts by checking if generated files are current. If not, the agent either sees a warning (and can tell the user) or auto-regenerates. Version drift is eliminated with ~80 lines of new code and zero new dependencies.
 
@@ -290,7 +290,7 @@ This would give automatic regeneration on `npm install` for Node projects.
 I recommend a **three-layer approach**, implemented incrementally:
 
 **Layer 1 — Version Gate (implement first, zero risk):**
-- Pin Aigon version in `.aigon/config.json` during `aigon update`
+- Pin Aigon version in `.aigon/config.json` during `aigon apply`
 - Warn on version mismatch in any file-writing command
 - ~30 lines of code, no new dependencies, no network calls
 - Eliminates silent drift — every mismatch is surfaced immediately
@@ -299,11 +299,11 @@ I recommend a **three-layer approach**, implemented incrementally:
 - `aigon install-agent` writes SessionStart hooks for Claude Code, Cursor, and Gemini CLI
 - Hook runs `aigon check-version` — compares CLI version vs project pin
 - Output becomes agent context: "Aigon v2.28.0 available, you have v2.27.0"
-- Optional `--auto-update` mode runs `aigon update` automatically
+- Optional `--auto-update` mode runs `aigon apply` automatically
 - Codex fallback: AGENTS.md instruction to check version
 
 **Layer 3 — Push Model (implement later, convenience):**
-- New `aigon update --all` command reads project registry
+- New `aigon apply --all` command reads project registry
 - Enhanced project registry (beyond `ports.json`) tracking all Aigon-enabled projects
 - Single command to update every project after upgrading Aigon globally
 - Auto-commit option with conventional message
@@ -324,7 +324,7 @@ I recommend a **three-layer approach**, implemented incrementally:
 | version-gate | Pin Aigon version in `.aigon/config.json` and warn on mismatch during file-writing commands | high | none |
 | session-start-hooks | Write SessionStart hooks for Claude Code, Cursor, and Gemini CLI during `install-agent` that run `aigon check-version` | high | version-gate |
 | check-version-command | New `aigon check-version` command that compares CLI version vs project pin and outputs status for hook consumption | high | version-gate |
-| update-all-command | New `aigon update --all` command that iterates over registered projects and runs update in each | medium | project-registry |
+| update-all-command | New `aigon apply --all` command that iterates over registered projects and runs update in each | medium | project-registry |
 | project-registry | Enhanced global registry tracking all Aigon-enabled projects (beyond ports.json) | medium | none |
 | remote-version-check | Fetch latest version from raw.githubusercontent.com with 1-hour TTL cache at `~/.aigon/version-cache.json` | medium | check-version-command |
 | generated-file-markers | Add `<!-- Generated by aigon@X.Y.Z -->` markers to generated files for staleness detection | low | none |

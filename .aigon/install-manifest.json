@@ -1,54 +1,54 @@
 {
   "version": "1.0",
-  "aigonVersion": "2.62.1",
+  "aigonVersion": "2.64.0-beta.6",
   "files": [
     {
       "path": ".aigon/docs/agents/claude.md",
       "sha256": "cba3cd2af7532bed1ce440791f365744ad2adf9bc45766808f6b0628ff2a9a0e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.528Z"
     },
     {
       "path": ".aigon/docs/agents/codex.md",
       "sha256": "3eed4355679fbb5b022d5e8fcafd847c9a891383b2615e9cdff027165f113867",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.539Z"
     },
     {
       "path": ".aigon/docs/agents/cursor.md",
       "sha256": "fcdd29d7b2155bf753dc166d0a216d614d0fa378111527ae91ae934a6477fc5f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.539Z"
     },
     {
       "path": ".aigon/docs/agents/gemini.md",
-      "sha256": "af509e6d4a7a6758378c622e6339af50f4562c166d5e3707f73a6e2d93880479",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "04d23970dc0b451e70416068b42dce5fbda7ca0ac7294345ffb851105a3a9940",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.539Z"
     },
     {
       "path": ".aigon/docs/agents/kimi.md",
       "sha256": "030286a3d204bb8f7b52b677d93126de52ab680ad17972dc8d840cc1cfd27486",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.543Z"
     },
     {
       "path": ".aigon/docs/agents/opencode.md",
       "sha256": "638d2fab8ed51cb07794d57d1028520fe282f480ef3ddaaad505901df9ecb830",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.543Z"
     },
     {
       "path": ".aigon/docs/development_workflow.md",
-      "sha256": "0676f16da226ecfd3b877af4d55832733a7b59599bd3e0e7aca374307cc10685",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:53.890Z"
+      "sha256": "014fc1cb149c7413214adbb7fbb5a2fc76c867c83d4a481e8f519b144fa67e3a",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.543Z"
     },
     {
       "path": ".aigon/docs/feature-sets.md",
       "sha256": "670ddb51aed288d3cff821bf10ccdbc8be53b966de2b6b9d378eab2b9138df0c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.543Z"
     },
     {
       "path": ".agents/skills/aigon-board/SKILL.md",
@@ -809,458 +809,458 @@
     {
       "path": ".gemini/commands/ab.toml",
       "sha256": "51779656dbc673e95a2ccc9a6bd8430a42e54c669aedcbcf56412f26d77813a7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/ads.toml",
       "sha256": "23908ce342f0f5b9e4cf3aa2bbf3e06ac151a2867dad0af166569f9773d4205d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afbc.toml",
       "sha256": "65309abe56acf514dca22c75908d4393cd76bf323517e5015042e304585fa8e1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afbl.toml",
       "sha256": "eedcb115560c2d3569ad066023c959506a629bbdc266ada81fea1ed519c65239",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afbt.toml",
       "sha256": "336b4106b34311a6719da718d6ed8b06376aebf6532272569ccd727fe7222b35",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afc.toml",
       "sha256": "cd90585a741587b59278a4e10f368c2ceaed7f108bacfec8c74e61ef5017a62e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afcl.toml",
       "sha256": "aeac705e67fe9143bdd9abd388045315e551026db3de7596a2851eff1ec00e1c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afd.toml",
-      "sha256": "0a12b32bdb09a6e375e6c43839cfe6a899471cd2887d147fcda1c4ead13cc39f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "2d87eaee7fcfa06d1ba066b8ac6d57b60fb47fdcefeee78d0248cfe052b49b3d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afe.toml",
       "sha256": "4b7df6d99f966858849343ca94ac32ff91f34236041407f3ce319c0753b71fb2",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afn.toml",
       "sha256": "eb9cb93b193b5350190cf11e49f725e8e352707496c2a0e46840055f9cf5bfb3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afo.toml",
       "sha256": "d4036b3042fb8d629b3b304dc09805dd6e01e862fec32e5e802272a70a6b8f5c",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afp.toml",
       "sha256": "8974d8e26e6cb480c415df90b791feabe5d59da46a822d227f58e9bb6dd9960e",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afr.toml",
-      "sha256": "11c647e536d0f88ec6f0ac77b2ada81501cb1c71201ab97d661760cfcd94cc3a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:57.828Z"
+      "sha256": "35e926373802211c6e481ca8a2e140c28fad6f0b79a7c56e20879db9d7d6330d",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afrv.toml",
-      "sha256": "b95b0c0b1013733573a71c809f1f3d68fffdda1e13e6cab48241c300b9aa8864",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "a7a70ac3a8c6f9afe9e07634c384b5f89c92246e51be515f66c88c428436b1e8",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afs.toml",
-      "sha256": "20cffff6b012f294d0163c9ab3c3936f8c11505e3eaf9436b7da8c068a72b62d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "bae59da602b9b33f0773bbc7187548132ba17d427d4cbe80320c28ce51ba6538",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afsr.toml",
-      "sha256": "48b0b74942a2f6dc134a85b6544e468ca2f077f01f54d152b6c1b018451f3b49",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.376Z"
+      "sha256": "d876000b98c7316d3542d8e2b0966971e9ee86fd9a272bf14a9ed107faea6866",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/afsrv.toml",
       "sha256": "fecbf7125fb0225d65af715dfc9a7ad567d56824b245cf2fcd109821807ccf9d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aft.toml",
       "sha256": "9f3cfa018a7d04ac6de524168f3cfeb83ebc34bee4f64a185751322865f4ff24",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/ah.toml",
       "sha256": "20d9ea536ac5d89db780299a5cd3c006a1e77ad0e86c13675fb0ce5410118673",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/board.toml",
       "sha256": "30a438618c814e52e2393f05ce30b3a73e3cf09f6c84a1a5224d5bbc1b6ecfe3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/dev-server.toml",
       "sha256": "bf3ba7450beff0fcd49382ae8711ce7272dfa51f637ce91010bae897b795a92f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-autonomous-start.toml",
       "sha256": "5e8418c3bdedbf689903761ff736e788dd5b55e8d38b8c697fff20c92001a892",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-cleanup.toml",
       "sha256": "cc5329628384d7c69e4b4c5178524e1564919597aa436e2f77e3f5c3ee6581f4",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-close.toml",
       "sha256": "6a8d0fc06f7cb964779aa3f9e2c7607a23b43b8d18b472eadf28c260ba60622d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-code-review.toml",
-      "sha256": "dc7ed73e9261a8ace2f9f306b8d77cd9f4c3f4c1cd33e055d6fb8ab13862cee2",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T10:53:57.826Z"
+      "sha256": "b4d976a5e958f0067761e7708c09741f0a1c9db049bd83b377fd8e771071abfc",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-code-revise.toml",
-      "sha256": "8122dd7360c1e59ffdf970f23371920e52367ec3bcdd84b024d8002dfa404356",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "77159a19fc347321c4f38edfe35116fbd2529544a75fa74c4f4e9e5a7cf068b5",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.546Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-create.toml",
       "sha256": "51cbb786019846a087d4a416bcf4ed55941ac8ca693639663d2e8ce392b329ce",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-do.toml",
-      "sha256": "b6a0e25ded9d5d9fd76997bdd495e977e093b6a5650ff6a7874743441a7387e3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "00df3a74e3473b0c80a897cfdb9a760c9837e96fc14d3e88cd99b4729626f580",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-eval.toml",
       "sha256": "66e1990a401f08cd8c6136f037fcd449ee3f6a972dfc260879cd9100498100c3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-now.toml",
       "sha256": "3b5525c4cc41f1004a532f3d93e3712bbaab09f3301cfde0312b95c2069786b4",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-open.toml",
       "sha256": "3131661680f4296070dc7bfd8879cec77255dae7b56a3537f07612c0b230178f",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-prioritise.toml",
       "sha256": "b87bd677ec967dcd3fef3a30c74b0509fbb0dac093b563ca81d239d1052a9ca0",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-push.toml",
       "sha256": "f8901b115717dad90f8dc53ae7c6d5524f555d5eccd31ac69f4816de04e09535",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-reset.toml",
       "sha256": "4fbbdd7de7485236e30361b84d329fb2836c52a76ad06315958b43e9cbb4ef97",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-review.toml",
       "sha256": "c0a6ddc7a94380c92a41a1855bc44b4a1bebe80ae553bb701c3ef342059a2924",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-spec-review.toml",
-      "sha256": "3f7564707d8bc9059d4a58d5e511af79b52a1963155767ade5018f10e742d859",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.376Z"
+      "sha256": "19b1f68590811a12f70e3b7b6c0be816d1ce02244a1b5270270c65684a562614",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-spec-revise.toml",
       "sha256": "93152ee7f502289adcfa7aef795e1341cbd9c10f24a3f02a18aa96939aba1fb1",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-start.toml",
-      "sha256": "b3a63ba5e2d8f08ec387d399918d79a757d17fe1bfaaa62b9629de76b8fb1d45",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "fce3cebf8ef8b05df7a4b3217f32e9c7b0201b77dffcd147d63b572bdaf99f43",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-transfer.toml",
       "sha256": "f37eef5c66795b001ac9af563a4980c71f5c5fb19ac64deb45c769c0fe4827b7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feature-unprioritise.toml",
       "sha256": "cbe8338e06232e6a8a49ef7d458a3c0d1f2d920c75d5d42b419ded8f27270a90",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.547Z"
     },
     {
       "path": ".gemini/commands/aigon/feedback-create.toml",
       "sha256": "bf33e036e8c95d5fd0310a19bbad7e39da1561c4d3e6d9101514561cb04c5c05",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/feedback-list.toml",
       "sha256": "130dacbb1fe6f020f9805e0f0c951f6262874bb701e391b3b2c22950c133a9b3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/feedback-triage.toml",
       "sha256": "d4d001f0d60592da72451a10a6c3e9196b84d725c954ef19609c4a3f5ecbb1bb",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/help.toml",
       "sha256": "f435a551c3cf0d92195df7694ea8e946681dffd30bb8506141244d9633a938b6",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/next.toml",
       "sha256": "9fbf0e100049b6cefb3636cc127c409f0fa926c91b2fd856957ecef7e8f20a55",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.378Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-autopilot.toml",
       "sha256": "33df2ef4b831945b2e153ccb4fd397c3128669b1fa1e070f1053c02fcaa6da43",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.378Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-close.toml",
       "sha256": "3169854ba1093d4faaf54b7d9e1511391c3d1ff0758e5992d5c809e5ec8c7d03",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-create.toml",
       "sha256": "264b74c86611d63f4519901838362ec1a2120366ec5d9276040db00931574a1d",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-do.toml",
-      "sha256": "775133369ba28b0f190fc18bdf6d3b44eeded8f9e0d505c1740f103791a2e617",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.379Z"
+      "sha256": "2258d4c8124c92705a859469937e593410117efa6e5e327bd76d8dc3b6dcbfdd",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-eval.toml",
       "sha256": "25d7e18d1701b8134367779b2de28c9a50e0d2e96984c6769f02a3878bf42605",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-open.toml",
       "sha256": "4020a2161d780df97d9b33b26c9c7f771b41e8aebb334c2f320240894ae004ad",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-prioritise.toml",
       "sha256": "d2a9212a5281015a45a29d739dc6db1c9df8d47050ecb58c7db4432da546c534",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-reset.toml",
       "sha256": "c7013bd6eb7c98bd3fbe5c3470fa43cad41c77503dd93998e33b321d1c048193",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-spec-review.toml",
-      "sha256": "1c952c64dc7e4a343ecadd4819fdca891f127bb9927dfcc34e7161b6927952e7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.380Z"
+      "sha256": "89f730ef3dbad20d0f3cd88fe12ae67dfa1987305efef92f6bc68a8769943484",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-spec-revise.toml",
       "sha256": "bd58be19be2285e33ac653568d949913aa0fa7d759adb774b06c1c226459bcf3",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-start.toml",
       "sha256": "2b43bad24691c37060cc4662c14e350618f305affb3e19d8765d593765cf9f03",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/research-unprioritise.toml",
       "sha256": "ef9b959481e76c406a0edf939735371a52429bd7a6a85400338cfd3bade0f586",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/sessions-close.toml",
       "sha256": "fe50b0dcb750099a9fe90bf05eb5e0097f8dbcdfb94b70d9e7cfcf589070b7da",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.381Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aigon/set-prioritise.toml",
       "sha256": "975d29cef670f3217eb589a0c7766bd73eb732294088168c4bbbbe34193b5667",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/an.toml",
       "sha256": "ff2198bfb21aaa366c143b652a0d3798f2a4d5bc616d5fdaae9fccebfd6242ab",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.378Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/arap.toml",
       "sha256": "4d1875de8de576d0a4cdc0cf65168a99af72b6bb0e3f0afc7a391832d50f3fd7",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.378Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/arc.toml",
       "sha256": "5de4cff78a6b184fb6d36510e7d301da77f2ea87e1dc1e38279ef870741eb2c5",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/arcl.toml",
       "sha256": "c97b031eb6bb348f1fc6374af00e3d2eb91fb256cd547dea9d88294f57587a56",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/ard.toml",
-      "sha256": "1d3a66cb46299214e314a1bd5a3343d22529400934c57cfbeb3fe2a73a53e6d4",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.379Z"
+      "sha256": "70bc6bb640feb2a8548d3e2ac2f1d7bd71c9fc5133c80c75929ea522a90ad36b",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/are.toml",
       "sha256": "1a7241a2e92fce7750cb553e9d6dae2c50f736e85bcc960fcbc3f8748bd19b01",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/aro.toml",
       "sha256": "84d9e39898d1f2882247bf33cfc60e83ce750e31c4f83e99666408a0db8cfb40",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.548Z"
     },
     {
       "path": ".gemini/commands/arp.toml",
       "sha256": "aadc5e3cf5e5d84abc587b48858b9374e4353644b91cabaf5fee4b7a1fca249b",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/arr.toml",
       "sha256": "d50d9d940ef8e85d028ed6b33312237f7890715fae8e101f060e84a0749553be",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/ars.toml",
       "sha256": "aaefc50068fadca3574ed2fde59882573b77cfc3138364a1a008a7840eef0458",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/arsr.toml",
-      "sha256": "567fe8ac18f253c9e0a57b7c44b1b080c02789e70d01d38de26894689ea8ef69",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T09:19:05.380Z"
+      "sha256": "4204fa61811fd42c697429b579c20fa02c7041d515e654ee80559ede62124314",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/arsrv.toml",
       "sha256": "1be37aba91f8ad76a4b6f0dc1b83c442f3fd9cbd303797d90ae9d34bcf1e6ebc",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/asp.toml",
       "sha256": "787e4ed02c7bba76f42750288486cad0cc324519fd155658493f006fd72bf542",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/restart-server.toml",
       "sha256": "bd4de1668d9c7ae9d654df817f03c6c61c28e588f41efc848b4c7b6529340d6a",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/seed-reset.toml",
       "sha256": "91a9465f2794292041e0e6ad647698d67a188e813fb030d9c3fe418362e7b9a2",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/commands/start-docs.toml",
       "sha256": "12da0f70a8713197b8c4b9c057c3b88c265aa77253936f4262445e263c0b60ef",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/settings.json",
-      "sha256": "27695d1771954ae85339dfec235ef8c8609afeb21167ab78c4e4e76cae735c3b",
-      "version": "2.62.1",
-      "installedAt": "2026-04-29T07:16:27.640Z"
+      "sha256": "ce310c5e0cb126db1ed38faa197e6e62137b5750c4b3d42133397fca602e45b4",
+      "version": "2.64.0-beta.6",
+      "installedAt": "2026-05-10T09:22:18.549Z"
     },
     {
       "path": ".gemini/settings.json.orig",

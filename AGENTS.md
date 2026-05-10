@@ -71,7 +71,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/utils.js` | ~183 | Cross-cutting re-exports (config, proxy, dashboard, worktree, templates, git) + feedback constants, dev-server URL, terminal title, safeWrite |
 | `lib/hooks.js` | ~146 | Hook lifecycle: parseHooksFile, getDefinedHooks, executeHook, runPreHook, runPostHook |
 | `lib/analytics.js` | ~889 | Analytics: collectAnalyticsData, parseLogFrontmatterFull, buildCompletionSeries, buildWeeklyAutonomyTrend |
-| `lib/version.js` | ~154 | Version management: getAigonVersion, compareVersions, upgradeAigonCli, checkAigonCliOrigin |
+| `lib/version.js` | ~154 | Version management: getAigonVersion, compareVersions, getChangelogEntriesSince, checkAigonCliOrigin |
 | `lib/spec-crud.js` | ~247 | Spec file CRUD: findFile, moveFile, modifySpecFile, getNextId, createSpecFile, readSpecSection |
 | `lib/cli-parse.js` | ~256 | CLI option parsing + YAML helpers: parseCliOptions, parseFrontMatter, serializeYamlScalar, slugify, escapeRegex |
 | `lib/deploy.js` | ~65 | Deploy command resolution and execution: resolveDeployCommand, runDeployCommand |
@@ -205,7 +205,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 
 **Install manifest** (F422): every file written by `install-agent` is recorded in `.aigon/install-manifest.json` with `{path, sha256, version, installedAt}`. On re-install, files whose sha256 differs from the manifest are warned about (prompt in interactive mode; `AIGON_NONINTERACTIVE=1` or `--force` skips). `aigon uninstall [--dry-run] [--force]` reads the manifest and deletes every tracked file; it never touches `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, or `.aigon/config.json`. Migration 2.61.0 (`migrate_initialize_install_manifest`) synthesizes the manifest for legacy repos. `aigon doctor` reports missing/modified/untracked files; `aigon doctor --fix` triggers the migration.
 
-**SessionStart version check (F493)**: Hooks call `aigon check-version`. It prints drift vs `.aigon/version`, optional origin/npm notices, and tells you to run `aigon update` when you want to sync — it does **not** auto-run `aigon update`, reinstall agents, run repo migrations, or auto-commit project files.
+**SessionStart version check (F493)**: Hooks call `aigon check-version`. It prints drift vs `.aigon/version`, optional origin/npm notices, and tells you to run `aigon apply` when you want to sync — it does **not** auto-run `aigon apply`, reinstall agents, run repo migrations, or auto-commit project files.
 
 ## Aigon Pro (`@aigon/pro`)
 - **Private repo**: `~/src/aigon-pro`

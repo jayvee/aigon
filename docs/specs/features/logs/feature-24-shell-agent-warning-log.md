@@ -19,7 +19,7 @@ Single-file change to `aigon-cli.js`. Build on the existing `detectActiveAgentSe
 - Injected call into `research-conduct` handler
 - Added new `feature-review` handler (previously fell through to "Unknown command")
 - Added new `research-synthesize` handler (previously fell through to "Unknown command")
-- Ran `aigon update` to sync to working copies
+- Ran `aigon apply` to sync to working copies
 
 ## Decisions
 

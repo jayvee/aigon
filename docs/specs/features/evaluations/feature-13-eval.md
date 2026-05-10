@@ -52,7 +52,7 @@ See: `./docs/specs/features/04-in-evaluation/feature-13-feedback-foundation.md`
   - Tested thoroughly in isolated environment
 - **Weaknesses:**
   - Didn't commit folder structure to git (incomplete for spec requirement)
-  - Didn't update `aigon update` command (missing sync functionality)
+  - Didn't update `aigon apply` command (missing sync functionality)
   - No README documentation for users
 
 #### cu (Cursor)
@@ -62,13 +62,13 @@ See: `./docs/specs/features/04-in-evaluation/feature-13-feedback-foundation.md`
   - Template includes mustache-style conditionals for dynamic content
   - Good markdown sections for capturing user feedback verbatim
 - **Weaknesses:**
-  - Identical code changes to cc (didn't update `aigon update` command)
+  - Identical code changes to cc (didn't update `aigon apply` command)
   - No README documentation
   - Template comments are verbose (might be overwhelming)
 
 #### cx (Codex)
 - **Strengths:**
-  - **Only implementation that updated `aigon update` command** - critical for template syncing!
+  - **Only implementation that updated `aigon apply` command** - critical for template syncing!
   - Created comprehensive README documentation (52 lines) with schema examples
   - Updated root docs/specs/README.md to reference feedback
   - Most complete implementation overall
@@ -84,10 +84,10 @@ See: `./docs/specs/features/04-in-evaluation/feature-13-feedback-foundation.md`
 
 **Rationale:**
 
-Codex provided the most complete implementation by recognizing that feedback templates need to be synced via `aigon update`, not just `aigon init`. This is critical for maintaining consistency across projects when the template evolves.
+Codex provided the most complete implementation by recognizing that feedback templates need to be synced via `aigon apply`, not just `aigon init`. This is critical for maintaining consistency across projects when the template evolves.
 
 **Key differentiators:**
-1. ✅ **Only updated `aigon update` command** - essential for template syncing
+1. ✅ **Only updated `aigon apply` command** - essential for template syncing
 2. ✅ Created README documentation for users
 3. ✅ Updated root docs to reference feedback
 4. ✅ More thorough implementation (14 files changed vs 5/11)
