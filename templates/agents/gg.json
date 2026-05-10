@@ -382,8 +382,8 @@
             "hooks": [
               {
                 "type": "command",
-                "command": "aigon check-version --json",
-                "timeout": 30
+                "command": "aigon check-version --notice-only",
+                "timeout": 15
               },
               {
                 "type": "command",

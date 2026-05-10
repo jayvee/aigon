@@ -36,14 +36,14 @@ A unified, named-both-sides drift notice rendered at every surface where the use
 
 ```bash
 node --check lib/version.js
-# In-sync repo: zero output
-aigon check-version --notice-only | wc -c | grep -q "^0$"
+# In-sync repo: zero output (notice goes to stderr — merge streams when piping)
+aigon check-version --notice-only 2>&1 | wc -c | grep -q "^0$"
 # Drift: notice contains both sides and the apply command
 mkdir /tmp/test-drift && cd /tmp/test-drift && aigon apply
 # tamper with installed CLI version (mock):
-AIGON_TEST_INSTALLED_VERSION=99.99.99 aigon check-version --notice-only \
+AIGON_TEST_INSTALLED_VERSION=99.99.99 aigon check-version --notice-only 2>&1 \
   | grep -q "applied v.*installed v99.99.99"
-AIGON_TEST_INSTALLED_VERSION=99.99.99 aigon check-version --notice-only \
+AIGON_TEST_INSTALLED_VERSION=99.99.99 aigon check-version --notice-only 2>&1 \
   | grep -q "aigon apply"
 ```
 
