@@ -2899,6 +2899,7 @@ function budgetSummaryForAgent(agentId, entry) {
         label: 'weekly remaining',
         pctRemaining: weekPct,
         resetsAt: entry.week_all && entry.week_all.resets_at,
+        resetsDate: entry.week_all && entry.week_all.resets_date,
         timeZone: entry.week_all && entry.week_all.tz,
         polledAt: entry.polled_at,
       },
@@ -3054,6 +3055,7 @@ function renderBudgetWidget() {
         label: 'weekly remaining',
         pctRemaining: weekPct,
         resetsAt: cc.week_all && cc.week_all.resets_at,
+        resetsDate: cc.week_all && cc.week_all.resets_date,
         timeZone: cc.week_all && cc.week_all.tz,
         polledAt: cc.polled_at,
       }));
