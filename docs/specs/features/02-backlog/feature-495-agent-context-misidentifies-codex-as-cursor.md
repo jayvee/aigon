@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-10T07:39:01.638Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-context-misidentifies-codex-as-cursor
