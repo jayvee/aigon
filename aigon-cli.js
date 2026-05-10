@@ -103,7 +103,7 @@ const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 const resolvedCommand = cleanCommand ? (COMMAND_ALIASES[cleanCommand] || cleanCommand) : cleanCommand;
 
-const SKIP_FIRST_RUN = new Set(['onboarding', 'setup', '--version', '-v', 'version', '--help', '-h', 'help', 'check-version', 'apply', 'update']);
+const SKIP_FIRST_RUN = new Set(['onboarding', 'setup', '--version', '-v', 'version', '--help', '-h', 'help', 'check-version', 'apply', 'update', 'installed-notice']);
 
 function firstRunComplete() {
     const os = require('os');
@@ -149,6 +149,7 @@ const TEMPLATE_DRIFT_SKIP = new Set([
     '--version', '-v', 'version', '--help', '-h', 'help',
     'install-agent', 'uninstall', 'doctor', 'setup', 'global-setup',
     'check-version', 'check-prerequisites', 'apply', 'update',
+    'installed-notice',
     'agent-context', 'sync-heartbeat', 'session-hook', 'agent-status',
 ]);
 async function maybeRunTemplateDriftLayers(cmd) {
