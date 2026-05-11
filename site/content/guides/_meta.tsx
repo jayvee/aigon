@@ -9,6 +9,7 @@ export default {
     title: "Open source",
   },
   "brewboard-tutorial": "Tutorial: Brewboard",
+  "setup-wizard": "Setup wizard",
   dashboard: "Dashboard",
   "drive-mode": "Drive Mode",
   "fleet-mode": "Fleet Mode",

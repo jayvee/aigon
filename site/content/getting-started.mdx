@@ -3,391 +3,119 @@ title: Getting Started
 description: Install Aigon and run your first spec-driven feature loop.
 ---
 
-import { Callout } from 'nextra/components'
-
-<Callout type="warning">
-**Beta software.** Aigon is early access — APIs and config formats may change between releases. Stable release coming soon. File bugs at [github.com/jayvee/aigon/issues](https://github.com/jayvee/aigon/issues).
-</Callout>
+import { Callout, Tabs } from 'nextra/components'
 
 ## Prerequisites
 
-**Install these first** — `npm install -g @senlabsai/aigon` will fail without them:
+You need **Node.js 18+**. That's it.
 
-- **Node.js 18+** and **Git** — Aigon is a Node CLI in a Git repo.
-- **A C toolchain and Python 3** — Aigon depends on `node-pty`, which builds a small native module at install time. Without these you'll get a `node-gyp` error during `npm install`.
-- **`lsof`** — used by `aigon server start/restart` and port-allocation probes. On macOS this ships with the OS.
-- **`tmux`** — used to run agent sessions in the background so you can attach/detach. The setup wizard offers to install this if missing.
+<Tabs items={['macOS', 'Ubuntu / Debian', 'Fedora', 'Arch']}>
+  <Tabs.Tab>
+    ```bash
+    brew install node
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    sudo dnf install -y nodejs npm
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    sudo pacman -S --noconfirm nodejs npm
+    ```
+  </Tabs.Tab>
+</Tabs>
 
-Pick the one line that matches your platform:
+The setup wizard installs everything else it needs (`tmux`, `lsof`, `gh`) once Aigon is on your PATH.
 
-**macOS (Homebrew):**
+## Install Aigon
 
-```bash
-brew install node git tmux
-```
+<Tabs items={['macOS', 'Linux']}>
+  <Tabs.Tab>
+    ```bash
+    npm install -g @senlabsai/aigon@next
+    aigon setup
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    sudo npm install -g @senlabsai/aigon@next
+    aigon setup
+    ```
+  </Tabs.Tab>
+</Tabs>
 
-*Xcode Command Line Tools provide the C toolchain — run `xcode-select --install` first if you don't have them.*
+The wizard walks you through agent install, terminal preference, and dashboard start — see [Setup wizard](/docs/guides/setup-wizard) for the eight steps.
 
-**Ubuntu / Debian:**
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git build-essential python3 lsof tmux
-```
-
-**Fedora:**
-
-```bash
-sudo dnf install -y nodejs npm git gcc-c++ make python3 lsof tmux
-```
-
-**Arch:**
-
-```bash
-sudo pacman -S --noconfirm nodejs npm git base-devel python lsof tmux
-```
-
-> **Already have Node?** Check the version with `node -v`. Aigon needs 18 or higher. The wizard re-checks all prerequisites and will offer to install missing optional ones (`gh`, `tmux`, `lsof`).
-
-## Quick install
-
-Once the prerequisites above are in place, install Aigon and run the setup wizard:
-
-**macOS:**
-
-```bash
-npm install -g @senlabsai/aigon@next
-aigon setup
-```
-
-**Linux:**
-
-```bash
-sudo npm install -g @senlabsai/aigon@next
-aigon setup
-```
-
-### What the setup wizard does
-
-`aigon setup` walks through eight steps. Each is skippable. The wizard remembers your progress, so you can resume later with `aigon setup --resume`, or force a full re-run with `aigon global-setup --force`.
-
-1. **Prerequisites** — verifies Node, npm, Git, GitHub CLI (`gh`), `tmux`, and `lsof` are installed; offers to install missing optional ones (`gh`, `tmux`, `lsof`); prompts for Git identity if not configured; runs `gh auth login` if needed.
-2. **Terminal preference** (macOS only) — pick from iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux uses tmux for persistent sessions and can auto-detect GNOME Terminal / Kitty / xterm for foreground launches.
-3. **Agent install** — multi-select from Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, and Kimi. Aigon installs each binary you select; for Claude Code, Gemini, and Codex it also runs the auth flow (Cursor / OpenCode / Kimi need to be authenticated separately).
-4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon apply`, and registers it with the dashboard.
-5. **Repo scan** — scans your `~/src` directory for Git repositories and offers to register them with the dashboard (so they show up on the kanban without you running `aigon server add` yourself).
-6. **Dashboard server** — opt-in start. The wizard does NOT start the server by default; you have to confirm.
-7. **Brewboard demo** — opt-in walkthrough that drives an autonomous feature against the seed repo.
-8. **Aigon Pro vault** — Pro users only; sets up encrypted backups for spec history. See [Aigon Pro (beta access)](#aigon-pro-beta-access) below for how to request access and install it.
-
-## Add Aigon to a project
-
-Once the wizard has finished, point Aigon at any Git repository:
+## Add Aigon to your project
 
 ```bash
 cd /path/to/your/project
 aigon apply
-aigon install-agent cc gg          # Install Claude Code + Gemini agents
+aigon install-agent cc gg          # Claude Code + Gemini
 ```
 
-`aigon apply` is the one verb you run to bring Aigon into a repo and to keep it current. On first run it writes the kanban folder structure under `docs/specs/`, installs project git hooks, allocates a port block, and bootstraps the workflow engine. On subsequent runs it re-vendors docs and refreshes agent configs. The kanban has six lanes — features and research move through `01-inbox` → `02-backlog` → `03-in-progress` → `04-in-evaluation` → `05-done`, with `06-paused` for paused work.
+Agent codes — install whichever you have access to: `cc` Claude Code · `gg` Gemini CLI · `cx` Codex CLI · `cu` Cursor · `op` OpenCode · `km` Kimi Code CLI. Inside any of them, invoke Aigon commands as `/aigon:feature-do 07` (or `aigon-feature-do` for Codex).
 
-`aigon install-agent` writes per-agent slash commands and config into your repo. Pass any combination of these codes:
+## Install Aigon Pro (optional)
 
-| Code | Agent | How you invoke Aigon commands inside the agent |
-|------|-------|----------------------------------|
-| `cc` | Claude Code | `/aigon:feature-do 07` |
-| `gg` | Gemini CLI | `/aigon:feature-do 07` |
-| `cx` | Codex CLI | `aigon-feature-do` (Codex skill) |
-| `cu` | Cursor | `/aigon-feature-do 07` |
-| `op` | OpenCode | `/aigon-feature-do 07` |
-| `km` | Kimi Code CLI | Prompt is pasted into the TUI on session launch |
-
-Install only the agents you have access to. You can add more later with `aigon install-agent`. Fleet mode benefits from two or more.
-
-> **Tip:** `install-agent` checks whether the agent CLI binary is in your PATH and warns you if it's missing.
-
-## Three ways to interact
-
-The dashboard is the recommended starting point — it gives you a visual overview of the pipeline and lets you start, monitor, and close features with a click. Agent slash commands and the CLI are there when you want more control or want to script things.
-
-| | Dashboard | Agent slash commands | CLI |
-|---|---|---|---|
-| **Where** | Browser at `localhost:4100` | Inside an agent session | Terminal / shell |
-| **Best for** | Visual overview, monitoring, click-to-start | Writing specs, implementing features | Orchestration, setup, scripting |
-| **Example** | Click **Start** on a kanban card | `/aigon:feature-do 07` | `aigon feature-start 07 cc gg` |
-
-All three surfaces drive the same underlying workflow. Mix them freely.
-
-### Open the dashboard
-
-If you said yes to the **Dashboard server** step in the wizard, it's already running — open [http://localhost:4100](http://localhost:4100). The Pipeline view shows your features across kanban lanes.
-
-If you skipped that step (or it's a fresh shell), start it manually:
-
-```bash
-aigon server start --persistent
-```
-
-`--persistent` installs a launchd service on macOS or a systemd user unit on Linux. The dashboard is meant to be always-on, so persistent mode is the recommended way to run it. See [Manual setup → Start the dashboard manually](#start-the-dashboard-manually) for one-off and headless variants.
-
-## Your first feature (using an agent CLI)
-
-Run your agent CLI of choice — for this example, we'll use Claude Code. Open a terminal in your project, then launch the agent:
-
-```bash
-cd /path/to/your/project
-claude
-```
-
-Inside Claude Code, the fastest path from idea to implementation is `/aigon:feature-now`. Describe what you want — the agent creates a spec, assigns an ID, sets up the workspace, and starts implementing:
-
-```
-/aigon:feature-now dark-mode
-Add a dark mode toggle to the top-right of the site header.
-Use CSS custom properties for theming. Default to system preference.
-Store the user's choice in localStorage.
-```
-
-This is a normal agent conversation — you can go back and forth, refine requirements, ask questions, and iterate on the spec before the agent starts coding. The difference is that the conversation is anchored to a feature spec with acceptance criteria, so decisions are captured rather than lost in chat history.
-
-If you're using a different agent, the slash command is the same except for the prefix — see the [agent table above](#add-aigon-to-a-project).
-
-### Step-by-step (the full loop)
-
-For more control, use the individual commands:
-
-```
-# 1. Create a feature — describe what you want
-/aigon:feature-create dark-mode
-Add a dark/light mode toggle with system preference detection...
-
-# 2. (Optional) Spec review — get a second agent's read on the spec
-/aigon:feature-spec-review dark-mode
-
-# 3. Prioritise — assigns an ID, moves to backlog
-/aigon:feature-prioritise dark-mode
-# → Assigned ID: 07
-
-# 4. Start — creates the worktree and moves the spec to in-progress.
-#    For most agents this also launches an implementation session.
-/aigon:feature-start 07
-
-# 5. (Optional) Code review — if you want a different agent to review
-/aigon:feature-code-review 07
-
-# 6. Merge to main
-/aigon:feature-close 07
-```
-
-Each step moves the feature through the pipeline. To start over, use `aigon feature-reset <id>`.
-
-## Your first feature (via the dashboard)
-
-Open [http://localhost:4100](http://localhost:4100). The Pipeline view shows a kanban with your features across the six lanes.
-
-**1. Create a feature**
-
-Click the **New feature** button (or use `/aigon:feature-create` from inside an agent). A spec drawer opens — fill in a title and a brief description, then save. The new spec appears in the **Inbox** lane.
-
-**2. Prioritise**
-
-Click **Prioritise** on the inbox card. The spec is assigned a numeric ID and moves to **Backlog**.
-
-**3. Start**
-
-Click **Start** on the backlog card. A modal lets you pick which agent will implement it (Claude Code, Gemini, Codex, etc.) and the model/effort level. On confirm, Aigon creates a Git worktree, launches the agent in a tmux session, and moves the card to **In Progress**.
-
-You can watch the agent work live — click the card to open the side panel with the agent's terminal. Tail the implementation log, attach via `tmux attach -t <session-name>`, or just leave the dashboard open and check back later.
-
-**4. Code review (optional, but recommended in Fleet mode)**
-
-When the agent signals it's done, the card shows **Code Review** and **Close** buttons. Click **Code Review** to run a review pass with a *different* agent — Aigon will prompt for which one. Reviewer diversity is the wedge: when Claude reviews Claude, the reviewer shares the implementer's blind spots. A different model family catches different classes of bug.
-
-If the reviewer raises issues, the original agent gets a chance to revise. Once the reviewer signs off, the card moves to the **In Evaluation** lane.
-
-**5. Close**
-
-Click **Close** on the card. Aigon runs the security scan gate (gitleaks, semgrep), merges the branch into main, runs your test suite if one is configured, and moves the card to **Done**.
-
-If a step fails, the dashboard shows a "Resolve & close" action that launches an agent to fix the merge conflict or test failure for you.
-
-## Updating Aigon
-
-Two steps in two tools — npm owns CLI upgrades, `aigon apply` owns project file application:
-
-```bash
-npm update -g @senlabsai/aigon@next      # 1. upgrade the CLI
-aigon apply                              # 2. re-apply templates into this repo
-aigon apply --all                        # …or apply to every registered repo at once
-```
-
-After the npm upgrade, `aigon installed-notice` runs automatically and tells you which of your registered repos are behind. The dashboard does not auto-restart — run `aigon server restart` (or click `[ Restart now ]` on the dashboard's upgrade pill) if you want the latest dashboard UI.
-
-See [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates) for the full flow.
-
-## Manual setup (advanced)
-
-The setup wizard handles all of this — these sections are reference material if you'd rather configure things yourself or hit a wizard step that didn't work for you.
-
-### Start the dashboard manually
-
-The dashboard is meant to be always-on — it's the daily command center. The recommended invocation is:
-
-```bash
-aigon server add /path/to/your/project   # one-time, registers the project
-aigon server start --persistent          # installs a launchd / systemd user service
-```
-
-`--persistent` installs a **launchd** service on macOS, or a **systemd user unit** on Linux. Both auto-restart on reboot.
-
-> **Headless Linux servers:** systemd user services need lingering enabled to survive logout. Run once: `sudo loginctl enable-linger $USER`, then `aigon server start --persistent`.
-
-**Linux without systemd (containers, WSL, minimal installs)** — drop the flag and run in the background:
-
-```bash
-nohup aigon server start > ~/.aigon/logs/server.log 2>&1 &
-```
-
-Other server commands:
-
-| Command | Purpose |
-|---|---|
-| `aigon server start` | Foreground mode — exits when the terminal closes. Useful for debugging. |
-| `aigon server stop` | Stop the running server (persistent or otherwise). |
-| `aigon server status` | Print whether the server is running, and where. |
-| `aigon server restart` | Stop + start. Use after editing `lib/*.js` if you're hacking on Aigon itself. |
-
-### Agent CLIs (manual install)
-
-If you want to install agent CLIs yourself rather than through the wizard:
-
-| Agent | Binary | macOS | Linux |
-|-------|--------|-------|-------|
-| Claude Code | `claude` | `brew install claude` | `sudo npm i -g @anthropic-ai/claude-code` |
-| Gemini CLI | `gemini` | `npm i -g @google/gemini-cli` | `sudo npm i -g @google/gemini-cli` |
-| Codex CLI | `codex` | `npm i -g @openai/codex` | `sudo npm i -g @openai/codex` |
-| Cursor | `agent` | `curl https://cursor.com/install -fsS \| bash` | `curl https://cursor.com/install -fsS \| bash` |
-| OpenCode | `opencode` | `npm i -g opencode-ai` | `sudo npm i -g opencode-ai` |
-| Kimi Code CLI | `kimi` | `uv tool install --python 3.13 kimi-cli` | `uv tool install --python 3.13 kimi-cli` |
-
-> **Cursor:** The installer places `agent` in `~/.local/bin`. If the command isn't found after install, add it to your PATH: `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc`.
-
-You don't need all of them — install whichever you have access to. Fleet mode works best with 2+ agents.
-
-### Aigon Pro (beta access)
-
-Aigon Pro extends Aigon with production-grade capabilities for operators running long autonomous features:
-
-- **Agent failover** — automatically continues work on the next agent in your configured chain when one hits its quota; includes a manual "Failover now" button on the dashboard. See the [Agent Failover guide](/docs/guides/agent-failover).
-- **Insights engine** — AI coaching and trend analysis across your feature history.
-- **Backup & sync** — encrypted vault for spec and workflow state.
-- **Scheduled features** — time-triggered autonomous runs.
-
-Aigon Pro is distributed as an npm package alongside the public CLI. If you've been granted beta access, use the same pattern as the [Pro installation guide](/docs/guides/pro-installation): install the package, activate your key once, restart the server.
-
-**1. Install the package**
+[Beta access](https://senlabs.ai) only. Pro adds autonomous mode, agent failover, scheduled & recurring features, and encrypted spec backups.
 
 ```bash
 npm install -g @senlabsai/aigon-pro
-```
-
-**2. Activate your key**
-
-```bash
 aigon pro activate <your-key>
-```
-
-**3. Restart the server**
-
-```bash
 aigon server restart
 ```
 
-> **Access:** Pro requires a licence key from Sen Labs. Contact [Sen Labs](https://senlabs.ai) to request beta access.
+See [Installing Aigon Pro](/docs/guides/pro-installation) for the full guide.
 
-### Optional / additional tools
+## Start using Aigon
 
-| Tool | Used for | macOS | Linux |
-|------|---|-------|-------|
-| **GitHub CLI (`gh`)** | Wizard offers to install + auth this. Required for [GitHub Integration](/docs/guides/github-integration) and the `feature-close` PR check. | `brew install gh` | See below |
-| **gitleaks** | **Enforced merge gate** for `feature-close`. Without it installed, secret scanning is skipped. | `brew install gitleaks` | `sudo apt install gitleaks` (or [releases](https://github.com/gitleaks/gitleaks/releases)) |
-| **Semgrep** | **Enforced merge gate** for `feature-close` (SAST). | `brew install semgrep` | `sudo apt-get install -y python3-pip && pip3 install semgrep` |
-| **Playwright** | Optional dashboard E2E tests for Aigon contributors only. | `npx playwright install` | `npx playwright install && sudo npx playwright install-deps` |
+Go to **[http://localhost:4100](http://localhost:4100)** — the wizard started the server during install. The Pipeline view shows your features across kanban lanes.
 
-**Installing `gh` on Linux (Ubuntu / Debian):**
+> **New to Aigon?** Walk through the [Brewboard tutorial](/docs/guides/brewboard-tutorial) first — it's a small Next.js seed repo with six pre-written feature specs ready to run. The tutorial gets you cloning, applying Aigon, and watching the dashboard drive a real feature in ~10 minutes. The wizard may already have cloned it for you; the tutorial covers both cases.
 
-```bash
-(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) \
-  && sudo mkdir -p -m 755 /etc/apt/keyrings \
-  && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-  && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-  && sudo mkdir -p -m 755 /etc/apt/sources.list.d \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-  && sudo apt update \
-  && sudo apt install gh -y
+## Your first feature
+
+### Via the dashboard (recommended)
+
+{/* Screenshot: dashboard kanban with a card mid-flight */}
+{/* <img src="/img/first-feature-dashboard.png" alt="Dashboard with a feature in progress" /> */}
+
+1. **New feature** — click **New feature**, fill in title + description, save. Lands in **Inbox**.
+2. **Prioritise** — click **Prioritise** on the card. Gets an ID, moves to **Backlog**.
+3. **Start** — pick an agent and model in the modal. Aigon creates a worktree, launches the agent in a tmux session, moves to **In Progress**. Click the card to watch live.
+4. **Code review** (optional) — click **Code Review** for a pass by a *different* agent. Reviewer diversity catches blind spots a same-model reviewer misses.
+5. **Close** — runs gitleaks + semgrep gates, merges to main, runs tests, moves to **Done**.
+
+### Via an agent CLI
+
+Inside Claude Code (or any installed agent), the fastest path is `/aigon:feature-now`:
+
+```
+/aigon:feature-now dark-mode
+Add a dark mode toggle to the top-right header.
+Default to system preference. Store choice in localStorage.
 ```
 
-Then authenticate: `gh auth login`.
+The agent creates a spec, assigns an ID, sets up the workspace, and starts implementing — all in one conversation.
 
-### Configure your terminal manually
+For more control, use individual commands: `feature-create` → `feature-prioritise` → `feature-start` → `feature-do` → `feature-code-review` → `feature-close`. 
 
-The wizard sets this up for you on macOS. To change it later:
-
-```bash
-aigon config init --global
-```
-
-#### macOS
-
-| Terminal | Command |
-|----------|---------|
-| **iTerm2** (recommended — agents run in tabs within a single window) | `aigon config set --global terminalApp iterm2` |
-| **Warp** (agents run in side-by-side split panes) | `aigon config set --global terminalApp warp` |
-| **Terminal.app** (macOS built-in) | `aigon config set --global terminalApp apple-terminal` |
-| **Ghostty** | `aigon config set --global terminalApp ghostty` |
-| **cmux** | `aigon config set --global terminalApp cmux` |
-
-#### Linux
-
-Linux terminals are auto-detected in common desktop environments. Set one explicitly only if you want to override detection:
-
-| Terminal | Command |
-|----------|---------|
-| **GNOME Terminal** | `aigon config set --global linuxTerminal gnome-terminal` |
-| **Kitty** | `aigon config set --global linuxTerminal kitty` |
-| **xterm** | `aigon config set --global linuxTerminal xterm` |
-
-> **Headless / server Linux:** No terminal config is needed. Agent sessions run inside tmux and you connect to them with `tmux attach -t <session-name>`.
-
-### Verify your setup
+## Updating Aigon
 
 ```bash
-aigon doctor
+npm update -g @senlabsai/aigon@next
+aigon apply --all
 ```
 
-`aigon doctor` checks Node.js, Git, tmux, agent CLIs in your PATH, and the dashboard's port registry. It can also clean up stale state — run `aigon doctor --fix` to auto-repair common issues, or `aigon doctor --reap-orphans --dry-run` to see orphaned agent processes left behind by crashed sessions.
-
-### Local proxy (optional)
-
-Aigon can route `.localhost` subdomains to its services, giving you clean URLs instead of `localhost:PORT`:
-
-| Without proxy | With proxy |
-|---|---|
-| `http://localhost:4100` | `http://aigon.localhost` |
-| `http://localhost:3001` | `http://brewboard-cc.localhost` |
-| `http://localhost:3002` | `http://brewboard-gg.localhost` |
-
-This is especially useful in Fleet mode, where each agent gets its own dev server on a different port. The proxy uses [RFC 6761](https://www.rfc-editor.org/rfc/rfc6761) `.localhost` domains, which resolve to `127.0.0.1` automatically — no DNS or `/etc/hosts` changes needed.
-
-```bash
-aigon proxy start              # foreground; runs until you stop it
-aigon proxy install            # persistent install — requires sudo
-aigon proxy status             # check if the daemon is running
-aigon proxy stop               # stop a foreground proxy
-aigon proxy uninstall          # remove the persistent daemon
-aigon proxy-setup              # one-shot setup helper (verifies and configures)
-```
+Re-applies templates across every registered repo. See [Applying Aigon updates](/docs/guides/applying-aigon-updates) for finer-grained control.
 
 ## What's next
 
@@ -397,3 +125,7 @@ aigon proxy-setup              # one-shot setup helper (verifies and configures)
 - **[Research Workflow](/docs/guides/research-workflow)** — answer open questions before turning them into features
 - **[Feedback Workflow](/docs/guides/feedback-workflow)** — triage user feedback into prioritised work
 - **[Execution Modes](/docs/concepts/execution-modes)** — Drive, Fleet, Autopilot, and Swarm
+
+<Callout type="warning">
+**Beta software.** Aigon is early access — APIs and config formats may change between releases. File bugs at [github.com/jayvee/aigon/issues](https://github.com/jayvee/aigon/issues).
+</Callout>

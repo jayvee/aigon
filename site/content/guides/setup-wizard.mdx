@@ -1,0 +1,26 @@
+---
+title: Setup wizard
+description: What `aigon setup` does, step by step.
+---
+
+`aigon setup` runs once after install. Eight steps, each skippable. Re-run any time with `aigon setup --resume`, or force a clean re-run with `aigon global-setup --force`.
+
+1. **Prerequisites** — verifies Node, npm, Git, GitHub CLI (`gh`), `tmux`, and `lsof`; offers to install missing optionals (`gh`, `tmux`, `lsof`); prompts for Git identity if not configured; runs `gh auth login` if needed.
+2. **Terminal preference** (macOS) — iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux auto-detects GNOME Terminal / Kitty / xterm and falls back to `tmux`.
+3. **Agent install** — multi-select from Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, and Kimi. Installs the binary and runs auth flow where supported.
+4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon apply`, registers it with the dashboard.
+5. **Repo scan** — scans `~/src` for Git repos and offers to register them with the dashboard.
+6. **Dashboard server** — starts the server (persistent on macOS/Linux). Skip if you want to start it yourself later with `aigon server start --persistent`.
+7. **Brewboard demo** — opt-in walkthrough that runs an autonomous feature against the seed repo.
+8. **Aigon Pro vault** — Pro users only; encrypted backups for spec history. See [Installing Aigon Pro](/docs/guides/pro-installation).
+
+## Re-running a step
+
+```bash
+aigon setup --resume          # pick up where you left off
+aigon global-setup --force    # start over from step 1
+```
+
+## What if I skip the wizard entirely?
+
+You can. Install agents with `aigon install-agent <code>`, start the dashboard with `aigon server start --persistent`, and run `aigon doctor` to verify your environment. See the [Dashboard guide](/docs/guides/dashboard) for the manual path.
