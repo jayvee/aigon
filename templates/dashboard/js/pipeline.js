@@ -781,9 +781,7 @@
       // keep the full per-agent status pills since each agent may be at
       // a different phase.
       const isSoloCard = (feature.agents || []).length === 1;
-      const soloLivenessIcon = isSoloCard
-        ? '<span class="kcard-agent-status kcard-agent-status-icon-only ' + s.cls + '" title="' + escHtml(s.label) + '">' + s.icon + '</span>'
-        : '';
+      const soloLivenessIcon = '';
       // F492 AC3: pulsing .dot.live alongside the agent name. Suppressed when
       // tmux is not alive or the agent is in a done state — see
       // buildLivenessIndicator for the gate.
@@ -798,7 +796,7 @@
         : '';
       const statusRowHtml = isSoloCard
         ? buildIdleLadderChip(agent) // solo: keep idle-ladder chip if present, drop the status pill text
-        : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + livenessDot + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + elapsedSuffix + '</span>' + buildIdleLadderChip(agent) + '</div>';
+        : '<div class="kcard-agent-status-row' + ((agent.idleLadder && agent.idleLadder.state !== 'active') ? ' is-idle-ladder' : '') + '">' + '<span class="kcard-agent-status ' + s.cls + '">' + s.icon + ' ' + s.label + elapsedSuffix + '</span>' + buildIdleLadderChip(agent) + '</div>';
       return '<div class="kcard-agent agent-' + escHtml(agent.id) + '">' +
         '<div class="kcard-agent-header">' +
           soloLivenessIcon +
