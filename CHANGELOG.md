@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.65.0-beta.1] — 2026-05-11
+
+Install-experience cleanup. The Linux install path now works end-to-end on a fresh box without manual hand-holding, the wizard no longer leaks deprecation warnings, the dashboard stops showing red "No engine state" cards after a fresh apply, and there's a one-command unattended Docker E2E test suite.
+
+### Added
+
+- **`scripts/test/build-auth-snapshot.sh` + `scripts/test/e2e-docker.sh`** — unattended install validator. One-time builder commits a machine-local pre-authed snapshot; from then on `e2e-docker.sh` spawns a fresh container, repacks the aigon tarball, runs `aigon setup --yes`, asserts every install-time checkpoint and kicks off one Haiku-model feature on `cc` + one Flash-model feature on `gg`. ~3 minutes, fully unattended.
+- **Public-docs Prerequisites table** in `site/content/getting-started.mdx` now lists every package a fresh box actually needs (`build-essential`, `python3`, `lsof`, `tmux`) on top of `nodejs` + `git`. Section reordered to appear **above** Quick install so customers don't skip it.
+- **Copy buttons on every code block** via `defaultShowCopyCode: true` in Nextra config + visible orange-tinted button styling.
+- **`lsof` detector in `aigon setup`** wizard prereqs.
+
+### Fixed
+
+- **`aigon apply` auto-bootstraps missing workflow snapshots** — previously it warned and pointed users at `aigon doctor --fix`. Brewboard-seed clones gitignore `.aigon/workflows/`, so a fresh apply left the dashboard showing red "No engine state" cards on every seeded done/in-progress feature. Now apply does the bootstrap itself; idempotent on already-current repos.
+- **`Ready` → `Implemented`** in the card-headline label table (a prior rename only updated the pipeline-grid label table and missed the per-card headline).
+- **`aigon setup` wizard internally invoked `aigon init`** in two paths (brewboard seed clone + repo-scan registration). Both fixed to use `aigon apply` — no more deprecation warning leaks during a fresh install.
+- **`aigon setup` wizard's tmux install hung on a `Y/n` apt prompt** — now passes `apt-get install -y` with `DEBIAN_FRONTEND=noninteractive`.
+- **Wizard agent-install step pre-verifies each detector** — already-installed agents render with an "already installed — select to reinstall" hint, default selection excludes them.
+- **Feature 248 ID collision** — two specs both prefixed `feature-248-` made the workflow read-model fail with `duplicate-matches-snapshot-mismatch`. Renamed the orphan to `feature-514-…`.
+- **Bench resolver** — always resolves an explicit model; never runs with `model=null`.
+
+### Security
+
+- **Pre-commit hook** at `.githooks/pre-commit` blocks staged additions matching the (now-rotated) Pro beta-key sentinel, non-placeholder `AIGON_PRO_KEY=` values, and Pro-internal filename patterns. Override for one commit via `AIGON_ALLOW_SENSITIVE_COMMIT=1`.
+- **AGENTS.md § "Repo boundary — OSS vs Pro/internal"** — load-bearing rule that Pro credentials and pre-publish test infra belong in `aigon-pro/`, never in this public repo.
+- **Pro test infra moved to `aigon-pro/docker/`** — `pro-test-instructions.txt`, `run-published-pro-install.sh`, `Dockerfile.published-pro` no longer in the public repo. The Docker clean-room README now points at the public Getting Started docs instead of duplicating instructions.
+
+### Documentation
+
+- **Apply / init / remove command reference** — `aigon init` is deprecated (alias for `aigon apply`); `aigon apply` now both bootstraps a fresh repo and refreshes templates; `aigon uninstall` renamed to `aigon remove` and surfaced in the public reference.
+- **`aigon pro activate <key>` + `aigon pro status`** — new public reference pages under `site/content/reference/commands/pro/`.
+
 ## [2.64.0-beta.6] — 2026-05-11
 
 Apply-pipeline drift hardening (F497–F500, F502), benchmarking workflow upgrades (F503, F504), engine cleanup (F501), and a quota-detector false-positive fix (F505).
