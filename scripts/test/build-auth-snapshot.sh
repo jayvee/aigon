@@ -31,38 +31,34 @@ fail() { echo "✗ $*" >&2; exit 1; }
 docker image inspect aigon-clean-room >/dev/null 2>&1 \
   || fail "aigon-clean-room image missing — run: docker build -t aigon-clean-room docker/clean-room/"
 
-log "Packing aigon source"
-cd "$REPO_ROOT"
-rm -f senlabsai-aigon-*.tgz
-npm pack >/dev/null
-TGZ="$(ls senlabsai-aigon-*.tgz | head -1)"
-[[ -f "$TGZ" ]] || fail "npm pack did not produce a tarball"
-
 log "Spawning builder container"
 docker rm -f "$BUILDER" 2>/dev/null || true
 docker run -d --name "$BUILDER" \
-  -v "$REPO_ROOT:/host/aigon:ro" \
   --hostname clean-room \
   aigon-clean-room \
   sleep infinity >/dev/null
 
-log "Installing prereqs + aigon + agent CLIs (no auth yet — ~2 minutes)"
+# The snapshot deliberately does NOT install aigon — the whole point of
+# this image is to test fresh installs of `@senlabsai/aigon` from the
+# public npm registry (or from a locally-packed tarball). Baking in aigon
+# would defeat that. The snapshot only bakes prereqs + agent CLIs + auth.
+log "Installing prereqs + agent CLIs (NO aigon — that's the point of this image)"
 docker exec "$BUILDER" bash -lc "
   set -e
   sudo apt-get update -qq 2>&1 | tail -1
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - >/dev/null 2>&1
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     nodejs git build-essential python3 lsof tmux >/dev/null
-  sudo npm install -g /host/aigon/$TGZ >/dev/null 2>&1
   sudo npm install -g @anthropic-ai/claude-code @google/gemini-cli >/dev/null 2>&1
   hash -r
   mkdir -p ~/.gemini
   git config --global user.email 'test@example.com'
   git config --global user.name 'Aigon Test'
   echo
-  echo '  aigon : '\$(aigon --version)
+  echo '  node  : '\$(node --version)
   echo '  claude: '\$(claude --version 2>&1 | head -1)
   echo '  gemini: '\$(gemini --version 2>&1 | head -1)
+  echo '  aigon : NOT installed by design (install it in each test from npm or local tarball)'
 "
 
 cat <<'EOF'
