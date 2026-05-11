@@ -171,10 +171,10 @@ test('rule 9: drive implementing → Implementing with owner', () => {
     assert.strictEqual(h.tone, 'running');
 });
 
-test('rule 9: drive ready → ready / Ready', () => {
+test('rule 9: drive ready → ready / Implemented', () => {
     const agents = [{ id: 'solo', status: 'ready', isWorking: false }];
     const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Ready');
+    assert.strictEqual(h.verb, 'Implemented');
     assert.strictEqual(h.tone, 'ready');
 });
 
