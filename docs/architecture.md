@@ -38,7 +38,7 @@ Current command families:
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
-| `lib/commands/setup.js` | `init`, `install-agent`, `uninstall`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor` |
+| `lib/commands/setup.js` | `init`, `install-agent`, `remove`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
 
 ### The ctx pattern
@@ -125,7 +125,7 @@ Current shared modules:
 
 - `lib/proxy.js` (~660 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~1,980 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
+- `lib/dashboard-server.js` (~2,590 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
@@ -147,7 +147,7 @@ Current shared modules:
   `buildTokenExhaustionSignal`, `chooseNextAgent`, `buildFailoverPrompt`, `clearTokenExhaustedFlag`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal. **Registry API** (F350): each macOS adapter carries `id`, `displayName`, `pickerLabel`, `platforms`, `aliases`, `hiddenFromPicker` — all consumer surfaces (dashboard enum, onboarding picker, display-name map, canonicaliser, help text) derive from this single source. Adding a new terminal requires only a new adapter object here.
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`, `getTerminalIds`, `getPickerOptions`, `getDashboardOptions`, `getDisplayName`, `canonicalize`, `isValidId`, `registerAdapter`
-- `lib/config.js` (~951 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
+- `lib/config.js` (~1,240 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
   `registerGlobalConfigMigration`, `runPendingGlobalConfigMigrations`, `migrateLegacyTerminalSettings`
@@ -174,7 +174,7 @@ Current shared modules:
 
 **Additional modules:**
 
-- `lib/telemetry.js` (~144 lines): normalized session telemetry — common schema across all agents (agent, model, tokens, cost, turns, duration), records to `.aigon/telemetry/`
+- `lib/telemetry.js` (~1,735 lines): normalized session telemetry — common schema across all agents (agent, model, tokens, cost, turns, duration), records to `.aigon/telemetry/`
   `writeNormalizedTelemetryRecord`, `captureFeatureTelemetry`
 - `lib/security.js` (~131+ lines): merge gate scanning — runs gitleaks + semgrep at feature-close/submit, severity-aware thresholds, diff-aware scanning, graceful degradation
   `runSecurityScan`, `parseSemgrepOutput`, `formatSemgrepFindings`
@@ -417,7 +417,7 @@ So the architecture after F171 → F283 → F294 is:
 **Lifecycle:**
 - Created/updated atomically on every `install-agent` run (write to `.tmp`, then rename).
 - Pre-install check: if any tracked file's on-disk sha256 differs from the manifest, the user is warned; interactive mode prompts for confirmation; `AIGON_NONINTERACTIVE=1` or `--force` skips the prompt.
-- `aigon uninstall [--dry-run] [--force]`: reads the manifest, lists all files, deletes them (with confirmation), removes empty parent dirs, deletes the manifest. Never removes `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json`.
+- `aigon remove [--dry-run] [--force] [--purge]`: reads the manifest, lists all files, deletes them (with confirmation), removes empty parent dirs, deletes the manifest, and deregisters the repo from the global registry. Without `--purge` never removes `.aigon/workflows/`, `.aigon/state/`, `.aigon/sessions/`, `.aigon/config.json`; with `--purge` removes `.aigon/` entirely.
 - Migration 2.61.0 (`migrate_initialize_install_manifest`): synthesizes a manifest for repos installed before F422 by scanning standard aigon dirs. Idempotent — skips if manifest already exists.
 - `aigon doctor` reports: missing files (in manifest but not on disk), modified files (sha256 differs), untracked aigon-pattern files. `aigon doctor --fix` triggers migration 2.61.0.
 
@@ -545,19 +545,7 @@ When orienting to the repo, read in this order:
 
 ## Testing
 
-### Test Layers
-
-Aigon has five test layers, each serving a different purpose:
-
-| Layer | Command | Framework | What it tests |
-|-------|---------|-----------|---------------|
-| **Unit tests** | `node aigon-cli.test.js` | Custom `test()` | Core logic: parsing, state machine, dashboard data, command routing, analytics |
-| **Module tests** | `node lib/<name>.test.js` | Custom `test()` | Individual modules: workflow-core, workflow-signals, shell-trap, config, proxy, worktree, templates, dashboard-server |
-| **Dashboard UI** | `npm run test:dashboard` | Playwright | Dashboard HTML rendering with mocked API data (monitor, pipeline, actions, analytics) |
-| **Mock E2E** | `npm run test:e2e:mock-solo` / `mock-fleet` | Custom runner | Full feature lifecycle with mock agents — no AI tokens burned |
-| **CLI E2E** | `npm run test:e2e` | Custom runner | Real git operations on fixture repos in `~/src/` |
-
-There is also a **Dashboard E2E** layer (`npm run test:browser`) that runs full lifecycle tests through the dashboard browser UI with mock agents. The full suite is slow (~90s) and runs only at the deploy gate; the `@smoke` subset (`npm run test:browser:smoke`) runs automatically in the iterate gate when dashboard files change.
+For the full canonical reference on test discipline (iterate vs deploy gates, what NOT to do mid-iteration, where rules live), see `docs/testing.md`. This section is a brief architectural summary.
 
 ### Test stages
 

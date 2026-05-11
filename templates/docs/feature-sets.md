@@ -65,11 +65,11 @@ aigon set show <slug> --json
 
 ## Set state derivation
 
-Set state is **derived** from member workflow state — the dashboard never persists set status independently. The rollup is computed by `lib/feature-sets.js` (`summarizeSets`, `getSetMembersSorted`, `getSetDependencyEdges`) and consumed by `lib/dashboard-status-collector.js` for the per-set card payload. Action eligibility (`set-autonomous-{start,stop,resume,reset}`) lives in `lib/feature-set-workflow-rules.js`; the frontend renders only what the server emits.
+Set state is **derived** from member workflow state — the dashboard never persists set status independently. The rollup is computed at read time by Aigon's set-rules layer, and the frontend renders only what the server emits.
 
 ## Autonomous sets (Pro)
 
-The set conductor (`lib/set-conductor.js`) runs members sequentially in topological order:
+The set conductor runs members sequentially in topological order:
 
 ```bash
 aigon set-autonomous-start <slug>
@@ -98,5 +98,3 @@ Each member is delegated to `feature-autonomous-start`, polled, and recorded in 
 ## See also
 
 - `.aigon/docs/development_workflow.md` — feature lifecycle (`feature-create` → `feature-prioritise` → `feature-do` → `feature-close`)
-- `lib/feature-sets.js` — derived-state scanner (no engine writes)
-- `lib/set-conductor.js` — autonomous-set sequencer (Pro)

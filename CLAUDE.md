@@ -29,6 +29,6 @@ Every write path must produce the state its read path assumes. Full rule, incide
 ## Reading order
 1. `AGENTS.md` — orientation
 2. `docs/architecture.md` — full module docs
-3. `docs/development_workflow.md` — feature/research lifecycle
+3. `.aigon/docs/development_workflow.md` — feature/research lifecycle (vendored — source in `templates/docs/`)
 4. `aigon feature-spec <ID>` — active spec
-5. `docs/agents/{id}.md` — agent-specific notes
+5. `.aigon/docs/agents/{id}.md` — agent-specific notes

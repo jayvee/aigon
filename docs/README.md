@@ -4,13 +4,13 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 
 ## Engineering
 
-- [architecture.md](architecture.md) — Full module docs, the `ctx` pattern, state architecture, write-path contract. Read when changing how `lib/` modules fit together. See § "Install manifest" for `lib/install-manifest.js` — the module that tracks install-agent footprint with sha256+version per file and enables `aigon uninstall`.
+- [architecture.md](architecture.md) — Full module docs, the `ctx` pattern, state architecture, write-path contract. Read when changing how `lib/` modules fit together. See § "Install manifest" for `lib/install-manifest.js` — the module that tracks install-agent footprint with sha256+version per file and enables `aigon remove`.
 - [../.aigon/docs/development_workflow.md](../.aigon/docs/development_workflow.md) — Feature/research lifecycle, Solo vs Arena modes, spec-driven discipline. Read when working a feature for the first time. Vendored from `templates/docs/`; aigon-the-repo dogfoods it from `.aigon/docs/` (F421).
 - [../.aigon/docs/feature-sets.md](../.aigon/docs/feature-sets.md) — What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order. Vendored from `templates/docs/` (F421).
 - [dashboard.md](dashboard.md) — Dashboard surface map: tabs, server-owned `validActions`, read-only rule.
 - [workflow-rules.md](workflow-rules.md) — Action registry contract for feature/research/set workflow rules.
 - [autonomous-mode.md](autonomous-mode.md) — AutoConductor loop, supervisor rules, what is and is not auto-decided.
-- [testing.md](testing.md) — Unit/integration discipline, the 2,500-LOC test ceiling, REGRESSION-comment rule.
+- [testing.md](testing.md) — Unit/integration discipline, the test-suite LOC ceiling (see `scripts/check-test-budget.sh` for the live value), REGRESSION-comment rule.
 - [testing-dashboard.md](testing-dashboard.md) — Playwright harness, when `npm run test:ui` runs, mid-iteration skip rule.
 - [testing-linux-docker.md](testing-linux-docker.md) — End-to-end Linux install verification via Docker/OrbStack.
 - [`scripts/test-brewboard-migration.sh`](../scripts/test-brewboard-migration.sh) — End-to-end migration test: applies the F420–F422 doctor migrations (2.59.0/2.59.1/2.60.0/2.61.0) against a committed legacy fixture and asserts the resulting state matches the post-install contract. Run with `npm run test:migration`.

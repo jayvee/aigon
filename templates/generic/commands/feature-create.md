@@ -28,7 +28,7 @@ Use this understanding to write a well-informed spec — especially the **Techni
 
 ### Set the spec frontmatter
 
-**`complexity:` (required)** — drives the per-agent {model, effort} **defaults** in the dashboard start modal (resolved from each agent’s `cli.complexityDefaults[<complexity>]` in `templates/agents/<id>.json`, then `aigon config`). **Do not put model names or effort levels in the spec**; those SKUs change over time and belong only in agent templates + config.
+**`complexity:` (required)** — drives the per-agent {model, effort} **defaults** in the dashboard start modal, resolved from each agent's complexity-defaults table and then `aigon config`. **Do not put model names or effort levels in the spec**; those SKUs change over time and belong only in agent config.
 
 Use this rubric:
 

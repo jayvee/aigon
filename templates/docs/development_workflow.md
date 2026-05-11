@@ -2,7 +2,7 @@
 
 This project uses **Aigon**, a spec-driven development workflow for AI agents.
 
-For codebase structure and CLI module boundaries, read `docs/architecture.md`. For grouping features into delivery units, read `.aigon/docs/feature-sets.md`.
+For grouping features into delivery units, read `.aigon/docs/feature-sets.md`.
 
 ## Overview
 
@@ -48,34 +48,31 @@ docs/specs/
 |---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
 | `aigon feature-prioritise <name>` | Assign ID and move to backlog |
+| `aigon feature-spec-review <ID>` | Pre-implementation review of the spec itself |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
-| `aigon feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs iterate loop |
+| `aigon feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
+| `aigon feature-status <ID>` | Deep status: session, progress, cost, spec criteria |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
+| `aigon feature-code-review <ID>` | Post-implementation code review with fixes by a different agent |
+| `aigon feature-code-revise [ID]` | Implementer-side follow-up after a code review |
+| `aigon feature-push [ID] [agent]` | Push the feature branch to `origin` for PR review |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
+| `aigon feature-reset <ID>` | Full reset back to backlog (sessions + worktrees + branches + state + spec move) |
 
 ## Key Rules
 
 1. **Spec-Driven**: Never write code without resolving the active feature spec via `aigon feature-spec <ID>`
 2. **Work in isolation**: Solo mode uses branches, arena mode uses worktrees
 3. **Implementation Logs**: Document implementation decisions in `logs/` before completing
-4. **Feature lifecycle is engine-backed**: workflow-core is the authority for features, and visible spec folders are a projection of that state
+4. **Feature lifecycle is engine-backed**: Aigon's workflow engine is the authority for features, and visible spec folders are a projection of that state
 5. **Spec creation**: never write spec files directly to `docs/specs/` — always use `aigon feature-create <name>`. Direct writes produce snapshotless specs that appear on the board but cannot be started, tracked, or closed correctly.
-
-## Pre-authorised Spec Notes
-
-Feature specs may include an optional `## Pre-authorised` section after `## Validation`.
-
-- Use it for bounded standing approvals specific to that feature, such as a small test-budget increase or a known-safe validation skip.
-- Before stopping on a policy gate, agents must check that section.
-- If a line authorises the action, proceed and cite it in the commit footer as `Pre-authorised-by: ...`.
-- If the section is blank or absent, behavior is unchanged: stop and ask.
 
 ## Feature State Model
 
 For features, there are two relevant layers:
 
-- The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by `lib/workflow-core/`.
+- The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by Aigon's workflow engine.
 - The visible stage is still the spec folder under `docs/specs/features/`, but that folder is a projection of workflow state, not the authority.
 - Active feature discovery should use `{{CMD_PREFIX}}feature-list --active` or workflow snapshot reads, not folder probes.
 

@@ -68,7 +68,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 3. **Use conventional commits when you commit**: Prefer `feat:`, `fix:`, `chore:`, or `docs:` as appropriate
 4. **Complete with the matching command**: Use the `feature-*` or `research-*` close/review/eval command for the entity you are working on
 5. **Follow project instructions**: Check `AGENTS.md` for shared project build, test, and dependency commands
-6. **Orient to the codebase first**: Read `docs/architecture.md` before making structural CLI changes
+6. **Orient to the codebase first**: Skim the repo's top-level docs (e.g. `README.md`, `AGENTS.md`, or any `docs/` overview the project provides) before making structural changes
 
 ## Drive Mode Workflow
 

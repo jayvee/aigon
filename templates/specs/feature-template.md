@@ -23,8 +23,8 @@ complexity: medium
        medium    — standard feature with moderate cross-cutting, one command handler, small refactor
        high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
        very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
-     At start time, model and effort defaults come from each agent's `cli.complexityDefaults[<complexity>]` in
-     `templates/agents/<id>.json` (not from this spec). Do not put model IDs in the spec. -->
+     At start time, model and effort defaults come from each agent's complexity-defaults
+     table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
 <!-- One paragraph describing what this feature does and why -->
@@ -45,7 +45,7 @@ complexity: medium
      All commands must exit 0 for the iteration to be considered successful.
 -->
 ```bash
-# Example: node --check aigon-cli.js
+# Example: node --check src/index.js
 ```
 
 ## Pre-authorised
@@ -56,7 +56,7 @@ complexity: medium
      explicitly demands Playwright runs mid-iterate. Add or remove other lines
      per feature.
      Example extras:
-       - May raise `scripts/check-test-budget.sh` CEILING by up to +40 LOC if regression tests require it.
+       - May raise the project's test-LOC budget by up to +40 LOC if regression tests require it.
 -->
 - May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 

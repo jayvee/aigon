@@ -55,9 +55,9 @@ Key directories:
 
 - `aigon-cli.js` — CLI entry point (dispatch only, no business logic)
 - `lib/commands/` — domain command modules (feature, research, feedback, infra, setup, misc)
-- `lib/*.js` — shared library code (16 modules; see the module map in `AGENTS.md`)
+- `lib/*.js` — shared library code (see the module map in `AGENTS.md`)
 - `templates/generic/commands/` — agent prompt templates (source of truth)
-- `tests/` — unit + integration tests (kept under a 2,000-LOC ceiling)
+- `tests/` — unit + integration tests (kept under a hard LOC ceiling — see `scripts/check-test-budget.sh` for the live value)
 - `site/` — Next.js + Nextra documentation site published at [aigon.build](https://www.aigon.build)
 
 ## Browser MCP
@@ -78,16 +78,16 @@ Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10�
 1. Fork the repo, create a feature branch from `main`
 2. Make your changes — keep them focused, one concern per PR
 3. **Add a test** for new code or bug fixes (see `AGENTS.md` rule T2 — every regression test should include a one-line `// REGRESSION:` comment naming the issue it prevents)
-4. Run the full pre-push check:
+4. Run the deploy gate before pushing:
    ```bash
-   npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh
+   npm run test:deploy
    ```
-   All three must pass before pushing.
+   This runs `test:core` + `test:browser` + the test-budget check. Do not push past a red gate.
 5. Open a PR using the template — explain the *why*, link the issue, list what you tested
 
 ## Test discipline
 
-The test suite has a **hard ceiling of 2,000 LOC** enforced by `scripts/check-test-budget.sh`. When adding tests:
+The test suite has a **hard LOC ceiling** enforced by `scripts/check-test-budget.sh` (check the script for the live value). When adding tests:
 
 - Test behaviour, not implementation details
 - Delete old tests that are now covered by integration tests

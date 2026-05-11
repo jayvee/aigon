@@ -6,11 +6,11 @@
 > aigon feature-do {{ARG1_SYNTAX}}
 > ```
 > This prints the feature spec inline. Read the output, then follow the steps below.
-> Do NOT search for spec files, do NOT run `aigon --help`, do NOT run `./aigon-cli.js`. Just run the command above.
+> Do NOT search for spec files, do NOT run `aigon --help`, do NOT hunt for the `aigon` source. Just run the command above.
 
 Implement a feature. Works in Drive mode (branch), Drive worktree, and Fleet mode (competition).
 
-> **Worktree invariant:** you are already inside the correct repo. If `aigon` fails, read the error — do NOT hunt for `aigon-cli.js`.
+> **Worktree invariant:** you are already inside the correct repo. If `aigon` fails, read the error — do NOT try to introspect the tool's internals.
 
 ## Argument Resolution
 If no ID is provided or it doesn't match an active feature, run `aigon feature-list --active`, filter to matches, and ask the user which one.
