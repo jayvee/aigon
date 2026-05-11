@@ -2,6 +2,12 @@
 // @smoke
 'use strict';
 
+// F513: aigon remove command — preserves spec folders, --purge wipes .aigon/,
+// --dry-run is no-op, refuses in worktree, apply/remove/apply cycle works.
+//
+// Three independent --flag behaviours (spec preserved / --purge / --dry-run)
+// run on a single apply+install fixture to avoid 6 redundant CLI spawns.
+
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -31,87 +37,58 @@ function gitInit(repo) {
     spawnSync('git', ['checkout', '-qb', 'main'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
 }
 
-function installAgent(repo) {
-    const result = spawnSync(process.execPath, [CLI, 'install-agent', 'cc'], {
-        cwd: repo,
-        env: { ...process.env, ...GIT_SAFE_ENV, HOME: repo, USERPROFILE: repo, AIGON_NONINTERACTIVE: '1' },
-        stdio: 'pipe',
-    });
-    return (result.stdout || '').toString() + (result.stderr || '').toString();
-}
-
-// F513: remove preserves spec folder
-testAsync('remove: spec folders are preserved after remove', () => withTempDirAsync('aigon-f513-rm-spec-', async (repo) => {
+// Combined: spec preservation + --dry-run no-op (share one apply+install fixture).
+testAsync('remove + remove --dry-run: spec folders + manifest preserved', () => withTempDirAsync('aigon-f513-rm-flags-', async (repo) => {
     gitInit(repo);
     runAigon(repo, ['apply']);
-    installAgent(repo);
+    runAigon(repo, ['install-agent', 'cc']);
 
-    // create a spec file that must survive
     const inboxDir = path.join(repo, 'docs', 'specs', 'features', '01-inbox');
     fs.writeFileSync(path.join(inboxDir, 'feature-my-spec.md'), '# My spec');
 
-    runAigon(repo, ['remove', '--force']);
-
-    assert.ok(fs.existsSync(path.join(inboxDir, 'feature-my-spec.md')), 'spec file must survive remove');
-    assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '01-inbox')), 'spec folder must survive remove');
-}));
-
-// F513: remove --purge also wipes .aigon/
-testAsync('remove --purge: removes .aigon/ runtime state', () => withTempDirAsync('aigon-f513-purge-', async (repo) => {
-    gitInit(repo);
-    runAigon(repo, ['apply']);
-    installAgent(repo);
-
-    assert.ok(fs.existsSync(path.join(repo, '.aigon')), 'pre-condition: .aigon/ exists');
-    runAigon(repo, ['remove', '--purge', '--force']);
-    assert.ok(!fs.existsSync(path.join(repo, '.aigon')), '.aigon/ must be gone after --purge');
-}));
-
-// F513: remove --dry-run makes no changes
-testAsync('remove --dry-run: makes no changes', () => withTempDirAsync('aigon-f513-dryrun-', async (repo) => {
-    gitInit(repo);
-    runAigon(repo, ['apply']);
-    installAgent(repo);
-    const manifest = installManifestLib.readManifest(repo);
-    assert.ok(manifest && manifest.files.length > 0, 'pre-condition: manifest has files');
-
+    // --dry-run first: must not touch anything
+    const manifestBefore = installManifestLib.readManifest(repo);
+    assert.ok(manifestBefore && manifestBefore.files.length > 0, 'pre-condition: manifest populated');
     runAigon(repo, ['remove', '--dry-run']);
-
-    // All manifest files must still exist
-    for (const entry of manifest.files) {
+    for (const entry of manifestBefore.files) {
         assert.ok(fs.existsSync(path.join(repo, entry.path)), `${entry.path} must still exist after --dry-run`);
     }
     assert.ok(installManifestLib.readManifest(repo), 'manifest must still exist after --dry-run');
+
+    // Now the real remove: spec must survive, spec folder must survive
+    runAigon(repo, ['remove', '--force']);
+    assert.ok(fs.existsSync(path.join(inboxDir, 'feature-my-spec.md')), 'spec file must survive remove');
+    assert.ok(fs.existsSync(inboxDir), 'spec folder must survive remove');
 }));
 
-// F513: remove refuses to run in worktree
+// Combined: --purge wipes .aigon/ + full apply→remove→apply round-trip
+// (each step's invariants are checked along the way).
+testAsync('remove --purge: wipes .aigon/, second apply re-bootstraps (F513 cycle)', () => withTempDirAsync('aigon-f513-cycle-', async (repo) => {
+    gitInit(repo);
+    runAigon(repo, ['apply']);
+    runAigon(repo, ['install-agent', 'cc']);
+    assert.ok(fs.existsSync(path.join(repo, '.aigon')), 'pre-condition: .aigon/ exists');
+
+    runAigon(repo, ['remove', '--purge', '--force']);
+    assert.ok(!fs.existsSync(path.join(repo, '.aigon')), '.aigon/ must be gone after --purge');
+
+    // Second apply should bootstrap as first-time again
+    const { output } = runAigon(repo, ['apply']);
+    assert.ok(output.includes('First-time setup'), `banner must appear after remove+re-apply: ${output}`);
+    assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '01-inbox')), 'spec folders must be recreated');
+}));
+
+// F513: remove refuses to run in worktree (no apply needed — synthesises the marker).
 testAsync('remove: refuses to run in worktree', () => withTempDirAsync('aigon-f513-wt-', async (repo) => {
     gitInit(repo);
     runAigon(repo, ['apply']);
 
-    // Simulate a worktree marker
     fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.aigon', 'worktree.json'), JSON.stringify({ mainRepo: '/tmp/main-repo' }));
 
     const { status, output } = runAigon(repo, ['remove', '--force'], true);
     assert.notStrictEqual(status, 0, 'remove must exit non-zero in worktree');
     assert.ok(output.includes('worktree'), `must mention worktree: ${output}`);
-}));
-
-// F513: full cycle apply → remove --purge → apply is idempotent
-testAsync('remove: apply → remove --purge → apply cycle works', () => withTempDirAsync('aigon-f513-cycle-', async (repo) => {
-    gitInit(repo);
-    runAigon(repo, ['apply']);
-    installAgent(repo);
-    // --purge removes .aigon/ so the next apply sees a truly fresh repo
-    runAigon(repo, ['remove', '--purge', '--force']);
-
-    assert.ok(!fs.existsSync(path.join(repo, '.aigon')), 'pre-condition: .aigon/ gone after purge');
-
-    // Second apply should bootstrap as first-time
-    const { output } = runAigon(repo, ['apply']);
-    assert.ok(output.includes('First-time setup'), `banner must appear after remove+re-apply: ${output}`);
-    assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '01-inbox')), 'spec folders must be recreated');
 }));
 
 report();

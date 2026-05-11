@@ -2,6 +2,12 @@
 // @smoke
 'use strict';
 
+// F513: aigon apply bootstraps spec folders, second run is silent, non-git dir
+// fails loudly, init alias still works (with deprecation), uninstall alias redirects.
+//
+// Fresh-apply + silent-second-apply share one gitInit + first apply (saves a
+// process spawn per fixture).
+
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -30,29 +36,22 @@ function gitInit(repo) {
     spawnSync('git', ['checkout', '-qb', 'main'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
 }
 
-// F513: apply on fresh git repo bootstraps the spec structure
-testAsync('apply-bootstrap: fresh git repo gets spec folders and applied-digest', () => withTempDirAsync('aigon-f513-fresh-', async (repo) => {
+// Combined: first apply bootstraps (banner + folders + applied-digest);
+// second apply is silent. One gitInit + one extra apply shared.
+testAsync('apply-bootstrap: first apply bootstraps, second is silent', () => withTempDirAsync('aigon-f513-apply-', async (repo) => {
     gitInit(repo);
     assert.ok(!fs.existsSync(path.join(repo, '.aigon')), 'pre-condition: no .aigon/');
 
-    const { output } = runAigon(repo, ['apply']);
-    assert.ok(output.includes('First-time setup'), `banner must appear: ${output}`);
-
+    const first = runAigon(repo, ['apply']);
+    assert.ok(first.output.includes('First-time setup'), `banner must appear: ${first.output}`);
     assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '01-inbox')), 'features/01-inbox must be created');
     assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'research-topics', '01-inbox')), 'research-topics/01-inbox must be created');
     assert.ok(fs.existsSync(path.join(repo, '.aigon', 'applied-digest')), 'applied-digest must be written');
+
+    const second = runAigon(repo, ['apply']);
+    assert.ok(!second.output.includes('First-time setup'), `banner must NOT appear on second run: ${second.output}`);
 }));
 
-// F513: second apply does NOT re-print the banner
-testAsync('apply-bootstrap: second run is silent (no banner)', () => withTempDirAsync('aigon-f513-noop-', async (repo) => {
-    gitInit(repo);
-    runAigon(repo, ['apply']);
-
-    const { output } = runAigon(repo, ['apply']);
-    assert.ok(!output.includes('First-time setup'), `banner must NOT appear on second run: ${output}`);
-}));
-
-// F513: non-git directory exits non-zero and creates nothing
 testAsync('apply-bootstrap: non-git dir exits non-zero and creates nothing', () => withTempDirAsync('aigon-f513-nogit-', async (repo) => {
     const { status, output } = runAigon(repo, ['apply'], true);
     assert.notStrictEqual(status, 0, 'must exit non-zero in non-git dir');
@@ -60,15 +59,13 @@ testAsync('apply-bootstrap: non-git dir exits non-zero and creates nothing', () 
     assert.ok(!fs.existsSync(path.join(repo, '.aigon')), '.aigon must not be created');
 }));
 
-// F513: aigon init still works but prints deprecation warning
-testAsync('init-deprecation: init prints deprecation warning and forwards', () => withTempDirAsync('aigon-f513-init-dep-', async (repo) => {
+testAsync('init-deprecation: aigon init prints deprecation warning and forwards', () => withTempDirAsync('aigon-f513-init-dep-', async (repo) => {
     gitInit(repo);
     const { output } = runAigon(repo, ['init']);
     assert.ok(output.toLowerCase().includes('deprecated') || output.includes('aigon apply'), `must mention deprecation: ${output}`);
     assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '01-inbox')), 'init must still bootstrap the repo');
 }));
 
-// F513: aigon uninstall produces redirect error
 testAsync('uninstall-alias: aigon uninstall exits non-zero with redirect hint', () => withTempDirAsync('aigon-f513-uninst-', async (repo) => {
     gitInit(repo);
     const { status, output } = runAigon(repo, ['uninstall'], true);
