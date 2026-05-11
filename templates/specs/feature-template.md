@@ -21,7 +21,7 @@ complexity: medium
 <!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
        low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
        medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work
+       high      — multi-file changes, new public surfaces, judgment-heavy deletion work
        very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
      At start time, model and effort defaults come from each agent's complexity-defaults
      table (not from this spec). Do not put model IDs in the spec. -->
@@ -41,24 +41,11 @@ complexity: medium
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the general test suite.
+     Use for feature-specific checks that don't fit in the project's general checks.
      All commands must exit 0 for the iteration to be considered successful.
--->
+     Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
-# Example: node --check src/index.js
 ```
-
-## Pre-authorised
-<!-- Standing orders the agent may enact without stopping to ask.
-     Each line is a single bounded permission. The agent cites the matching line
-     in a commit footer `Pre-authorised-by: <slug>` for auditability.
-     The first line below is a project-wide default — keep it unless the feature
-     explicitly demands Playwright runs mid-iterate. Add or remove other lines
-     per feature.
-     Example extras:
-       - May raise the project's test-LOC budget by up to +40 LOC if regression tests require it.
--->
-- May skip `npm run test:ui` mid-iteration when this iteration touches no dashboard assets (`templates/dashboard/**`, `lib/dashboard*.js`, `lib/server*.js`). Playwright still runs at the pre-push gate.
 
 ## Technical Approach
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->

@@ -15,6 +15,7 @@ The full orientation lives in **`AGENTS.md`**. Read that first — it is the sin
 7. Use `Skill(frontend-design)` before any visual change. For pipeline card changes, consult `docs/card-design-wireframe.html` (the canonical card reference design — vocabulary, layout, all states).
 8. To start a feature over: `aigon feature-reset <ID>` — never stitch raw cleanup commands.
 9. Check `## Pre-authorised` before stopping on a policy gate — if the gate matches a listed line, proceed and add `Pre-authorised-by: <slug>` in the commit footer.
+10. **Templates under `templates/{generic,docs,specs,prompts,skill-pointers}/` install into the user's repo — Aigon has ZERO opinion about that repo's language, package manager, tests, build, lint, or directory layout.** Aigon only has opinions about its own lifecycle (features/research/feedback/specs) and its own `.aigon/` state. If a template sentence would be wrong in a Python repo, a Rust crate, or a static site — strip it. See `AGENTS.md` § "Target-repo boundary — zero opinion". Enforced by `scripts/check-template-leaks.js`.
 
 ## Write-path contract (pointer)
 

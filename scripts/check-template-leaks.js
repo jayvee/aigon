@@ -18,8 +18,10 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const TEMPLATES = path.join(ROOT, 'templates');
 
-// Directories under templates/ that ARE installed into user repos (in scope).
-const SCAN_DIRS = ['generic', 'docs', 'specs', 'prompts', 'skill-pointers'];
+// Directories under templates/ whose contents are installed into user repos or embedded
+// into installed templates. Top-level `agents/`, `aigon-eval/`, `contributing/`,
+// `dashboard/`, `profiles/`, `recurring/` are aigon-internal and intentionally not scanned.
+const SCAN_DIRS = ['generic', 'docs', 'specs', 'prompts', 'sections'];
 
 // File-level exceptions: paths (relative to templates/) of files that legitimately
 // reference aigon-internal paths because they are maintainer-only commands. These
@@ -29,9 +31,14 @@ const FILE_EXCEPTIONS = new Set([
     'generic/commands/model-refresh.md', // maintainer command — edits aigon's own agent registry
 ]);
 
-// Patterns that indicate a leak of aigon-internal paths into user-facing templates.
+// Patterns that indicate a leak of aigon-internal references OR target-repo assumptions
+// into user-facing templates. Aigon has ZERO opinion about the target repo's language,
+// package manager, test framework, build, lint, or directory layout — see AGENTS.md §
+// "Target-repo boundary — zero opinion".
+//
 // Each entry: { pattern: RegExp, label: short description for the report }
 const LEAK_PATTERNS = [
+    // --- aigon-internal source paths ---
     { pattern: /\bdocs\/architecture\.md\b/, label: "docs/architecture.md (aigon's own architecture doc)" },
     { pattern: /\blib\/workflow-core\b/, label: "lib/workflow-core/ (aigon's engine source)" },
     { pattern: /\blib\/[a-z][a-z0-9_-]*\.js\b/, label: "lib/<name>.js (aigon source file)" },
@@ -40,6 +47,41 @@ const LEAK_PATTERNS = [
     { pattern: /~\/src\/aigon\b/, label: "~/src/aigon (maintainer-local path)" },
     { pattern: /\/Users\/[a-zA-Z0-9._-]+\//, label: "/Users/... absolute path" },
     { pattern: /\btemplates\/(?:generic|docs|agents|specs|prompts)\b/, label: "templates/... (aigon's source template dir)" },
+
+    // --- target-repo build/package-manager assumptions ---
+    { pattern: /\bnpm\s+(?:run\s+\S+|test|install|ci|publish|i\b)/, label: "npm command (target-repo may not use npm)" },
+    { pattern: /\bpnpm\s+\S+/, label: "pnpm command (target-repo may not use pnpm)" },
+    { pattern: /\byarn\s+\S+/, label: "yarn command (target-repo may not use yarn)" },
+    { pattern: /\bpip\s+install\b/, label: "pip install (target-repo may not be Python)" },
+    { pattern: /\bcargo\s+(?:test|build|run|check)\b/, label: "cargo command (target-repo may not be Rust)" },
+    { pattern: /\bgo\s+(?:test|build|run)\b/, label: "go command (target-repo may not be Go)" },
+    { pattern: /\bbundle\s+exec\b/, label: "bundle exec (target-repo may not be Ruby)" },
+    { pattern: /\bmvn\s+\S+/, label: "mvn command (target-repo may not be Java)" },
+
+    // --- target-repo test-framework / lint / typecheck assumptions ---
+    { pattern: /\bplaywright\b/i, label: "playwright (target-repo may not use Playwright)" },
+    { pattern: /\bpytest\b/i, label: "pytest (target-repo may not be Python)" },
+    { pattern: /\bjest\b/i, label: "jest (target-repo may not use Jest)" },
+    { pattern: /\bvitest\b/i, label: "vitest (target-repo may not use Vitest)" },
+    { pattern: /\bmocha\b/i, label: "mocha (target-repo may not use Mocha)" },
+    { pattern: /\beslint\b/i, label: "eslint (target-repo may not use ESLint)" },
+    { pattern: /\bprettier\b/i, label: "prettier (target-repo may not use Prettier)" },
+    { pattern: /\brubocop\b/i, label: "rubocop (target-repo may not be Ruby)" },
+    { pattern: /\btsc\b/, label: "tsc (target-repo may not be TypeScript)" },
+    { pattern: /\bnode\s+--check\b/, label: "node --check (target-repo may not be Node)" },
+
+    // --- target-repo directory-layout assumptions ---
+    // Match standalone references like "lib/" or "the tests/" — not full paths like
+    // ".aigon/state/" or "docs/specs/" which ARE Aigon-owned and exist in user repos.
+    { pattern: /(?<![./\w-])tests\//, label: "tests/ directory (target-repo may not have one)" },
+    { pattern: /(?<![./\w-])src\//, label: "src/ directory (target-repo may not have one)" },
+    { pattern: /(?<![./\w-])app\/(?!\w)/, label: "app/ directory (target-repo may not have one)" },
+
+    // --- aigon-the-repo's own conventions leaking out ---
+    { pattern: /\btest:(?:iterate|core|browser|deploy|quick|ui|all|migration)\b/, label: "test:* npm script (aigon-specific gate name)" },
+    { pattern: /\biterate gate\b|deploy gate\b/i, label: "iterate gate / deploy gate (aigon-the-repo's testing concept)" },
+    { pattern: /\bLOC\s+(?:budget|ceiling)\b/i, label: "LOC budget / ceiling (aigon-the-repo's test convention)" },
+    { pattern: /\bcheck-test-budget\b/, label: "check-test-budget (aigon-the-repo's script)" },
 ];
 
 const SUPPRESSION_MARKERS = ['aigon-internal-ok'];

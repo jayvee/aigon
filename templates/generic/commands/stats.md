@@ -41,7 +41,7 @@ find . -type f -name "*.md" -not -path "*/node_modules/*" \
   | xargs wc -l 2>/dev/null | tail -1
 ```
 
-Break down application code by directory (top-level `src/` subdirs, `packages/`, `lib/`, etc.) showing lines per directory.
+Break down application code by top-level directory, showing lines per directory.
 
 ### Token Usage
 

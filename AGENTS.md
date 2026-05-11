@@ -37,6 +37,34 @@
 
 **If you find Pro/internal content in this repo, move it to aigon-pro and flag the find** — do not leave it and do not commit alongside it. There was a leak incident on 2026-05-10 (beta key `aigon-pro-beta-2026` in 3 pushed commits) and the recovery cost was hours of git-history rewriting and credential rotation. The hook exists to prevent a second one.
 
+## Target-repo boundary — zero opinion (load-bearing)
+
+**Aigon is installed into repos it knows nothing about.** Aigon's only domain is the **process** for managing features, research, feedback, and specs. It has **zero opinion** about anything else in the target repo.
+
+Aigon may have opinions about:
+- the feature / research / feedback lifecycle (create → prioritise → start → do → eval → close)
+- the structure of spec files (frontmatter, `## Summary`, `## Acceptance Criteria`, `## Validation`)
+- folders under `docs/specs/` (these are aigon's own folders, written by `aigon feature-create`)
+- aigon's own state under `.aigon/` (workflows, state, sessions, config, manifest, telemetry, cache)
+- worktrees, branches, tmux sessions (language-agnostic git concepts)
+- the `aigon` CLI itself
+
+Aigon may **NOT** have opinions about:
+- the target repo's **language** (Node, Python, Rust, Go, …)
+- the target repo's **package manager** (npm, pnpm, yarn, pip, cargo, …)
+- the target repo's **test framework** or whether it has tests at all
+- the target repo's **lint / formatter / type-checker** stack
+- the target repo's **build / deploy** process
+- the target repo's **directory structure** (no `lib/`, `src/`, `tests/`, `app/`, `pages/` assumptions)
+- any **specific commands** like `npm test`, `npm run build`, `pytest`, `cargo build`, `eslint`, `prettier`, `tsc`, `playwright`, etc.
+- the target repo's **conventions** around commits, PRs, code review, or test discipline beyond what aigon's own lifecycle imposes
+
+**Where this rule applies:** anything under `templates/{generic,docs,specs,prompts,skill-pointers}/` — those files get installed verbatim into a user's repo via `aigon install-agent`. Every word in those files becomes a prompt or doc the user (or their agent) sees, in **their** repo, with **their** stack.
+
+**Rule of thumb when authoring or editing a template:** if the sentence would be wrong in a Python monorepo, a Rust crate, a Go service, or a static-site repo — it's an opinion the template should not have. Strip it or generalise it.
+
+**Why this matters:** every assumption is a bug for the users who don't match it. "Run `npm test`" is invisible to a Rust shop until their first feature; then it's nonsense. The template-leak guard (`scripts/check-template-leaks.js`) catches the common patterns mechanically and runs in `test:core` and `prepublishOnly` — but the guard is a backstop, not the rule. The rule is **zero opinion**.
+
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
 
