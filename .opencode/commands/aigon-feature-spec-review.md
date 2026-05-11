@@ -100,7 +100,7 @@ Review the spec against this checklist. Prefer small, targeted edits over broad 
 - Verify `complexity:` matches the spec's actual scope + risk + judgment-load using the rubric (low / medium / high / very-high).
   - **low** config/doc/single-file; **medium** standard cross-cutting; **high** multi-file engine/event/dashboard; **very-high** architectural shifts.
 - If the author over- or under-rated complexity, revise the value. Note the revision (old → new) in the review commit's Summary and give the reason in one line.
-- **Remove any legacy `recommended_models:` YAML** (or per-agent model/effort keys) from frontmatter if present — specs must not embed model IDs; defaults come from `templates/agents/<id>.json` at start time.
+- **Remove any legacy `recommended_models:` YAML** (or per-agent model/effort keys) from frontmatter if present — specs must not embed model IDs; defaults come from the agent's complexity-defaults table at start time.
 - Frontmatter edits ship in the same `spec-review:` commit as other edits.
 
 ## Review workflow
