@@ -70,7 +70,7 @@ The wizard verifies Node and Git; it doesn't install them itself. Install them f
 ```bash
 sudo apt-get update -qq
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs git build-essential python3
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs git build-essential python3 lsof tmux
 ```
 
 ### Step 4 — Install Aigon from your packed tarball
