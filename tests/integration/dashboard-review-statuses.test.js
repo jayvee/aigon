@@ -2,6 +2,9 @@
 // REGRESSION feature 304: dashboard review-check states were collapsed back to
 // generic implementing/running, so the agent card lost "Addressing review" and
 // "Feedback addressed" across reloads.
+//
+// Merged from dashboard-state-render-meta.test.js: STATE_RENDER_META coverage +
+// stateRenderMeta-on-card-row invariants (both about state→UI mapping).
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
@@ -15,6 +18,47 @@ const {
     normalizeDashboardStatus,
     deriveFeatureDashboardStatus,
 } = require('../../lib/dashboard-status-helpers');
+const { STATE_RENDER_META, getStateRenderMeta } = require('../../lib/state-render-meta');
+const { LifecycleState } = require('../../lib/workflow-core/types');
+
+// --- STATE_RENDER_META coverage (merged from dashboard-state-render-meta) ---
+test('STATE_RENDER_META: complete coverage, required fields, cls + badge invariants', () => {
+    const missing = Object.values(LifecycleState).filter(s => !STATE_RENDER_META[s]);
+    assert.deepStrictEqual(missing, [], 'missing entries: ' + missing);
+    Object.entries(STATE_RENDER_META).forEach(([s, m]) => assert.ok(m.icon && m.label && m.cls, s));
+    assert.strictEqual(STATE_RENDER_META.code_review_in_progress.cls, 'status-reviewing');
+    assert.strictEqual(STATE_RENDER_META.code_review_complete.cls, 'status-review-done');
+    assert.strictEqual(STATE_RENDER_META.spec_review_in_progress.cls, 'status-reviewing');
+    assert.strictEqual(STATE_RENDER_META.spec_review_complete.cls, 'status-review-done');
+    assert.strictEqual(STATE_RENDER_META.code_revision_in_progress.cls, 'status-running');
+    assert.ok(STATE_RENDER_META.code_review_in_progress.badge, 'code review needs badge');
+    assert.ok(STATE_RENDER_META.spec_review_in_progress.badge, 'spec review needs badge');
+    assert.strictEqual(STATE_RENDER_META.implementing.badge, '🔨 Implementing');
+    assert.strictEqual(getStateRenderMeta('unknown_state').cls, 'status-idle');
+});
+
+testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_review_in_progress → status-reviewing', () => withTempDirAsync('aigon-srm-', async repo => {
+    ['01-inbox', '02-backlog', '03-in-progress'].forEach(d =>
+        fs.mkdirSync(path.join(repo, 'docs/specs/features', d), { recursive: true }));
+    require('child_process').execSync('git init -q && git config user.email t@t && git config user.name t', { cwd: repo });
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-77-srm.md');
+    fs.writeFileSync(specPath, '# Feature: srm\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '77', 'backlog', specPath, { authorAgentId: 'cc' });
+    clearTierCache(repo);
+    const row = (collectRepoStatus(repo, []).features || []).find(f => String(f.id) === '77');
+    assert.ok(row && row.stateRenderMeta && row.stateRenderMeta.cls, 'stateRenderMeta missing');
+    assert.ok(Array.isArray(row.reviewCycles), 'reviewCycles must be array');
+    await engine.startFeature(repo, '77', 'solo_branch', ['cc']);
+    await engine.signalAgentReady(repo, '77', 'cc');
+    await engine.recordCodeReviewStarted(repo, 'feature', '77', { reviewerId: 'cx' });
+    const snap = await engine.showFeatureOrNull(repo, '77');
+    assert.strictEqual(snap.currentSpecState, LifecycleState.CODE_REVIEW_IN_PROGRESS);
+    assert.strictEqual(getStateRenderMeta(snap.currentSpecState).cls, 'status-reviewing');
+    const state = wrm.getFeatureDashboardState(repo, '77', 'in-progress', []);
+    assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].statusCls, 'status-reviewing');
+}));
+
+// --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read
 // from tmux presence instead of the snapshot. Spec-review status now flows from
 // events (started / submitted / check_started / acked); tmux is just a shell.
