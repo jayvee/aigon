@@ -9,9 +9,48 @@ import { Callout } from 'nextra/components'
 **Beta software.** Aigon is early access — APIs and config formats may change between releases. Stable release coming soon. File bugs at [github.com/jayvee/aigon/issues](https://github.com/jayvee/aigon/issues).
 </Callout>
 
+## Prerequisites
+
+**Install these first** — `npm install -g @senlabsai/aigon` will fail without them:
+
+- **Node.js 18+** and **Git** — Aigon is a Node CLI in a Git repo.
+- **A C toolchain and Python 3** — Aigon depends on `node-pty`, which builds a small native module at install time. Without these you'll get a `node-gyp` error during `npm install`.
+- **`lsof`** — used by `aigon server start/restart` and port-allocation probes. On macOS this ships with the OS.
+- **`tmux`** — used to run agent sessions in the background so you can attach/detach. The setup wizard offers to install this if missing.
+
+Pick the one line that matches your platform:
+
+**macOS (Homebrew):**
+
+```bash
+brew install node git tmux
+```
+
+*Xcode Command Line Tools provide the C toolchain — run `xcode-select --install` first if you don't have them.*
+
+**Ubuntu / Debian:**
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - && sudo apt-get install -y nodejs git build-essential python3 lsof tmux
+```
+
+**Fedora:**
+
+```bash
+sudo dnf install -y nodejs npm git gcc-c++ make python3 lsof tmux
+```
+
+**Arch:**
+
+```bash
+sudo pacman -S --noconfirm nodejs npm git base-devel python lsof tmux
+```
+
+> **Already have Node?** Check the version with `node -v`. Aigon needs 18 or higher. The wizard re-checks all prerequisites and will offer to install missing optional ones (`gh`, `tmux`, `lsof`).
+
 ## Quick install
 
-Install Aigon and run the setup wizard:
+Once the prerequisites above are in place, install Aigon and run the setup wizard:
 
 **macOS:**
 
@@ -26,26 +65,6 @@ aigon setup
 sudo npm install -g @senlabsai/aigon@next
 aigon setup
 ```
-
-If you don't already have Node.js and Git, install them first — see [Prerequisites](#prerequisites) below. The setup wizard checks optional tools such as `tmux`, `gh`, and agent CLIs.
-
-### Prerequisites
-
-Before `npm install -g @senlabsai/aigon` will succeed you need:
-
-- **Node.js 18+** and **Git** — Aigon is a Node CLI in a Git repo.
-- **A C toolchain and Python 3** — Aigon depends on `node-pty`, which builds a small native module at install time. Without these you'll get a `node-gyp` error during `npm install`.
-- **`lsof`** — used by `aigon server start/restart` and port-allocation probes. On macOS this ships with the OS.
-- **`tmux`** — used to run agent sessions in the background so you can attach/detach. The setup wizard offers to install this if missing.
-
-| Platform | Install everything aigon needs at install + run time |
-|---|---|
-| **macOS (Homebrew)** | `brew install node git tmux` *(Xcode Command Line Tools provide the C toolchain; install with `xcode-select --install` if you don't have it)* |
-| **Ubuntu / Debian** | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo bash - && sudo apt-get install -y nodejs git build-essential python3 lsof tmux` |
-| **Fedora** | `sudo dnf install -y nodejs npm git gcc-c++ make python3 lsof tmux` |
-| **Arch** | `sudo pacman -S --noconfirm nodejs npm git base-devel python lsof tmux` |
-
-> **Already have Node?** Check the version with `node -v`. Aigon needs 18 or higher. The wizard re-checks all prerequisites and will offer to install missing optional ones (`gh`, `tmux`, `lsof`).
 
 ### What the setup wizard does
 

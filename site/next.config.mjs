@@ -6,6 +6,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const withNextra = nextra({
   contentDirBasePath: "/docs",
+  // Show the copy-to-clipboard icon on every code block automatically,
+  // without having to add `copy=true` to each ``` fence in MDX.
+  defaultShowCopyCode: true,
 });
 
 /** @type {import('next').NextConfig} */

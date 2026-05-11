@@ -134,3 +134,25 @@ h6:hover > .subheading-anchor,
     padding-inline: 0.625rem;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────
+   Prominent copy button on code blocks.
+   Nextra renders the icon by default but it's a ghost icon on transparent
+   bg — easy to miss in a high-stakes install guide. Give it a tinted
+   background, accent border, and aigon-orange icon so users see it.
+   ──────────────────────────────────────────────────────────────────── */
+.nextra-code button[title="Copy code"] {
+  opacity: 1 !important;
+  background-color: rgba(213, 95, 42, 0.10) !important;
+  border-color: rgba(213, 95, 42, 0.40) !important;
+  color: #d55f2a !important;
+}
+.dark .nextra-code button[title="Copy code"] {
+  background-color: rgba(213, 95, 42, 0.14) !important;
+  border-color: rgba(213, 95, 42, 0.50) !important;
+  color: #f0a070 !important;
+}
+.nextra-code button[title="Copy code"]:hover {
+  background-color: rgba(213, 95, 42, 0.22) !important;
+  border-color: rgba(213, 95, 42, 0.7) !important;
+}
