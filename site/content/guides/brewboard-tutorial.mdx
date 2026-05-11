@@ -38,31 +38,27 @@ Each spec has acceptance criteria, a technical approach, and out-of-scope constr
 
 <Steps>
 
-### Clone the seed repo
+### Install Brewboard
 
 ```bash
-git clone https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
-cd ~/src/brewboard
-git remote remove origin        # prevent accidental pushes — this is a local sandbox
-npm install
+aigon install-seed brewboard
 ```
 
-### Bring Aigon into the repo
+That one command clones the seed to `~/src/brewboard`, strips the origin remote (so this stays a local sandbox), runs `npm install`, applies Aigon, and registers the repo with the dashboard.
+
+### Pick your agent
 
 ```bash
-aigon apply
+cd ~/src/brewboard
 aigon install-agent cc          # swap for gg, cx, or cu if you prefer
 ```
 
-`aigon apply` creates the `docs/specs/` folder structure on first run and rebuilds the pre-seeded feature manifests. `install-agent` writes slash commands, hooks, and permissions for your chosen agent.
-
 ### Start the dashboard server
 
-If you haven't already started the Aigon server, do so now and register Brewboard:
+If the wizard didn't start it, do so now:
 
 ```bash
 aigon server start --persistent        # install as a persistent system service
-aigon server add ~/src/brewboard       # register the repo with the dashboard
 ```
 
 Open [http://localhost:4100](http://localhost:4100). You'll see the Brewboard repo in the sidebar and its six features spread across the pipeline.

@@ -6,6 +6,7 @@ Usage: aigon <command> [arguments]
 
 Setup:
   install-agent <agents...>         Install agent configs ({{SUPPORTED_AGENT_INSTALL_IDS}})
+  install-seed <name>               Clone a demo seed repo (brewboard, trailhead) into ~/src/<name>, apply Aigon, and register it with the dashboard
   apply                             Initialize repo on first run, then keep Aigon files up to date (re-vendor docs, refresh agent configs)
   remove [--dry-run] [--force] [--purge]  Remove Aigon-managed files from this repo; deregisters from dashboard
   hooks [list]                      List defined hooks (from docs/aigon-hooks.md)
