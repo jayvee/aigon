@@ -85,10 +85,11 @@ Go to **[http://localhost:4100](http://localhost:4100)** — the wizard started 
 
 ### Via the dashboard (recommended)
 
-{/* Screenshot: dashboard kanban with a card mid-flight */}
-{/* <img src="/img/first-feature-dashboard.png" alt="Dashboard with a feature in progress" /> */}
+Make sure you're on the **Pipeline** view, then pick your project (or **Brewboard**) from the left-hand sidebar. The kanban below shows that repo's features spread across the six lanes.
 
-1. **New feature** — click **New feature**, fill in title + description, save. Lands in **Inbox**.
+<img src="/img/dashboard-new-feature-button.png" alt="New feature button on the Aigon dashboard" style={{ width: '66%' }} />
+
+1. **New feature** — click the **+ New feature** button. Fill in a title and a short description, save. The card lands in **Inbox**.
 2. **Prioritise** — click **Prioritise** on the card. Gets an ID, moves to **Backlog**.
 3. **Start** — pick an agent and model in the modal. Aigon creates a worktree, launches the agent in a tmux session, moves to **In Progress**. Click the card to watch live.
 4. **Code review** (optional) — click **Code Review** for a pass by a *different* agent. Reviewer diversity catches blind spots a same-model reviewer misses.
