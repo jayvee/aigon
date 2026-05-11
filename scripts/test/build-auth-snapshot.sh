@@ -42,23 +42,32 @@ docker run -d --name "$BUILDER" \
 # this image is to test fresh installs of `@senlabsai/aigon` from the
 # public npm registry (or from a locally-packed tarball). Baking in aigon
 # would defeat that. The snapshot only bakes prereqs + agent CLIs + auth.
-log "Installing prereqs + agent CLIs (NO aigon — that's the point of this image)"
+log "Installing prereqs + agent CLIs + merge-gate scanners (NO aigon — that's the point of this image)"
 docker exec "$BUILDER" bash -lc "
   set -e
   sudo apt-get update -qq 2>&1 | tail -1
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash - >/dev/null 2>&1
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-    nodejs git build-essential python3 lsof tmux >/dev/null
+    nodejs git build-essential python3 python3-pip lsof tmux >/dev/null
+  # gitleaks + semgrep — enforced merge gate by aigon feature-close. Install
+  # the gitleaks binary direct from GitHub releases (apt package lags by
+  # months); install semgrep via pip3.
+  GITLEAKS_VER=8.18.4
+  ARCH=\$(uname -m | sed 's/x86_64/x64/; s/aarch64/arm64/')
+  curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v\${GITLEAKS_VER}/gitleaks_\${GITLEAKS_VER}_linux_\${ARCH}.tar.gz | sudo tar -xzC /usr/local/bin gitleaks
+  pip3 install --quiet --break-system-packages semgrep 2>&1 | tail -1 || true
   sudo npm install -g @anthropic-ai/claude-code @google/gemini-cli >/dev/null 2>&1
   hash -r
   mkdir -p ~/.gemini
   git config --global user.email 'test@example.com'
   git config --global user.name 'Aigon Test'
   echo
-  echo '  node  : '\$(node --version)
-  echo '  claude: '\$(claude --version 2>&1 | head -1)
-  echo '  gemini: '\$(gemini --version 2>&1 | head -1)
-  echo '  aigon : NOT installed by design (install it in each test from npm or local tarball)'
+  echo '  node    : '\$(node --version)
+  echo '  claude  : '\$(claude --version 2>&1 | head -1)
+  echo '  gemini  : '\$(gemini --version 2>&1 | head -1)
+  echo '  gitleaks: '\$(gitleaks version 2>&1 | head -1)
+  echo '  semgrep : '\$(semgrep --version 2>&1 | head -1)
+  echo '  aigon   : NOT installed by design (install it in each test from npm or local tarball)'
 "
 
 cat <<'EOF'
