@@ -52,9 +52,25 @@
       } else {
         insightsHtml = (payload.report.observations || []).map(function(obs) {
           var severity = escHtml(String(obs.severity || 'info').toLowerCase());
+          var rawObs = obs.observation || '';
+          var obsHtml;
+          if (rawObs.indexOf(' | ') !== -1) {
+            var items = rawObs.split(' | ');
+            var rows = items.map(function(item) {
+              var isCost = item.indexOf('(cost:') !== -1;
+              var isTokens = item.indexOf('(tokens:') !== -1;
+              var badgeHtml = '';
+              if (isCost) badgeHtml = '<span class="amp-outlier-badge cost">$</span>';
+              else if (isTokens) badgeHtml = '<span class="amp-outlier-badge tokens">T</span>';
+              return '<div class="amp-outlier-row">' + badgeHtml + '<span class="amp-outlier-text">' + escHtml(item.trim()) + '</span></div>';
+            }).join('');
+            obsHtml = '<div class="amp-outlier-list">' + rows + '</div>';
+          } else {
+            obsHtml = '<div class="amp-insight-observation">' + escHtml(rawObs) + '</div>';
+          }
           return '<article class="amp-insight-item">' +
             '<div class="amp-insight-title"><span class="amp-insight-sev ' + severity + '">' + severity.toUpperCase() + '</span> ' + escHtml(obs.title || 'Insight') + '</div>' +
-            '<div class="amp-insight-observation">' + escHtml(obs.observation || '') + '</div>' +
+            obsHtml +
             '<div class="amp-insight-action">Action: ' + escHtml(obs.action || '—') + '</div>' +
             '</article>';
         }).join('');

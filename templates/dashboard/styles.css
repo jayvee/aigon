@@ -1008,6 +1008,14 @@
     .amp-insight-sev.warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#fcd34d}
     .amp-insight-sev.info{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#93c5fd}
     .amp-insight-observation{font-size:12px;color:var(--text-secondary)}
+    .amp-outlier-list{display:flex;flex-direction:column;gap:3px;max-height:220px;overflow-y:auto;padding-right:4px}
+    .amp-outlier-list::-webkit-scrollbar{width:3px}.amp-outlier-list::-webkit-scrollbar-track{background:transparent}.amp-outlier-list::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:999px}
+    .amp-outlier-row{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--text-secondary);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .amp-outlier-row:last-child{border-bottom:none}
+    .amp-outlier-badge{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;font-size:9px;font-weight:700;flex-shrink:0;position:relative;top:1px}
+    .amp-outlier-badge.cost{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+    .amp-outlier-badge.tokens{background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+    .amp-outlier-text{font-family:var(--font-mono,ui-monospace,monospace);color:var(--text-secondary)}
     .amp-insight-action{font-size:11px;color:var(--text-tertiary)}
     .amp-insights-coaching-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin-top:4px}
     .amp-insights-coaching-list{margin:0;padding-left:20px;display:grid;gap:4px;color:var(--text-secondary);font-size:12px}
