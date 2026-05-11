@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.65.0-beta.2] — 2026-05-11
+
+Toolchain-less Linux install + new `aigon install-seed` command + getting-started page rewrite. Plus test-suite cleanup: removed the brittle dashboard lifecycle E2E tests that were catching test-of-test issues instead of product bugs.
+
+### Added
+
+- **`aigon install-seed <name>`** — one command to clone a known seed repo (`brewboard`, `trailhead`), apply Aigon, and register it with the dashboard. Lets users who skipped the wizard's seed-clone step (or want to add another seed later) avoid re-entering the wizard.
+- **Setup wizard guide page** (`/docs/guides/setup-wizard`) — the 8-step wizard explainer that used to bloat getting-started now lives in a dedicated page.
+
+### Changed
+
+- **`node-pty` swapped for `@homebridge/node-pty-prebuilt-multiarch`** (aliased). Linux installs no longer need a C toolchain or Python — the fork ships prebuilds for `linux-x64`/`linux-arm64`/`linux-arm` (+ musl variants) across Node ABIs 102→131. Verified end-to-end in `node:22-slim` (zero build tools).
+- **`getting-started` page rewritten as a true quick-start**: 4-tab platform prereq strip down to "Node 18+", install + dashboard CTA up top, dashboard-first first-feature flow, screenshot of the New feature button, Brewboard tutorial nudge.
+
+### Fixed
+
+- **Gemini telemetry**: CLI ≥ 0.1.x writes session telemetry as JSONL (one JSON per line) instead of monolithic JSON. Resolver now handles both extensions and parses the first line as the session header.
+
+### Removed
+
+- **Dashboard E2E lifecycle tests** (`failure-modes`, `solo-lifecycle`, `fleet-lifecycle`, `workflow-e2e`, `mark-complete`, `mock-agent-tmux`, `mock-agent.js`). 855 LOC of `MockAgent` + tmux choreography that was catching hardcoded-ID drift, UI label renames, and fixture pollution — zero product bugs in recent history. Engine lifecycle coverage stays in `tests/integration/lifecycle.test.js`; dashboard render coverage stays in the remaining `@smoke` specs.
+
 ## [2.65.0-beta.1] — 2026-05-11
 
 Install-experience cleanup. The Linux install path now works end-to-end on a fresh box without manual hand-holding, the wizard no longer leaks deprecation warnings, the dashboard stops showing red "No engine state" cards after a fresh apply, and there's a one-command unattended Docker E2E test suite.
