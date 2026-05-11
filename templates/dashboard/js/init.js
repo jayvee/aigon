@@ -543,13 +543,13 @@
     applyForceProOverride(state.data);
     render();
     if (typeof window.__aigonSyncStatusFingerprint === 'function') window.__aigonSyncStatusFingerprint();
-    // Docs link — detect dev mode (localhost) vs production
-    const docsLink = document.getElementById('docs-link');
-    if (docsLink) {
-      const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.endsWith('.localhost');
-      docsLink.href = isDev ? 'http://localhost:3600/docs' : 'https://www.aigon.build/docs';
-      docsLink.title = isDev ? 'Open docs (local dev)' : 'Open Aigon docs';
-    }
+    // Docs link — probe whether local docs server is up, fall back to public site
+    fetch('/api/docs-url').then(r => r.json()).then(({ url }) => {
+      const docsLink = document.getElementById('docs-link');
+      if (!docsLink) return;
+      docsLink.href = url;
+      docsLink.title = url.startsWith('http://localhost') ? 'Open docs (local)' : 'Open Aigon docs';
+    }).catch(() => {});  // fallback: keep the href baked into the HTML
     document.getElementById('refresh-btn').onclick = requestRefresh;
     document.getElementById('sidebar-toggle-btn').onclick = () => {
       state.sidebarHidden = !state.sidebarHidden;
