@@ -64,9 +64,9 @@ npm install -g @senlabsai/aigon@next
 # run it explicitly:
 aigon setup
 
-# Install aigon into your project
+# Bring aigon into your project
 cd /path/to/your/project
-aigon init
+aigon apply                   # Bootstraps .aigon/, kanban folders, hooks
 aigon install-agent cc        # Install the Claude Code agent
 aigon doctor                  # Verify environment
 ```

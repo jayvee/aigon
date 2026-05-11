@@ -123,7 +123,7 @@ section "Step 8: Server lifecycle from global install path (F331)"
 TEST_REPO=$(mktemp -d)
 cd "$TEST_REPO"
 git init -q
-aigon init >/dev/null 2>&1 || true   # seed .aigon/ so the server has a repo to manage
+aigon apply >/dev/null 2>&1 || true   # seed .aigon/ so the server has a repo to manage
 
 # Start server as a background process (nohup avoids shell job-control suspension)
 nohup aigon server start > /tmp/aigon-server.log 2>&1 &

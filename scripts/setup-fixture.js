@@ -8,7 +8,7 @@
  *
  * Each repo is a real git repo with:
  *   - Realistic project files (package.json, src/, etc.)
- *   - Full docs/specs/ directory structure (via aigon init)
+ *   - Full docs/specs/ directory structure (via aigon apply)
  *   - Pre-seeded Aigon state (features, research, feedback) with known IDs
  *   - Real commits with realistic messages
  *
@@ -190,7 +190,7 @@ function addGitHubRemote(repoDir, repoName, ghUser) {
 // ─── seed repo overrides ─────────────────────────────────────────────────────
 
 /**
- * Override the default AGENTS.md scaffolded by `aigon init` with lightweight
+ * Override the default AGENTS.md scaffolded by `aigon apply` with lightweight
  * instructions suited to seed/test repos. This keeps agent implementations
  * fast by skipping tests, plan mode, verbose logs, and doc updates.
  */
@@ -542,12 +542,12 @@ export default config;
 
     commit(repoDir, 'feat: initial BrewBoard project setup');
 
-    // Initialize aigon
-    runAigon(['init'], repoDir);
+    // Bring aigon into the repo (first-run apply bootstraps .aigon/)
+    runAigon(['apply'], repoDir);
     writeFixtureConfig(repoDir);
     writeSeedAgentsMd(repoDir, BREWBOARD_AGENTS_COMMANDS_TAIL);
     runAigon(['install-agent', 'cc'], repoDir);
-    commit(repoDir, 'chore: initialize aigon spec structure');
+    commit(repoDir, 'chore: apply aigon spec structure');
 
     // ── features/01-inbox (2 items, no ID) ──────────────────────────────────
     const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');
@@ -759,12 +759,12 @@ final class HikeTests: XCTestCase {
 
     commit(repoDir, 'feat: initial Trailhead iOS app skeleton');
 
-    // Initialize aigon
-    runAigon(['init'], repoDir);
+    // Bring aigon into the repo (first-run apply bootstraps .aigon/)
+    runAigon(['apply'], repoDir);
     writeFixtureConfig(repoDir);
     writeSeedAgentsMd(repoDir);
     runAigon(['install-agent', 'cc'], repoDir);
-    commit(repoDir, 'chore: initialize aigon spec structure');
+    commit(repoDir, 'chore: apply aigon spec structure');
 
     // ── features/01-inbox ────────────────────────────────────────────────────
     const inboxDir = path.join(repoDir, 'docs', 'specs', 'features', '01-inbox');

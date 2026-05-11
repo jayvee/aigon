@@ -63,4 +63,4 @@ A React Native trail-tracking app. Used for iOS/mobile agent testing.
 
 ## seed-reset internals
 
-For implementation details: `lib/commands/setup/seed-reset.js` and `lib/commands/setup.js` (`seed-reset` command handler). The reset sequence is: Nuke → Clone from seed → Provision (aigon init, install-agent, npm install) → Force-push to both remotes.
+For implementation details: `lib/commands/setup/seed-reset.js` and `lib/commands/setup.js` (`seed-reset` command handler). The reset sequence is: Nuke → Clone from seed → Provision (aigon apply, install-agent, npm install) → Force-push to both remotes.

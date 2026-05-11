@@ -1,0 +1,40 @@
+---
+title: "installed-notice"
+description: "One-shot summary of which registered repos are behind after an Aigon upgrade. Runs as an npm postinstall hook; safe to run manually."
+---
+
+# `aigon installed-notice`
+
+Prints a short summary of which repos in `~/.aigon/config.json` `repos` were applied with an older Aigon than the one that just installed. Wired to `npm postinstall` for `@senlabsai/aigon`, so you usually see it once after each upgrade — no need to invoke it yourself.
+
+```bash
+aigon installed-notice
+```
+
+## When it prints
+
+The command is **silent** when:
+
+- You have no registered repos yet (first-time install).
+- Every registered repo's `.aigon/version` matches the newly-installed CLI.
+- Something goes wrong — the command never fails an `npm install`.
+
+When at least one registered repo is behind, output looks like:
+
+```text
+✓ aigon upgraded to v2.65.0
+  3 of your 8 known repos were applied with an older aigon:
+    /Users/you/src/repo-a  (applied v2.63.0)
+    /Users/you/src/repo-b  (applied v2.63.0)
+    /Users/you/src/repo-c  (applied v2.64.0)
+  Re-apply all:  aigon apply --all
+```
+
+The list is capped at 10 entries; anything beyond that is summarised as `… and N more`.
+
+Worktrees are excluded — they never write `.aigon/version`, so they never appear in the stale list.
+
+## See also
+
+- [`apply`](../setup/apply) — the command this notice points you at
+- [Applying Aigon updates to your repos](/docs/guides/applying-aigon-updates) — the full single-repo, multi-repo, and dashboard flow

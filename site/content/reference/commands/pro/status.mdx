@@ -1,0 +1,58 @@
+---
+title: "pro status"
+description: "Show whether @senlabsai/aigon-pro is installed, whether a Pro key is configured, and whether Pro is active in the current process."
+---
+
+# `aigon pro status`
+
+Prints the state of all three things that have to be true for Aigon Pro features to work:
+
+1. The `@senlabsai/aigon-pro` package is installed (globally or otherwise resolvable).
+2. A `proKey` is present in `~/.aigon/config.json`.
+3. The Pro module activated in the current process (the package's `isActivated()` check returned true).
+
+```bash
+aigon pro status
+```
+
+## Example output
+
+Fully active:
+
+```text
+Package @senlabsai/aigon-pro: ✅ installed
+Resolved from: /opt/homebrew/lib/node_modules/@senlabsai/aigon-pro/index.js
+Pro key (~/.aigon/config.json):  ✅ present
+
+Pro is active.
+```
+
+Installed but not yet activated:
+
+```text
+Package @senlabsai/aigon-pro: ✅ installed
+Pro key (~/.aigon/config.json):  ❌ not set
+
+Activate: aigon pro activate <your-key>
+```
+
+Not installed:
+
+```text
+Package @senlabsai/aigon-pro: ❌ not installed
+Pro key (~/.aigon/config.json):  ❌ not set
+
+Install: npm install -g @senlabsai/aigon-pro
+Activate: aigon pro activate <your-key>
+```
+
+## Where this is also surfaced
+
+- **Dashboard → Settings → Version** — shows the same three signals (package installed / key present / active), plus the Pro package version.
+- **`assertProCapability`** — every Pro feature that gates on Pro prints the same install + activate hints to stderr when called without Pro available.
+- **Pro features in agents** — Fleet mode, Insights, Aigon Sync, recurring/scheduled features all check the same gate.
+
+## See also
+
+- [`pro activate`](./activate) — save the key
+- [Installing Aigon Pro](/docs/guides/pro-installation)

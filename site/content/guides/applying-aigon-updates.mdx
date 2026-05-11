@@ -1,0 +1,94 @@
+---
+title: Applying Aigon updates to your repos
+description: How to refresh your repos when a new Aigon version is available — single repo, every registered repo, or via the dashboard's upgrade pill.
+---
+
+Aigon installs files into every repo it manages — slash commands, agent configs, hooks, vendored docs. When a new Aigon version ships with improvements to those templates, you bring each repo up to the new version with a single command: **`aigon apply`**.
+
+This guide covers what to run, when, and where you'll see a prompt to do it.
+
+## Two commands, two jobs
+
+| Goal | Command |
+|---|---|
+| Upgrade the Aigon CLI itself | `npm update -g @senlabsai/aigon` |
+| Apply the new version into a repo | `aigon apply` *(or `aigon apply --all`)* |
+
+npm handles the CLI upgrade. `aigon apply` rolls that upgrade out into your repos.
+
+## Applying updates
+
+### Apply to current repo
+
+```bash
+aigon apply
+```
+
+Runs in the current directory. If nothing has changed since the last apply, it is a no-op and reports zero changes.
+
+### Apply to all registered repos
+
+```bash
+aigon apply --all
+```
+
+Walks every repo registered in `~/.aigon/config.json` (every repo you have ever run `aigon apply` in) and applies sequentially. Up-to-date repos are reported as `skipped (current)` and not re-applied.
+
+```text
+[1/4] /Users/you/src/repo-a: skipped (current)
+[2/4] /Users/you/src/repo-b: applying…
+[2/4] /Users/you/src/repo-b: ok
+[3/4] /Users/you/src/repo-c: applying…
+[3/4] /Users/you/src/repo-c: ok
+[4/4] /Users/you/src/repo-d: skipped (current)
+
+📦 apply --all summary: 2 applied, 2 skipped, 0 failed (4 total).
+```
+
+A failure in one repo does not abort the others. Aggregate exit code is non-zero if any repo failed.
+
+## Where you'll see a prompt
+
+Aigon nudges you exactly once, in whichever surface you're already using. Each prompt names the same fix: run `aigon apply`.
+
+- **Agent sessions** (Claude Code, Gemini, Codex, Cursor, Kimi, OpenCode) — a short notice at session start.
+- **Dashboard** — a slim pill in the chrome (top of the page) with a `[ Re-apply ]` button. See [Dashboard](/docs/guides/dashboard#upgrade-pill-chrome).
+- **Terminal**, on demand — run `aigon check-version` any time.
+
+When a repo is already up to date, every surface is silent.
+
+## After an npm upgrade
+
+Right after `npm update -g @senlabsai/aigon`, npm prints a short summary of which of your registered repos are now behind:
+
+```text
+✓ aigon upgraded to v2.65.0
+  3 of your 8 known repos were applied with an older aigon:
+    /Users/you/src/repo-a  (applied v2.63.0)
+    /Users/you/src/repo-b  (applied v2.63.0)
+    /Users/you/src/repo-c  (applied v2.64.0)
+  Re-apply all:  aigon apply --all
+```
+
+You can re-print it at any time with [`aigon installed-notice`](/docs/reference/commands/pro/installed-notice).
+
+## Privacy
+
+Repo paths are stored in plain text in `~/.aigon/config.json`. Nothing is uploaded, no telemetry is sent. You can edit or remove entries any time, or unregister a repo with `aigon server repos remove <path>`.
+
+## Cheat sheet
+
+| Goal | Command |
+|---|---|
+| Upgrade Aigon itself | `npm update -g @senlabsai/aigon` |
+| Apply into this repo | `aigon apply` |
+| Apply into every registered repo | `aigon apply --all` |
+| Check for pending updates | `aigon check-version` |
+| Re-print the post-upgrade summary | `aigon installed-notice` |
+| Do it in the dashboard | Open `localhost:4100` and click the upgrade pill |
+
+## See also
+
+- [`apply`](/docs/reference/commands/setup/apply) — full command reference
+- [`installed-notice`](/docs/reference/commands/pro/installed-notice)
+- [Dashboard](/docs/guides/dashboard) — the upgrade pill and Settings → Version

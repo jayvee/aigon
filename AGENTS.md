@@ -22,6 +22,21 @@
 - **Token-window scheduling (F352)**: `aigon token-window [--message=<text>] [--agents=<list>] [--dry-run]` nudges all active agent sessions with a lightweight message to align rolling provider usage windows. Config key `tokenWindow` in `~/.aigon/config.json` accepts `message`, `targetAgents`, and `timezone`. Kickoff timestamp written to `.aigon/state/last-token-kickoff`; surfaced in `/api/budget` as `lastTokenKickoffAt`. See `docs/token-maxing.md` for the rolling-window mental model and scheduler examples.
 - **Schema migrations in doctor (F353)**: `aigon doctor --fix` now calls `runPendingMigrations(process.cwd())` as the first repair step (before workflow-state bootstrap) — making it the single front-door repair command. Without `--fix`, doctor detects pending migrations and lists them as a "needs fix" item. The migration framework is idempotent (per-version manifest at `.aigon/migrations/<version>/manifest.json`); running `doctor --fix` twice is safe.
 
+## Repo boundary — OSS vs Pro/internal (load-bearing)
+
+**This repo (`~/src/aigon`) is public on GitHub.** Anything you put here is visible to every user, every scraper, every AI training crawler. The repo boundary is non-negotiable:
+
+- **OSS (this repo)** — the CLI source, dashboard, end-user docs under `site/`, generic install testing (e.g. `docker/clean-room/Dockerfile`, `run-f513.sh`, the OSS smoke). Nothing that references a credential, a Pro key, a beta-tester roster, a release-rehearsal script, or any maintainer-only workflow.
+- **Pro / internal (`~/src/aigon-pro`)** — Pro source, Pro-related test infra (Dockerfiles, smoke scripts touching real keys), beta keys, pre-publish scripts, internal rehearsal docs.
+
+**Hard rules:**
+1. Never write a literal Pro key, beta key, or any credential into this repo. Use `<your-key>`, `$AIGON_PRO_KEY`, or read from env at runtime.
+2. Filenames matching `*published-pro*`, `pro-test-*`, `*-pro-key*` belong in `aigon-pro/`, not here.
+3. Any file describing how to test or rehearse a Pro release belongs in `aigon-pro/docker/` or `aigon-pro/scripts/`, not here.
+4. The pre-commit hook at `.githooks/pre-commit` blocks (1) and (2) automatically — if it fires, do not bypass with `AIGON_ALLOW_SENSITIVE_COMMIT=1` unless you are the maintainer fixing the hook itself. Move the file to aigon-pro instead.
+
+**If you find Pro/internal content in this repo, move it to aigon-pro and flag the find** — do not leave it and do not commit alongside it. There was a leak incident on 2026-05-10 (beta key `aigon-pro-beta-2026` in 3 pushed commits) and the recovery cost was hours of git-history rewriting and credential rotation. The hook exists to prevent a second one.
+
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
 

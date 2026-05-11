@@ -1,0 +1,55 @@
+---
+title: "pro activate"
+description: "Save an Aigon Pro key to ~/.aigon/config.json so Pro features activate on every CLI run."
+---
+
+# `aigon pro activate`
+
+Saves your Aigon Pro key once. The key persists in `~/.aigon/config.json` across shell sessions, launchd / systemd restarts, and new terminals — no environment variables or shell profile edits required.
+
+```bash
+aigon pro activate <your-key>
+```
+
+## What it does
+
+1. Reads `~/.aigon/config.json` (creating the file and parent directory if missing).
+2. Writes `{"proKey": "<your-key>"}` into it, merging with any existing keys (does not overwrite unrelated config).
+3. If the dashboard server is currently running, triggers a background `aigon server restart` so Pro-only views (Insights, Aigon Sync, Recurring features, scheduled jobs, etc.) load on the next request.
+
+You will see one of:
+
+```text
+✅ Pro key saved to ~/.aigon/config.json
+🔄 Dashboard server restart triggered in the background.
+   Log: /Users/you/.aigon/dashboard.log
+```
+
+or, if the server is not running:
+
+```text
+✅ Pro key saved to ~/.aigon/config.json
+   Start the dashboard with: aigon server start
+```
+
+## Errors
+
+| Symptom | Fix |
+|---|---|
+| `Usage: aigon pro activate <key>` | You forgot the key argument. |
+| `🔒 <feature> is a Pro feature` after activate | Run [`aigon pro status`](./status) — the `@senlabsai/aigon-pro` package is probably not installed. |
+
+## Three-step install
+
+`pro activate` is step 2 of the [Pro installation flow](/docs/guides/pro-installation):
+
+```bash
+npm install -g @senlabsai/aigon-pro      # 1. install the package
+aigon pro activate <your-key>            # 2. activate the key (this command)
+aigon server restart                     # 3. restart the server
+```
+
+## See also
+
+- [`pro status`](./status) — verify Pro is installed and active
+- [Installing Aigon Pro](/docs/guides/pro-installation) — full setup walkthrough
