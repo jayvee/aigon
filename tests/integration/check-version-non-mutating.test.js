@@ -59,31 +59,19 @@ test('check-version leaves .aigon/ unchanged with stale .aigon/version', () => w
     assert.ok(output.includes('aigon apply'), 'check-version should prompt the user to run aigon apply');
 }));
 
-// Integration: capture-session-telemetry exits 0 even when capture throws internally
-test('capture-session-telemetry exits 0 when transcript path does not exist', () => {
-    const result = runAigon(['capture-session-telemetry', '/nonexistent/transcript.jsonl']);
-    assert.strictEqual(result.status, 0, `capture-session-telemetry should exit 0 on error, got ${result.status}`);
-});
+// Integration: hooks (capture-*, check-agent-signal) must always exit 0 — they are advisory.
+test('hooks exit 0 on error/missing-state (capture-session-telemetry, capture-gemini-telemetry, check-agent-signal)', () => withTempDir('aigon-f493-hooks-', (dir) => {
+    const cst = runAigon(['capture-session-telemetry', '/nonexistent/transcript.jsonl']);
+    assert.strictEqual(cst.status, 0, `capture-session-telemetry: ${cst.status}`);
 
-// Integration: capture-gemini-telemetry exits 0 even when repo has no transcripts
-test('capture-gemini-telemetry exits 0 when telemetry dir is missing', () => withTempDir('aigon-f493-gg-', (dir) => {
-    const result = runAigon(['capture-gemini-telemetry'], {
+    const cgt = runAigon(['capture-gemini-telemetry'], {
         cwd: dir,
-        env: {
-            HOME: dir,
-            AIGON_PROJECT_PATH: dir,
-            AIGON_ENTITY_TYPE: 'feature',
-            AIGON_ENTITY_ID: '07',
-            AIGON_AGENT_ID: 'gg',
-        },
+        env: { HOME: dir, AIGON_PROJECT_PATH: dir, AIGON_ENTITY_TYPE: 'feature', AIGON_ENTITY_ID: '07', AIGON_AGENT_ID: 'gg' },
     });
-    assert.strictEqual(result.status, 0, `capture-gemini-telemetry should exit 0 on error, got ${result.status}`);
-}));
+    assert.strictEqual(cgt.status, 0, `capture-gemini-telemetry: ${cgt.status}`);
 
-// Integration: check-agent-signal always exits 0 (advisory only)
-test('check-agent-signal exits 0 when not on a feature branch', () => withTempDir('aigon-f493-cas-', (dir) => {
-    const result = runAigon(['check-agent-signal', '--json'], { cwd: dir });
-    assert.strictEqual(result.status, 0, `check-agent-signal should exit 0: ${result.stderr.toString()}`);
+    const cas = runAigon(['check-agent-signal', '--json'], { cwd: dir });
+    assert.strictEqual(cas.status, 0, `check-agent-signal: ${cas.stderr.toString()}`);
 }));
 
 report();

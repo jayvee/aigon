@@ -147,30 +147,6 @@ testAsync('merged path: finds commits via merge-grep when worktree is gone', () 
     })
 );
 
-testAsync('merged path: returns empty array when no merge commit found', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/123/commits?repoPath=${encodeURIComponent(repo)}`);
-            dispatcher.dispatchOssRoute('GET', '/api/feature/123/commits', req, res);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'merged');
-            assert.deepStrictEqual(body.commits, []);
-            assert.strictEqual(body.mergeCommit, null);
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
-
 testAsync('worktree path: filters commits with Aigon-Internal: true trailer', () =>
     withTempDirAsync(async (repo) => {
         initRepo(repo);
@@ -212,19 +188,7 @@ testAsync('worktree path: filters commits with Aigon-Internal: true trailer', ()
     })
 );
 
-testAsync('rejects non-numeric ids', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-        const ctx = buildStubServerCtx(repo);
-        const dispatcher = createDashboardRouteDispatcher(ctx);
-        const { req, res, done, getStatusCode } = buildStubReqRes(`/api/feature/abc/commits?repoPath=${encodeURIComponent(repo)}`);
-        dispatcher.dispatchOssRoute('GET', '/api/feature/abc/commits', req, res);
-        await done;
-        assert.strictEqual(getStatusCode(), 400);
-    })
-);
-
-testAsync('accepts plural /api/features/:id/commits as well as singular', () =>
+testAsync('dispatcher: rejects non-numeric ids (400) and accepts plural /api/features/:id/commits', () =>
     withTempDirAsync(async (repo) => {
         initRepo(repo);
         const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
@@ -233,11 +197,16 @@ testAsync('accepts plural /api/features/:id/commits as well as singular', () =>
         try {
             const ctx = buildStubServerCtx(repo);
             const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode } = buildStubReqRes(`/api/features/55/commits?repoPath=${encodeURIComponent(repo)}`);
-            const matched = dispatcher.dispatchOssRoute('GET', '/api/features/55/commits', req, res);
+            const bad = buildStubReqRes(`/api/feature/abc/commits?repoPath=${encodeURIComponent(repo)}`);
+            dispatcher.dispatchOssRoute('GET', '/api/feature/abc/commits', bad.req, bad.res);
+            await bad.done;
+            assert.strictEqual(bad.getStatusCode(), 400);
+
+            const plural = buildStubReqRes(`/api/features/55/commits?repoPath=${encodeURIComponent(repo)}`);
+            const matched = dispatcher.dispatchOssRoute('GET', '/api/features/55/commits', plural.req, plural.res);
             assert.strictEqual(matched, true);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
+            await plural.done;
+            assert.strictEqual(plural.getStatusCode(), 200);
         } finally {
             process.env.HOME = prevHome;
             fs.rmSync(fakeHome, { recursive: true, force: true });

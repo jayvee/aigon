@@ -10,18 +10,13 @@ const { test, withTempDir, report } = require('../_helpers');
 const perfBench = require('../../lib/perf-bench');
 const seedReset = require('../../lib/commands/setup/seed-reset');
 
-test('benchKey is stable for an (agentId, modelValue) pair', () => {
-    const k = perfBench.benchKey({ agentId: 'cc', modelValue: 'claude-opus-4-7' });
-    assert.strictEqual(k, 'cc::claude-opus-4-7');
-});
-
-test('writeStateFile + readStateFile round-trip', () => {
+test('benchKey + writeStateFile/readStateFile round-trip', () => {
+    assert.strictEqual(perfBench.benchKey({ agentId: 'cc', modelValue: 'claude-opus-4-7' }), 'cc::claude-opus-4-7');
     withTempDir((dir) => {
         const fpath = path.join(dir, 'sweep-x.state.json');
         const state = { seed: 'brewboard', startedAt: 'now', pairs: [{ agentId: 'cc', modelValue: 'm', status: 'pending' }] };
         perfBench.writeStateFile(fpath, state);
-        const loaded = perfBench.readStateFile(fpath);
-        assert.deepStrictEqual(loaded, state);
+        assert.deepStrictEqual(perfBench.readStateFile(fpath), state);
     });
 });
 
@@ -87,29 +82,16 @@ test('applyResumeFilter: 3 done + 2 pending → only 2 pending are returned', ()
     });
 });
 
-test('applyResumeFilter without an existing state file throws when required', () => {
+test('applyResumeFilter throws when no state file; goldImagePath/Meta paths + readGoldMeta null edges', () => {
     withTempDir((dir) => {
-        const allPairs = [{ agentId: 'cc', modelValue: 'm1', modelLabel: 'M1' }];
         assert.throws(
-            () => perfBench.applyResumeFilter(allPairs, dir, 'brewboard'),
-            /No sweep state file/
+            () => perfBench.applyResumeFilter([{ agentId: 'cc', modelValue: 'm1', modelLabel: 'M1' }], dir, 'brewboard'),
+            /No sweep state file/,
         );
     });
-});
-
-// --- Gold-image helpers (F504) ---
-
-test('goldImagePath / goldImageMetaPath produce stable paths under ~/.aigon/bench-seeds', () => {
-    const tar = seedReset.goldImagePath('brewboard');
-    const meta = seedReset.goldImageMetaPath('brewboard');
-    assert.ok(tar.endsWith('/.aigon/bench-seeds/brewboard-gold.tar.gz'));
-    assert.ok(meta.endsWith('/.aigon/bench-seeds/brewboard-gold.meta.json'));
-});
-
-test('readGoldMeta returns null when missing', () => {
-    // Use a guaranteed-absent name to avoid stomping a real gold image.
-    const meta = seedReset.readGoldMeta('definitely-not-a-real-seed-name-' + process.pid);
-    assert.strictEqual(meta, null);
+    assert.ok(seedReset.goldImagePath('brewboard').endsWith('/.aigon/bench-seeds/brewboard-gold.tar.gz'));
+    assert.ok(seedReset.goldImageMetaPath('brewboard').endsWith('/.aigon/bench-seeds/brewboard-gold.meta.json'));
+    assert.strictEqual(seedReset.readGoldMeta('definitely-not-a-real-seed-name-' + process.pid), null);
 });
 
 test('createGoldImage + extractGoldImage round-trip via mocked tar', () => {

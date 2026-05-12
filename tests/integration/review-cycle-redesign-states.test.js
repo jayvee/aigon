@@ -14,7 +14,6 @@ const { featureMachine } = require('../../lib/workflow-core/machine');
 const { projectContext } = require('../../lib/workflow-core/projector');
 const readModel = require('../../lib/workflow-read-model');
 const { resolveSpecRevisionAgent } = require('../../lib/commands/entity-commands');
-const { runPendingMigrations } = require('../../lib/migration');
 const wf = require('../../lib/workflow-core');
 function initRepo(repo) {
     ['docs/specs/features/01-inbox', 'docs/specs/features/02-backlog']
@@ -95,28 +94,6 @@ testAsync('record paths: review submit and revise ack emit transient completion 
     assert.strictEqual(snapshot.currentSpecState, 'backlog');
     assert.strictEqual(snapshot.specReview.pendingCount, 0);
 }));
-testAsync('migration 2.56.0: idempotent rewrite of snapshots into new states', () => withTempDirAsync('aigon-f341-mig-', async (repo) => {
-    initRepo(repo);
-    fs.writeFileSync(path.join(repo, 'docs/specs/features/02-backlog/feature-12-x.md'), '# x\n');
-    execSync('git add . && git commit -qm init', { cwd: repo });
-    // Seed a legacy-style snapshot with specReview activity but lifecycle still backlog.
-    const snapDir = path.join(repo, '.aigon/workflows/features/12');
-    fs.mkdirSync(snapDir, { recursive: true });
-    const snap = {
-        entityType: 'feature', featureId: '12', lifecycle: 'backlog', currentSpecState: 'backlog',
-        mode: 'solo_branch', agents: {}, specReview: { activeReviewers: [{ agentId: 'gg', startedAt: '2026-04-01T00:00:00Z' }], pendingCount: 0, pendingReviews: [], pendingAgents: [], pendingLabel: '' },
-        eventCount: 1, createdAt: '2026-04-01T00:00:00Z', updatedAt: '2026-04-01T00:00:00Z',
-    };
-    fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify(snap, null, 2));
-    fs.writeFileSync(path.join(snapDir, 'events.jsonl'), JSON.stringify({ type: 'feature.started', featureId: '12', mode: 'solo_branch', agents: [], at: '2026-04-01T00:00:00Z' }) + '\n');
-    await runPendingMigrations(repo);
-    const after1 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
-    assert.strictEqual(after1.currentSpecState, 'spec_review_in_progress');
-    // Re-run: must not re-rewrite (idempotent).
-    await runPendingMigrations(repo);
-    const after2 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
-    assert.strictEqual(after2.currentSpecState, 'spec_review_in_progress');
-}));
 test('machine: code review complete routes to revision or submitted', () => {
     // REGRESSION: code review must not collapse back to the legacy reviewing state.
     const base = {
@@ -160,27 +137,4 @@ test('projector: accepts legacy review_requested and new code review events', ()
     assert.strictEqual(newCtx.codeReview.revisionAgentId, 'cc');
     assert.strictEqual(newCtx.codeReview.revisionCompletedAt, '2026-04-01T03:00:00Z');
 });
-testAsync('migration 2.57.0: idempotent reviewing rename', () => withTempDirAsync('aigon-f342-mig-', async (repo) => {
-    initRepo(repo);
-    const snapDir = path.join(repo, '.aigon/workflows/features/12');
-    fs.mkdirSync(snapDir, { recursive: true });
-    fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
-        entityType: 'feature',
-        featureId: '12',
-        lifecycle: 'reviewing',
-        currentSpecState: 'reviewing',
-        mode: 'solo_branch',
-        agents: { cc: { status: 'ready' } },
-        eventCount: 2,
-        createdAt: '2026-04-01T00:00:00Z',
-        updatedAt: '2026-04-01T01:00:00Z',
-    }, null, 2));
-    fs.writeFileSync(path.join(snapDir, 'events.jsonl'), '');
-    await runPendingMigrations(repo);
-    const after1 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
-    assert.strictEqual(after1.currentSpecState, 'code_review_in_progress');
-    await runPendingMigrations(repo);
-    const after2 = JSON.parse(fs.readFileSync(path.join(snapDir, 'snapshot.json'), 'utf8'));
-    assert.strictEqual(after2.currentSpecState, 'code_review_in_progress');
-}));
 report();

@@ -37,99 +37,61 @@ test('emit dedupe map tracks composite key', () => {
     assert.strictEqual(emittedDedupe.has(k), true);
 });
 
-testAsync('agent-resume refuses when sidecar is missing', async () => withTempDirAsync(async (dir) => {
-    const prevPath = process.env.AIGON_PROJECT_PATH;
-    delete process.env.AIGON_PROJECT_PATH;
-    const id = '43';
-    const padded = id.padStart(2, '0');
+function seedResumeFixture(dir, padded, { withModelOverride = false } = {}) {
     const wfDir = path.join(dir, '.aigon', 'workflows', 'features', padded);
     fs.mkdirSync(wfDir, { recursive: true });
+    const specPath = path.join(dir, 'docs', 'specs', 'features', '03-in-progress', `feature-${padded}-test.md`);
     fs.writeFileSync(path.join(wfDir, 'snapshot.json'), JSON.stringify({
-        featureId: padded,
-        currentSpecState: 'implementing',
-        agents: { gg: { status: 'running' } },
+        featureId: padded, currentSpecState: 'implementing',
+        agents: { gg: withModelOverride
+            ? { status: 'running', modelOverride: { model: 'gemini-2.5-pro' } }
+            : { status: 'running' } },
+        ...(withModelOverride ? { specPath } : {}),
     }));
+    if (withModelOverride) {
+        fs.mkdirSync(path.dirname(specPath), { recursive: true });
+        fs.writeFileSync(specPath, '# t\n');
+    }
     fs.mkdirSync(path.join(dir, '.aigon', 'state'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.aigon', 'state', `feature-${padded}-gg.json`), JSON.stringify({
-        agent: 'gg',
-        status: 'quota-paused',
-        priorQuotaStatus: 'implementing',
+        agent: 'gg', status: 'quota-paused', priorQuotaStatus: 'implementing',
         updatedAt: new Date().toISOString(),
     }));
-    const resume = require('../../lib/agent-resume');
-    let code;
+}
+
+async function expectResumeRejection(dir, id, expectedCode) {
+    const prevPath = process.env.AIGON_PROJECT_PATH;
+    delete process.env.AIGON_PROJECT_PATH;
     try {
+        const resume = require('../../lib/agent-resume');
         try {
             await resume.runAgentResume([id, 'gg'], { cwd: dir });
+            assert.fail(`expected ${expectedCode}`);
         } catch (e) {
-            code = e.code;
-            assert.strictEqual(code, 'NO_SIDECAR');
+            assert.strictEqual(e.code, expectedCode);
         }
-        assert.ok(code, 'expected NO_SIDECAR');
     } finally {
         if (prevPath !== undefined) process.env.AIGON_PROJECT_PATH = prevPath;
         else delete process.env.AIGON_PROJECT_PATH;
     }
+}
+
+testAsync('agent-resume refuses when sidecar is missing', async () => withTempDirAsync(async (dir) => {
+    seedResumeFixture(dir, '43');
+    await expectResumeRejection(dir, '43', 'NO_SIDECAR');
 }));
 
 testAsync('agent-resume refuses when quota.json still depleted', async () => withTempDirAsync(async (dir) => {
-    const prevPath = process.env.AIGON_PROJECT_PATH;
-    delete process.env.AIGON_PROJECT_PATH;
-    const id = '42';
-    const padded = id.padStart(2, '0');
-    const model = 'gemini-2.5-pro';
-    const wfDir = path.join(dir, '.aigon', 'workflows', 'features', padded);
-    fs.mkdirSync(wfDir, { recursive: true });
-    fs.writeFileSync(path.join(wfDir, 'snapshot.json'), JSON.stringify({
-        featureId: padded,
-        currentSpecState: 'implementing',
-        agents: {
-            gg: { status: 'running', modelOverride: { model } },
-        },
-        specPath: path.join(dir, 'docs', 'specs', 'features', '03-in-progress', `feature-${padded}-test.md`),
-    }));
-    fs.mkdirSync(path.join(dir, 'docs', 'specs', 'features', '03-in-progress'), { recursive: true });
-    fs.writeFileSync(
-        path.join(dir, 'docs', 'specs', 'features', '03-in-progress', `feature-${padded}-test.md`),
-        '# t\n'
-    );
-    const quotaState = {
+    seedResumeFixture(dir, '42', { withModelOverride: true });
+    quotaProbe.writeQuotaState({
         schemaVersion: 1,
-        agents: {
-            gg: {
-                models: {
-                    [model]: {
-                        verdict: 'depleted',
-                        lastProbedAt: new Date().toISOString(),
-                        resetAt: new Date(Date.now() + 86400000).toISOString(),
-                    },
-                },
-            },
-        },
-    };
-    fs.mkdirSync(path.join(dir, '.aigon', 'state'), { recursive: true });
-    fs.writeFileSync(path.join(dir, '.aigon', 'state', `feature-${padded}-gg.json`), JSON.stringify({
-        agent: 'gg',
-        status: 'quota-paused',
-        priorQuotaStatus: 'implementing',
-        updatedAt: new Date().toISOString(),
-    }));
-    quotaProbe.writeQuotaState(quotaState, dir);
-
-    const resume = require('../../lib/agent-resume');
-    let code;
-    try {
-        try {
-            await resume.runAgentResume([id, 'gg'], { cwd: dir });
-        } catch (e) {
-            code = e.code;
-            assert.strictEqual(code, 'QUOTA_DEPLETED');
-        }
-        assert.ok(code, 'expected QUOTA_DEPLETED');
-    } finally {
-        if (prevPath !== undefined) process.env.AIGON_PROJECT_PATH = prevPath;
-        else delete process.env.AIGON_PROJECT_PATH;
-    }
+        agents: { gg: { models: { 'gemini-2.5-pro': {
+            verdict: 'depleted',
+            lastProbedAt: new Date().toISOString(),
+            resetAt: new Date(Date.now() + 86400000).toISOString(),
+        } } } },
+    }, dir);
+    await expectResumeRejection(dir, '42', 'QUOTA_DEPLETED');
 }));
 
 testAsync('F454: scanActiveSessions skips capture-pane when activity epoch is unchanged', async () => withTempDirAsync(async (dir) => {

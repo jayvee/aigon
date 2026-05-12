@@ -124,33 +124,23 @@ test('renameTranscriptDirSync renames slug dir to numeric id', () => withTempDir
     assert.ok(fs.existsSync(path.join(numDir, 'implement-uuid.jsonl')), 'file must be present under numeric dir');
 }));
 
-// renameTranscriptDirSync is a no-op when the source dir does not exist
-test('renameTranscriptDirSync is a no-op when slug dir absent', () => withTempDir('aigon-ts-', (tmp) => {
-    // Should not throw
-    renameTranscriptDirSync(tmp, 'feature', 'nonexistent-slug', '99');
-    const numDir = resolveTranscriptEntityDir(tmp, 'feature', '99');
-    assert.ok(!fs.existsSync(numDir));
-}));
-
-// copySessionToDurable falls back gracefully when native body is missing
-test('copySessionToDurable writes meta even when native body is absent', () => withTempDir('aigon-ts-', (tmp) => {
-    const sidecar = {
+// Edge cases: missing source body, missing slug dir, missing durable copy.
+test('edge cases: missing source body, missing slug dir, missing durable copy', () => withTempDir('aigon-ts-', (tmp) => {
+    const { durableBodyPath, metaPath } = copySessionToDurable(tmp, 'feature', '1', 'cc', {
         agentSessionId: 'uuid-missing',
         agentSessionPath: '/nonexistent/path/uuid-missing.jsonl',
         sessionName: 'aigon-f1-do-cc',
-    };
-    const { durableBodyPath, metaPath } = copySessionToDurable(tmp, 'feature', '1', 'cc', sidecar, null);
-    assert.strictEqual(durableBodyPath, null, 'no body should be written when src missing');
-    assert.ok(fs.existsSync(metaPath), 'meta must still be written');
+    }, null);
+    assert.strictEqual(durableBodyPath, null);
+    assert.ok(fs.existsSync(metaPath));
     const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
     assert.strictEqual(meta.complete, false);
     assert.strictEqual(meta.nativeBodyBytes, 0);
-}));
 
-// findDurablePath returns null when no durable copy exists
-test('findDurablePath returns null when no hot-tier copy exists', () => withTempDir('aigon-ts-', (tmp) => {
-    const result = findDurablePath(tmp, 'feature', '42', 'cc', 'uuid-none');
-    assert.strictEqual(result, null);
+    renameTranscriptDirSync(tmp, 'feature', 'nonexistent-slug', '99'); // must not throw
+    assert.ok(!fs.existsSync(resolveTranscriptEntityDir(tmp, 'feature', '99')));
+
+    assert.strictEqual(findDurablePath(tmp, 'feature', '42', 'cc', 'uuid-none'), null);
 }));
 
 report();

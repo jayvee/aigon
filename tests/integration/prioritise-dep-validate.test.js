@@ -58,80 +58,41 @@ function writeInboxSpec(root, slug, dependsOnBody = null) {
     fs.writeFileSync(path.join(dir, `feature-${slug}.md`), lines.join('\n'));
 }
 
-// ---------------------------------------------------------------------------
-// Unit tests for parseDependsOn
-// ---------------------------------------------------------------------------
+// --- parseDependsOn (table-driven) ---
+const PARSE_CASES = [
+    ['missing depends_on',           '# Feature\n\nsome body',          []],
+    ['depends_on: none',             'depends_on: none',                []],
+    ['empty depends_on',             'depends_on: ',                    []],
+    ['single slug',                  'depends_on: parent-slug',         ['parent-slug']],
+    ['comma-separated slugs',        'depends_on: foo, bar, baz',       ['foo', 'bar', 'baz']],
+    ['numeric ID',                   'depends_on: 443',                 ['443']],
+];
+for (const [name, body, expected] of PARSE_CASES) {
+    test(`parseDependsOn: ${name}`, () => assert.deepStrictEqual(parseDependsOn(body), expected));
+}
 
-test('parseDependsOn: returns empty for missing depends_on', () => {
-    assert.deepStrictEqual(parseDependsOn('# Feature\n\nsome body'), []);
-});
-
-test('parseDependsOn: returns empty for depends_on: none', () => {
-    assert.deepStrictEqual(parseDependsOn('depends_on: none'), []);
-});
-
-test('parseDependsOn: returns empty for empty depends_on', () => {
-    assert.deepStrictEqual(parseDependsOn('depends_on: '), []);
-});
-
-test('parseDependsOn: single slug', () => {
-    assert.deepStrictEqual(parseDependsOn('depends_on: parent-slug'), ['parent-slug']);
-});
-
-test('parseDependsOn: comma-separated slugs', () => {
-    assert.deepStrictEqual(parseDependsOn('depends_on: foo, bar, baz'), ['foo', 'bar', 'baz']);
-});
-
-test('parseDependsOn: numeric ID', () => {
-    assert.deepStrictEqual(parseDependsOn('depends_on: 443'), ['443']);
-});
-
-// ---------------------------------------------------------------------------
-// Unit tests for checkDepsPrioritised
-// ---------------------------------------------------------------------------
-
-test('checkDepsPrioritised: no violations when parent is in backlog', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    fs.writeFileSync(path.join(root, '02-backlog', 'feature-01-parent.md'), '# parent\n');
-    const violations = checkDepsPrioritised(['parent'], paths);
-    assert.deepStrictEqual(violations, []);
-}));
-
-test('checkDepsPrioritised: violation when parent is in inbox', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    fs.writeFileSync(path.join(root, '01-inbox', 'feature-parent.md'), '# parent\n');
-    const violations = checkDepsPrioritised(['parent'], paths);
-    assert.strictEqual(violations.length, 1);
-    assert.strictEqual(violations[0].status, '01-inbox');
-}));
-
-test('checkDepsPrioritised: violation when parent is missing', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    const violations = checkDepsPrioritised(['ghost-feature'], paths);
-    assert.strictEqual(violations.length, 1);
-    assert.strictEqual(violations[0].status, 'missing');
-}));
-
-test('checkDepsPrioritised: no violation for parent in in-progress', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    fs.writeFileSync(path.join(root, '03-in-progress', 'feature-01-parent.md'), '# parent\n');
-    const violations = checkDepsPrioritised(['parent'], paths);
-    assert.deepStrictEqual(violations, []);
-}));
-
-test('checkDepsPrioritised: no violation for parent in done', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    fs.writeFileSync(path.join(root, '05-done', 'feature-01-parent.md'), '# parent\n');
-    const violations = checkDepsPrioritised(['parent'], paths);
-    assert.deepStrictEqual(violations, []);
-}));
-
-test('checkDepsPrioritised: no violation for parent in paused', () => withTempDir('aigon-dep-val-', (root) => {
-    const paths = mkFeaturePaths(root);
-    fs.writeFileSync(path.join(root, '06-paused', 'feature-01-parent.md'), '# parent\n');
-    const violations = checkDepsPrioritised(['parent'], paths);
-    assert.deepStrictEqual(violations, []);
-}));
+// --- checkDepsPrioritised: parent folder determines violation ---
+//   01-inbox / missing  → violation
+//   02-backlog, 03-in-progress, 05-done, 06-paused → no violation (already past inbox)
+const DEP_CASES = [
+    ['01-inbox',       'feature-parent.md',     { violations: 1, status: '01-inbox' }],
+    [null,             null,                    { violations: 1, status: 'missing' }],
+    ['02-backlog',     'feature-01-parent.md',  { violations: 0 }],
+    ['03-in-progress', 'feature-01-parent.md',  { violations: 0 }],
+    ['05-done',        'feature-01-parent.md',  { violations: 0 }],
+    ['06-paused',      'feature-01-parent.md',  { violations: 0 }],
+];
+for (const [folder, file, expected] of DEP_CASES) {
+    test(`checkDepsPrioritised: parent in ${folder || 'missing'} → ${expected.violations ? 'violation' : 'ok'}`, () =>
+        withTempDir('aigon-dep-val-', (root) => {
+            const paths = mkFeaturePaths(root);
+            if (folder) fs.writeFileSync(path.join(root, folder, file), '# parent\n');
+            const target = folder ? 'parent' : 'ghost-feature';
+            const violations = checkDepsPrioritised([target], paths);
+            assert.strictEqual(violations.length, expected.violations);
+            if (expected.status) assert.strictEqual(violations[0].status, expected.status);
+        }));
+}
 
 // ---------------------------------------------------------------------------
 // Integration test: prioritise child before parent fails, then succeeds

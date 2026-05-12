@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
-// REGRESSION F234: feature-close server restart is deferred when invoked from the dashboard
-// (AIGON_INVOKED_BY_DASHBOARD=1) — it records a restart marker instead of calling restartServer.
-// Also tests: F428 runDashboardInteractiveAction is async (spawn, not spawnSync).
+// REGRESSION F234: dashboard-invoked feature-close defers restart (writes marker, not call).
+// F428: runDashboardInteractiveAction is async (spawn, not spawnSync).
 
 const assert = require('assert');
 const { EventEmitter } = require('events');
@@ -22,8 +21,7 @@ function makeDeps(diff, opts = {}) {
             loadProjectConfig: () => opts.cfg || {},
             restartServer: () => { calls.n++; },
             writeRestartMarker: (m) => { calls.marker = m; },
-            log: () => {},
-            warn: () => {},
+            log: () => {}, warn: () => {},
         },
     };
 }
@@ -36,39 +34,27 @@ function run(diff, opts) {
 
 const prevEnv = process.env.AIGON_INVOKED_BY_DASHBOARD;
 
-test('lib/*.js diff triggers server restart in CLI context', () => {
+test('CLI context: restart triggered only when lib/ changed, server alive, opt-in', () => {
     delete process.env.AIGON_INVOKED_BY_DASHBOARD;
-    assert.strictEqual(run('lib/x.js\n').n, 1);
+    assert.strictEqual(run('lib/x.js\n').n, 1, 'lib change → restart');
+    assert.strictEqual(run('').n, 0, 'empty diff → no restart');
+    assert.strictEqual(run('lib/x.js\n', { noServer: true }).n, 0, 'no server → no restart');
+    assert.strictEqual(run('lib/x.js\n', { cfg: { featureClose: { autoRestartServer: false } } }).n, 0, 'opt-out');
 });
 
-test('empty diff skips restart', () => {
-    delete process.env.AIGON_INVOKED_BY_DASHBOARD;
-    assert.strictEqual(run('').n, 0);
-});
-
-test('missing server entry skips restart silently', () => {
-    delete process.env.AIGON_INVOKED_BY_DASHBOARD;
-    assert.strictEqual(run('lib/x.js\n', { noServer: true }).n, 0);
-});
-
-test('opt-out config disables restart', () => {
-    delete process.env.AIGON_INVOKED_BY_DASHBOARD;
-    assert.strictEqual(run('lib/x.js\n', { cfg: { featureClose: { autoRestartServer: false } } }).n, 0);
-});
-
-test('dashboard-invoked: never calls restartServer, records restart marker with files (F234)', () => {
+test('dashboard-invoked (F234): never calls restartServer, records marker with files', () => {
     process.env.AIGON_INVOKED_BY_DASHBOARD = '1';
     try {
         const calls = run('lib/x.js\nlib/y.js\n');
-        assert.strictEqual(calls.n, 0, 'dashboard-invoked must never call restartServer');
-        assert.ok(calls.marker && calls.marker.reason === 'lib-changed' && calls.marker.files.length === 2, 'marker recorded with files');
+        assert.strictEqual(calls.n, 0);
+        assert.ok(calls.marker && calls.marker.reason === 'lib-changed' && calls.marker.files.length === 2);
     } finally {
         if (prevEnv === undefined) delete process.env.AIGON_INVOKED_BY_DASHBOARD;
         else process.env.AIGON_INVOKED_BY_DASHBOARD = prevEnv;
     }
 });
 
-testAsync('runDashboardInteractiveAction: async spawn path succeeds with mocked child process (F428)', async () => {
+testAsync('runDashboardInteractiveAction (F428): async spawn injects restart-deferral env', async () => {
     const dashboardServerPath = require.resolve('../../lib/dashboard-server');
     const origSpawn = childProcess.spawn;
     let seen = null;
@@ -89,15 +75,11 @@ testAsync('runDashboardInteractiveAction: async spawn path succeeds with mocked 
     try {
         const dashboardServer = require('../../lib/dashboard-server');
         const result = await dashboardServer.runDashboardInteractiveAction({
-            action: 'feature-close',
-            args: ['234'],
-            repoPath: process.cwd(),
-            registeredRepos: [],
-            defaultRepoPath: process.cwd(),
+            action: 'feature-close', args: ['234'],
+            repoPath: process.cwd(), registeredRepos: [], defaultRepoPath: process.cwd(),
         });
-        assert.ok(result.ok, 'dashboard action returns success with mocked spawn');
-        assert.ok(seen, 'dashboard action invoked spawn');
-        assert.strictEqual(seen.opts.env.AIGON_INVOKED_BY_DASHBOARD, '1', 'injects restart-deferral env var');
+        assert.ok(result.ok);
+        assert.strictEqual(seen.opts.env.AIGON_INVOKED_BY_DASHBOARD, '1');
     } finally {
         childProcess.spawn = origSpawn;
         delete require.cache[dashboardServerPath];

@@ -22,35 +22,24 @@ function seedResearchFixture(repo, id) {
     fs.writeFileSync(path.join(logsDir, `research-${id}-gg-findings.md`), '# GG findings\n');
 }
 
-test('buildResearchContextSection: returns empty string for null / empty array', () => {
-    assert.strictEqual(buildResearchContextSection(null, '/tmp/no-such-repo'), '');
-    assert.strictEqual(buildResearchContextSection([], '/tmp/no-such-repo'), '');
-    assert.strictEqual(buildResearchContextSection(undefined, '/tmp/no-such-repo'), '');
-});
-
-test('buildResearchContextSection: resolves spec path and findings paths for a single integer ID', () => withTempDir('aigon-research-ctx-', (repo) => {
-    seedResearchFixture(repo, 91);
-    const section = buildResearchContextSection(91, repo);
-    assert.ok(section.includes('Step 2.6: Research context'), 'should emit the Step 2.6 header');
-    assert.ok(section.includes('./docs/specs/research-topics/05-done/research-91-fixture-topic.md'), 'should include the resolved spec path');
-    assert.ok(section.includes('./docs/specs/research-topics/logs/research-91-cc-findings.md'), 'should include cc findings path');
-    assert.ok(section.includes('./docs/specs/research-topics/logs/research-91-gg-findings.md'), 'should include gg findings path');
-}));
-
-test('buildResearchContextSection: accepts an array of IDs and emits a section per ID', () => withTempDir('aigon-research-ctx-multi-', (repo) => {
-    seedResearchFixture(repo, 91);
-    seedResearchFixture(repo, 92);
-    const section = buildResearchContextSection([91, 92], repo);
-    assert.ok(section.includes('research-91-fixture-topic.md'), 'should include first ID spec');
-    assert.ok(section.includes('research-92-fixture-topic.md'), 'should include second ID spec');
-    assert.ok(section.includes('Research 91:'), 'should label first ID');
-    assert.ok(section.includes('Research 92:'), 'should label second ID');
-}));
-
-test('buildResearchContextSection: returns empty string when no on-disk artifacts exist', () => withTempDir('aigon-research-ctx-empty-', (repo) => {
+test('buildResearchContextSection: empty inputs and missing artifacts return ""', () => withTempDir('aigon-research-ctx-empty-', (repo) => {
+    for (const v of [null, [], undefined]) assert.strictEqual(buildResearchContextSection(v, '/tmp/no-such-repo'), '');
     fs.mkdirSync(path.join(repo, 'docs', 'specs', 'research-topics', '05-done'), { recursive: true });
-    const section = buildResearchContextSection(999, repo);
-    assert.strictEqual(section, '');
+    assert.strictEqual(buildResearchContextSection(999, repo), '');
+}));
+
+test('buildResearchContextSection: resolves spec + findings paths for single ID and arrays of IDs', () => withTempDir('aigon-research-ctx-', (repo) => {
+    seedResearchFixture(repo, 91);
+    const single = buildResearchContextSection(91, repo);
+    assert.ok(single.includes('Step 2.6: Research context'));
+    assert.ok(single.includes('./docs/specs/research-topics/05-done/research-91-fixture-topic.md'));
+    assert.ok(single.includes('./docs/specs/research-topics/logs/research-91-cc-findings.md'));
+    assert.ok(single.includes('./docs/specs/research-topics/logs/research-91-gg-findings.md'));
+
+    seedResearchFixture(repo, 92);
+    const multi = buildResearchContextSection([91, 92], repo);
+    assert.ok(multi.includes('research-91-fixture-topic.md') && multi.includes('research-92-fixture-topic.md'));
+    assert.ok(multi.includes('Research 91:') && multi.includes('Research 92:'));
 }));
 
 report();

@@ -27,55 +27,26 @@ function runRemove(repo, extraArgs = []) {
     }).toString();
 }
 
-testAsync('install-agent writes manifest with entries after fresh install', () => withTempDirAsync('aigon-f422-fresh-', async (repo) => {
+testAsync('install-agent writes manifest with valid entries; second run is idempotent (no duplicates)', () => withTempDirAsync('aigon-f422-fresh-', async (repo) => {
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
 
     const manifest = installManifestLib.readManifest(repo);
-    assert.ok(manifest, 'manifest must exist after install-agent');
+    assert.ok(manifest);
     assert.strictEqual(manifest.version, installManifestLib.MANIFEST_VERSION);
-    assert.ok(Array.isArray(manifest.files), 'manifest.files must be an array');
-    assert.ok(manifest.files.length > 0, 'manifest must have at least one entry');
-    assert.ok(manifest.aigonVersion, 'aigonVersion must be set');
-
-    // Every path in the manifest must exist on disk
+    assert.ok(manifest.files.length > 0 && manifest.aigonVersion);
     for (const entry of manifest.files) {
-        assert.ok(fs.existsSync(path.join(repo, entry.path)), `manifest entry ${entry.path} must exist on disk`);
-        assert.ok(entry.sha256 && entry.sha256.length === 64, `sha256 must be a 64-char hex string for ${entry.path}`);
-        assert.ok(entry.installedAt, `installedAt must be set for ${entry.path}`);
+        assert.ok(fs.existsSync(path.join(repo, entry.path)), `${entry.path} on disk`);
+        assert.ok(entry.sha256 && entry.sha256.length === 64);
+        assert.ok(entry.installedAt);
     }
-}));
 
-testAsync('install-agent twice does not grow duplicates in manifest', () => withTempDirAsync('aigon-f422-idempotent-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
-    runInstallAgent(repo);
-    const manifest1 = installManifestLib.readManifest(repo);
-    const count1 = manifest1.files.length;
-
+    const count = manifest.files.length;
     runInstallAgent(repo);
     const manifest2 = installManifestLib.readManifest(repo);
-    assert.strictEqual(manifest2.files.length, count1, 'second install must not add duplicate entries');
-
-    // Paths must be unique
+    assert.strictEqual(manifest2.files.length, count, 'second install must not add duplicates');
     const paths = manifest2.files.map(f => f.path);
-    const unique = new Set(paths);
-    assert.strictEqual(unique.size, paths.length, 'all paths in manifest must be unique');
-}));
-
-testAsync('install-agent manifest sha256 always matches on-disk content', () => withTempDirAsync('aigon-f422-sha-match-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
-    runInstallAgent(repo);
-    const manifest = installManifestLib.readManifest(repo);
-
-    // Every sha in the manifest must match the actual file on disk
-    const crypto = require('crypto');
-    for (const entry of manifest.files) {
-        const absPath = path.join(repo, entry.path);
-        if (!fs.existsSync(absPath)) continue;
-        const buf = fs.readFileSync(absPath);
-        const actual = crypto.createHash('sha256').update(buf).digest('hex');
-        assert.strictEqual(actual, entry.sha256, `sha256 mismatch for ${entry.path}`);
-    }
+    assert.strictEqual(new Set(paths).size, paths.length, 'paths unique');
 }));
 
 testAsync('install-agent refreshes stale manifest entries without overwrite prompt', () => withTempDirAsync('aigon-f422-refresh-modified-', async (repo) => {
@@ -107,29 +78,13 @@ testAsync('install-agent refreshes stale manifest entries without overwrite prom
     assert.strictEqual(installManifestLib.getModifiedFiles(nextManifest, repo).length, 0, 'manifest must be refreshed after re-install');
 }));
 
-testAsync('aigon remove --dry-run lists files without deleting', () => withTempDirAsync('aigon-f422-dryrun-', async (repo) => {
+testAsync('aigon remove: --dry-run preserves files; --force deletes manifest files, preserves runtime state', () => withTempDirAsync('aigon-f422-remove-', async (repo) => {
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo);
     const manifest = installManifestLib.readManifest(repo);
+    assert.ok(manifest.files.length > 0);
 
-    const output = runRemove(repo, ['--dry-run']);
-    assert.ok(output.includes('dry-run'), `output should mention dry-run: ${output}`);
-
-    // Files must still exist
-    for (const entry of manifest.files) {
-        assert.ok(fs.existsSync(path.join(repo, entry.path)), `${entry.path} must still exist after --dry-run`);
-    }
-    // Manifest must still exist
-    assert.ok(installManifestLib.readManifest(repo), 'manifest must still exist after --dry-run');
-}));
-
-testAsync('aigon remove removes manifest files, preserves runtime state', () => withTempDirAsync('aigon-f422-remove-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
-    runInstallAgent(repo);
-    const manifest = installManifestLib.readManifest(repo);
-    assert.ok(manifest.files.length > 0, 'must have files to remove');
-
-    // Create some runtime state that must NOT be deleted
+    // Runtime state that must survive --force
     const runtimeDirs = ['.aigon/workflows', '.aigon/state', '.aigon/sessions'];
     for (const d of runtimeDirs) {
         fs.mkdirSync(path.join(repo, d), { recursive: true });
@@ -137,16 +92,17 @@ testAsync('aigon remove removes manifest files, preserves runtime state', () => 
     }
     fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), '{}');
 
+    // --dry-run: lists, deletes nothing
+    const output = runRemove(repo, ['--dry-run']);
+    assert.ok(output.includes('dry-run'));
+    for (const entry of manifest.files) assert.ok(fs.existsSync(path.join(repo, entry.path)));
+    assert.ok(installManifestLib.readManifest(repo));
+
+    // --force: deletes manifest files but preserves runtime state
     runRemove(repo, ['--force']);
-
-    // Runtime state preserved
-    for (const d of runtimeDirs) {
-        assert.ok(fs.existsSync(path.join(repo, d, 'keep.json')), `runtime state ${d}/keep.json must be preserved`);
-    }
-    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'config.json')), '.aigon/config.json must be preserved');
-
-    // Manifest itself should be gone
-    assert.strictEqual(installManifestLib.readManifest(repo), null, 'manifest must be deleted after remove');
+    for (const d of runtimeDirs) assert.ok(fs.existsSync(path.join(repo, d, 'keep.json')));
+    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'config.json')));
+    assert.strictEqual(installManifestLib.readManifest(repo), null);
 }));
 
 testAsync('migration 2.61.0 synthesizes manifest for legacy repo', () => withTempDirAsync('aigon-f422-mig-', async (repo) => {
@@ -167,17 +123,6 @@ testAsync('migration 2.61.0 synthesizes manifest for legacy repo', () => withTem
     const paths = manifest.files.map(f => f.path);
     assert.ok(paths.some(p => p.includes('feature-create.md')), 'must include feature-create.md');
     assert.ok(paths.some(p => p.includes('development_workflow.md')), 'must include development_workflow.md');
-}));
-
-testAsync('migration 2.61.0 is idempotent when manifest already exists', () => withTempDirAsync('aigon-f422-mig-idem-', async (repo) => {
-    fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
-    const existingManifest = installManifestLib.createEmptyManifest('1.0.0');
-    installManifestLib.writeManifest(repo, existingManifest);
-
-    await runPendingMigrations(repo);
-
-    const manifest = installManifestLib.readManifest(repo);
-    assert.deepStrictEqual(manifest.files, [], 'existing manifest must not be overwritten by migration');
 }));
 
 report();

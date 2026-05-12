@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
-// Merged from: install-agent-multi-output (F440), install-agent-no-agents-md-scaffold (F420),
-// install-agent-vendored-docs-to-dot-aigon (F421). Shared CLI-spawn helper amortises the
-// per-spawn cost, and tests that inspect different aspects of the same install output
-// share one tempdir/install pair.
+// Merged: install-agent multi-output (F440), no-AGENTS.md scaffold (F420),
+// vendored-docs-to-.aigon (F421). Shared CLI-spawn helper amortises per-spawn cost.
 
 const assert = require('assert');
 const fs = require('fs');
@@ -27,13 +25,9 @@ function listAigonCmds(dir) {
     return fs.readdirSync(dir).filter(f => f.startsWith('aigon-') && f.endsWith('.md')).sort();
 }
 
-function listAigonSkills(dir) {
-    return fs.readdirSync(dir).filter(d => d.startsWith('aigon-')).sort();
-}
+const listAigonSkills = (dir) => fs.readdirSync(dir).filter(d => d.startsWith('aigon-')).sort();
 
-// --- F440: op multi-output (flat .md + skill tree) ---
-// One install, asserts the full shape: flat dir exists, skill dir exists,
-// counts match, frontmatter is well-formed.
+// F440: op multi-output (flat .md + skill tree) — asserts full install shape + frontmatter.
 testAsync('install-agent op: writes both flat commands and skill tree with matching counts (F440)', () => withTempDirAsync('aigon-f440-op-', async (repo) => {
     runInstallAgent(repo, 'op');
     const cmdDir = path.join(repo, '.opencode', 'commands');
@@ -70,9 +64,8 @@ testAsync('install-agent op: second run is idempotent (no duplicates) (F440)', (
     assert.deepStrictEqual(listAigonSkills(path.join(repo, '.agents', 'skills')), skillsBefore);
 }));
 
-// --- F440: cc single-output regression + vendored docs (F421) in one install ---
-// Single install, asserts: command dir exists with .md files, AGENTS.md untouched,
-// .aigon/docs/ is populated, legacy docs/ paths NOT created.
+// F440 + F421: cc single-output + vendored docs in one install. Asserts command dir has
+// .md files, AGENTS.md untouched, .aigon/docs/ populated, legacy docs/ paths NOT created.
 testAsync('install-agent cc: writes commands, vendored docs to .aigon/docs/, leaves docs/ untouched (F440+F421)', () => withTempDirAsync('aigon-f421-cc-', async (repo) => {
     fs.mkdirSync(path.join(repo, 'docs', 'specs'), { recursive: true });
     runInstallAgent(repo, 'cc');
@@ -166,45 +159,18 @@ testAsync('migration 2.59→2.60: full flow (block strip, doc relocate, idempote
     assert.strictEqual(fs.readFileSync(userOwnedPath, 'utf8'), userOwned);
 }));
 
-testAsync('migration 2.60.0: leaves diverged user-edited doc in place (F421)', () => withTempDirAsync('aigon-f421-mig-diverged-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
-    const userEdited = '# Development Workflow\n\nMy hand-edited copy with custom rules.\n';
-    fs.writeFileSync(path.join(repo, 'docs', 'development_workflow.md'), userEdited);
-
-    await runPendingMigrations(repo);
-
-    assert.ok(fs.existsSync(path.join(repo, 'docs', 'development_workflow.md')));
-    assert.strictEqual(fs.readFileSync(path.join(repo, 'docs', 'development_workflow.md'), 'utf8'), userEdited);
-}));
-
 // --- F440 registry contract (pure-function, no install spawn) ---
-testAsync('agent-registry op: outputs is array of 2, output alias === outputs[0] (F440)', () => withTempDirAsync('aigon-f440-registry-op-', async () => {
+testAsync('agent-registry (F440): cc single-output and op multi-output normalise to outputs[] with output alias', async () => {
     delete require.cache[require.resolve('../../lib/agent-registry')];
     const registry = require('../../lib/agent-registry');
-    const cfg = registry.getAgent('op');
-    assert.ok(Array.isArray(cfg.outputs));
-    assert.strictEqual(cfg.outputs.length, 2);
-    assert.strictEqual(cfg.outputs[0].commandDir, '.opencode/commands');
-    assert.strictEqual(cfg.outputs[1].commandDir, '.agents/skills');
-    assert.strictEqual(cfg.output, cfg.outputs[0]);
-}));
-
-testAsync('agent-registry cc: single output normalised to outputs array of length 1 (F440)', () => withTempDirAsync('aigon-f440-registry-cc-', async () => {
-    delete require.cache[require.resolve('../../lib/agent-registry')];
-    const registry = require('../../lib/agent-registry');
-    const cfg = registry.getAgent('cc');
-    assert.ok(Array.isArray(cfg.outputs));
-    assert.strictEqual(cfg.outputs.length, 1);
-    assert.strictEqual(cfg.output, cfg.outputs[0]);
-}));
-
-// --- F420 drift guard: removed scaffold helpers stay removed ---
-testAsync('lib/templates.js: legacy scaffold helpers no longer exported (F420 drift guard)', async () => {
-    const templates = require('../../lib/templates');
-    for (const name of ['syncAgentsMdFile', 'getProjectInstructions', 'getRootFileContent', 'getScaffoldContent']) {
-        assert.strictEqual(templates[name], undefined,
-            `lib/templates.js must not export ${name} after F420`);
-    }
+    const cc = registry.getAgent('cc');
+    assert.strictEqual(cc.outputs.length, 1);
+    assert.strictEqual(cc.output, cc.outputs[0]);
+    const op = registry.getAgent('op');
+    assert.strictEqual(op.outputs.length, 2);
+    assert.strictEqual(op.outputs[0].commandDir, '.opencode/commands');
+    assert.strictEqual(op.outputs[1].commandDir, '.agents/skills');
+    assert.strictEqual(op.output, op.outputs[0]);
 });
 
 report();

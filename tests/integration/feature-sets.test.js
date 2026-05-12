@@ -20,32 +20,14 @@ function spec(dir, file, set, dependsOn) {
     fs.writeFileSync(path.join(dir, file), lines.join('\n'));
 }
 function initRepo(root) {
-    execFileSync('git', ['init'], {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        stdio: 'pipe',
-    });
-    execFileSync('git', ['config', 'user.email', 'test@aigon.test'], {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        stdio: 'pipe',
-    });
-    execFileSync('git', ['config', 'user.name', 'Aigon Test'], {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        stdio: 'pipe',
-    });
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    const g = (args) => execFileSync('git', args, { cwd: root, env, stdio: 'pipe' });
+    g(['init']);
+    g(['config', 'user.email', 'test@aigon.test']);
+    g(['config', 'user.name', 'Aigon Test']);
     fs.writeFileSync(path.join(root, '.gitkeep'), '');
-    execFileSync('git', ['add', '.gitkeep'], {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        stdio: 'pipe',
-    });
-    execFileSync('git', ['commit', '-m', 'chore: init test repo'], {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        stdio: 'pipe',
-    });
+    g(['add', '.gitkeep']);
+    g(['commit', '-m', 'chore: init test repo']);
 }
 function runCli(root, args) {
     const cli = path.join(__dirname, '..', '..', 'aigon-cli.js');

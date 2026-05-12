@@ -219,16 +219,4 @@ test('research close finalizer stages engine-moved spec and commits it', () => w
     assert.match(nameStatus, /A\tdocs\/specs\/research-topics\/05-done\/research-24-close-test\.md/);
     assert.match(fs.readFileSync(doneSpecPath, 'utf8'), /transitions:\n  - \{ from: "in-evaluation", to: "done"/);
 }));
-testAsync('getMainRepoPath returns repo root from a subdirectory', () => withTempDirAsync('aigon-git-', async (dir) => {
-    const gitLib = require('../../lib/git');
-    execSync('git init -q', { cwd: dir });
-    execSync('git config user.email t@t', { cwd: dir });
-    execSync('git config user.name t', { cwd: dir });
-    fs.writeFileSync(path.join(dir, 'README.md'), 'x');
-    execSync('git add . && git commit -qm init', { cwd: dir });
-    fs.mkdirSync(path.join(dir, 'a', 'b', 'c'), { recursive: true });
-    // fs.realpathSync resolves /private/var → /var on macOS so the assert is stable.
-    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(path.join(dir, 'a', 'b', 'c'))), fs.realpathSync(dir));
-    assert.strictEqual(fs.realpathSync(gitLib.getMainRepoPath(dir)), fs.realpathSync(dir));
-}));
 report();

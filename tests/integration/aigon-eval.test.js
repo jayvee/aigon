@@ -19,55 +19,33 @@ const fixture = {
     finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
 };
 
-test('aigon-eval check matrix passes when mock agent emits expected signals', () => {
-    const result = checks.runCheckMatrix({
-        fixture,
-        telemetryEvents: [
-            { kind: 'signal-emitted', status: 'implementing', t: '2026-04-29T00:00:00.000Z', elapsedSec: 1 },
-            { kind: 'signal-emitted', status: 'implementation-complete', t: '2026-04-29T00:00:04.000Z', elapsedSec: 4 },
-        ],
-        finalEngineSnapshot: { currentSpecState: 'ready' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
-        gitDiff: { changedFiles: ['eval-fixture.txt'] },
-        commandEvents: [{ command: 'aigon feature-do 991' }],
-    });
-
-    assert.strictEqual(result.pass, true);
-    assert.strictEqual(result.checks.lifecycleSignals.pass, true);
+const READY_SNAP = { currentSpecState: 'ready' };
+const SPEC_PATH = 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md';
+const GOOD_DIFF = { changedFiles: ['eval-fixture.txt'] };
+const SIG = (status, secs = 0) => ({ kind: 'signal-emitted', status, t: `2026-04-29T00:00:0${secs}.000Z`, elapsedSec: secs });
+const runMatrix = (telemetryEvents, commandEvents) => checks.runCheckMatrix({
+    fixture, telemetryEvents, finalEngineSnapshot: READY_SNAP, finalSpecPath: SPEC_PATH, gitDiff: GOOD_DIFF, commandEvents,
 });
 
-test('aigon-eval fails lifecycle check when implementation-complete is skipped', () => {
-    const result = checks.runCheckMatrix({
-        fixture,
-        telemetryEvents: [
-            { kind: 'signal-emitted', status: 'implementing', t: '2026-04-29T00:00:00.000Z', elapsedSec: 1 },
-        ],
-        finalEngineSnapshot: { currentSpecState: 'ready' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
-        gitDiff: { changedFiles: ['eval-fixture.txt'] },
-        commandEvents: [],
-    });
+test('aigon-eval check matrix: passes happy path, fails on missing implementation-complete and forbidden commands', () => {
+    const happy = runMatrix(
+        [SIG('implementing', 1), SIG('implementation-complete', 4)],
+        [{ command: 'aigon feature-do 991' }],
+    );
+    assert.strictEqual(happy.pass, true);
+    assert.strictEqual(happy.checks.lifecycleSignals.pass, true);
 
-    assert.strictEqual(result.pass, false);
-    assert.strictEqual(result.checks.lifecycleSignals.pass, false);
-    assert.match(result.checks.lifecycleSignals.reason, /missing implementation-complete/);
-});
+    const skippedSignal = runMatrix([SIG('implementing', 1)], []);
+    assert.strictEqual(skippedSignal.pass, false);
+    assert.strictEqual(skippedSignal.checks.lifecycleSignals.pass, false);
+    assert.match(skippedSignal.checks.lifecycleSignals.reason, /missing implementation-complete/);
 
-test('aigon-eval fails forbidden command check when agent runs feature-close', () => {
-    const result = checks.runCheckMatrix({
-        fixture,
-        telemetryEvents: [
-            { kind: 'signal-emitted', status: 'implementing', t: '2026-04-29T00:00:00.000Z' },
-            { kind: 'signal-emitted', status: 'implementation-complete', t: '2026-04-29T00:00:01.000Z' },
-        ],
-        finalEngineSnapshot: { currentSpecState: 'ready' },
-        finalSpecPath: 'docs/specs/features/03-in-progress/feature-991-aigon-eval-fixture.md',
-        gitDiff: { changedFiles: ['eval-fixture.txt'] },
-        commandEvents: [{ command: 'aigon feature-close 991' }],
-    });
-
-    assert.strictEqual(result.pass, false);
-    assert.strictEqual(result.checks.forbiddenCommandGuard.pass, false);
+    const forbidden = runMatrix(
+        [SIG('implementing'), SIG('implementation-complete', 1)],
+        [{ command: 'aigon feature-close 991' }],
+    );
+    assert.strictEqual(forbidden.pass, false);
+    assert.strictEqual(forbidden.checks.forbiddenCommandGuard.pass, false);
 });
 
 test('aigon-eval extracts forbidden commands from captured session sidecars', () => {

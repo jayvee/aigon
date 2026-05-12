@@ -221,59 +221,39 @@ test('backlog snapshot exposes feature-unprioritise validAction', () => withTemp
 // caller-supplied baseState instead of re-reading snapshot+events from disk.
 // dashboard-status-collector calls these twice per row (empty agents → full
 // agents); the second call must not duplicate the I/O the first call did.
-test('F460: passing options.baseState skips snapshot+events re-read (feature)', () => withTempDir('aigon-rm-f460f-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'features', '03-in-progress', 'feature-30-dedupe.md');
-    writeSnap(repo, 'features', '30', 'implementing');
-    const adapter = require('../../lib/workflow-snapshot-adapter');
-    const origSnap = adapter.readFeatureSnapshotSync;
-    const origEvents = adapter.readFeatureEventsSync;
-    let snapCalls = 0;
-    let eventCalls = 0;
-    adapter.readFeatureSnapshotSync = (...a) => { snapCalls++; return origSnap.apply(adapter, a); };
-    adapter.readFeatureEventsSync = (...a) => { eventCalls++; return origEvents.apply(adapter, a); };
-    try {
-        const initial = wrm.getFeatureDashboardState(repo, '30', null, []);
-        const baselineSnap = snapCalls;
-        const baselineEvents = eventCalls;
-        assert.ok(baselineSnap >= 1, 'first pass reads snapshot at least once');
-        const second = wrm.getFeatureDashboardState(repo, '30', initial.stage, [{ id: 'cc', status: 'implementing' }], { baseState: initial });
-        assert.strictEqual(snapCalls, baselineSnap, 'second pass with baseState must not re-read snapshot');
-        assert.strictEqual(eventCalls, baselineEvents, 'second pass with baseState must not re-read events');
-        assert.strictEqual(second.stage, initial.stage);
-        assert.strictEqual(second.workflowSnapshot, initial.workflowSnapshot);
-    } finally {
-        adapter.readFeatureSnapshotSync = origSnap;
-        adapter.readFeatureEventsSync = origEvents;
-    }
-}));
-
-test('F460: passing options.baseState skips snapshot+events re-read (research)', () => withTempDir('aigon-rm-f460r-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'research-topics', '03-in-progress', 'research-22-dedupe.md');
-    writeSnap(repo, 'research', '22', 'implementing');
-    const adapter = require('../../lib/workflow-snapshot-adapter');
-    const origSnap = adapter.readWorkflowSnapshotSync;
-    const origEvents = adapter.readWorkflowEventsSync;
-    let snapCalls = 0;
-    let eventCalls = 0;
-    adapter.readWorkflowSnapshotSync = (...a) => { snapCalls++; return origSnap.apply(adapter, a); };
-    adapter.readWorkflowEventsSync = (...a) => { eventCalls++; return origEvents.apply(adapter, a); };
-    try {
-        const initial = wrm.getResearchDashboardState(repo, '22', null, []);
-        const baselineSnap = snapCalls;
-        const baselineEvents = eventCalls;
-        assert.ok(baselineSnap >= 1, 'first pass reads snapshot at least once');
-        const second = wrm.getResearchDashboardState(repo, '22', initial.stage, [{ id: 'cc', status: 'implementing' }], { baseState: initial });
-        assert.strictEqual(snapCalls, baselineSnap, 'second pass with baseState must not re-read snapshot');
-        assert.strictEqual(eventCalls, baselineEvents, 'second pass with baseState must not re-read events');
-        assert.strictEqual(second.stage, initial.stage);
-        assert.strictEqual(second.workflowSnapshot, initial.workflowSnapshot);
-    } finally {
-        adapter.readWorkflowSnapshotSync = origSnap;
-        adapter.readWorkflowEventsSync = origEvents;
-    }
-}));
+// REGRESSION F460: dashboard-status-collector calls getFeature/getResearch twice per row
+// (empty agents → full agents); the second call with options.baseState must reuse the first
+// call's snapshot+events instead of re-reading from disk.
+for (const [kind, snapKey, prefix, snapMethod, eventsMethod, getter] of [
+    ['features',  'features', 'feature',  'readFeatureSnapshotSync',  'readFeatureEventsSync',  wrm.getFeatureDashboardState],
+    ['research-topics', 'research', 'research', 'readWorkflowSnapshotSync', 'readWorkflowEventsSync', wrm.getResearchDashboardState],
+]) {
+    test(`F460: passing options.baseState skips snapshot+events re-read (${kind})`, () => withTempDir(`aigon-rm-f460-${prefix}-`, (repo) => {
+        seed(repo);
+        const id = kind === 'features' ? '30' : '22';
+        writeSpec(repo, kind, '03-in-progress', `${prefix}-${id}-dedupe.md`);
+        writeSnap(repo, snapKey, id, 'implementing');
+        const adapter = require('../../lib/workflow-snapshot-adapter');
+        const origSnap = adapter[snapMethod];
+        const origEvents = adapter[eventsMethod];
+        let snapCalls = 0, eventCalls = 0;
+        adapter[snapMethod] = (...a) => { snapCalls++; return origSnap.apply(adapter, a); };
+        adapter[eventsMethod] = (...a) => { eventCalls++; return origEvents.apply(adapter, a); };
+        try {
+            const initial = getter(repo, id, null, []);
+            const baselineSnap = snapCalls, baselineEvents = eventCalls;
+            assert.ok(baselineSnap >= 1, 'first pass reads snapshot at least once');
+            const second = getter(repo, id, initial.stage, [{ id: 'cc', status: 'implementing' }], { baseState: initial });
+            assert.strictEqual(snapCalls, baselineSnap, 'second pass with baseState must not re-read snapshot');
+            assert.strictEqual(eventCalls, baselineEvents, 'second pass with baseState must not re-read events');
+            assert.strictEqual(second.stage, initial.stage);
+            assert.strictEqual(second.workflowSnapshot, initial.workflowSnapshot);
+        } finally {
+            adapter[snapMethod] = origSnap;
+            adapter[eventsMethod] = origEvents;
+        }
+    }));
+}
 
 // REGRESSION F494: manual nudge action (feature-nudge / research-nudge) was filtered
 // out by a guard that read context.tmuxSessionStates — a field the dashboard's

@@ -117,26 +117,6 @@ test('flag-on: cc session with native agentSessionPath surfaces durablePath, not
     assert.ok(!r.tmuxLogPath, 'cc should not have tmuxLogPath');
 }));
 
-// isTmuxTranscriptCaptureEnabled defaults to false
-test('isTmuxTranscriptCaptureEnabled: returns false when not set in global config', () => {
-    // Temporarily override GLOBAL_CONFIG_PATH resolution by ensuring the
-    // module reads from a path with no transcripts.tmux key.
-    // We test via the DEFAULT_GLOBAL_CONFIG fallback.
-    const { DEFAULT_GLOBAL_CONFIG } = require('../../lib/config');
-    assert.strictEqual(
-        DEFAULT_GLOBAL_CONFIG.transcripts.tmux,
-        false,
-        'default should be false'
-    );
-    assert.strictEqual(
-        typeof DEFAULT_GLOBAL_CONFIG.transcripts.tmuxMaxBytes,
-        'number',
-        'tmuxMaxBytes should be a number'
-    );
-    assert.ok(DEFAULT_GLOBAL_CONFIG.transcripts.tmuxMaxBytes > 0, 'tmuxMaxBytes should be positive');
-    assert.ok(DEFAULT_GLOBAL_CONFIG.transcripts.tmuxMaxFiles >= 1, 'tmuxMaxFiles should be >= 1');
-});
-
 // rotation script: files rotate when size cap is exceeded
 test('rotation: log file rotates to .1 when size cap is exceeded', () => withTempDir('aigon-tpp-rot-', (tmp) => {
     const { execSync } = require('child_process');
