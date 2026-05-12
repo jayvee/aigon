@@ -4,6 +4,9 @@
     "testing": "skip",
     "planMode": "never"
   },
+  "iterate": {
+    "validationCommand": "npm run test:iterate"
+  },
   "security": {
     "mode": "warn"
   },

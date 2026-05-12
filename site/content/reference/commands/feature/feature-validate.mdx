@@ -57,12 +57,14 @@ In the feature spec, add a `## Validation` section with shell commands:
 ## Validation
 
 \`\`\`bash
-npm test
-npm run build 2>&1 | tail -5
+npx playwright test tests/feature-42.spec.ts
+node --test tests/integration/feature-42.test.js
 \`\`\`
 ```
 
 These commands are run in the feature's worktree directory.
+
+Prefer targeted commands for the specific feature. Keep the repo-wide suite in your close or pre-push gate.
 
 ## Related
 

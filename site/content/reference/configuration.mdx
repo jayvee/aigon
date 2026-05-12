@@ -22,7 +22,8 @@ aigon config init --global                  # Create global config
 # Set values (dot-notation for nested keys)
 aigon config set profile web
 aigon config set --global terminalApp warp
-aigon config set fleet.testInstructions "run npm test"
+aigon config set iterate.validationCommand "npm run test:iterate"
+aigon config set fleet.testInstructions "run the repo's fast validation command"
 
 # Get values (shows where the value comes from)
 aigon config get terminal
@@ -83,11 +84,26 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
 | `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
 | `github.prCheck` | Project | Show GitHub PR status on dashboard cards | `true` (default), `false` to hide |
+| `iterate.validationCommand` | Project | Override the automatic iterate-mode validation command | String |
 | `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
 | `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
 | `devProxy.basePort` | Project | Starting port for allocation | Default: `3000` |
 | `worktreeSetup` | Project | Shell command run once per worktree after `git worktree add` | String (single line; use `&&` for composition) |
+
+## Iterate validation override
+
+If the profile-aware default is too broad for your repo, set an explicit iterate gate in `.aigon/config.json`:
+
+```json
+{
+  "iterate": {
+    "validationCommand": "npm run test:iterate"
+  }
+}
+```
+
+Use this to point feature iteration at your fast, scoped validation command. Keep full-suite checks for the close or pre-push gate.
 
 ## Per-worktree setup (`worktreeSetup`)
 
