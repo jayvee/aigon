@@ -507,6 +507,7 @@
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
         state.data = applyForceProOverride(next);
+        reapplyPendingOptimisticEntityStarts();
         // Always refresh timestamp + title; gate kanban re-render on fingerprint.
         document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
         updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
