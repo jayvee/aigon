@@ -102,6 +102,28 @@ For features, there are two relevant layers:
 5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
 
+## Per-worktree setup (`worktreeSetup`)
+
+Worktrees are fresh checkouts — they do not share `node_modules`, virtualenvs, or any other build artefacts with the main repo. If your agents need those to exist before they start work, declare a setup command in `.aigon/config.json`:
+
+```json
+{ "worktreeSetup": "npm ci" }
+```
+
+or (faster, when the stack tolerates it):
+
+```json
+{ "worktreeSetup": "ln -s ../../node_modules node_modules" }
+```
+
+**When it runs:** after `git worktree add` writes `.env.local`, before the agent launches. One execution per worktree.
+
+**Where to set it:** `.aigon/config.json` (project scope). Use `&&` to compose multiple commands on one line.
+
+**Failure semantics:** runs with a 120-second timeout. Failure warns and continues — the agent still launches.
+
+**Anti-pattern:** Aigon does not detect or guess your stack. There is no built-in `pnpm`/`yarn`/`bun`/`pip`/`cargo` fallback — if you need per-worktree setup, declare it via `worktreeSetup`.
+
 ## Before Completing a Feature
 
 Before running `feature-close`, always:
