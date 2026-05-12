@@ -1,4 +1,3 @@
-<!-- description: Hard reset a seed demo repo (brewboard, trailhead) back to its canonical seed state -->
 # Seed Reset
 
 Wipes a demo repo and re-clones it from its canonical seed. Three phases: Nuke → Clone → Provision.

@@ -30,6 +30,27 @@ The reviewer checks: correctness against acceptance criteria, out-of-scope file 
 5. Patches issues directly in the feature worktree with `fix(review): ...` commits
 6. Signals `review-complete` when done
 
+## Dashboard card after review
+
+Once the reviewer signals completion, the card shows a verdict badge below the reviewer's status line. There are two outcomes:
+
+<div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'flex-start', marginTop: '16px' }}>
+  <div style={{ flex: '1', minWidth: '240px', maxWidth: '320px' }}>
+    <img
+      src="/img/review-complete-approved.png"
+      alt="Dashboard card showing a completed code review with the green Approved verdict badge"
+      style={{ borderRadius: '8px', border: '1px solid var(--color-border)', width: '100%' }}
+    />
+    <p style={{ marginTop: '8px', fontSize: '14px' }}><strong>✓ Approved</strong> — reviewer found no issues. The feature is ready to close as-is.</p>
+  </div>
+  <div style={{ flex: '1', minWidth: '240px', maxWidth: '320px' }}>
+    {/* TODO: replace with screenshot of card showing ⚠ Revision requested (amber badge) once captured */}
+    <p style={{ marginTop: '8px', fontSize: '14px' }}><strong>⚠ Revision requested</strong> — issues found. Use <strong>Address review</strong> from the <code>⋯</code> menu to start a revision pass.</p>
+  </div>
+</div>
+
+The eye icon (👁) next to "Review" lets you peek at the reviewer's session to read the full findings before deciding whether to revise or close.
+
 ## Examples
 
 ```bash
