@@ -24,6 +24,7 @@
         const next = await res.json();
         state.failures = 0;
         state.data = applyForceProOverride(next);
+        reapplyPendingOptimisticEntityStarts();
         if (typeof window.__aigonSyncStatusFingerprint === 'function') {
           window.__aigonSyncStatusFingerprint();
         }
@@ -83,6 +84,39 @@
           render();
         }
       };
+    }
+
+    // F522: `/api/status` poll + requestRefresh replace `state.data` wholesale. Re-apply
+    // in-flight feature-start / research-start optimistics so the card does not snap
+    // back to Backlog until the action finishes (~20s fleet) or the server advances.
+    function reapplyPendingOptimisticEntityStarts() {
+      const pending = state.pendingActions;
+      if (!pending || pending.size === 0) return;
+      const repos = (state.data && state.data.repos) || [];
+      for (const key of pending) {
+        let entityKey;
+        let rest = '';
+        if (key.startsWith('feature-start:')) {
+          entityKey = 'features';
+          rest = key.slice('feature-start:'.length);
+        } else if (key.startsWith('research-start:')) {
+          entityKey = 'research';
+          rest = key.slice('research-start:'.length);
+        } else {
+          continue;
+        }
+        const entityId = String((rest.split(':')[0] || ''));
+        if (!entityId) continue;
+        for (let i = 0; i < repos.length; i++) {
+          const repo = repos[i];
+          if (!repo) continue;
+          const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
+          if (!entity) continue;
+          if (entity.stage !== 'backlog' && entity.stage !== 'inbox') continue;
+          entity.stage = 'in-progress';
+          break;
+        }
+      }
     }
 
     async function requestAction(action, args, repoPath, btn) {
