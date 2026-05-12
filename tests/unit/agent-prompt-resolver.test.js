@@ -13,6 +13,7 @@ const {
     resolveCxCommandBody,
     resolveCxPromptBody,
     buildReviewCheckFeedbackPrompt,
+    buildPostReviewDispositionPrompt,
 } = require('../../lib/agent-prompt-resolver');
 
 for (const [desc, args, expected] of [
@@ -84,6 +85,26 @@ for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) 
             const dir = cfg.output?.commandDir || '.agents/skills';
             assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-revise') && /\bRead\b/.test(prompt) && prompt.includes('aigon agent-status revision-complete'), prompt);
             assert.ok(!/\$aigon-feature-code-revise\b/.test(prompt) && !/ aigon feature-code-revise /.test(prompt), prompt);
+        }
+    });
+}
+
+// F530: disposition prompt is framed as accept/revert/modify rather than
+// "the reviewer requested revision" — same completion signal as the revise path.
+for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) {
+    const id = file.replace(/\.json$/, '');
+    const cfg = JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, file), 'utf8'));
+    const prompt = buildPostReviewDispositionPrompt(id, '530', { loadAgentConfig: () => cfg });
+    test(`disposition prompt for '${id}' frames accept/revert/modify and reuses revision-complete signal`, () => {
+        assert.ok(/accept/i.test(prompt) && /revert/i.test(prompt) && /modify/i.test(prompt), prompt);
+        assert.ok(prompt.includes('aigon agent-status revision-complete'), prompt);
+        assert.ok(!/the reviewer requested revision/i.test(prompt), prompt);
+        if (cfg.capabilities?.resolvesSlashCommands) {
+            const prefix = cfg.placeholders?.CMD_PREFIX || '/aigon:';
+            assert.ok(prompt.includes(`${prefix}feature-code-revise 530`), prompt);
+        } else {
+            const dir = cfg.output?.commandDir || '.agents/skills';
+            assert.ok(prompt.includes(`${dir}/`) && prompt.includes('feature-code-revise'), prompt);
         }
     });
 }
