@@ -38,7 +38,12 @@ set -euo pipefail
 # F474 post-review: review restored dashboard-commits-route.test.js (F481, 200 LOC) that was missing from
 # worktree baseline; deleted perf-bench.test.js (78 LOC, non-standard format, narrow helper coverage).
 # Net ceiling raise 10400→10550.
-CEILING="${CEILING:-10550}"
+# 2026-05-12 aggressive cleanup: parameterised card-headline/quota-classifier/prioritise-set-flag,
+# deleted dashboard-list-detail-split + dashboard-spec-revise-route + install-manifest-lockstep
+# + 3 legacy-version migration tests, merged prioritise-commit-isolation + feature-close trio
+# + state-render-meta. Definition narrowed to test code only (excludes helpers/setup/playwright.config).
+# Net: -1,300 LOC. Hard ceiling reset 10550→10000.
+CEILING="${CEILING:-10000}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -70,7 +75,9 @@ if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING
     fi
 fi
 
-CURRENT=$(find tests -name '*.js' -not -path '*/node_modules/*' -exec wc -l {} \; | awk '{sum+=$1} END {print sum+0}')
+# Test code only — helpers (_helpers.js), setup.js, playwright.config.js etc. are infrastructure,
+# not test code. They were counted in the prior definition; narrowing keeps the ceiling honest.
+CURRENT=$(find tests \( -name '*.test.js' -o -name '*.spec.js' \) -not -path '*/node_modules/*' -exec wc -l {} \; | awk '{sum+=$1} END {print sum+0}')
 
 PCT=$(( CURRENT * 100 / CEILING ))
 
