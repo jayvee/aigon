@@ -14,6 +14,8 @@ complexity: high
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T10:57:47.834Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: auto-review-implementor-confirm-after-reviewer-changes
