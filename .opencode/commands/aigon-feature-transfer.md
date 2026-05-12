@@ -49,4 +49,4 @@ aigon feature-transfer 308 --to=cc --reason="auto-failover" --no-launch
 
 - `aigon feature-reset <ID>` — nukes the feature back to backlog (destroys commits). Use this only when you want to start over.
 - `aigon sessions-close <ID>` — only kills tmux sessions. The transfer command calls this internally.
-- Planned: F308 ("auto failover agent on token exhaustion") will invoke this command automatically when it detects a usage-limit panel in an agent's output.
+- Auto-failover (when enabled in your Aigon config) will invoke this command automatically when it detects a usage-limit panel in an agent's output.

@@ -5,7 +5,7 @@ description: Manage dev server - start, stop, logs, list
 
 Manage the dev server for the current project. Handles port allocation, process lifecycle, proxy registration, and log viewing.
 
-> **CRITICAL:** NEVER run `npm run dev`, `next dev`, or any dev command directly. ALWAYS use `aigon dev-server start`. Running the dev command directly bypasses port allocation and will cause port conflicts in worktrees.
+> **CRITICAL:** NEVER run the project's dev command directly. ALWAYS use `aigon dev-server start`. Running the dev command directly bypasses port allocation and will cause port conflicts in worktrees.
 
 ## Usage
 
@@ -72,7 +72,7 @@ Prints the proxy subdomain URL (or localhost fallback) for use in testing and br
 
 ## Notes
 
-- The dev server command is read from `devProxy.command` in `.aigon/config.json` (default: `npm run dev`)
+- The dev server command is read from `devProxy.command` in `.aigon/config.json` (set this to whatever the project uses)
 - Port is allocated automatically — agents get offsets from the base port (cc=+1, gg=+2, cx=+3, cu=+4)
 - The base port is configured per-project in `.aigon/config.json` (devProxy.basePort). Worktree agents get offsets from this.
 - If the proxy is running (`aigon proxy install`), the server gets a named URL like `http://cx-121.myapp.localhost`

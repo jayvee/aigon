@@ -95,16 +95,10 @@ Pick **one** of these three options. Be honest — your job is correctness, not 
   git commit -m "fix(post-review): <what you changed and why>"
   ```
 
-## Step 5.5: Run the iterate gate if you made code changes
+## Step 5.5: Run a quick check if you made code changes
 
 - **Accept**: no code changed — skip this step entirely.
-- **Revert or Modify**:
-
-```bash
-npm run test:iterate
-```
-
-Scoped to your changes, <30s. Do NOT run `npm run test:core`, `npm run test:browser`, or `npm run test:deploy` here; the deploy gate catches the rest. Fix any failures before reporting in Step 6. See `docs/testing.md` for the full rationale.
+- **Revert or Modify**: run whatever quick check the project uses (lint, scoped tests, type-check, etc. — see the project's own docs). The full / pre-push suite is not your job here; the implementor or the merge step owns it. Fix any failures before reporting in Step 6.
 
 ## Step 6: Report
 

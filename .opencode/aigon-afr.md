@@ -121,7 +121,7 @@ Revert out-of-scope deletions before reviewing the rest of the diff.
 - Rewrite in your preferred style
 - Add comments/docs to code you didn't change
 - "Improve" code that already works
-- Run lint, tsc, build checks, or any test suite (`npm test`, `npm run test:iterate`, `npm run test:browser`, etc.) — validation belongs to the implementor and the deploy gate
+- Run lint, type-checks, builds, or any test suite — validation belongs to the implementor, not the reviewer
 - **Add a regression test by default.** When a bug is found, first ask: can the producer API be hardened (stricter types, enums, removed dead branch) to make re-introduction impossible? If yes, fix the producer. Add a test only when the bug is subtle enough that PR review genuinely won't catch it.
 
 **Targeted fixes, not a rewrite.**
@@ -155,7 +155,7 @@ Examples: `fix(review): handle null user in profile lookup`, `fix(review): escap
 - If no code fixes: no tests.
 - If code fixes: no tests. Record `Validation not run by reviewer per policy` in the review log (Step 4).
 
-The implementing agent owns scoped validation after revision (`npm run test:iterate`). The deploy gate owns full validation. The reviewer's job is diff review and targeted fixes — not validation.
+The implementing agent owns scoped validation after revision. The project's pre-push checks (if any) own full validation. The reviewer's job is diff review and targeted fixes — not validation.
 
 ## Step 4: Update the implementation log and commit
 

@@ -37,7 +37,7 @@ Use this rubric:
 
 - **low** — config tweaks, doc-only changes, single-file helpers, trivial bug fixes.
 - **medium** — standard feature with moderate cross-cutting; one command handler, small refactor, a new API route with clear shape.
-- **high** — multi-file engine edits, new event types, new dashboard surfaces, judgment-heavy deletion work, anything that requires careful reasoning about invariants.
+- **high** — multi-file changes, new public surfaces, judgment-heavy deletion work, anything that requires careful reasoning about invariants.
 - **very-high** — architectural shifts, write-path-contract changes, new workflow transitions, cross-cutting template+engine+frontend. Reserve for work where a smaller model is likely to miss load-bearing detail.
 
 **`planning_context:` (set this when you ran plan mode)** — if you entered plan mode (`EnterPlanMode` / Shift+Tab) before writing this spec and a plan file was written to `~/.claude/plans/`, set this field to that path:

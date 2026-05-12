@@ -8,226 +8,139 @@ const { computeCardHeadline } = require('../../lib/card-headline');
 const NOW = Date.parse('2026-04-30T12:00:00Z');
 const isoMinusSec = sec => new Date(NOW - sec * 1000).toISOString();
 
-const opts = (extra) => ({ entityType: 'feature', now: NOW, ...(extra || {}) });
+function call(entity, snap, agents, plan, lane, entityType) {
+    return computeCardHeadline(entity, snap, agents, plan, lane, { entityType: entityType || 'feature', now: NOW });
+}
 
-// Rule 1 — warn-class supersedes everything else
-test('rule 1: lastCloseFailure produces warn / Close failed with reason and age', () => {
-    const entity = {
-        lastCloseFailure: { reason: 'tests failed', at: isoMinusSec(120) },
-        // these would otherwise produce a different headline
-        autonomousPlan: { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] },
-    };
-    const h = computeCardHeadline(entity, null, [], entity.autonomousPlan, 'in-progress', opts());
-    assert.strictEqual(h.tone, 'warn');
-    assert.strictEqual(h.verb, 'Close failed');
-    assert.strictEqual(h.detail, 'tests failed');
-    assert.strictEqual(h.age, 120);
-});
+// Each row exercises one rule path. `expect` is a partial — assert only listed keys.
+// `expect === null` asserts the headline itself is null.
+const CASES = [
+    // --- Rule 1: warn class wins over everything ---
+    ['1', 'lastCloseFailure produces warn + reason + age',
+        { lastCloseFailure: { reason: 'tests failed', at: isoMinusSec(120) }, autonomousPlan: { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] } },
+        null, [], { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] }, 'in-progress', null,
+        { tone: 'warn', verb: 'Close failed', detail: 'tests failed', age: 120 }],
+    ['1', 'specDrift → warn / Spec drift',
+        { specDrift: { lifecycle: 'in-progress' } }, null, [], null, 'in-progress', null,
+        { tone: 'warn', verb: 'Spec drift' }],
+    ['1', 'missing snapshot past backlog → No engine state',
+        {}, null, [], null, 'in-progress', null,
+        { verb: 'No engine state', tone: 'warn' }],
+    ['1', 'missing snapshot in inbox → null',
+        {}, null, [], null, 'inbox', null, null],
 
-test('rule 1: specDrift → warn / Spec drift', () => {
-    const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, null, [], null, 'in-progress', opts());
-    assert.strictEqual(h.tone, 'warn');
-    assert.strictEqual(h.verb, 'Spec drift');
-});
+    // --- Rule 2: terminal lanes ---
+    ['2', 'lane=done → done / Closed',
+        {}, { closedAt: isoMinusSec(3600) }, [], null, 'done', null,
+        { tone: 'done', verb: 'Closed', age: 3600 }],
+    ['2', "feedback wont-fix → Won't fix",
+        {}, null, [], null, 'wont-fix', 'feedback', { verb: "Won't fix" }],
 
-test('rule 1: missing snapshot past backlog → No engine state', () => {
-    const h = computeCardHeadline({}, null, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'No engine state');
-    assert.strictEqual(h.tone, 'warn');
-});
+    // --- Rule 3: awaiting input supersedes implementing ---
+    ['3', 'awaitingInput beats a running drive agent',
+        {}, { currentSpecState: 'implementing' },
+        [{ id: 'cc', status: 'implementing', isWorking: true, awaitingInput: { message: 'pick option A or B' } }],
+        null, 'in-progress', null,
+        { verb: 'Needs you', tone: 'attention', owner: 'cc', detail: 'pick option A or B' }],
 
-test('rule 1: missing snapshot in inbox does NOT trigger No engine state', () => {
-    const h = computeCardHeadline({}, null, [], null, 'inbox', opts());
-    assert.strictEqual(h, null);
-});
+    // --- Rule 4: F492 autonomous-tone "Confirming <stage>" ---
+    ['4', 'pendingCompletionSignal w/ !isWorking → Confirming implementation',
+        {}, { currentSpecState: 'ready' },
+        [{ id: 'cc', status: 'ready', isWorking: false, pendingCompletionSignal: 'implementation-complete' }],
+        null, 'in-progress', null,
+        { verb: 'Confirming implementation', tone: 'running', owner: 'cc' }],
 
-// Rule 2 — terminal lanes
-test('rule 2: lane=done → done / Closed', () => {
-    const snap = { closedAt: isoMinusSec(3600) };
-    const h = computeCardHeadline({}, snap, [], null, 'done', opts());
-    assert.strictEqual(h.tone, 'done');
-    assert.strictEqual(h.verb, 'Closed');
-    assert.strictEqual(h.age, 3600);
-});
+    // --- Rule 5: eval status ---
+    ['5', 'evalStatus=pick winner → Eval complete (detail names winner)',
+        { evalStatus: 'pick winner', winnerAgent: 'cc' }, { currentSpecState: 'evaluating' }, [], null, 'in-progress', null,
+        { verb: 'Eval complete', detailMatches: /cc/ }],
 
-test("rule 2: feedback wont-fix → done / Won't fix", () => {
-    const h = computeCardHeadline({}, null, [], null, 'wont-fix', opts({ entityType: 'feedback' }));
-    assert.strictEqual(h.verb, "Won't fix");
-});
+    // --- Rule 6: inbox ---
+    ['6', 'feature inbox → null (lane label conveys prioritisation)',
+        {}, null, [], null, 'inbox', null, null],
+    ['6', 'feedback inbox → Needs triage',
+        {}, null, [], null, 'inbox', 'feedback', { verb: 'Needs triage' }],
 
-// Rule 3 — awaiting human input wins over implementing
-test('rule 3: awaitingInput supersedes a running drive agent', () => {
-    const agents = [{
-        id: 'cc',
-        status: 'implementing',
-        isWorking: true,
-        awaitingInput: { message: 'pick option A or B' },
-    }];
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Needs you');
-    assert.strictEqual(h.tone, 'attention');
-    assert.strictEqual(h.owner, 'cc');
-    assert.strictEqual(h.detail, 'pick option A or B');
-});
+    // --- Rule 7: backlog ---
+    ['7', 'backlog with blockedBy → null',
+        { blockedBy: [{ id: 12 }, { id: 34 }] }, null, [], null, 'backlog', null, null],
+    ['7', 'backlog ready → null',
+        {}, null, [], null, 'backlog', null, null],
 
-// Rule 4 — F492: autonomous-tone label "Confirming <stage>" replaces the old
-// user-action-implying "Implementation done · confirm to proceed".
-test('rule 4: pendingCompletionSignal with !isWorking → Confirming <stage> (running)', () => {
-    const agents = [{
-        id: 'cc',
-        status: 'ready',
-        isWorking: false,
-        pendingCompletionSignal: 'implementation-complete',
-    }];
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Confirming implementation');
-    assert.strictEqual(h.tone, 'running');
-    assert.strictEqual(h.owner, 'cc');
-});
+    // --- Rule 8: autonomous stages (F492 active participle) ---
+    ['8', 'running stage → verb-form stage name + owner + age',
+        {}, { currentSpecState: 'implementing' }, [],
+        { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }], startedAt: isoMinusSec(45) }] }, 'in-progress', null,
+        { verb: 'Implementing', owner: 'cc', age: 45, tone: 'running' }],
+    ['8', 'failed stage → Stage failed (warn)',
+        {}, { currentSpecState: 'implementing' }, [],
+        { stages: [{ type: 'implement', status: 'failed', agents: [{ id: 'cc' }] }] }, 'in-progress', null,
+        { verb: 'Implement failed', tone: 'warn' }],
+    ['8', 'handoff (waiting after complete) → Starting <stage> (running)',
+        {}, { currentSpecState: 'ready' }, [],
+        { stages: [
+            { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
+            { type: 'review', status: 'waiting', agents: [{ id: 'gg' }] },
+        ] }, 'in-progress', null,
+        { verb: 'Starting review', owner: 'gg', tone: 'running' }],
+    ['8', 'all complete → Stopped at <last-stage> (ready)',
+        {}, { currentSpecState: 'ready' }, [],
+        { stages: [
+            { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
+            { type: 'review', status: 'complete', agents: [{ id: 'gg' }] },
+        ] }, 'in-progress', null,
+        { verb: 'Stopped at review', tone: 'ready' }],
 
-// Rule 5
-test('rule 5: evalStatus=pick winner → Eval complete', () => {
-    const h = computeCardHeadline({ evalStatus: 'pick winner', winnerAgent: 'cc' }, { currentSpecState: 'evaluating' }, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Eval complete');
-    assert.ok(/cc/.test(h.detail || ''));
-});
+    // --- Rule 9: drive/solo ---
+    ['9', 'drive implementing → Implementing (no subject, tone running)',
+        {}, { currentSpecState: 'implementing' },
+        [{ id: 'solo', status: 'implementing', isWorking: true }], null, 'in-progress', null,
+        { verb: 'Implementing', subject: null, tone: 'running' }],
+    ['9', 'drive ready → ready / Implemented',
+        {}, { currentSpecState: 'ready' },
+        [{ id: 'solo', status: 'ready', isWorking: false }], null, 'in-progress', null,
+        { verb: 'Implemented', tone: 'ready' }],
+    ['9', 'sessionEnded while implementing → Finished (unconfirmed)',
+        {}, { currentSpecState: 'implementing' },
+        [{ id: 'cc', status: 'implementing', isWorking: false, flags: { sessionEnded: true } }], null, 'in-progress', null,
+        { verb: 'Finished (unconfirmed)' }],
+    ['9', 'idleLadder needs-attention upgrades tone',
+        {}, { currentSpecState: 'ready' },
+        [{ id: 'cc', status: 'ready', isWorking: false, idleLadder: { state: 'needs-attention', idleSec: 600 } }], null, 'in-progress', null,
+        { tone: 'attention', detailMatches: /agent silent/ }],
+    ['9', 'idleLadder idle on non-running → Idle with age',
+        {}, { currentSpecState: 'ready' },
+        [{ id: 'cc', status: 'ready', isWorking: false, idleLadder: { state: 'idle', idleSec: 1200 } }], null, 'in-progress', null,
+        { verb: 'Idle', age: 1200 }],
 
-// Rule 6
-test('rule 6: feature inbox → no headline (lane label already conveys prioritisation)', () => {
-    const h = computeCardHeadline({}, null, [], null, 'inbox', opts());
-    assert.strictEqual(h, null);
-});
+    // --- Rule 11: lifecycle fallback ---
+    ['11', 'lifecycle fallback when no agents/plan',
+        {}, { currentSpecState: 'code_review_in_progress' }, [], null, 'in-progress', null,
+        { verb: 'Code review', tone: 'waiting' }],
 
-test('rule 6: feedback inbox → Needs triage', () => {
-    const h = computeCardHeadline({}, null, [], null, 'inbox', opts({ entityType: 'feedback' }));
-    assert.strictEqual(h.verb, 'Needs triage');
-});
+    // --- Edges / combinations ---
+    ['edge', 'age silently drops when timestamp missing',
+        {}, { currentSpecState: 'implementing' }, [],
+        { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] }, 'in-progress', null,
+        { age: null }],
+    ['combo', 'warn-class (specDrift) beats a running stage',
+        { specDrift: { lifecycle: 'in-progress' } }, { currentSpecState: 'implementing' }, [],
+        { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] }, 'in-progress', null,
+        { verb: 'Spec drift' }],
+];
 
-// Rule 7
-test('rule 7: backlog with blockedBy → no headline (dependency shown in dep chain)', () => {
-    const entity = { blockedBy: [{ id: 12 }, { id: 34 }] };
-    const h = computeCardHeadline(entity, null, [], null, 'backlog', opts());
-    assert.strictEqual(h, null);
-});
-
-test('rule 7: backlog ready → no headline', () => {
-    const h = computeCardHeadline({}, null, [], null, 'backlog', opts());
-    assert.strictEqual(h, null);
-});
-
-// Rule 8 — autonomous stages. F492: verb is the active participle so the
-// stage name appears once (not paired with a generic "Running ·" prefix).
-test('rule 8: running stage → verb-form stage name with owner', () => {
-    const plan = { stages: [
-        { type: 'implement', status: 'running', agents: [{ id: 'cc' }], startedAt: isoMinusSec(45) },
-    ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implementing');
-    assert.strictEqual(h.owner, 'cc');
-    assert.strictEqual(h.age, 45);
-    assert.strictEqual(h.tone, 'running');
-});
-
-test('rule 8: failed stage → Stage failed (warn)', () => {
-    const plan = { stages: [
-        { type: 'implement', status: 'failed', agents: [{ id: 'cc' }] },
-    ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implement failed');
-    assert.strictEqual(h.tone, 'warn');
-});
-
-// F492: stage handoff label is autonomous-tone "Starting <noun>" (running)
-// replacing the old user-action-flavoured "<Stage> gate" (waiting).
-test('rule 8: handoff (waiting after complete) → Starting <stage> (running)', () => {
-    const plan = { stages: [
-        { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
-        { type: 'review', status: 'waiting', agents: [{ id: 'gg' }] },
-    ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Starting review');
-    assert.strictEqual(h.owner, 'gg');
-    assert.strictEqual(h.tone, 'running');
-});
-
-// F492: when every stage is complete and the lane is still in-progress, the
-// run finished where the user asked it to stop. Label names the stop point.
-test('rule 8: all complete → Stopped at <last-stage> (ready)', () => {
-    const plan = { stages: [
-        { type: 'implement', status: 'complete', agents: [{ id: 'cc' }] },
-        { type: 'review', status: 'complete', agents: [{ id: 'gg' }] },
-    ] };
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Stopped at review');
-    assert.strictEqual(h.tone, 'ready');
-});
-
-// Rule 9 — drive/solo
-test('rule 9: drive implementing → Implementing with owner', () => {
-    const agents = [{ id: 'solo', status: 'implementing', isWorking: true }];
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implementing');
-    assert.strictEqual(h.subject, null);
-    assert.strictEqual(h.tone, 'running');
-});
-
-test('rule 9: drive ready → ready / Implemented', () => {
-    const agents = [{ id: 'solo', status: 'ready', isWorking: false }];
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Implemented');
-    assert.strictEqual(h.tone, 'ready');
-});
-
-test('rule 9: sessionEnded while implementing → Finished (unconfirmed)', () => {
-    const agents = [{ id: 'cc', status: 'implementing', isWorking: false, flags: { sessionEnded: true } }];
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Finished (unconfirmed)');
-});
-
-test('rule 9: idleLadder needs-attention upgrades tone to attention', () => {
-    const agents = [{
-        id: 'cc',
-        status: 'ready',
-        isWorking: false,
-        idleLadder: { state: 'needs-attention', idleSec: 600 },
-    }];
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.tone, 'attention');
-    assert.ok(/agent silent/.test(h.detail || ''));
-});
-
-test('rule 9: idleLadder idle on non-running agent → Idle with age', () => {
-    const agents = [{
-        id: 'cc',
-        status: 'ready',
-        isWorking: false,
-        idleLadder: { state: 'idle', idleSec: 1200 },
-    }];
-    const h = computeCardHeadline({}, { currentSpecState: 'ready' }, agents, null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Idle');
-    assert.strictEqual(h.age, 1200);
-});
-
-// Rule 11 — lifecycle fallback
-test('rule 11: lifecycle fallback when no agents/plan', () => {
-    const snapshot = { currentSpecState: 'code_review_in_progress' };
-    const h = computeCardHeadline({}, snapshot, [], null, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Code review');
-    assert.strictEqual(h.tone, 'waiting');
-});
-
-// Edge: age omitted when timestamp missing
-test('age silently drops when timestamp missing', () => {
-    const plan = { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] };
-    const h = computeCardHeadline({}, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.age, null);
-});
-
-// Combination: warn supersedes running stage
-test('combo: warn-class (specDrift) beats a running stage', () => {
-    const plan = { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] };
-    const h = computeCardHeadline({ specDrift: { lifecycle: 'in-progress' } }, { currentSpecState: 'implementing' }, [], plan, 'in-progress', opts());
-    assert.strictEqual(h.verb, 'Spec drift');
-});
+for (const [rule, name, entity, snap, agents, plan, lane, etype, expect] of CASES) {
+    test(`rule ${rule}: ${name}`, () => {
+        const h = call(entity, snap, agents, plan, lane, etype);
+        if (expect === null) { assert.strictEqual(h, null); return; }
+        for (const [k, v] of Object.entries(expect)) {
+            if (k === 'detailMatches') {
+                assert.ok(v.test(h.detail || ''), `detail "${h.detail}" must match ${v}`);
+            } else {
+                assert.strictEqual(h[k], v, `${k}: expected ${JSON.stringify(v)}, got ${JSON.stringify(h[k])}`);
+            }
+        }
+    });
+}
 
 report();
