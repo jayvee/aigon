@@ -11,7 +11,11 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { test, withTempDir, report, GIT_SAFE_ENV } = require('../_helpers');
-const { requiresImplementorDisposition } = require('../../lib/feature-autonomous');
+const {
+    requiresImplementorDisposition,
+    isCodeRevisionComplete,
+    isExplicitCodeRevisionComplete,
+} = require('../../lib/feature-autonomous');
 
 function gitInit(repo, env) {
     execFileSync('git', ['init', '-q'], { cwd: repo, env, stdio: 'pipe' });
@@ -211,6 +215,106 @@ test('no worktree path + no spec path returns false (graceful degradation)', () 
         requiresImplementorDisposition({ snapshot, worktreePath: null, specPath: null }),
         false
     );
+});
+
+// AC #9 (close-gate wiring): when the helper returns true, the gate must wait for
+// explicit revision-complete evidence — the verdict's requestRevision=false alone
+// must NOT satisfy it. These tests pair `requiresImplementorDisposition` with
+// `isExplicitCodeRevisionComplete` to mirror the exact predicates the AutoConductor
+// uses at the feedback-wait and close branches.
+
+test('AC #9 close-gate: approve+reviewer output + no revisionCompletedAt → gate holds (close blocked)', () =>
+    withTempDir('aigon-f530-gate-blocked-', (repo) => {
+        const env = { ...process.env, ...GIT_SAFE_ENV };
+        gitInit(repo, env);
+        commit(repo, 'feature.js', 'impl v1', 'feat: initial impl', { when: PRE_REVIEW });
+        commit(repo, 'feature.js', 'reviewer fix', 'fix(review): tighten null check', {
+            authorEmail: 'reviewer@aigon.test', authorName: 'Reviewer', when: POST_REVIEW,
+        });
+        const specPath = writeSpec(repo, '## Code Review\n- abc fix(review): tighten');
+
+        // Snapshot at the moment AutoConductor evaluates after `--approve`:
+        // reviewCompletedAt set, requestRevision=false, NO revisionCompletedAt yet.
+        const snapshot = {
+            featureId: '528',
+            codeReview: {
+                reviewStartedAt: REVIEW_STARTED,
+                reviewCompletedAt: '2026-04-01T12:00:00Z',
+                requestRevision: false,
+                revisionCompletedAt: null,
+            },
+        };
+
+        const dispositionRequired = requiresImplementorDisposition({
+            snapshot, worktreePath: repo, specPath,
+        });
+        assert.strictEqual(dispositionRequired, true, 'helper must require disposition');
+
+        // The legacy check returns true (premature) because it short-circuits on the approve flag.
+        assert.strictEqual(
+            isCodeRevisionComplete(snapshot, repo, '528', 'cc'),
+            true,
+            'legacy check returns true on approve flag — this is the bug surface F530 covers',
+        );
+        // The disposition-aware check returns false: no explicit revisionCompletedAt → gate holds.
+        assert.strictEqual(
+            isExplicitCodeRevisionComplete(snapshot, repo, '528', 'cc'),
+            false,
+            'explicit check must NOT close until implementor signals',
+        );
+    }));
+
+test('AC #9 close-gate: approve+reviewer output + revisionCompletedAt → gate releases (close allowed)', () =>
+    withTempDir('aigon-f530-gate-released-', (repo) => {
+        const env = { ...process.env, ...GIT_SAFE_ENV };
+        gitInit(repo, env);
+        commit(repo, 'feature.js', 'impl v1', 'feat: initial impl', { when: PRE_REVIEW });
+        commit(repo, 'feature.js', 'reviewer fix', 'fix(review): tighten', {
+            authorEmail: 'reviewer@aigon.test', authorName: 'Reviewer', when: POST_REVIEW,
+        });
+        const specPath = writeSpec(repo, '## Code Review\n- abc fix(review): tighten');
+
+        // After the implementor signals revision-complete, revisionCompletedAt is populated.
+        const snapshot = {
+            featureId: '528',
+            codeReview: {
+                reviewStartedAt: REVIEW_STARTED,
+                reviewCompletedAt: '2026-04-01T12:00:00Z',
+                requestRevision: false,
+                revisionCompletedAt: '2026-04-01T13:00:00Z',
+            },
+        };
+        assert.strictEqual(requiresImplementorDisposition({ snapshot, worktreePath: repo, specPath }), true);
+        assert.strictEqual(isExplicitCodeRevisionComplete(snapshot, repo, '528', 'cc'), true);
+    }));
+
+test('AC #6 close-gate: clean approve → both predicates allow immediate close', () =>
+    withTempDir('aigon-f530-gate-clean-', (repo) => {
+        const env = { ...process.env, ...GIT_SAFE_ENV };
+        gitInit(repo, env);
+        commit(repo, 'feature.js', 'impl v1', 'feat: initial impl', { when: PRE_REVIEW });
+        const specPath = writeSpec(repo, '## Code Review\n- None');
+        const snapshot = {
+            featureId: '528',
+            codeReview: {
+                reviewStartedAt: REVIEW_STARTED,
+                reviewCompletedAt: '2026-04-01T12:00:00Z',
+                requestRevision: false,
+                revisionCompletedAt: null,
+            },
+        };
+        assert.strictEqual(requiresImplementorDisposition({ snapshot, worktreePath: repo, specPath }), false);
+        // dispositionRequired=false → the gate uses the legacy isCodeRevisionComplete, which
+        // returns true on requestRevision=false. Close fires immediately.
+        assert.strictEqual(isCodeRevisionComplete(snapshot, repo, '528', 'cc'), true);
+    }));
+
+test('isExplicitCodeRevisionComplete also accepts code_revision_complete lifecycle', () => {
+    const snapshot = {
+        currentSpecState: 'code_revision_complete',
+        codeReview: { requestRevision: false, reviewCompletedAt: '2026-04-01T12:00:00Z' },
+    };
+    assert.strictEqual(isExplicitCodeRevisionComplete(snapshot, '/no/repo', '528', 'cc'), true);
 });
 
 report();
