@@ -472,14 +472,14 @@
             return a.id + ':' + a.status + ':' + ladder;
           }).join('|');
           const closeFail = f.lastCloseFailure ? '!' : '';
-          parts.push('F' + f.id + ':' + (f.stage || '') + ':' + (f.currentSpecState || '') + ':' + agents + closeFail);
+          parts.push('F' + f.id + ':' + (f.stage || '') + ':' + (f.currentSpecState || '') + ':' + (f.startupPhase || '') + ':' + agents + closeFail);
         });
         research.forEach(r => {
           const agents = (r.agents || []).map(a => {
             const ladder = (a.idleLadder && a.idleLadder.state) || '';
             return a.id + ':' + a.status + ':' + ladder;
           }).join('|');
-          parts.push('R' + r.id + ':' + (r.stage || '') + ':' + agents);
+          parts.push('R' + r.id + ':' + (r.stage || '') + ':' + (r.startupPhase || '') + ':' + agents);
         });
       });
       return parts.join('\n');

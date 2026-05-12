@@ -55,10 +55,49 @@
       return payload;
     }
 
+    const ENTITY_STARTUP_PHASE = 'Setting up';
+
+    function hasAuthoritativeRuntimeState(entity) {
+      return Array.isArray(entity && entity.agents) && entity.agents.length > 0;
+    }
+
+    function markEntityStartupPhase(entity) {
+      if (!entity) return;
+      if (hasAuthoritativeRuntimeState(entity)) {
+        delete entity.startupPhase;
+      } else {
+        entity.startupPhase = ENTITY_STARTUP_PHASE;
+      }
+    }
+
+    function clearEntityStartupPhase(entity) {
+      if (entity && entity.startupPhase) delete entity.startupPhase;
+    }
+
+    function clearStartupPhaseForEntityStart(action, args, repoPath) {
+      if (action !== 'feature-start' && action !== 'research-start') return;
+      const entityKey = action === 'research-start' ? 'research' : 'features';
+      const entityId = String(((args || [])[0]) || '');
+      if (!entityId) return;
+      const repos = (state.data && state.data.repos) || [];
+      const repoMatch = repoPath
+        ? repos.find(r => r && r.path === repoPath)
+        : null;
+      const repo = repoMatch || repos.find(r => (r && (r[entityKey] || []).some(e => String(e.id) === entityId)));
+      if (!repo) return;
+      const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
+      if (!entity || !entity.startupPhase) return;
+      clearEntityStartupPhase(entity);
+      repo[entityKey] = (repo[entityKey] || []).slice();
+      render();
+    }
+
     // F522: optimistic stage move for feature-start / research-start so the
     // card jumps from BACKLOG → IN-PROGRESS within a frame instead of waiting
     // ~20s for the full CLI (worktree + tmux setup) to complete. Returns a
     // rollback function (or null if the action isn't optimistically handled).
+    // F527: carry a client-only startupPhase while the start request is in
+    // flight so the optimistic card explains that setup is still active.
     function applyOptimisticEntityStart(action, args, repoPath) {
       if (action !== 'feature-start' && action !== 'research-start') return null;
       const entityKey = action === 'research-start' ? 'research' : 'features';
@@ -73,8 +112,20 @@
       const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
       if (!entity) return null;
       const previousStage = entity.stage;
-      if (previousStage === 'in-progress') return null;
+      const previousStartupPhase = entity.startupPhase;
+      if (previousStage === 'in-progress') {
+        markEntityStartupPhase(entity);
+        repo[entityKey] = (repo[entityKey] || []).slice();
+        render();
+        return () => {
+          if (previousStartupPhase) entity.startupPhase = previousStartupPhase;
+          else clearEntityStartupPhase(entity);
+          repo[entityKey] = (repo[entityKey] || []).slice();
+          render();
+        };
+      }
       entity.stage = 'in-progress';
+      markEntityStartupPhase(entity);
       // F525: bump array identity so Alpine's set-trap fires on repo[entityKey]
       // — every kanban column's x-effect re-runs, picking up the moved card.
       // Per-item mutation alone doesn't invalidate columns whose effects didn't
@@ -86,6 +137,8 @@
         // (e.g. a successful refresh already showed in-progress from the server).
         if (entity.stage === 'in-progress') {
           entity.stage = previousStage;
+          if (previousStartupPhase) entity.startupPhase = previousStartupPhase;
+          else clearEntityStartupPhase(entity);
           repo[entityKey] = (repo[entityKey] || []).slice();
           render();
         }
@@ -118,8 +171,12 @@
           if (!repo) continue;
           const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
           if (!entity) continue;
-          if (entity.stage !== 'backlog' && entity.stage !== 'inbox') continue;
-          entity.stage = 'in-progress';
+          if (entity.stage === 'backlog' || entity.stage === 'inbox') {
+            entity.stage = 'in-progress';
+          } else if (entity.stage !== 'in-progress') {
+            continue;
+          }
+          markEntityStartupPhase(entity);
           // F525: see applyOptimisticEntityStart — bump array identity to trigger
           // Alpine's set-trap so every column's x-effect re-runs.
           repo[entityKey] = (repo[entityKey] || []).slice();
@@ -251,6 +308,7 @@
       } finally {
         if (processingToast) processingToast.remove();
         state.pendingActions.delete(key);
+        clearStartupPhaseForEntityStart(action, args, repoPath);
         if (startingCard) startingCard.classList.remove('card-starting');
       }
     }

@@ -467,6 +467,15 @@
       return '<span class="kcard-workflow-idle-badge" role="status" tabindex="0" title="' + escHtml(tip) + '">Awaiting input</span>';
     }
 
+    function buildStartupPhaseHtml(item) {
+      const phase = item && item.startupPhase ? String(item.startupPhase) : '';
+      const allowed = ['Setting up', 'Preparing worktrees', 'Launching agents'];
+      if (!allowed.includes(phase)) return '';
+      return '<div class="kcard-agent-status-row kcard-startup-phase" role="status">' +
+        '<span class="kcard-agent-status status-running">● ' + escHtml(phase) + '</span>' +
+        '</div>';
+    }
+
     // Agent-specific action label overrides (keyed by action name)
     const AGENT_ACTION_LABELS = {};
     const prStatusByFeature = new Map();
@@ -945,6 +954,7 @@
         blockedByHtml +
         autonomousPlanHtml +
         buildWorkflowIdleBadgeHtml(feature) +
+        buildStartupPhaseHtml(feature) +
         nudgeChipsHtml;
 
       if (hasAgentSections) {
