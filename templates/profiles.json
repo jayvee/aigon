@@ -2,7 +2,6 @@
   "stringFiles": {
     "testInstructions": "test-instructions.md",
     "manualTestingGuidance": "manual-testing-guidance.md",
-    "depCheck": "dep-check.md",
     "playwrightVerification": "playwright-verification.md"
   },
   "profiles": {
