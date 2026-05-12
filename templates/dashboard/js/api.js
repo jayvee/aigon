@@ -55,23 +55,47 @@
       return payload;
     }
 
-    const ENTITY_STARTUP_PHASE = 'Setting up';
+    const STARTUP_PHASE_LABELS = ['Setting up', 'Preparing worktrees', 'Launching agents'];
+    const STARTUP_PHASE_SEGMENT_MS = 5500;
 
     function hasAuthoritativeRuntimeState(entity) {
       return Array.isArray(entity && entity.agents) && entity.agents.length > 0;
     }
 
-    function markEntityStartupPhase(entity) {
+    function markEntityStartupPhase(entity, opts) {
+      const resetClock = opts && opts.resetClock;
       if (!entity) return;
       if (hasAuthoritativeRuntimeState(entity)) {
         delete entity.startupPhase;
-      } else {
-        entity.startupPhase = ENTITY_STARTUP_PHASE;
+        delete entity.startupPhaseStartedAt;
+        return;
       }
+      if (resetClock || entity.startupPhaseStartedAt == null) {
+        entity.startupPhaseStartedAt = Date.now();
+      }
+      const elapsed = Date.now() - entity.startupPhaseStartedAt;
+      const idx = Math.min(
+        STARTUP_PHASE_LABELS.length - 1,
+        Math.floor(elapsed / STARTUP_PHASE_SEGMENT_MS)
+      );
+      entity.startupPhase = STARTUP_PHASE_LABELS[idx];
     }
 
     function clearEntityStartupPhase(entity) {
-      if (entity && entity.startupPhase) delete entity.startupPhase;
+      if (!entity) return;
+      delete entity.startupPhase;
+      delete entity.startupPhaseStartedAt;
+    }
+
+    function restoreEntityStartupClientState(entity, prevPhase, prevStartedAt) {
+      if (prevPhase === undefined && prevStartedAt === undefined) {
+        clearEntityStartupPhase(entity);
+        return;
+      }
+      if (prevPhase !== undefined) entity.startupPhase = prevPhase;
+      else delete entity.startupPhase;
+      if (prevStartedAt !== undefined) entity.startupPhaseStartedAt = prevStartedAt;
+      else delete entity.startupPhaseStartedAt;
     }
 
     function clearStartupPhaseForEntityStart(action, args, repoPath) {
@@ -86,7 +110,8 @@
       const repo = repoMatch || repos.find(r => (r && (r[entityKey] || []).some(e => String(e.id) === entityId)));
       if (!repo) return;
       const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
-      if (!entity || !entity.startupPhase) return;
+      if (!entity) return;
+      if (entity.startupPhase === undefined && entity.startupPhaseStartedAt == null) return;
       clearEntityStartupPhase(entity);
       repo[entityKey] = (repo[entityKey] || []).slice();
       render();
@@ -113,19 +138,19 @@
       if (!entity) return null;
       const previousStage = entity.stage;
       const previousStartupPhase = entity.startupPhase;
+      const previousStartupPhaseStartedAt = entity.startupPhaseStartedAt;
       if (previousStage === 'in-progress') {
-        markEntityStartupPhase(entity);
+        markEntityStartupPhase(entity, { resetClock: true });
         repo[entityKey] = (repo[entityKey] || []).slice();
         render();
         return () => {
-          if (previousStartupPhase) entity.startupPhase = previousStartupPhase;
-          else clearEntityStartupPhase(entity);
+          restoreEntityStartupClientState(entity, previousStartupPhase, previousStartupPhaseStartedAt);
           repo[entityKey] = (repo[entityKey] || []).slice();
           render();
         };
       }
       entity.stage = 'in-progress';
-      markEntityStartupPhase(entity);
+      markEntityStartupPhase(entity, { resetClock: true });
       // F525: bump array identity so Alpine's set-trap fires on repo[entityKey]
       // — every kanban column's x-effect re-runs, picking up the moved card.
       // Per-item mutation alone doesn't invalidate columns whose effects didn't
@@ -137,8 +162,7 @@
         // (e.g. a successful refresh already showed in-progress from the server).
         if (entity.stage === 'in-progress') {
           entity.stage = previousStage;
-          if (previousStartupPhase) entity.startupPhase = previousStartupPhase;
-          else clearEntityStartupPhase(entity);
+          restoreEntityStartupClientState(entity, previousStartupPhase, previousStartupPhaseStartedAt);
           repo[entityKey] = (repo[entityKey] || []).slice();
           render();
         }
@@ -176,7 +200,7 @@
           } else if (entity.stage !== 'in-progress') {
             continue;
           }
-          markEntityStartupPhase(entity);
+          markEntityStartupPhase(entity, { resetClock: false });
           // F525: see applyOptimisticEntityStart — bump array identity to trigger
           // Alpine's set-trap so every column's x-effect re-runs.
           repo[entityKey] = (repo[entityKey] || []).slice();
