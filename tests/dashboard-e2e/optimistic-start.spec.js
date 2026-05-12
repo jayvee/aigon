@@ -15,6 +15,21 @@ const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
 const FEATURE_NAME = 'e2e drive feature';
 
+async function columnRepoPath(card) {
+    const repoPath = await card.evaluate(el => {
+        const col = el.closest('.kanban-col');
+        return col && col.getAttribute('data-repo-path');
+    });
+    expect(repoPath, 'kcard should sit under .kanban-col[data-repo-path]').toBeTruthy();
+    return /** @type {string} */ (repoPath);
+}
+
+/** One repo's column — disambiguates All Repos when two workspaces reuse the same feature title. */
+function kanbanCol(page, stage, repoPath) {
+    const esc = String(repoPath).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return page.locator(`div.kanban-col[data-stage="${stage}"][data-repo-path="${esc}"]`);
+}
+
 async function findBacklogCard(page) {
     const backlogCol = page.locator('.kanban-col[data-stage="backlog"]').first();
     await expect(backlogCol).toContainText(FEATURE_NAME, { timeout: 8000 });
@@ -46,12 +61,13 @@ test.describe('F525 optimistic feature-start re-renders kanban', () => {
         });
 
         const card = await findBacklogCard(page);
+        const repoPath = await columnRepoPath(card);
         await openAgentPicker(page, card);
 
         const clickStart = Date.now();
         await page.click('#agent-picker-submit');
 
-        const inProgressCard = page.locator('.kanban-col[data-stage="in-progress"] .kcard').filter({ hasText: FEATURE_NAME });
+        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
         await expect(inProgressCard).toBeVisible({ timeout: 250 });
         const elapsed = Date.now() - clickStart;
         expect(elapsed, `card moved in ${elapsed}ms`).toBeLessThan(500);
@@ -70,16 +86,17 @@ test.describe('F525 optimistic feature-start re-renders kanban', () => {
         });
 
         const card = await findBacklogCard(page);
+        const repoPath = await columnRepoPath(card);
         await openAgentPicker(page, card);
         await page.click('#agent-picker-submit');
 
         // First: optimistic move puts it in in-progress.
-        const inProgressCard = page.locator('.kanban-col[data-stage="in-progress"] .kcard').filter({ hasText: FEATURE_NAME });
+        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
         await expect(inProgressCard).toBeVisible({ timeout: 500 });
 
         // Then: after the 500 response + rollback, it should be back in backlog.
-        const backlogCard = page.locator('.kanban-col[data-stage="backlog"] .kcard').filter({ hasText: FEATURE_NAME });
+        const backlogCard = kanbanCol(page, 'backlog', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
         await expect(backlogCard).toBeVisible({ timeout: 3000 });
-        await expect(page.locator('.kanban-col[data-stage="in-progress"] .kcard').filter({ hasText: FEATURE_NAME })).toHaveCount(0);
+        await expect(kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME })).toHaveCount(0);
     });
 });
