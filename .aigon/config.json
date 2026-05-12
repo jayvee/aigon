@@ -1,5 +1,6 @@
 {
   "tier": "pro",
+  "worktreeSetup": "npm ci",
   "instructions": {
     "testing": "skip",
     "planMode": "never"
