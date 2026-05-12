@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T01:55:00.649Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: settings-scope-restructure
