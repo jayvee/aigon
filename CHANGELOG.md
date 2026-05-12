@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.66.0-beta.1] — 2026-05-12
+
+Fleet startup phases, settings scopes, and background launches.
+
+### Added
+
+- add github.prCheck toggle to dashboard repo settings (9f76b76c)
+- require implementor disposition when reviewer leaves output (f2c3d566)
+- expose agent startup readiness timing (bc04ba01)
+- shorten feature-start startup path (e3cb9499)
+- show startup phase on optimistic dashboard cards (28b251cb)
+- implementation for feature 525 (bca38103)
+- regenerate agent instructions on bake-affecting setting change (e2d2e6c8)
+- respect logging:skip directive when seeding starter log (266e5e92)
+- optimistic stage move on feature-start / research-start (95b2d3ff)
+- UI restructure for scope model (b6ad3d19)
+- add scope field to schema + resolver short-circuit + API/CLI validation (70ab3d37)
+- add terminal.focusOnLaunch (default background) so launches don't steal focus (fe6d8abb)
+
+### Fixed
+
+- guard caddy start behind isProxyAvailable to prevent double-daemon (647b79e8)
+- sticky footer + budget nowrap in autonomous modal (598b2d73)
+- two card-card bugs — stale "Agents active" and globe-click opening drawer (7fadaef9)
+- make reloadCaddy self-healing and increase caddy start timeout (b25b7972)
+- preserve runtime task statuses in dashboard agent status (fc6f0933)
+- extract disposition-aware revision-complete check and test it directly (9645ccdb)
+- auto-start dev server on implementing and remove model badge from agent card (e08fcb60)
+- restore dashboard action-log start-phase lines (05cec20d)
+- preserve dashboard startup progress (fe97f46c)
+- clear session-ended flag when tmux sessions are created (23c121d0)
+- cycle startup-phase labels; revert unrelated worktree doc edit (1bcba90c)
+- evict moved specs from status index (b2c6d4dc)
+- unblock agent-status gate by generalizing worktree setup docs (ce09e50b)
+- re-render set cards when set rollups change (148c73a7)
+- kanban card stuck on start — bump array identity to fire Alpine set-trap (F525) (8fe9043c)
+- proxy detection, light-rigor skip, and repo-context UI (8aac87ee)
+- skip autonomous revision stage when review approved (1290e2f2)
+- keep optimistic start through status poll/refresh (2a86e4f0)
+- add agent CLI paths and flags to preferences UI (e4822876)
+- ignore project overrides for user-scope settings in dashboard payload (afb5e00c)
+- correct hook timeouts from seconds to milliseconds (308846e5)
+- agent-disambiguate inline prompt file path (9c9254b6)
+- peek button, Address review action, and verdict badge (3b3fc153)
+- conductor stuck when reviewer approves with no revision needed (bc18903d)
+- collapse-active-to-backlog must also reset workflow snapshot (8fbe661b)
+
 ## [2.65.0-beta.2] — 2026-05-11
 
 Toolchain-less Linux install + new `aigon install-seed` command + getting-started page rewrite. Plus test-suite cleanup: removed the brittle dashboard lifecycle E2E tests that were catching test-of-test issues instead of product bugs.
