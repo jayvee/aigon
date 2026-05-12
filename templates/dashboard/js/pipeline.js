@@ -781,7 +781,6 @@
       const peekBtn = agent.tmuxSession
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
-      const tripletBadge = buildAgentTripletBadge(agent);
       // Solo cards: the headline banner already carries the lifecycle phase
       // (Implementing / Reviewing / etc.). Suppress the agent-box status
       // pill TEXT to avoid duplicating the same word twice on the card,
@@ -811,7 +810,6 @@
           soloLivenessIcon +
           (isSoloCard ? livenessDot : '') +
           '<span class="kcard-agent-name" title="' + escHtml(displayName) + '">' + escHtml(displayName) + '</span>' +
-          tripletBadge +
           peekBtn +
           devSlot +
         '</div>' +
