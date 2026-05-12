@@ -44,6 +44,7 @@ next-env.d.ts
 .claude/settings.json
 .claude/settings.local.json
 .claude/skills/
+!.claude/skills/release/
 .claude/projects/
 .gemini/
 .codex/
