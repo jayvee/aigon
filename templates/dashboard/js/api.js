@@ -54,6 +54,37 @@
       return payload;
     }
 
+    // F522: optimistic stage move for feature-start / research-start so the
+    // card jumps from BACKLOG → IN-PROGRESS within a frame instead of waiting
+    // ~20s for the full CLI (worktree + tmux setup) to complete. Returns a
+    // rollback function (or null if the action isn't optimistically handled).
+    function applyOptimisticEntityStart(action, args, repoPath) {
+      if (action !== 'feature-start' && action !== 'research-start') return null;
+      const entityKey = action === 'research-start' ? 'research' : 'features';
+      const entityId = String(((args || [])[0]) || '');
+      if (!entityId) return null;
+      const repos = (state.data && state.data.repos) || [];
+      const repoMatch = repoPath
+        ? repos.find(r => r && r.path === repoPath)
+        : null;
+      const repo = repoMatch || repos.find(r => (r && (r[entityKey] || []).some(e => String(e.id) === entityId)));
+      if (!repo) return null;
+      const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
+      if (!entity) return null;
+      const previousStage = entity.stage;
+      if (previousStage === 'in-progress') return null;
+      entity.stage = 'in-progress';
+      render();
+      return () => {
+        // Only restore if nothing else has moved the card forward in the meantime
+        // (e.g. a successful refresh already showed in-progress from the server).
+        if (entity.stage === 'in-progress') {
+          entity.stage = previousStage;
+          render();
+        }
+      };
+    }
+
     async function requestAction(action, args, repoPath, btn) {
       const key = action + ':' + (args || []).join(':');
       if (state.pendingActions.has(key)) return;
@@ -65,6 +96,7 @@
       }
       const startingCard = btn ? btn.closest('.card') : null;
       if (startingCard) startingCard.classList.add('card-starting');
+      const optimisticRollback = applyOptimisticEntityStart(action, args, repoPath);
       const label = (action || '').replace(/^(feature|research)-/, '');
       const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
 
@@ -101,6 +133,7 @@
         const stderrStr = String(payload.stderr || '');
         const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
+          if (optimisticRollback) optimisticRollback();
           showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: payload.error || 'exit ' + payload.exitCode });
@@ -165,6 +198,7 @@
           );
           render();
         } else {
+          if (optimisticRollback) optimisticRollback();
           showToast('Action failed: ' + e.message, null, null, {error:true});
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
