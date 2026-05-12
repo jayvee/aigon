@@ -90,7 +90,6 @@ function resetRepo(repoName) {
             if (!fs.existsSync(fullDir)) continue;
             fs.readdirSync(fullDir).filter(f => f.endsWith('.md')).forEach(f => {
                 const src = path.join(fullDir, f);
-                // Strip ID prefix for backlog (features in done may have IDs already)
                 const dest = path.join(backlogDir, f);
                 if (!fs.existsSync(dest)) {
                     fs.renameSync(src, dest);
@@ -99,6 +98,37 @@ function resetRepo(repoName) {
             });
         }
         if (moved > 0) console.log(`  📋 Moved ${moved} feature(s) back to backlog`);
+    }
+
+    // 6b. Move all research specs back to backlog and clear research workflow state
+    const researchRoot = path.join(repoPath, 'docs', 'specs', 'research-topics');
+    const researchBacklog = path.join(researchRoot, '02-backlog');
+    let researchMoved = 0;
+
+    if (fs.existsSync(researchBacklog)) {
+        for (const dir of moveDirs) {
+            const fullDir = path.join(researchRoot, dir);
+            if (!fs.existsSync(fullDir)) continue;
+            fs.readdirSync(fullDir).filter(f => f.endsWith('.md')).forEach(f => {
+                const src = path.join(fullDir, f);
+                const dest = path.join(researchBacklog, f);
+                if (!fs.existsSync(dest)) {
+                    fs.renameSync(src, dest);
+                    researchMoved++;
+                } else {
+                    // Stale duplicate — remove it so the backlog copy is authoritative
+                    fs.unlinkSync(src);
+                    researchMoved++;
+                }
+            });
+        }
+        if (researchMoved > 0) console.log(`  📋 Moved/cleaned ${researchMoved} research spec(s) back to backlog`);
+    }
+
+    const researchWorkflowDir = path.join(repoPath, '.aigon', 'workflows', 'research');
+    if (fs.existsSync(researchWorkflowDir)) {
+        fs.rmSync(researchWorkflowDir, { recursive: true, force: true });
+        console.log(`  🗑️  Cleared research workflow state`);
     }
 
     // 7. Rewrite config with correct per-provider models
