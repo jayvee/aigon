@@ -111,6 +111,9 @@
     .agent-review{border-left-color:#fbbf24}
     .kcard-agent-status.status-reviewing{color:#fbbf24}
     .kcard-agent-status.status-review-done{color:#86efac}
+    .kcard-review-verdict{font-size:11px;font-weight:600;margin-top:3px;padding:2px 6px;border-radius:4px;display:inline-block}
+    .kcard-review-verdict.verdict-revision{color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25)}
+    .kcard-review-verdict.verdict-approved{color:#86efac;background:rgba(134,239,172,.08);border:1px solid rgba(134,239,172,.2)}
     /* Solo-card icon-only liveness cue: shows just the colored status icon
        (e.g. green ● for running) inline with the agent name. No background,
        no padding, no label text — the headline banner carries the phase. */

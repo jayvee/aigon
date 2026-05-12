@@ -843,9 +843,16 @@
       const peekBtn = reviewer.session
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(reviewer.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
+      // Show revision verdict badge when review is complete and verdict is known
+      const verdictHtml = (!isRunning && reviewer.requestRevision != null && mode !== 'spec' && mode !== 'spec-revise' && mode !== 'spec-check')
+        ? '<div class="kcard-review-verdict ' + (reviewer.requestRevision ? 'verdict-revision' : 'verdict-approved') + '">' +
+          (reviewer.requestRevision ? '⚠ Revision requested' : '✓ Approved') +
+          '</div>'
+        : '';
       return '<div class="kcard-agent agent-review">' +
         '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(title) + '</span>' + peekBtn + '</div>' +
         '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
+        verdictHtml +
         (isRunning && reviewer.session ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(reviewer.session) + '">Open</button></div>' : '') +
         '</div>';
     }
