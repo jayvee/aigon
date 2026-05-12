@@ -554,6 +554,14 @@
         err.scopeViolation = payload && payload.error === 'scope_violation';
         throw err;
       }
+      // F523: settings that bake into installed agent command files trigger a
+      // server-side `install-agent --all` + commit. Surface the result so the
+      // user knows their change actually reached the agents.
+      if (payload && payload.regenerated) {
+        showToast('Agent instructions regenerated');
+      } else if (payload && payload.regenerateError) {
+        showToast('Agent instruction regeneration failed: ' + payload.regenerateError, null, null, { error: true });
+      }
       return payload;
     }
 
