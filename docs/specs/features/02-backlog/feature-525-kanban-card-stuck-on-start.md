@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: low
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-05-12T07:00:32.591Z", actor: "cli/feature-prioritise" }
 ---
@@ -16,7 +16,7 @@ The optimistic stage move shipped previously (intent: card jumps from BACKLOG â†
 ## Acceptance Criteria
 - [ ] A repro test (Playwright or unit) mutates a feature's `stage` via the Alpine store proxy and asserts the matching `.card` element changes column within 250ms. This test fails on `main` today and passes after the fix.
 - [ ] Live verification with Playwright: clicking Start on a BACKLOG card on the live dashboard moves it to IN-PROGRESS within 250ms of click. Snapshot saved in the worktree's review notes.
-- [ ] HTTP error rollback: with a simulated 4xx/5xx response, the card returns to its source column within one frame after the error toast fires.
+- [ ] HTTP error rollback: with a simulated 4xx/5xx response (via route mocking/interception), the card returns to its source column within one frame after the error toast fires.
 - [ ] Works for both `feature-start` and `research-start` actions.
 - [ ] Works whether the source column is BACKLOG, INBOX, or has a set-grouping wrapper around the card.
 - [ ] The existing `card-starting` shimmer animation at `templates/dashboard/styles.css:65` still plays during the spawn window.
