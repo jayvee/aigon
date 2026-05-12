@@ -37,33 +37,39 @@ When a solo autonomous code review produces reviewer-authored output that the im
 - [ ] As a reviewer, I can still use `review-complete --approve` for a review that is otherwise done, without that flag also deciding whether the implementor gets a follow-up step.
 
 ## Acceptance Criteria
-- [ ] In solo autonomous mode, `review-complete --approve` does not immediately make the feature close-eligible when the review produced implementor-visible output that requires acknowledgement.
-- [ ] Reviewer-authored `fix(review):` commits on the feature branch always trigger an implementor follow-up step before close, even when the reviewer signaled `--approve`.
-- [ ] Review-log escalations recorded in the `## Code Review` section also trigger the implementor follow-up step before close. A clean review log with `Escalated Issues: None` does not trigger by escalation alone.
-- [ ] The implementor follow-up step reuses the existing autonomous prompt-injection path and waits for an implementor completion signal before `feature-close`.
-- [ ] The injected prompt text for this path is framed as an implementor review/disposition of reviewer output (`accept`, `revert`, or `modify`) rather than as "the reviewer requested revision."
-- [ ] A truly clean approved review remains close-eligible: no reviewer-authored branch changes, no escalated issues requiring acknowledgement, and no extra implementor step.
+- [ ] In solo autonomous mode, `review-complete --approve` does not immediately make the feature close-eligible when the detection rule below fires.
+- [ ] Detection rule (deterministic): the implementor follow-up is required when either (a) at least one commit exists on the feature branch with author/timestamp after `snapshot.codeReview.reviewStartedAt` whose author is not the implementor of record, OR (b) the spec's `## Code Review` section contains any `ESCALATE:` line (case-sensitive prefix); "Escalated Issues: None" or absence of any `ESCALATE:` line does not trigger.
+- [ ] When the detection rule fires, AutoConductor reuses the existing post-review prompt-injection path into the implementor's tmux session and gates `feature-close` on the same completion signal already accepted by that path (`feedback-addressed` / `revision-complete`, or `engineRevisionComplete`).
+- [ ] The injected prompt text for this path is framed as an implementor disposition of reviewer output (`accept`, `revert`, or `modify`) rather than "the reviewer requested revision."
+- [ ] The engine's `codeReview.requestRevision` flag is left untouched by this feature; gating is driven entirely by AutoConductor's detection helper, not by mutating review state.
+- [ ] A clean approved review (no post-`reviewStartedAt` non-implementor commits, no `ESCALATE:` entries) closes directly with no extra implementor step — current behavior preserved.
+- [ ] If the implementor session is gone when injection time comes, AutoConductor falls back to the existing "implementation session not found" branch (treats follow-up as addressed) and logs the bypass; it does not block close indefinitely.
+- [ ] Implementor disposition step honors the existing `MAX_FEEDBACK_POLLS` timeout; on timeout, AutoConductor exits non-zero with `reason: 'feedback-timeout'` (no new failure mode).
 - [ ] Fleet autonomous mode behavior is unchanged by this feature.
-- [ ] Feature 528's event/log shape is covered by a regression test: review approved, reviewer committed `fix(review): ...`, autonomous close must not proceed until the implementor disposition step completes.
+- [ ] Regression test covers feature 528's exact shape: ready → review-started → reviewer `fix(review): ...` commit → `review-complete --approve` → AutoConductor must inject the disposition prompt and must not call `feature-close` until the implementor signals.
+- [ ] Positive test covers the clean-review path: `--approve` with no reviewer commits and no `ESCALATE:` entries closes immediately, no injection.
 
 ## Validation
 ```bash
 node -c lib/feature-autonomous.js
-node -c lib/agent-prompt-resolver.js
-npm test
+# Unit-test the new helper + the close-gating branch:
+npm run test:iterate -- --testPathPattern='feature-autonomous|code-review'
+# Full non-browser gate before close:
+npm run test:core
 ```
+The regression test (AC #9) and positive test (AC #10) live under `tests/integration/` alongside other AutoConductor tests; use the existing fixture pattern for `.aigon/workflows/features/<id>/snapshot.json` rather than spinning up a real tmux session.
 
 ## Technical Approach
 Keep the existing engine states and `review-complete --approve|--request-revision` CLI contract. The change is in the autonomous close gate and in how the system derives "implementor acknowledgement required."
 
 ### 1. Derive "implementor acknowledgement required" from review output, not reviewer verdict
 
-Introduce a helper on the autonomous/read side that answers whether a completed review produced output the implementor must inspect before close. The initial rule for this feature:
+Add a helper `requiresImplementorDisposition(snapshot, mainRepo, featureNum, implAgentId)` in `lib/feature-autonomous.js` (or a sibling file under `lib/` if it grows; keep it co-located with the AutoConductor for the first patch). It returns boolean and is deterministic from durable state:
 
-- reviewer-authored `fix(review):` commits on the feature branch since the review started => require implementor acknowledgement
-- review log `## Code Review` section contains any `ESCALATE:` entry other than an explicit `None` => require implementor acknowledgement
+- Git evidence (preferred — does not rely on commit-message convention): run `git log --since=<snapshot.codeReview.reviewStartedAt> --format='%H %an %ae'` against the feature worktree's branch and return true if any commit's author email/agent ID is not the implementor of record. This catches `fix(review): ...`, `docs(review): ...`, and anything else the reviewer authored, by author rather than subject prefix.
+- Log evidence: scan the spec's `## Code Review` section for any line matching `/^[-*\s]*\*?\*?ESCALATE:/m`. Presence => true. "Escalated Issues: None" or absence of any `ESCALATE:` line => no contribution.
 
-The helper should be deterministic from repo/workflow state and should not depend on whether the reviewer chose `--approve` or `--request-revision`.
+The helper does not consult `codeReview.requestRevision` and works the same for `--approve` and `--request-revision`. It must be unit-testable in isolation given a snapshot, a tmp repo, and a spec file path.
 
 ### 2. Reuse the existing post-review injection path
 
@@ -87,11 +93,19 @@ This is a wording/behavior distinction, not a new lifecycle state.
 
 ### 4. Close gating
 
-In solo autonomous close flow:
+Concretely, replace the short-circuit at `lib/feature-autonomous.js:472-480` (the `reviewApprovedNoRevision` branch). The new branch:
 
-- `review-complete --approve` with no implementor-visible reviewer output remains immediate close-eligible
-- `review-complete --approve` with reviewer commits/escalations is not close-eligible until the implementor follow-up completes
-- `review-complete --request-revision` remains not close-eligible until implementor follow-up completes
+1. Compute `requiresImplementorDisposition(...)`.
+2. If false: keep current behavior — set `feedbackInjected=true`, `feedbackAddressed=true`, continue to close.
+3. If true: fall through to the existing injection branch (lines 481-503), but use the new disposition prompt copy from §3.
+
+So the close matrix becomes:
+
+| Verdict | Disposition required? | Result |
+|---------|----------------------|--------|
+| `--approve` | no | close immediately (current behavior) |
+| `--approve` | yes (this feature) | inject disposition prompt, gate close on implementor signal |
+| `--request-revision` | n/a | inject revision prompt, gate close on implementor signal (current behavior) |
 
 ### 5. Tests
 
@@ -116,9 +130,9 @@ Also add positive coverage for the clean-review case where `--approve` plus no r
 - Retrofitting or reopening already-closed historical features
 
 ## Open Questions
-- What is the most robust implementation for detecting reviewer-authored commits during the review window: commit-message convention alone, author/agent metadata, or diffing against the commit present at `feature.code_review.started`? Recommendation: use a helper that prefers durable git evidence over prompt conventions alone.
-- Should any non-`None` escalation trigger acknowledgement, or only specific escalation categories? Recommendation: any `ESCALATE:` entry should trigger it for this first patch; narrower semantics can come later if needed.
-- Should the implementor completion signal remain `revision-complete`, or should the injected follow-up rely on the more generic "review addressed" path already tolerated by AutoConductor? Recommendation: keep the existing completion signal path to minimize surface area.
+- Resolved by AC #2 and §1: detection uses git author evidence against `snapshot.codeReview.reviewStartedAt` plus an `ESCALATE:` scan of the spec's `## Code Review` section. Any narrower escalation semantics can come in a follow-up.
+- Resolved by AC #3 and §3: keep the existing completion signal set (`feedback-addressed` / `revision-complete` / `engineRevisionComplete`); the prompt copy differs but the signal does not.
+- Open: should the dashboard read-model expose a distinct "awaiting implementor disposition" status (vs the existing "code revision in progress")? Out of scope for this feature unless it falls out for free; revisit if operators report confusion.
 
 ## Related
 - Research: —
