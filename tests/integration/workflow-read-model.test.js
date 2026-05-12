@@ -223,44 +223,28 @@ test('F460: passing options.baseState skips snapshot+events re-read (research)',
 // out by a guard that read context.tmuxSessionStates — a field the dashboard's
 // action-derivation pipeline never populated. Bridge in enrichSnapshotWithInfraData
 // must surface tmux state so the guard evaluates correctly.
-test('feature-nudge appears when an agent has tmuxRunning: true', () => withTempDir('aigon-rm-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'features', '03-in-progress', 'feature-71-nudge.md');
-    writeSnap(repo, 'features', '71', 'implementing');
-    const state = wrm.getFeatureDashboardState(repo, '71', 'in-progress', [{ id: 'cx', status: 'running', tmuxRunning: true }]);
-    assert.ok(state.validActions.some((a) => a.action === 'feature-nudge'), 'feature-nudge present when tmuxRunning: true');
-}));
-
-test('feature-nudge is hidden when no agent has tmuxRunning: true', () => withTempDir('aigon-rm-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'features', '03-in-progress', 'feature-72-nudge.md');
-    writeSnap(repo, 'features', '72', 'implementing');
-    const state = wrm.getFeatureDashboardState(repo, '72', 'in-progress', [{ id: 'cx', status: 'running', tmuxRunning: false }]);
-    assert.ok(!state.validActions.some((a) => a.action === 'feature-nudge'), 'feature-nudge absent when no tmux is running');
-}));
-
-test('feature-nudge stays hidden in done state even if tmuxRunning: true', () => withTempDir('aigon-rm-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'features', '05-done', 'feature-73-nudge.md');
-    writeSnap(repo, 'features', '73', 'done');
-    const state = wrm.getFeatureDashboardState(repo, '73', 'done', [{ id: 'cx', status: 'running', tmuxRunning: true }]);
-    assert.ok(!state.validActions.some((a) => a.action === 'feature-nudge'), 'feature-nudge absent when entity is done');
-}));
-
-test('research-nudge appears when an agent has tmuxRunning: true', () => withTempDir('aigon-rm-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'research-topics', '03-in-progress', 'research-71-nudge.md');
-    writeSnap(repo, 'research', '71', 'implementing');
-    const state = wrm.getResearchDashboardState(repo, '71', 'in-progress', [{ id: 'cx', status: 'researching', tmuxRunning: true }]);
-    assert.ok(state.validActions.some((a) => a.action === 'research-nudge'), 'research-nudge present when tmuxRunning: true');
-}));
-
-test('research-nudge is hidden when no agent has tmuxRunning: true', () => withTempDir('aigon-rm-', (repo) => {
-    seed(repo);
-    writeSpec(repo, 'research-topics', '03-in-progress', 'research-72-nudge.md');
-    writeSnap(repo, 'research', '72', 'implementing');
-    const state = wrm.getResearchDashboardState(repo, '72', 'in-progress', [{ id: 'cx', status: 'researching', tmuxRunning: false }]);
-    assert.ok(!state.validActions.some((a) => a.action === 'research-nudge'), 'research-nudge absent when no tmux is running');
-}));
+const NUDGE_CASES = [
+    // [kind,        lane,           lifecycle,      tmuxRunning, expectNudge, label]
+    ['features',     '03-in-progress', 'implementing', true,        true,        'feature-nudge appears with tmuxRunning'],
+    ['features',     '03-in-progress', 'implementing', false,       false,       'feature-nudge hidden when no tmux'],
+    ['features',     '05-done',        'done',         true,        false,       'feature-nudge hidden in done state'],
+    ['research-topics', '03-in-progress', 'implementing', true,     true,        'research-nudge appears with tmuxRunning'],
+    ['research-topics', '03-in-progress', 'implementing', false,    false,       'research-nudge hidden when no tmux'],
+];
+let nudgeId = 71;
+for (const [kind, stage, lifecycle, tmuxRunning, expectNudge, label] of NUDGE_CASES) {
+    const id = String(nudgeId++);
+    const prefix = kind === 'features' ? 'feature' : 'research';
+    const lane = stage === '05-done' ? 'done' : 'in-progress';
+    const getter = kind === 'features' ? wrm.getFeatureDashboardState : wrm.getResearchDashboardState;
+    test(`F494 nudge: ${label}`, () => withTempDir('aigon-rm-', (repo) => {
+        seed(repo);
+        writeSpec(repo, kind, stage, `${prefix}-${id}-nudge.md`);
+        writeSnap(repo, kind === 'features' ? 'features' : 'research', id, lifecycle);
+        const state = getter(repo, id, lane, [{ id: 'cx', status: kind === 'features' ? 'running' : 'researching', tmuxRunning }]);
+        const present = state.validActions.some((a) => a.action === `${prefix}-nudge`);
+        assert.strictEqual(present, expectNudge, `${prefix}-nudge expectation mismatch`);
+    }));
+}
 
 report();
