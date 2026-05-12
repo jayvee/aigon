@@ -58,14 +58,39 @@
     const STARTUP_PHASE_LABELS = ['Setting up', 'Preparing worktrees', 'Launching agents'];
     const STARTUP_PHASE_SEGMENT_MS = 5500;
 
-    function hasAuthoritativeRuntimeState(entity) {
-      return Array.isArray(entity && entity.agents) && entity.agents.length > 0;
+    function serverStartupPhaseLabel(entity) {
+      const readiness = entity && entity.startupReadiness;
+      const phase = readiness && readiness.phase ? String(readiness.phase) : '';
+      if (phase === 'agents_booting' || phase === 'agents_partially_booted' || phase === 'agents_active') {
+        return readiness.phaseLabel || null;
+      }
+      return null;
+    }
+
+    function hasCompletedStartup(entity) {
+      const readiness = entity && entity.startupReadiness;
+      if (readiness && readiness.phase === 'all_ready') return true;
+      return Array.isArray(entity && entity.agents)
+        && entity.agents.length > 0
+        && entity.agents.every(agent => {
+          const status = String(agent && agent.status || '').toLowerCase();
+          return status === 'ready'
+            || status === 'implementation-complete'
+            || status === 'research-complete'
+            || status === 'review-complete'
+            || status === 'spec-review-complete';
+        });
     }
 
     function markEntityStartupPhase(entity, opts) {
       const resetClock = opts && opts.resetClock;
       if (!entity) return;
-      if (hasAuthoritativeRuntimeState(entity)) {
+      const serverPhase = serverStartupPhaseLabel(entity);
+      if (serverPhase) {
+        entity.startupPhase = serverPhase;
+        return;
+      }
+      if (hasCompletedStartup(entity)) {
         delete entity.startupPhase;
         delete entity.startupPhaseStartedAt;
         return;
@@ -203,6 +228,9 @@
           markEntityStartupPhase(entity, { resetClock: false });
           // F525: see applyOptimisticEntityStart — bump array identity to trigger
           // Alpine's set-trap so every column's x-effect re-runs.
+          // F527 follow-up: if the server already has workflow startupReadiness,
+          // preserve that phase instead of deleting it just because snapshot
+          // agents exist. Agents are registered before they are actually ready.
           repo[entityKey] = (repo[entityKey] || []).slice();
           break;
         }
@@ -332,7 +360,9 @@
       } finally {
         if (processingToast) processingToast.remove();
         state.pendingActions.delete(key);
-        clearStartupPhaseForEntityStart(action, args, repoPath);
+        if (action !== 'feature-start' && action !== 'research-start') {
+          clearStartupPhaseForEntityStart(action, args, repoPath);
+        }
         if (startingCard) startingCard.classList.remove('card-starting');
       }
     }
