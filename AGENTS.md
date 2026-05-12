@@ -65,6 +65,8 @@ Aigon may **NOT** have opinions about:
 
 **Why this matters:** every assumption is a bug for the users who don't match it. "Run `npm test`" is invisible to a Rust shop until their first feature; then it's nonsense. The template-leak guard (`scripts/check-template-leaks.js`) catches the common patterns mechanically and runs in `test:core` and `prepublishOnly` — but the guard is a backstop, not the rule. The rule is **zero opinion**.
 
+**Per-worktree setup (`worktreeSetup`).** Worktrees are fresh checkouts without `node_modules`/virtualenvs/etc. If operators need per-worktree preparation, they declare it as a shell command in `.aigon/config.json` (e.g. `"worktreeSetup": "npm ci"` or `"worktreeSetup": "ln -s ../../node_modules node_modules"`). Aigon executes it once after `git worktree add`, before the agent launches, with a 120-second timeout; failure warns and continues. Aigon **does not** detect the stack and **does not** inject any install command into agent prompts. See `templates/docs/development_workflow.md` § Per-worktree setup and `site/content/reference/configuration.mdx`. F524.
+
 ## The ctx Pattern
 Commands receive dependencies via a `ctx` object — enables test overrides without mocking globals:
 
@@ -124,7 +126,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/telemetry.js` | ~1735 | Normalized session telemetry (cc JSONL, gg `~/.gemini/tmp/`, cx `~/.codex/sessions/`); cross-agent pricing |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state, XState machine, action derivation, effect lifecycle |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: workflow-core snapshots → dashboard/board formats |
-| `lib/profile-placeholders.js` | ~500 | Profile presets, detection, instruction directive resolvers, `getProfilePlaceholders()` |
+| `lib/profile-placeholders.js` | ~500 | Profile presets, detection, instruction directive resolvers, `getProfilePlaceholders()`. **Does not inject package-manager commands** — per-worktree setup is operator-declared via `.aigon/config.json` `worktreeSetup` and executed by `lib/worktree.js` after `git worktree add` |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
 | `lib/feature-review-state.js` | ~220 | Per-feature `review-state.json` (current + history); writers **deprecated (F342)** — still accepted as synonym fallback during migration. Authoritative code-review signal is now `currentSpecState === 'code_revision_complete'` in the engine snapshot |
 | `lib/nudge.js` | ~250 | Shared nudge primitive: resolves tmux sessions from workflow state, rate-limits, delivers text atomically via paste-buffer, confirms pane echo, and records `operator.nudge_sent` events |
