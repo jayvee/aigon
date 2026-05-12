@@ -469,8 +469,8 @@
 
     function buildStartupPhaseHtml(item) {
       const phase = item && item.startupPhase ? String(item.startupPhase) : '';
-      const allowed = ['Setting up', 'Preparing worktrees', 'Launching agents'];
-      if (!allowed.includes(phase)) return '';
+      const allowed = ['Setting up', 'Preparing worktrees', 'Launching agents', 'Agents active'];
+      if (!allowed.includes(phase) && !phase.startsWith('Agents booting')) return '';
       return '<div class="kcard-agent-status-row kcard-startup-phase" role="status">' +
         '<span class="kcard-agent-status status-running">● ' + escHtml(phase) + '</span>' +
         '</div>';
