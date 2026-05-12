@@ -75,12 +75,18 @@
       const previousStage = entity.stage;
       if (previousStage === 'in-progress') return null;
       entity.stage = 'in-progress';
+      // F525: bump array identity so Alpine's set-trap fires on repo[entityKey]
+      // — every kanban column's x-effect re-runs, picking up the moved card.
+      // Per-item mutation alone doesn't invalidate columns whose effects didn't
+      // iterate this item on their last run (e.g. an empty IN-PROGRESS column).
+      repo[entityKey] = (repo[entityKey] || []).slice();
       render();
       return () => {
         // Only restore if nothing else has moved the card forward in the meantime
         // (e.g. a successful refresh already showed in-progress from the server).
         if (entity.stage === 'in-progress') {
           entity.stage = previousStage;
+          repo[entityKey] = (repo[entityKey] || []).slice();
           render();
         }
       };
@@ -114,6 +120,9 @@
           if (!entity) continue;
           if (entity.stage !== 'backlog' && entity.stage !== 'inbox') continue;
           entity.stage = 'in-progress';
+          // F525: see applyOptimisticEntityStart — bump array identity to trigger
+          // Alpine's set-trap so every column's x-effect re-runs.
+          repo[entityKey] = (repo[entityKey] || []).slice();
           break;
         }
       }
