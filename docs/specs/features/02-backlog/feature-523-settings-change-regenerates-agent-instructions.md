@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T06:14:46.293Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: settings-change-regenerates-agent-instructions
