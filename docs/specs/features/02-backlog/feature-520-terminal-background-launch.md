@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T01:19:15.607Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: terminal-background-launch
