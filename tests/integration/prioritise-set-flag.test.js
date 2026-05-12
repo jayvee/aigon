@@ -220,4 +220,94 @@ test('feature-prioritise <slug>: single-slug regression still works', () => with
     assert.ok(fs.readdirSync(path.join(specRoot, '02-backlog')).some(f => f.includes('standalone')));
 }));
 
+// ---------------------------------------------------------------------------
+// F452 commit-isolation regressions (merged from prioritise-commit-isolation)
+// ---------------------------------------------------------------------------
+
+function gitNamesInHead(root) {
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    return execFileSync('git', ['show', '--pretty=format:', '--name-only', 'HEAD'],
+        { cwd: root, encoding: 'utf8', env }).split('\n').map(x => x.trim()).filter(Boolean);
+}
+
+function writeBareSpec(dir, kind, slug) {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${kind}-${slug}.md`), `---\ncomplexity: low\n---\n\n# ${kind === 'feature' ? 'Feature' : 'Research'}: ${slug}\n`);
+}
+
+test('F452: prioritise commit excludes unrelated untracked inbox specs', () => withTempDir('aigon-priso-inbox-', (root) => {
+    initRepo(root);
+    const specRoot = mkSpecRoot(root);
+    writeBareSpec(path.join(specRoot, '01-inbox'), 'feature', 'main-spec');
+    const strangerAbs = path.join(specRoot, '01-inbox', 'feature-stranger-untracked.md');
+    fs.writeFileSync(strangerAbs, '# stray\n');
+
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    execFileSync('git', ['add', path.join(specRoot, '01-inbox', 'feature-main-spec.md')], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'chore: add main spec'], { cwd: root, env, stdio: 'pipe' });
+
+    const r = runCli(root, ['feature-prioritise', 'main-spec']);
+    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
+
+    const names = gitNamesInHead(root);
+    assert.ok(names.some(n => n.includes('feature-01-main-spec')), names.join(','));
+    assert.ok(!names.some(n => n.includes('stranger-untracked')), names.join(','));
+    assert.ok(fs.existsSync(strangerAbs), 'stranger file should remain');
+    // -uall forces per-file output even when prioritise's source-deletion leaves the dir empty.
+    const st = execFileSync('git', ['status', '--porcelain', '-uall'], { cwd: root, encoding: 'utf8', env });
+    assert.ok(/^\?\?\s+docs\/specs\/features\/01-inbox\/feature-stranger-untracked\.md$/m.test(st),
+        `expected ?? stranger, got:\n${st}`);
+}));
+
+test('F452: prioritise commit excludes pre-staged deletion of unrelated spec', () => withTempDir('aigon-priso-rm-', (root) => {
+    initRepo(root);
+    const specRoot = mkSpecRoot(root);
+    const inbox = path.join(specRoot, '01-inbox');
+    fs.writeFileSync(path.join(inbox, 'feature-main-spec.md'), '---\ncomplexity: low\n---\n\n# Main\n');
+    fs.writeFileSync(path.join(inbox, 'feature-extra-spec.md'), '---\ncomplexity: low\n---\n\n# Extra\n');
+
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    execFileSync('git', ['add', inbox], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'chore: add specs'], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['rm', '--cached', path.join(inbox, 'feature-extra-spec.md')], { cwd: root, env, stdio: 'pipe' });
+
+    const r = runCli(root, ['feature-prioritise', 'main-spec']);
+    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
+    assert.ok(!gitNamesInHead(root).some(n => n.includes('extra-spec')));
+    const staged = execFileSync('git', ['diff', '--cached', '--name-status'], { cwd: root, encoding: 'utf8', env });
+    assert.ok(staged.includes('feature-extra-spec.md'), staged);
+}));
+
+test('F452: research-prioritise commit excludes unrelated inbox topics', () => withTempDir('aigon-priso-rsch-', (root) => {
+    initRepo(root);
+    const rt = path.join(root, 'docs', 'specs', 'research-topics');
+    FOLDERS.forEach(f => fs.mkdirSync(path.join(rt, f), { recursive: true }));
+    writeBareSpec(path.join(rt, '01-inbox'), 'research', 'isolate-main');
+    const strangerAbs = path.join(rt, '01-inbox', 'research-stranger-untracked.md');
+    fs.writeFileSync(strangerAbs, '# stray\n');
+
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    execFileSync('git', ['add', path.join(rt, '01-inbox', 'research-isolate-main.md')], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'chore: add research'], { cwd: root, env, stdio: 'pipe' });
+
+    const r = runCli(root, ['research-prioritise', 'isolate-main']);
+    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
+    const names = gitNamesInHead(root);
+    assert.ok(names.some(n => /research-\d+-isolate-main\.md/.test(n)), names.join(','));
+    assert.ok(!names.some(n => n.includes('stranger-untracked')));
+    assert.ok(fs.existsSync(strangerAbs));
+}));
+
+test('F452: feature-now commit excludes unrelated inbox file', () => withTempDir('aigon-frnow-', (root) => {
+    initRepo(root);
+    const specRoot = mkSpecRoot(root);
+    fs.writeFileSync(path.join(specRoot, '01-inbox', 'stranger-holder.md'), '# keep inbox dirty\n');
+
+    const r = runCli(root, ['feature-now', 'Isolation Now']);
+    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
+    const names = gitNamesInHead(root);
+    assert.ok(names.some(n => /03-in-progress\/feature-\d+-isolation-now\.md/.test(n)), names.join(','));
+    assert.ok(!names.some(n => n.includes('stranger-holder')));
+}));
+
 report();

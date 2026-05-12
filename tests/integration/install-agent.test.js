@@ -117,60 +117,53 @@ testAsync('install-agent cc: does not create AGENTS.md, leaves existing byte-ide
         'AGENTS.md must be byte-identical after install-agent');
 }));
 
-// --- F420 migration 2.59.0: strip legacy AIGON marker block ---
-testAsync('migration 2.59.0: strips legacy aigon marker block from AGENTS.md (F420)', () => withTempDirAsync('aigon-f420-mig-block-', async (repo) => {
-    const userPre = '# My project\n\nUser content.\n\n';
-    const aigonBlock = '<!-- AIGON_START -->\n## Aigon\n\nThis project uses Aigon.\n<!-- AIGON_END -->\n';
-    const userPost = '\n## Other section\n\nMore user content.\n';
-    fs.writeFileSync(path.join(repo, 'AGENTS.md'), userPre + aigonBlock + userPost);
-
-    await runPendingMigrations(repo);
-
-    const after = fs.readFileSync(path.join(repo, 'AGENTS.md'), 'utf8');
-    assert.ok(!after.includes('AIGON_START'), 'marker start must be removed');
-    assert.ok(!after.includes('AIGON_END'), 'marker end must be removed');
-    assert.ok(!after.includes('## Aigon'), 'block content must be removed');
-    assert.ok(after.includes('User content.'), 'user content above must be preserved');
-    assert.ok(after.includes('Other section'), 'user content below must be preserved');
-    assert.ok(!/\n{3,}/.test(after), 'no runs of 3+ newlines after collapse');
-}));
-
-testAsync('migration 2.59.0: no-op when no marker block present (F420)', () => withTempDirAsync('aigon-f420-mig-noblock-', async (repo) => {
-    const original = '# My project\n\nNo aigon block here.\n';
-    fs.writeFileSync(path.join(repo, 'AGENTS.md'), original);
-    await runPendingMigrations(repo);
-    assert.strictEqual(fs.readFileSync(path.join(repo, 'AGENTS.md'), 'utf8'), original);
-}));
-
-// --- F420 migration 2.59.1: docs/aigon-project.md deletion ---
-testAsync('migration 2.59.1: deletes docs/aigon-project.md and is idempotent (F420)', () => withTempDirAsync('aigon-f420-mig-projmd-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
-    const projPath = path.join(repo, 'docs', 'aigon-project.md');
-    fs.writeFileSync(projPath, '# Old descriptor\n');
-
-    await runPendingMigrations(repo);
-    assert.ok(!fs.existsSync(projPath), 'docs/aigon-project.md must be deleted');
-
-    await runPendingMigrations(repo); // idempotent
-    assert.ok(!fs.existsSync(projPath));
-}));
-
-// --- F421 migration 2.60.0: pristine vs diverged vs already-migrated vs user-owned ---
-testAsync('migration 2.60.0: pristine legacy docs are moved into .aigon/docs/ (F421)', () => withTempDirAsync('aigon-f421-mig-pristine-', async (repo) => {
+// --- F420/F421 migrations: one fixture covers pristine legacy + AIGON-block strip +
+//     aigon-project.md delete + user-owned-files-untouched + idempotency in one pass. ---
+testAsync('migration 2.59→2.60: full flow (block strip, doc relocate, idempotency, user-owned untouched)', () => withTempDirAsync('aigon-mig-flow-', async (repo) => {
     const templatesDocs = path.join(__dirname, '..', '..', 'templates', 'docs');
+
+    // 1. AGENTS.md with marker block; user content surrounding it must be preserved.
+    fs.writeFileSync(path.join(repo, 'AGENTS.md'),
+        '# My project\n\nUser content.\n\n<!-- AIGON_START -->\n## Aigon\n\nThis project uses Aigon.\n<!-- AIGON_END -->\n\n## Other section\n\nMore user content.\n');
+
+    // 2. Legacy docs/aigon-project.md must be deleted.
     fs.mkdirSync(path.join(repo, 'docs', 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'aigon-project.md'), '# Old descriptor\n');
+
+    // 3. Pristine vendored docs (copied from templates) must move under .aigon/docs/.
     for (const file of fs.readdirSync(templatesDocs).filter(f => f.endsWith('.md'))) {
         fs.copyFileSync(path.join(templatesDocs, file), path.join(repo, 'docs', file));
     }
     fs.writeFileSync(path.join(repo, 'docs', 'agents', 'claude.md'),
         '<!-- AIGON_START -->\n# Claude\nuser content\n<!-- AIGON_END -->\n');
 
-    await runPendingMigrations(repo);
+    // 4. A user-owned file (no AIGON marker) must stay put.
+    const userOwnedPath = path.join(repo, 'docs', 'agents', 'internal-notes.md');
+    const userOwned = '# My internal note about agent X\nNot installed by aigon.\n';
+    fs.writeFileSync(userOwnedPath, userOwned);
 
+    await runPendingMigrations(repo);
+    await runPendingMigrations(repo); // second pass — must be idempotent
+
+    // AGENTS.md: block stripped, surrounding content intact, no triple-newline runs.
+    const agentsAfter = fs.readFileSync(path.join(repo, 'AGENTS.md'), 'utf8');
+    assert.ok(!agentsAfter.includes('AIGON_START'));
+    assert.ok(!agentsAfter.includes('AIGON_END'));
+    assert.ok(!agentsAfter.includes('## Aigon'));
+    assert.ok(agentsAfter.includes('User content.') && agentsAfter.includes('Other section'));
+    assert.ok(!/\n{3,}/.test(agentsAfter), 'no 3+ consecutive newlines after collapse');
+
+    // aigon-project.md deletion.
+    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'aigon-project.md')));
+
+    // Pristine vendored docs relocated under .aigon/docs/.
     assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'development_workflow.md')));
     assert.ok(!fs.existsSync(path.join(repo, 'docs', 'development_workflow.md')));
     assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'agents', 'claude.md')));
-    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'agents')));
+
+    // User-owned file untouched.
+    assert.ok(fs.existsSync(userOwnedPath));
+    assert.strictEqual(fs.readFileSync(userOwnedPath, 'utf8'), userOwned);
 }));
 
 testAsync('migration 2.60.0: leaves diverged user-edited doc in place (F421)', () => withTempDirAsync('aigon-f421-mig-diverged-', async (repo) => {
@@ -182,29 +175,6 @@ testAsync('migration 2.60.0: leaves diverged user-edited doc in place (F421)', (
 
     assert.ok(fs.existsSync(path.join(repo, 'docs', 'development_workflow.md')));
     assert.strictEqual(fs.readFileSync(path.join(repo, 'docs', 'development_workflow.md'), 'utf8'), userEdited);
-}));
-
-testAsync('migration 2.60.0: idempotent on already-migrated repos (F421)', () => withTempDirAsync('aigon-f421-mig-idem-', async (repo) => {
-    fs.mkdirSync(path.join(repo, '.aigon', 'docs', 'agents'), { recursive: true });
-    fs.writeFileSync(path.join(repo, '.aigon', 'docs', 'development_workflow.md'), '# Workflow\n');
-    fs.writeFileSync(path.join(repo, '.aigon', 'docs', 'agents', 'claude.md'), '<!-- AIGON_START -->\nx\n<!-- AIGON_END -->\n');
-
-    await runPendingMigrations(repo);
-    await runPendingMigrations(repo);
-
-    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'development_workflow.md')));
-    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'development_workflow.md')));
-}));
-
-testAsync('migration 2.60.0: leaves user-owned files in docs/agents/ alone (no AIGON marker) (F421)', () => withTempDirAsync('aigon-f421-mig-userown-', async (repo) => {
-    fs.mkdirSync(path.join(repo, 'docs', 'agents'), { recursive: true });
-    const userOwned = '# My internal note about agent X\nNot installed by aigon.\n';
-    fs.writeFileSync(path.join(repo, 'docs', 'agents', 'internal-notes.md'), userOwned);
-
-    await runPendingMigrations(repo);
-
-    assert.ok(fs.existsSync(path.join(repo, 'docs', 'agents', 'internal-notes.md')));
-    assert.strictEqual(fs.readFileSync(path.join(repo, 'docs', 'agents', 'internal-notes.md'), 'utf8'), userOwned);
 }));
 
 // --- F440 registry contract (pure-function, no install spawn) ---

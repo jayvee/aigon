@@ -87,4 +87,38 @@ function withRepoCwd(repo, fn) {
     }
 }
 
-module.exports = { test, testAsync, withTempDir, withTempDirAsync, report, GIT_SAFE_ENV, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap, withRepoCwd };
+// Shared CLI/git boilerplate used across ~10 integration tests.
+const { execFileSync, spawnSync } = require('child_process');
+const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
+
+function initGitRepo(root, { seedCommit = true, branch } = {}) {
+    const env = { ...process.env, ...GIT_SAFE_ENV };
+    execFileSync('git', ['init', '-q'], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['config', 'user.email', 'test@aigon.test'], { cwd: root, env, stdio: 'pipe' });
+    execFileSync('git', ['config', 'user.name', 'Aigon Test'], { cwd: root, env, stdio: 'pipe' });
+    if (branch) execFileSync('git', ['checkout', '-qb', branch], { cwd: root, env, stdio: 'pipe' });
+    if (seedCommit) {
+        fs.writeFileSync(path.join(root, '.gitkeep'), '');
+        execFileSync('git', ['add', '.gitkeep'], { cwd: root, env, stdio: 'pipe' });
+        execFileSync('git', ['commit', '-m', 'chore: init'], { cwd: root, env, stdio: 'pipe' });
+    }
+}
+
+function runAigonCli(repo, args, { expectFail = false, extraEnv = {} } = {}) {
+    const r = spawnSync('node', [CLI_PATH, ...args], {
+        cwd: repo,
+        env: { ...process.env, ...GIT_SAFE_ENV, ...extraEnv },
+        encoding: 'utf8',
+    });
+    const output = (r.stdout || '') + (r.stderr || '');
+    if (!expectFail && r.status !== 0) {
+        throw new Error(`aigon ${args.join(' ')} failed (status ${r.status}):\n${output}`);
+    }
+    return { stdout: r.stdout || '', stderr: r.stderr || '', code: r.status ?? 1, output };
+}
+
+module.exports = {
+    test, testAsync, withTempDir, withTempDirAsync, report,
+    GIT_SAFE_ENV, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap, withRepoCwd,
+    initGitRepo, runAigonCli, CLI_PATH,
+};
