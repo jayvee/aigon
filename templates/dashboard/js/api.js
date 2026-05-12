@@ -164,13 +164,30 @@
       const previousStage = entity.stage;
       const previousStartupPhase = entity.startupPhase;
       const previousStartupPhaseStartedAt = entity.startupPhaseStartedAt;
+      // Helper: re-lookup entity+repo from current state.data by ID. The status
+      // poll replaces state.data wholesale while the action fetch is in-flight,
+      // so closure-captured object references become stale. Rollback and startup-
+      // phase restore must operate on whatever objects are live in state.data.
+      function lookupLive() {
+        const liveRepos = (state.data && state.data.repos) || [];
+        const liveRepo = repoPath
+          ? liveRepos.find(r => r && r.path === repoPath)
+          : liveRepos.find(r => r && (r[entityKey] || []).some(e => String(e.id) === entityId));
+        if (!liveRepo) return null;
+        const liveEntity = (liveRepo[entityKey] || []).find(e => String(e.id) === entityId);
+        if (!liveEntity) return null;
+        return { repo: liveRepo, entity: liveEntity };
+      }
+
       if (previousStage === 'in-progress') {
         markEntityStartupPhase(entity, { resetClock: true });
         repo[entityKey] = (repo[entityKey] || []).slice();
         render();
         return () => {
-          restoreEntityStartupClientState(entity, previousStartupPhase, previousStartupPhaseStartedAt);
-          repo[entityKey] = (repo[entityKey] || []).slice();
+          const live = lookupLive();
+          if (!live) return;
+          restoreEntityStartupClientState(live.entity, previousStartupPhase, previousStartupPhaseStartedAt);
+          live.repo[entityKey] = (live.repo[entityKey] || []).slice();
           render();
         };
       }
@@ -183,12 +200,15 @@
       repo[entityKey] = (repo[entityKey] || []).slice();
       render();
       return () => {
-        // Only restore if nothing else has moved the card forward in the meantime
-        // (e.g. a successful refresh already showed in-progress from the server).
-        if (entity.stage === 'in-progress') {
-          entity.stage = previousStage;
-          restoreEntityStartupClientState(entity, previousStartupPhase, previousStartupPhaseStartedAt);
-          repo[entityKey] = (repo[entityKey] || []).slice();
+        // Re-lookup from current state.data — the status poll may have replaced
+        // state.data while the action fetch was in-flight, making the closure's
+        // entity/repo references stale (they point to the old object graph).
+        const live = lookupLive();
+        if (!live) return;
+        if (live.entity.stage === 'in-progress') {
+          live.entity.stage = previousStage;
+          restoreEntityStartupClientState(live.entity, previousStartupPhase, previousStartupPhaseStartedAt);
+          live.repo[entityKey] = (live.repo[entityKey] || []).slice();
           render();
         }
       };
