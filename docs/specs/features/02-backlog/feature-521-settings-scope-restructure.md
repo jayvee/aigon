@@ -33,17 +33,17 @@ This feature introduces an explicit `scope: 'user' | 'shared' | 'repo'` field pe
   - `'user'` — global only. No per-repo override allowed.
   - `'shared'` — global default with per-repo override (current behaviour).
   - `'repo'` — per-repo only, no global default. Often read-only / auto-detected.
-- [ ] Initial scope assignment per current schema key (proposed in Technical Approach; final list decided in spec-review):
-  - `user`: `terminalApp`, `terminal.focusOnLaunch`, `backgroundAgents`, `autoNudge.enabled`, `autoNudge.idleVisibleSeconds`, `autoNudge.idleNudgeSeconds`, `autoNudge.idleEscalateSeconds`
-  - `shared`: `defaultAgent`, `security.enabled`, `security.mode`, all `agents.*.*.model` entries
-  - `repo`: `profile`, `devServer.enabled` (read-only display when not present), plus anything else that's intrinsically per-repo
+- [ ] Initial scope assignment per current schema key (resolved in spec-review):
+  - `user`: `terminalApp`, `terminal.focusOnLaunch`, `backgroundAgents`, `autoNudge.enabled`, `autoNudge.idleVisibleSeconds`, `autoNudge.idleNudgeSeconds`, `autoNudge.idleEscalateSeconds`, plus all `agents.<id>.cli` and `agents.<id>.implementFlag` entries (these describe "what's installed on my machine" — never per-repo).
+  - `shared`: `defaultAgent`, `security.enabled`, `security.mode`, all `agents.<id>.<role>.model` entries (some repos genuinely want different models).
+  - `repo`: `profile`, `devServer.enabled` (read-only display when not present), plus anything else that's intrinsically per-repo.
 - [ ] `DASHBOARD_SETTINGS_SCHEMA` continues to expose every entry; the scope field is the only new shape.
 
 ### API
 
-- [ ] The `/api/settings` (or equivalent) endpoint includes `scope` in the per-setting payload returned alongside `effectiveValue`, `source`, etc.
-- [ ] `PATCH` (or POST) writes are validated against scope:
-  - `user` scope: writes only accepted at global scope (`scope: 'global'` in the body). Attempts to write per-repo return 400 with a clear error.
+- [ ] The `/api/settings` GET handler (`lib/dashboard-routes/config.js:444`) includes `scope` in the per-setting payload returned alongside `effectiveValue`, `source`, etc.
+- [ ] The `/api/settings` POST handler (`lib/dashboard-routes/config.js:460`) validates writes against scope. Validation lives next to the existing `settingDef` lookup (line 470). Errors return HTTP 400 with body `{ error: 'scope_violation', key, requestedScope, allowedScope, message }`:
+  - `user` scope: writes only accepted at global scope (`scope: 'global'` in the body). Attempts to write per-repo return 400.
   - `repo` scope: writes only accepted at project scope. Attempts to write globally return 400.
   - `shared` scope: both global and project writes accepted (current behaviour).
 - [ ] When loading values, the resolver continues to honour the existing precedence (project > global > default) for `shared` keys. For `user` keys, project-level values are *ignored* — if a stale per-repo override exists in `.aigon/config.json`, log a one-line warning at server start.
@@ -58,6 +58,7 @@ This feature introduces an explicit `scope: 'user' | 'shared' | 'repo'` field pe
 - [ ] **Settings → Preferences** (NEW top-level section): renders all `scope: 'user'` entries that aren't already shown in Terminal. Initial contents: Background agents, Auto-nudge enabled, Idle visible/nudge/escalate seconds, agent CLI paths and flags. **No "shared" vs "project" override column** — single value, single source.
 - [ ] **Settings → Repository Settings** (existing, slimmed down): renders only `scope: 'shared'` entries. The "global default | per-repo override" two-column layout stays for these. After restructure, this section is roughly 3-5 controls (default agent, security enabled, security mode, plus per-agent model defaults if they live here).
 - [ ] **Repo-intrinsic info** (`scope: 'repo'`): Profile and Dev server enabled render as **read-only context cards** at the top of the repo-specific settings view. They describe the repo; they aren't an editable "default with override."
+- [ ] **UI handling of API scope errors**: when a PATCH/POST returns a 400 with `error: 'scope_violation'`, the row reverts to its prior value, surfaces an inline error toast/badge using the existing settings-error helper, and includes the `message` field from the response. Covered by the smoke test below.
 
 ### Migration & backwards compat
 
@@ -122,11 +123,14 @@ Steps 1-3 can ship without 4-7 and the system stays correct (UI just stays as to
 
 ## Open Questions
 
-- **Per-agent model defaults**: classify each `agents.<id>.<role>.model` key as `shared` (overridable per repo) or `user` (always global)? Proposal: `shared` because some repos genuinely want different models, but spec-review should confirm.
-- **`agents.<id>.cli` and `agents.<id>.implementFlag`**: these are "what's on my machine" and "what flags the CLI accepts" — almost certainly `user`-scope. Confirm no repo wants per-repo overrides of these (none come to mind).
 - **Stale per-repo override warning**: log only, or also surface in the dashboard as a "this value is being ignored" affordance? Proposal: log-only for v1, dashboard surface as a follow-up if it actually bites anyone.
-- **Should the Preferences section sit at the top or bottom of the Settings nav?** Top makes sense because user preferences are the most-frequently-flipped controls; Repository Settings is where less-frequent operational tuning lives.
 - **What happens to `.aigon/config.json` files that are now entirely empty after stale-key cleanup?** Probably leave them — emptiness is harmless and removing them changes git status. Not worth special-casing.
+
+### Resolved in spec-review
+
+- Per-agent model defaults (`agents.<id>.<role>.model`) → `shared`.
+- `agents.<id>.cli` and `agents.<id>.implementFlag` → `user`.
+- Preferences sidebar placement → above Repository Settings (most-frequently-flipped controls go on top).
 
 ## Related
 
