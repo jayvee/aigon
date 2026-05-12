@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 205
+lines_removed: 1
+lines_changed: 206
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 88
+output_tokens: 36217
+cache_creation_input_tokens: 144837
+cache_read_input_tokens: 5569943
+thinking_tokens: 0
+total_tokens: 5751085
+billable_tokens: 36305
+cost_usd: 13.7882
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 523 - settings-change-regenerates-agent-instructions
 Agent: cc
 
