@@ -45,6 +45,28 @@ for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['re
         if (kind === 'features') assert.ok(s.validActions.length > 0);
     }));
 }
+
+testAsync('startup readiness derives heartbeat and all-ready intervals from workflow events', () => withTempDirAsync('aigon-rm-', async (repo) => {
+    seed(repo);
+    writeSpec(repo, 'features', '03-in-progress', 'feature-31-startup.md');
+    await workflowEngine.startFeature(repo, '31', 'fleet', ['cc', 'cx']);
+    await workflowEngine.emitSignal(repo, '31', 'heartbeat', 'cc');
+    let state = wrm.getFeatureDashboardState(repo, '31', 'in-progress', []);
+    assert.strictEqual(state.startupReadiness.agentCount, 2);
+    assert.strictEqual(state.startupReadiness.heartbeatCount, 1);
+    assert.strictEqual(state.startupReadiness.phase, 'agents_partially_booted');
+    assert.ok(Number.isFinite(state.startupReadiness.agents.find(a => a.agentId === 'cc').featureStartedToFirstHeartbeatMs));
+
+    await workflowEngine.emitSignal(repo, '31', 'heartbeat', 'cx');
+    await workflowEngine.emitSignal(repo, '31', 'agent-ready', 'cc');
+    await workflowEngine.emitSignal(repo, '31', 'agent-ready', 'cx');
+    state = wrm.getFeatureDashboardState(repo, '31', 'in-progress', []);
+    assert.strictEqual(state.startupReadiness.heartbeatCount, 2);
+    assert.strictEqual(state.startupReadiness.readyCount, 2);
+    assert.strictEqual(state.startupReadiness.phase, 'all_ready');
+    assert.ok(Number.isFinite(state.startupReadiness.featureStartedToAllReadyMs));
+}));
+
 test('spec drift is detect-only by default; AIGON_AUTO_RECONCILE=1 moves the file', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
     writeSpec(repo, 'features', '02-backlog', 'feature-16-x.md');

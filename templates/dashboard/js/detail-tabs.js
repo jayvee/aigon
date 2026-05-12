@@ -268,9 +268,13 @@
 
       function renderStats(payload) {
         const stats = computeStats(payload);
+        const startup = payload.startupReadiness || (payload.manifest && payload.manifest.startupReadiness) || {};
         const c = (payload.deepStatus && payload.deepStatus.cost) || {};
         const rows = [
           ['Time to start', formatDuration(stats.timeToStart), 'How long the feature sat in the backlog before an agent began working on it'],
+          ['Start to first heartbeat', formatDuration(startup.featureStartedToFirstHeartbeatMs), 'Post-start delay until the first agent heartbeat reached the workflow read model'],
+          ['Start to all heartbeats', formatDuration(startup.featureStartedToAllHeartbeatsMs), 'Post-start delay until every started agent had emitted a heartbeat'],
+          ['Start to all ready', formatDuration(startup.featureStartedToAllReadyMs), 'Wall-clock time from feature.started until every agent emitted agent_ready'],
           ['Time to submit', formatDuration(stats.timeToSubmit), 'How long the agent(s) spent implementing before submitting code'],
           ['Time to evaluate', formatDuration(stats.timeToEvaluate), 'How long between submission and evaluation/close'],
           ['Total lifecycle', formatDuration(stats.totalLifecycle), 'Wall-clock time from the earliest recorded event to close'],
