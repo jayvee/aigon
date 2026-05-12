@@ -1,7 +1,6 @@
 ---
 complexity: medium
 set: fleet-startup
-depends_on: none
 # agent: cc    # optional — id of the agent that owns this spec. Used as the
 #              #   default reviewer for spec-revise cycles when the operator
 #              #   does not pick one explicitly. Precedence at revision time:
