@@ -456,11 +456,6 @@
     // kanban re-render when nothing material has changed. Includes per-feature
     // idleLadder.state so the auto-nudge ladder still updates visibly, and
     // lastCloseFailure so a freshly-failed close re-renders.
-    //
-    // IMPORTANT: set cards render from repo.sets, not repo.features. If the
-    // fingerprint ignores repo.sets, the poll loop can preserve stale set
-    // header/count/action state (for example, still showing "Prioritise inbox
-    // members" after set-prioritise already moved all members to backlog).
     function statusFingerprint(data) {
       if (!data) return '';
       const parts = [];
@@ -470,7 +465,6 @@
         const features = repo.features || [];
         const research = repo.research || [];
         const feedback = repo.feedback || [];
-        const sets = repo.sets || [];
         parts.push(repo.path + ':' + features.length + '/' + research.length + '/' + feedback.length);
         features.forEach(f => {
           const agents = (f.agents || []).map(a => {
@@ -486,21 +480,6 @@
             return a.id + ':' + a.status + ':' + ladder;
           }).join('|');
           parts.push('R' + r.id + ':' + (r.stage || '') + ':' + agents);
-        });
-        sets.forEach(set => {
-          const actions = (set.validActions || []).map(a => {
-            const disabled = a && a.disabled ? '!' : '';
-            return (a && a.action ? a.action : '') + disabled;
-          }).join('|');
-          const counts = set.counts || {};
-          parts.push(
-            'S' + (set.slug || '')
-              + ':' + (set.memberCount || 0)
-              + ':' + (set.completed || 0)
-              + ':' + (counts.inbox || 0)
-              + ':' + (set.status || '')
-              + ':' + actions
-          );
         });
       });
       return parts.join('\n');
