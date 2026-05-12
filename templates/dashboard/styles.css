@@ -482,6 +482,10 @@
     .agent-checks{display:grid;gap:4px;margin-bottom:14px}
     .agent-checks.agent-checks-triplet{--agent-triplet-gutter:24px;--agent-triplet-cols:minmax(0,1.05fr) minmax(210px,1fr) 200px 200px}
     .agent-picker-modal-box{max-width:min(820px,96vw)}
+    #autonomous-modal .modal-box{display:flex;flex-direction:column;overflow:hidden;padding:0}
+    .autonomous-modal-header{padding:20px 24px 0;flex-shrink:0}
+    .modal-scroll-body{overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0;padding:12px 24px 0}
+    #autonomous-modal .modal-actions{flex-shrink:0;padding:14px 24px 20px;border-top:1px solid var(--border-subtle);margin:0}
     .agent-picker-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
     .agent-picker-header-row h3{margin:0}
     .matrix-peek-btn{font-size:11px;font-weight:500;color:var(--text-secondary);background:none;border:1px solid var(--border-subtle);border-radius:4px;padding:3px 8px;cursor:pointer;letter-spacing:.02em;transition:color .15s,border-color .15s}
@@ -1302,7 +1306,7 @@
     .budget-stale .budget-bar-fill{background:var(--text-tertiary);opacity:.5}
     .budget-stale .budget-pct{color:var(--text-tertiary)}
     .agent-check-budget{font-size:10px;color:var(--text-tertiary);font-variant-numeric:tabular-nums;margin-left:8px}
-    .agent-check-row-triplet .agent-check-budget{display:block;margin:2px 0 0}
+    .agent-check-row-triplet .agent-check-budget{display:block;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .agent-check-budget.budget-red{color:#f85149;font-weight:600}
     .agent-check-budget.budget-amber{color:#e0a000}
     .budget-notice-support{margin-top:3px;font-size:11px;color:var(--text-tertiary)}

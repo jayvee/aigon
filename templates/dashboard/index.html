@@ -343,42 +343,46 @@
   <!-- Start autonomously modal -->
   <div id="autonomous-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="autonomous-modal-title">
     <div class="modal-box agent-picker-modal-box">
-      <h3 id="autonomous-modal-title">Start Autonomously</h3>
-      <p class="modal-desc" id="autonomous-modal-desc"></p>
-      <div id="autonomous-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
-      <div id="autonomous-budget-notice" class="budget-notice" style="display:none" aria-hidden="true"></div>
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
-        <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">
-          <option value="">(custom — configure below)</option>
-        </select>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="autonomous-workflow-desc"></div>
+      <div class="autonomous-modal-header">
+        <h3 id="autonomous-modal-title">Start Autonomously</h3>
+        <p class="modal-desc" id="autonomous-modal-desc"></p>
+        <div id="autonomous-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
+        <div id="autonomous-budget-notice" class="budget-notice" style="display:none" aria-hidden="true"></div>
       </div>
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>
-        <div class="agent-checks" id="autonomous-agent-checks"></div>
-      </div>
-      <div id="autonomous-eval-wrap" style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>
-        <select id="autonomous-eval-agent" class="create-input" style="padding:8px 10px"></select>
-      </div>
-      <div id="autonomous-review-wrap" style="margin-bottom:12px;display:none">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>
-        <p id="autonomous-review-triplet-hint" class="autonomous-review-triplet-hint">Same per-run model and effort rules as the Code review picker: only agents that expose overrides in aigon config show dropdowns; others show —.</p>
-        <div class="agent-picker-reviewer-grid">
-          <select id="autonomous-review-agent" class="create-input" style="padding:8px 10px"></select>
-          <span id="autonomous-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
-          <span id="autonomous-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>
+      <div class="modal-scroll-body">
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
+          <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">
+            <option value="">(custom — configure below)</option>
+          </select>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="autonomous-workflow-desc"></div>
         </div>
-      </div>
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>
-        <select id="autonomous-stop-after" class="create-input" style="padding:8px 10px">
-          <option value="close">close (default)</option>
-          <option value="eval">eval</option>
-          <option value="review">review</option>
-          <option value="implement">implement</option>
-        </select>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>
+          <div class="agent-checks" id="autonomous-agent-checks"></div>
+        </div>
+        <div id="autonomous-eval-wrap" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>
+          <select id="autonomous-eval-agent" class="create-input" style="padding:8px 10px"></select>
+        </div>
+        <div id="autonomous-review-wrap" style="margin-bottom:12px;display:none">
+          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>
+          <p id="autonomous-review-triplet-hint" class="autonomous-review-triplet-hint">Same per-run model and effort rules as the Code review picker: only agents that expose overrides in aigon config show dropdowns; others show —.</p>
+          <div class="agent-picker-reviewer-grid">
+            <select id="autonomous-review-agent" class="create-input" style="padding:8px 10px"></select>
+            <span id="autonomous-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
+            <span id="autonomous-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>
+          <select id="autonomous-stop-after" class="create-input" style="padding:8px 10px">
+            <option value="close">close (default)</option>
+            <option value="eval">eval</option>
+            <option value="review">review</option>
+            <option value="implement">implement</option>
+          </select>
+        </div>
       </div>
       <div class="modal-actions" style="justify-content:space-between">
         <button class="btn" id="autonomous-modal-save-workflow" title="Save these settings as a reusable workflow">Save as workflow…</button>
