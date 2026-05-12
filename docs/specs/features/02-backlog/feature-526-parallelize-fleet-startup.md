@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T09:47:03.864Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: parallelize-fleet-startup
