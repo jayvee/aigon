@@ -383,12 +383,12 @@
               {
                 "type": "command",
                 "command": "aigon check-version --notice-only",
-                "timeout": 15
+                "timeout": 15000
               },
               {
                 "type": "command",
                 "command": "aigon project-context --json",
-                "timeout": 10
+                "timeout": 10000
               }
             ]
           }
@@ -400,12 +400,12 @@
               {
                 "type": "command",
                 "command": "aigon check-agent-signal --json",
-                "timeout": 5
+                "timeout": 5000
               },
               {
                 "type": "command",
                 "command": "aigon capture-gemini-telemetry",
-                "timeout": 15
+                "timeout": 15000
               }
             ]
           }
