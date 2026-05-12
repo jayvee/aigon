@@ -1,16 +1,4 @@
 # Implementation Log: Feature 521 - settings-scope-restructure
 Agent: cc
 
-## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Solo Drive worktree — see commits 70ab3d37, b6ad3d19, b151438d for the work; iterate gate green.
