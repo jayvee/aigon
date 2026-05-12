@@ -117,6 +117,40 @@ for (const [desc, id, autoPayload, check] of [
         check(wrm.getFeatureDashboardState(repo, id, 'in-progress', [{ id: 'cc', status: 'implementing' }]));
     }));
 }
+// REGRESSION F524: approved review (requestRevision=false) marks the
+// autonomous revision stage as complete, so the card headline doesn't read
+// "Starting revision" in the gap between review-approve and close-trigger.
+test('autonomous plan: approved review skips revision stage', () => withTempDir('aigon-rm-', (repo) => {
+    seed(repo);
+    const id = '14';
+    writeSpec(repo, 'features', '03-in-progress', `feature-${id}-approved.md`);
+    const snapDir = path.join(repo, '.aigon', 'workflows', 'features', id);
+    fs.mkdirSync(snapDir, { recursive: true });
+    fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+        entityType: 'feature', featureId: id,
+        currentSpecState: 'implementing', lifecycle: 'implementing',
+        mode: 'solo_worktree', agents: { cc: { status: 'ready' } },
+        codeReview: {
+            reviewerId: 'cx',
+            reviewCompletedAt: '2026-04-01T10:05:00Z',
+            requestRevision: false,
+            revisionAgentId: null,
+        },
+        createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+    }));
+    writeFeatureAuto(repo, id, {
+        featureId: id, status: 'running', running: true, mode: 'solo_worktree',
+        stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+        workflowSlug: 'solo-cc-reviewed-cx',
+        feedbackInjected: true, reviewTriggered: true,
+        startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+    });
+    const state = wrm.getFeatureDashboardState(repo, id, 'in-progress', [{ id: 'cc', status: 'ready' }]);
+    const revision = state.autonomousPlan.stages.find(s => s.type === 'revision');
+    assert.ok(revision, 'revision stage present in plan');
+    assert.strictEqual(revision.status, 'complete', 'approved review marks revision as complete (skipped)');
+}));
+
 // REGRESSION: brewboard-seed backlog specs ship without engine snapshots — Start must still appear.
 test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
