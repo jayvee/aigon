@@ -22,7 +22,7 @@ complexity: medium
        low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
        medium    — standard feature with moderate cross-cutting, one command handler, small refactor
        high      — multi-file changes, new public surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, write-path-contract changes, new XState transitions, cross-cutting template+engine+frontend
+       very-high — architectural shifts, contract-breaking changes, new invariants, cross-cutting work that spans multiple subsystems
      At start time, model and effort defaults come from each agent's complexity-defaults
      table (not from this spec). Do not put model IDs in the spec. -->
 
