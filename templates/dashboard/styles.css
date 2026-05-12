@@ -577,6 +577,7 @@
     .settings-repo-context-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary)}
     .settings-repo-context-value{margin-top:4px;font-family:var(--mono);font-size:13px;color:var(--text-primary)}
     .settings-repo-context-value.settings-repo-context-unset{color:var(--text-tertiary);font-style:italic}
+    .settings-repo-context-control{margin-top:6px}
     .settings-repo-context-hint{margin-top:6px;font-size:11px;color:var(--text-secondary);line-height:1.4}
     .settings-compare-intro{margin:0 0 12px;padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:12px;line-height:1.5}
     .settings-loading{padding:14px 16px;border:1px dashed var(--border-subtle);border-radius:10px;color:var(--text-tertiary);font-size:12px;background:rgba(255,255,255,.015)}
@@ -1220,7 +1221,7 @@
     .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;margin-bottom:6px}
     .toggle-row-label{font-size:13px;color:var(--text-primary)}
     .toggle-row-sub{font-size:11px;color:var(--text-tertiary)}
-    .toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0}
+    .toggle-switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
     .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
     .toggle-track{position:absolute;inset:0;border-radius:999px;background:var(--border-default);transition:background .15s ease;cursor:pointer}
     .toggle-track::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s ease}

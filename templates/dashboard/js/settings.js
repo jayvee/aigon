@@ -901,16 +901,10 @@
           cardLabel.className = 'settings-repo-context-label';
           cardLabel.textContent = def.label;
           card.appendChild(cardLabel);
-          const cardValue = document.createElement('div');
-          cardValue.className = 'settings-repo-context-value';
-          const value = def.effectiveValue;
-          if (value == null || value === '') {
-            cardValue.classList.add('settings-repo-context-unset');
-            cardValue.textContent = 'Unset';
-          } else {
-            cardValue.textContent = typeof value === 'string' ? value : JSON.stringify(value);
-          }
-          card.appendChild(cardValue);
+          const cardControl = document.createElement('div');
+          cardControl.className = 'settings-repo-context-control';
+          cardControl.appendChild(makeGeneralControl(def, 'project', def.effectiveValue, repoPath, false));
+          card.appendChild(cardControl);
           if (def.description) {
             const cardHint = document.createElement('div');
             cardHint.className = 'settings-repo-context-hint';
