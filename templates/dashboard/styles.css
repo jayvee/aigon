@@ -568,6 +568,16 @@
     .settings-section p{color:var(--text-secondary);font-size:12px;margin:0 0 12px}
     .settings-subsection{margin-top:16px}
     .settings-subsection h4{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--text-primary)}
+    /* F521: read-only repo-scope cards (profile, devServer.enabled). */
+    .settings-repo-context{margin:12px 0 16px}
+    .settings-repo-context h5{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary)}
+    .settings-repo-context-note{margin:0 0 10px;color:var(--text-secondary);font-size:12px;line-height:1.5}
+    .settings-repo-context-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+    .settings-repo-context-card{padding:10px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px}
+    .settings-repo-context-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-tertiary)}
+    .settings-repo-context-value{margin-top:4px;font-family:var(--mono);font-size:13px;color:var(--text-primary)}
+    .settings-repo-context-value.settings-repo-context-unset{color:var(--text-tertiary);font-style:italic}
+    .settings-repo-context-hint{margin-top:6px;font-size:11px;color:var(--text-secondary);line-height:1.4}
     .settings-compare-intro{margin:0 0 12px;padding:10px 12px;background:rgba(255,255,255,.025);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:12px;line-height:1.5}
     .settings-loading{padding:14px 16px;border:1px dashed var(--border-subtle);border-radius:10px;color:var(--text-tertiary);font-size:12px;background:rgba(255,255,255,.015)}
     .settings-target-wrap{display:grid;gap:6px;margin-bottom:18px;padding:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:10px}

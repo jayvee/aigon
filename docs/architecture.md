@@ -432,6 +432,26 @@ So the architecture after F171 → F283 → F294 is:
 
 **Tracked files** (fully aigon-owned, full overwrite): `.aigon/docs/*.md`, command files (`.claude/commands/aigon/*.md`, aliases), skill files (`.claude/skills/aigon/SKILL.md`, `.codex/skills/aigon-*/SKILL.md`), cursor rules (`.cursor/rules/aigon.mdc`). **Not tracked**: merged config files (`.claude/settings.json`, `.gemini/settings.json`, `.codex/config.toml`), hooks file, upserted agent docs (user can add content after marker blocks).
 
+## Setting scopes (F521)
+
+Every entry in `DASHBOARD_SETTINGS_SCHEMA` (`lib/dashboard-server.js`) carries a `scope` field with one of three values:
+
+- **`user`** — global only. The value belongs to the *user*, not the repo. Project-layer values are ignored at resolution time; PUT `/api/settings` with `scope: 'project'` returns HTTP 400 `scope_violation`. UI renders these under **Settings → Preferences** (or **Settings → Terminal** for the two terminal-related rows) with a single value, no per-repo override column.
+- **`shared`** — global default with optional per-repo override (legacy behaviour). The resolver honours `project > global > default` precedence. UI renders these under **Settings → Repository Settings** with the two-column "Shared | Repository" table.
+- **`repo`** — per-repo only; no meaningful global default (often auto-detected). PUT `/api/settings` with `scope: 'global'` returns HTTP 400 `scope_violation`. UI renders these as read-only **Repo context** cards.
+
+Current classification:
+
+| Scope    | Keys                                                                                                                            |
+|----------|----------------------------------------------------------------------------------------------------------------------------------|
+| `user`   | `backgroundAgents`, `terminalApp`, `terminal.focusOnLaunch`, `autoNudge.enabled`, `autoNudge.idle*Sec`, `agents.<id>.cli`, `agents.<id>.implementFlag` |
+| `shared` | `defaultAgent`, `security.enabled`, `security.mode`, `agents.<id>.<role>.model`                                                 |
+| `repo`   | `profile`, `devServer.enabled`                                                                                                  |
+
+The authoritative user-scope list lives in `USER_SCOPE_KEYS` (`lib/config.js`); the schema scope tags are checked against it by `tests/unit/settings-scope.test.js`. If you add a new setting, set its `scope` explicitly and — if it's `user` — add the key to `USER_SCOPE_KEYS` so `getEffectiveConfig` short-circuits the project layer correctly.
+
+Stale per-repo overrides of user-scope keys are listed by `listStaleUserScopeProjectOverrides(projectConfig)` and surface as a one-line warning at dashboard startup. They are *ignored*, not deleted — cleanup is the user's call.
+
 ## Where To Make Changes
 
 - Add or change a CLI command:

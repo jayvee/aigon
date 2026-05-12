@@ -56,12 +56,13 @@ test('global override to foreground wins over default', () => {
     assert.strictEqual(eff.terminal.focusOnLaunch, 'foreground');
 });
 
-// --- Project override beats global ---
-test('project override beats global', () => {
+// --- F521: terminal.focusOnLaunch is user-scope; project overrides are ignored ---
+test('F521: project override of terminal.focusOnLaunch is ignored (user-scope)', () => {
     writeGlobal({ terminalApp: 'apple-terminal', terminal: { focusOnLaunch: 'foreground' } });
     writeProject({ terminal: { focusOnLaunch: 'background' } });
     const eff = config.getEffectiveConfig(tmpRepo);
-    assert.strictEqual(eff.terminal.focusOnLaunch, 'background');
+    // Project value 'background' is ignored — global 'foreground' wins.
+    assert.strictEqual(eff.terminal.focusOnLaunch, 'foreground');
 });
 
 // --- Legacy `terminal: "warp"` string is migrated, not exposed as object ---
