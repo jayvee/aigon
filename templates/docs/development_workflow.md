@@ -106,16 +106,16 @@ For features, there are two relevant layers:
 
 ## Per-worktree setup (`worktreeSetup`)
 
-Worktrees are fresh checkouts — they do not share `node_modules`, virtualenvs, or any other build artefacts with the main repo. If your agents need those to exist before they start work, declare a setup command in `.aigon/config.json`:
+Worktrees are fresh checkouts — they do not share dependency directories, virtualenvs, or any other build artefacts with the main repo. If your agents need those to exist before they start work, declare a setup command in `.aigon/config.json`:
 
 ```json
-{ "worktreeSetup": "npm ci" }
+{ "worktreeSetup": "<your repo setup command>" }
 ```
 
-or (faster, when the stack tolerates it):
+or (faster, when your stack tolerates it):
 
 ```json
-{ "worktreeSetup": "ln -s ../../node_modules node_modules" }
+{ "worktreeSetup": "<your faster local setup command>" }
 ```
 
 **When it runs:** after `git worktree add` writes `.env.local`, before the agent launches. One execution per worktree.
