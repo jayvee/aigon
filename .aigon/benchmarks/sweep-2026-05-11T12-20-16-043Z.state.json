@@ -1,0 +1,39 @@
+{
+  "seed": "brewboard",
+  "startedAt": "2026-05-11T12:20:16.046Z",
+  "completedAt": null,
+  "pairs": [
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "modelLabel": "Gemini 2.5 Flash",
+      "status": "pending",
+      "resultFile": null,
+      "completedAt": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3.1-pro-preview",
+      "modelLabel": "Gemini 3.1 Pro Preview",
+      "status": "pending",
+      "resultFile": null,
+      "completedAt": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "modelLabel": "Gemini 2.5 Pro",
+      "status": "pending",
+      "resultFile": null,
+      "completedAt": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3-flash-preview",
+      "modelLabel": "Gemini 3 Flash Preview (free fallback)",
+      "status": "pending",
+      "resultFile": null,
+      "completedAt": null
+    }
+  ]
+}

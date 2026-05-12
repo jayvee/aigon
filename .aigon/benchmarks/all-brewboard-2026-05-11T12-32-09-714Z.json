@@ -1,0 +1,41 @@
+{
+  "pairs": [
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-flash",
+      "modelLabel": "Gemini 2.5 Flash",
+      "ok": true,
+      "totalMs": 93270,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3.1-pro-preview",
+      "modelLabel": "Gemini 3.1 Pro Preview",
+      "ok": true,
+      "totalMs": 53354,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-2.5-pro",
+      "modelLabel": "Gemini 2.5 Pro",
+      "ok": true,
+      "totalMs": 77790,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "gg",
+      "modelValue": "gemini-3-flash-preview",
+      "modelLabel": "Gemini 3 Flash Preview (free fallback)",
+      "ok": true,
+      "totalMs": 66627,
+      "costUsd": null,
+      "tokenUsage": null
+    }
+  ],
+  "timestamp": "2026-05-11T12:32:09.714Z"
+}
