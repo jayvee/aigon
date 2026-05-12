@@ -16,3 +16,25 @@ Close gate now keyed on `requiresImplementorDisposition` (reviewer-author commit
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-05-12
+
+### Fixes Applied
+
+- `05cec20d` fix(review): restore dashboard action-log start-phase lines — dropped an unrelated change that removed `[aigon:start-phase]` snippets from dashboard HTTP action logs.
+
+### Validation
+
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+
+- **ESCALATE:subsystem** — Acceptance criterion #9 asks for regression coverage that solo AutoConductor does not call `feature-close` until the implementor signals after `review-complete --approve` when reviewer commits exist. Current `tests/integration/feature-autonomous-disposition.test.js` only exercises `requiresImplementorDisposition()` in isolation; consider extending with the snapshot/fixture-driven harness described in the spec’s Validation section if full-loop assertion without tmux is feasible.
+
+### Notes
+
+- `requiresImplementorDisposition`, `dispositionRequiredForClose` gating in the feedback and close paths, and `buildPostReviewDispositionPrompt` align with the stated acceptance criteria.
+- No deleted files or other scope drift beyond the dashboard logging hunk (reverted).
