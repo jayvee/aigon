@@ -1,0 +1,311 @@
+    // ── Detail tabs (spec drawer) ────────────────────────────────────────────
+
+    function createDrawerDetailTabs(options) {
+      const opts = options || {};
+      const drawerEl = opts.drawerEl;
+      const tabsEl = opts.tabsEl;
+      const detailEl = opts.detailEl;
+      const getDrawerState = opts.getDrawerState;
+      const onToggleSpecView = opts.onToggleSpecView || (() => {});
+
+      const TAB_ORDER = ['spec', 'events', 'agents', 'stats', 'control'];
+      const state = {
+        active: 'spec',
+        loading: false,
+        payload: null,
+        loadedTabs: {}
+      };
+
+      function setWideMode(enabled) {
+        drawerEl.classList.toggle('drawer-wide', !!enabled);
+        document.body.classList.toggle('drawer-wide', !!enabled);
+      }
+
+      function switchTab(tab) {
+        const key = TAB_ORDER.includes(tab) ? tab : 'spec';
+        state.active = key;
+        tabsEl.querySelectorAll('.drawer-tab').forEach(btn => {
+          const active = btn.dataset.tab === key;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        if (key === 'spec') {
+          setWideMode(false);
+          onToggleSpecView(true);
+          return;
+        }
+        onToggleSpecView(false);
+        setWideMode(true);
+        renderTab(key);
+      }
+
+      function reset() {
+        state.active = 'spec';
+        state.loading = false;
+        state.payload = null;
+        state.loadedTabs = {};
+        detailEl.innerHTML = '';
+        setWideMode(false);
+        switchTab('spec');
+      }
+
+      function parseEntityFromSpecPath(specPath, fallbackType) {
+        const file = String(specPath || '').split('/').pop() || '';
+        const feature = file.match(/^feature-(\d+)-/);
+        if (feature) return { type: 'feature', id: feature[1] };
+        const research = file.match(/^research-(\d+)-/);
+        if (research) return { type: 'research', id: research[1] };
+        const pref = fallbackType === 'research' ? 'research' : 'feature';
+        return { type: pref, id: null };
+      }
+
+      function formatIso(ts) {
+        const d = new Date(ts);
+        if (isNaN(d)) return 'Unknown';
+        return d.toLocaleString();
+      }
+
+      function formatDuration(ms) {
+        if (!Number.isFinite(ms) || ms < 0) return 'n/a';
+        const s = Math.round(ms / 1000);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        if (h) return `${h}h ${m}m`;
+        if (m) return `${m}m ${sec}s`;
+        return `${sec}s`;
+      }
+
+      function jsonSyntaxHighlight(raw) {
+        const text = typeof raw === 'string' ? raw : JSON.stringify(raw || {}, null, 2);
+        const re = /(\"(?:\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\\"])*\"(?:\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?)\b/g;
+        let result = '';
+        let lastIndex = 0;
+        let m;
+        while ((m = re.exec(text)) !== null) {
+          result += escHtml(text.slice(lastIndex, m.index));
+          let cls = 'json-number';
+          if (m[0].startsWith('"') && m[0].endsWith(':')) cls = 'json-key';
+          else if (m[0].startsWith('"')) cls = 'json-string';
+          else if (m[0] === 'true' || m[0] === 'false') cls = 'json-boolean';
+          else if (m[0] === 'null') cls = 'json-null';
+          result += '<span class="' + cls + '">' + escHtml(m[0]) + '</span>';
+          lastIndex = re.lastIndex;
+        }
+        result += escHtml(text.slice(lastIndex));
+        return result;
+      }
+
+      async function fetchDetailPayload() {
+        if (state.payload) return state.payload;
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) throw new Error('This item has no numeric ID yet.');
+        const q = new URLSearchParams({
+          specPath: drawer.path || ''
+        });
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        const res = await fetch(`/api/detail/${parsed.type}/${parsed.id}?${q.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        state.payload = data;
+        return data;
+      }
+
+      function computeStats(payload) {
+        const manifest = payload.manifest || {};
+        const events = Array.isArray(manifest.events) ? manifest.events : [];
+        const byType = {};
+        events.forEach(ev => {
+          const key = String(ev.type || ev.status || '').trim().toLowerCase();
+          if (!key) return;
+          byType[key] = ev.at || ev.ts || ev.timestamp || null;
+        });
+        const firstEventTs = events.length > 0 ? (events[0].at || events[0].ts || events[0].timestamp || null) : null;
+        const createdTs = manifest.createdAt || byType.created || byType['feature-created'] || byType['transition:feature-create'] || byType['transition:research-create'] || byType['transition:feature-prioritise'] || byType['transition:research-prioritise'] || byType.bootstrapped || firstEventTs;
+        const startedTs = byType.started || byType['feature-started'] || byType['research-started'] || byType['transition:feature-start'] || byType['transition:research-start'];
+        // Fallback: derive submit time from agent status files if no manifest event
+        let agentSubmitTs = null;
+        if (!byType.submitted && !byType['all-submitted'] && !byType['feature-submitted'] && !byType['transition:feature-submit']) {
+          const agentFiles = payload.agentFiles || {};
+          Object.values(agentFiles).forEach(af => {
+            if (af && af.status === 'submitted' && af.updatedAt) {
+              if (!agentSubmitTs || af.updatedAt < agentSubmitTs) agentSubmitTs = af.updatedAt;
+            }
+          });
+        }
+        const submittedTs = byType.submitted || byType['all-submitted'] || byType['feature-submitted'] || byType['research-submitted'] || byType['transition:feature-submit'] || byType['transition:research-submit'] || agentSubmitTs;
+        const evaluatedTs = byType.evaluated || byType.closed || byType['feature-evaluated'] || byType['research-evaluated'] || byType['transition:feature-eval'] || byType['transition:feature-close'] || byType['transition:research-eval'] || byType['transition:research-close'];
+
+        const created = createdTs ? new Date(createdTs) : null;
+        const started = startedTs ? new Date(startedTs) : null;
+        const submitted = submittedTs ? new Date(submittedTs) : null;
+        const evaluated = evaluatedTs ? new Date(evaluatedTs) : null;
+
+        return {
+          timeToStart: created && started ? (started - created) : NaN,
+          timeToSubmit: started && submitted ? (submitted - started) : NaN,
+          timeToEvaluate: submitted && evaluated ? (evaluated - submitted) : NaN,
+          totalLifecycle: created && (evaluated || submitted || started) ? ((evaluated || submitted || started) - created) : NaN,
+          agentCount: Array.isArray(manifest.agents) ? manifest.agents.length : Object.keys(payload.agentFiles || {}).length,
+          winner: manifest.winner || manifest.winningAgent || 'n/a',
+          createdAt: createdTs || null,
+          startedAt: startedTs || null,
+          submittedAt: submittedTs || null,
+          evaluatedAt: evaluatedTs || null
+        };
+      }
+
+      function renderEvents(payload) {
+        const events = Array.isArray(payload.manifest && payload.manifest.events) ? payload.manifest.events : [];
+        if (events.length === 0) {
+          detailEl.innerHTML = '<div class="drawer-empty">No events recorded.</div>';
+          return;
+        }
+        const rows = events.map(ev => {
+          const ts = ev.at || ev.ts || ev.timestamp || '';
+          const kind = ev.type || ev.status || 'event';
+          const actor = ev.actor || ev.agent || 'system';
+          const summary = ev.message || ev.detail || '';
+          return '<li class="timeline-item">' +
+            '<div class="timeline-time">' + escHtml(formatIso(ts)) + '</div>' +
+            '<div class="timeline-dot"></div>' +
+            '<div class="timeline-content">' +
+              '<div class="timeline-title"><span class="timeline-kind">' + escHtml(kind) + '</span><span class="timeline-actor">' + escHtml(actor) + '</span></div>' +
+              (summary ? '<div class="timeline-summary">' + escHtml(summary) + '</div>' : '') +
+            '</div>' +
+          '</li>';
+        }).join('');
+        detailEl.innerHTML = '<ol class="detail-timeline">' + rows + '</ol>';
+      }
+
+      function renderAgents(payload) {
+        const files = payload.agentFiles || {};
+        const excerpts = payload.logExcerpts || {};
+        const ids = Object.keys(files).sort();
+        if (ids.length === 0) {
+          detailEl.innerHTML = '<div class="drawer-empty">No agent status files found.</div>';
+          return;
+        }
+        const cards = ids.map(id => {
+          const file = files[id] || {};
+          const ex = excerpts[id] || {};
+          const excerpt = ex.plan || ex.progress || ex.findings || ex.summary || '';
+          const flags = file.flags && typeof file.flags === 'object' ? Object.keys(file.flags) : [];
+          return '<section class="agent-detail-card">' +
+            '<div class="agent-detail-header">' +
+              '<span class="agent-detail-id">' + escHtml(id) + '</span>' +
+              '<span class="agent-detail-status status-' + escHtml(String(file.status || 'unknown').toLowerCase()) + '">' + escHtml(file.status || 'unknown') + '</span>' +
+            '</div>' +
+            '<dl class="agent-detail-grid">' +
+              '<div><dt>Updated</dt><dd>' + escHtml(formatIso(file.updatedAt || '')) + '</dd></div>' +
+              '<div><dt>Worktree</dt><dd class="mono">' + escHtml(file.worktreePath || 'n/a') + '</dd></div>' +
+              '<div><dt>Flags</dt><dd>' + escHtml(flags.length ? flags.join(', ') : 'none') + '</dd></div>' +
+              '<div><dt>Session</dt><dd>' + escHtml(file.tmuxSession || (file.flags && file.flags.sessionName) || 'n/a') + '</dd></div>' +
+            '</dl>' +
+            (excerpt ? '<details class="agent-excerpt"><summary>Log excerpt</summary><pre>' + escHtml(excerpt) + '</pre></details>' : '<div class="agent-no-excerpt">No excerpt available.</div>') +
+          '</section>';
+        }).join('');
+        detailEl.innerHTML = '<div class="agent-detail-grid-wrap">' + cards + '</div>';
+      }
+
+      function renderStats(payload) {
+        const stats = computeStats(payload);
+        const rows = [
+          ['Time to start', formatDuration(stats.timeToStart)],
+          ['Time to submit', formatDuration(stats.timeToSubmit)],
+          ['Time to evaluate', formatDuration(stats.timeToEvaluate)],
+          ['Total lifecycle', formatDuration(stats.totalLifecycle)],
+          ['Agent count', String(stats.agentCount || 0)],
+          ['Winner', String(stats.winner || 'n/a')]
+        ];
+        const timelineRows = [
+          ['Created', stats.createdAt ? formatIso(stats.createdAt) : 'n/a'],
+          ['Started', stats.startedAt ? formatIso(stats.startedAt) : 'n/a'],
+          ['Submitted', stats.submittedAt ? formatIso(stats.submittedAt) : 'n/a'],
+          ['Evaluated', stats.evaluatedAt ? formatIso(stats.evaluatedAt) : 'n/a']
+        ];
+        detailEl.innerHTML =
+          '<div class="stats-grid">' +
+            rows.map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
+          '</div>' +
+          '<div class="stats-events">' +
+            timelineRows.map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
+          '</div>';
+      }
+
+      function buildControlBlock(id, label, raw) {
+        return '<section class="control-block">' +
+          '<div class="control-header">' +
+            '<strong>' + escHtml(label) + '</strong>' +
+            '<button class="btn btn-sm detail-copy-json" data-copy-id="' + escHtml(id) + '">Copy</button>' +
+          '</div>' +
+          '<pre class="json-block" data-json-id="' + escHtml(id) + '">' + jsonSyntaxHighlight(raw) + '</pre>' +
+        '</section>';
+      }
+
+      function renderControl(payload) {
+        const manifestRaw = payload.rawManifest || JSON.stringify(payload.manifest || {}, null, 2);
+        const files = payload.agentFiles || {};
+        const rawFiles = payload.rawAgentFiles || {};
+        const ids = Object.keys(files).sort();
+        let html = buildControlBlock('manifest', 'Coordinator manifest', manifestRaw);
+        ids.forEach(id => {
+          const raw = rawFiles[id] || JSON.stringify(files[id] || {}, null, 2);
+          html += buildControlBlock('agent-' + id, `Agent ${id}`, raw);
+        });
+        if (ids.length === 0) {
+          html += '<div class="drawer-empty">No agent control files found.</div>';
+        }
+        detailEl.innerHTML = '<div class="control-wrap">' + html + '</div>';
+      }
+
+      async function renderTab(tab) {
+        if (tab === 'spec') return;
+        if (state.loading) return;
+        detailEl.innerHTML = '<div class="drawer-empty">Loading…</div>';
+        try {
+          state.loading = true;
+          const payload = await fetchDetailPayload();
+          state.loadedTabs[tab] = true;
+          if (tab === 'events') renderEvents(payload);
+          else if (tab === 'agents') renderAgents(payload);
+          else if (tab === 'stats') renderStats(payload);
+          else if (tab === 'control') renderControl(payload);
+          else detailEl.innerHTML = '<div class="drawer-empty">Unknown tab.</div>';
+        } catch (e) {
+          detailEl.innerHTML = '<div class="drawer-empty drawer-empty-error">' + escHtml(e.message || 'Failed to load detail data') + '</div>';
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      tabsEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.drawer-tab');
+        if (!btn) return;
+        switchTab(btn.dataset.tab || 'spec');
+      });
+
+      detailEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.detail-copy-json');
+        if (!btn) return;
+        const id = btn.dataset.copyId;
+        const pre = detailEl.querySelector('[data-json-id="' + id + '"]');
+        if (!pre) return;
+        const text = pre.textContent || '';
+        const ok = await copyText(text);
+        showToast(ok ? 'Copied JSON' : 'Copy failed');
+      });
+
+      return {
+        switchTab,
+        reset,
+        clearData() { state.payload = null; state.loadedTabs = {}; },
+        getActiveTab() { return state.active; },
+        onDrawerRefresh() {
+          state.payload = null;
+          state.loadedTabs = {};
+          if (state.active !== 'spec') renderTab(state.active);
+        }
+      };
+    }

@@ -1,0 +1,169 @@
+---
+description: Review feature spec <ID> - improve the spec itself before implementation
+argument-hint: "<ID|slug> [--agent=<agent-id>]"
+---
+# aigon-feature-spec-review
+
+Review the feature spec itself, not the code. Edit the spec in place using the shared rubric below, then commit the reviewed spec with a `spec-review:` commit.
+
+**Your job: WRITE a review of this spec.** That means reading it, making targeted edits in place, and creating one `spec-review:` commit that records your findings. You are the reviewer. Do not check for or process anyone else's reviews — that is a separate downstream task (`feature-spec-revise`) and is not what you are doing here.
+
+If `git log` shows no prior `spec-review:` commits on this spec, that is expected — your review will be the first. Do **not** exit with "no pending reviews"; that would be the check workflow, not this one.
+
+You are already inside the spec-review task for this feature.
+
+- Do not run `aigon feature-spec-review {{args}}` again.
+- Do not run `aigon feature-spec-revise {{args}}` — that is a different command for a later stage, run by the feature author after reviewers have completed their review. It is not your job here.
+- Do not ask the shell to start the same command recursively.
+- Use the resolved spec path below, edit that spec in place, then make the required `spec-review:` commit and run `aigon feature-spec-review-record {{args}}`.
+- If you cannot complete the commit or record step, stop and report the blocker instead of making a generic commit.
+
+## Resolve the spec
+
+```bash
+SPEC_PATH=$(aigon feature-spec {{args}} 2>/dev/null || true)
+if [ -z "$SPEC_PATH" ]; then
+  SPEC_PATH=$(find docs/specs/features -maxdepth 2 \( -name "feature-{{args}}-*.md" -o -name "feature-{{args}}.md" \) | head -1)
+fi
+test -n "$SPEC_PATH" && echo "$SPEC_PATH"
+```
+
+If `SPEC_PATH` is empty, stop and report that the feature spec could not be resolved.
+
+Read the spec before editing:
+
+```bash
+cat "$SPEC_PATH"
+```
+
+## Research context (skip when none)
+
+If the spec frontmatter has a `research:` field, read the linked findings before reviewing — the spec is supposed to be grounded in those conclusions. Evaluate whether the acceptance criteria and technical approach reflect what the research actually surfaced. Skip when no `research:` field is present.
+
+```bash
+RESEARCH_IDS=$(awk '/^---[[:space:]]*$/{f=!f;next} f && /^research:/{
+  sub(/^research:[[:space:]]*/,"")
+  gsub(/[\[\]]/,"")
+  gsub(/,/," ")
+  print
+}' "$SPEC_PATH")
+if [ -n "$RESEARCH_IDS" ]; then
+  for ID in $RESEARCH_IDS; do
+    echo "=== Research $ID findings ==="
+    for f in docs/specs/research-topics/logs/research-${ID}-*-findings.md; do
+      [ -e "$f" ] || continue
+      echo "--- $f ---"
+      cat "$f"
+    done
+  done
+else
+  echo "(no research linked — skipping)"
+fi
+```
+
+## Review rubric
+
+## Spec Review Rubric
+
+Review the spec against this checklist. Prefer small, targeted edits over broad rewrites.
+
+### Specificity
+- Replace vague language with concrete behavior, constraints, and outcomes.
+- Name exact commands, files, states, and data shapes where they matter.
+
+### Completeness
+- Ensure the happy path, error path, and lifecycle edge cases are covered.
+- Call out missing UX states, integration seams, or follow-up commits/tests the spec requires.
+
+### Testability
+- Acceptance criteria should be observable and falsifiable.
+- Prefer criteria that can be checked with a command, visible UI state, or concrete artifact.
+
+### Scope clarity
+- Remove work that belongs in a follow-up feature.
+- Flag hidden expansion of scope, especially cross-cutting work that was not signalled in the spec.
+
+### Understandability
+- Tighten structure so implementation order and ownership are obvious.
+- Eliminate ambiguity about which module or layer should own the change.
+
+### Consistency
+- Align with existing Aigon patterns: centralized action rules, ctx usage, template source-of-truth, and workflow-core authority.
+- Avoid introducing a second source of truth or frontend-only eligibility logic.
+
+### Minimal-diff preference
+- Edit in place.
+- Keep valid author intent.
+- Strengthen the spec without rewriting its voice unless the original wording is actively harmful or unclear.
+
+### Frontmatter: complexity
+- Verify `complexity:` matches the spec's actual scope + risk + judgment-load using the rubric (low / medium / high / very-high).
+  - **low** config/doc/single-file; **medium** standard cross-cutting; **high** multi-file engine/event/dashboard; **very-high** architectural shifts.
+- If the author over- or under-rated complexity, revise the value. Note the revision (old → new) in the review commit's Summary and give the reason in one line.
+- **Remove any legacy `recommended_models:` YAML** (or per-agent model/effort keys) from frontmatter if present — specs must not embed model IDs; defaults come from the agent's complexity-defaults table at start time.
+- Frontmatter edits ship in the same `spec-review:` commit as other edits.
+
+## Review workflow
+
+1. Resolve `SPEC_PATH`.
+2. Read the full spec carefully.
+3. Make targeted edits in place.
+4. Preserve author intent unless it is ambiguous, contradictory, or clearly under-specified.
+5. Prefer tightening acceptance criteria, execution order, ownership, and edge cases over adding net-new scope.
+6. Verify or bootstrap `AIGON_AGENT_ID` before committing.
+7. Commit with the exact `spec-review: feature ...` format below.
+8. Run `aigon feature-spec-review-record {{args}}`.
+9. Do not create any other commit message format.
+
+Before committing, confirm the reviewer identity is available. Dashboard/tmux launches
+set `AIGON_AGENT_ID` before the agent starts; direct slash-command use inside an
+already-running agent may need to derive it from the current agent process:
+
+```bash
+if [ -z "${AIGON_AGENT_ID:-}" ]; then
+  AIGON_AGENT_ID=$(aigon agent-context --id-only 2>/dev/null || true)
+  export AIGON_AGENT_ID
+fi
+test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-review commits"; exit 1; }
+```
+
+## Commit format
+
+Commit exactly once after your spec edits:
+
+```bash
+git add "$SPEC_PATH"
+git commit -m "spec-review: feature {{args}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID}
+
+Summary:
+- <high-level summary>
+
+Strengths:
+- <what was already strong>
+
+Gaps:
+- <what you tightened or clarified>
+
+Risky decisions:
+- <scope or architectural risks, or 'None'>
+
+Suggested edits:
+- <notable edits you made>"
+aigon feature-spec-review-record {{args}}
+```
+
+## Forbidden
+
+- Running `aigon feature-spec-review {{args}}` from inside this task
+- Running `aigon feature-spec-revise {{args}}` or `aigon feature-spec-revise-record {{args}}` — that is the next stage, not this one
+- Making a `spec-revise:` commit (even `--allow-empty`) — that commit belongs to the revise stage
+- Making a non-`spec-review:` commit
+- Ending the task before `feature-spec-review-record` succeeds
+
+## Report to the user
+
+Tell the user what you changed and why.
+
+Then, as the last line of your reply, print the following **as a literal suggestion for the user to run next** — do not execute it yourself:
+
+`/aigon:feature-spec-revise {{args}}`

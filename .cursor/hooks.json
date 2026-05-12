@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "session_start": [
+      {
+        "command": "/bin/zsh -l -c \"aigon check-version\"",
+        "timeout": 30
+      }
+    ],
+    "sessionStart": [
+      {
+        "command": "/bin/zsh -l -c \"aigon check-version\"",
+        "timeout": 30
+      },
+      {
+        "command": "/bin/zsh -l -c \"aigon project-context\"",
+        "timeout": 10
+      },
+      {
+        "command": "/bin/zsh -l -c \"aigon check-version --notice-only\"",
+        "timeout": 15
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+---
+description: Aigon workflow context — read this before every task
+globs:
+alwaysApply: true
+---
+## Aigon
+
+This project uses the Aigon development workflow. Read these docs before starting any work:
+
+- **Agent instructions**: `AGENTS.md` — codebase orientation, module map, coding rules
+- **Development workflow**: `.aigon/docs/development_workflow.md` — feature/research lifecycle
+- **Agent-specific notes**: `.aigon/docs/agents/cursor.md`
+
+## Key Rules
+
+1. **`main` vs implementation work.** Land **implementation** (any non-trivial code change tied to active feature/research implementation) via the repo's usual **feature branch or worktree** — not silently on `main` when isolation is intended. **`aigon feature-create` / `research-create`**, which produce **`docs/specs/*/01-inbox/*.md`**, normally **do** commit to **`main`** (or whatever the default integration branch is); **do not** create a disposable Git branch only to commit a fresh inbox spec.
+2. **Use `aigon` CLI for all state transitions** — never move spec files manually
+3. **Use `aigon dev-server start` for dev servers** — never run the project's dev command directly (bypasses port allocation)
+4. **Signal when done** — run `aigon agent-status implementation-complete` when implementation is complete
+5. **Read the spec first** — run `aigon feature-spec <ID>` to find and read the feature spec before coding
+6. **Verify per the project's own conventions** — run whatever lint/tests/builds the project defines (check the project's docs) before submitting
+
+## Dev Server
+
+**NEVER run the project's dev command directly.** Use `aigon dev-server start` which handles port allocation and proxy registration.
+
+If you need to check your dev server URL: `aigon dev-server url`

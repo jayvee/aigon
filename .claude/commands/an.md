@@ -1,0 +1,190 @@
+---
+description: Suggest the most likely next workflow action based on current context (shortcut for next)
+---
+# aigon-next
+
+Inspect the current git branch, worktree status, and Kanban stage to automatically suggest the most likely next workflow action. Eliminates the need to remember command names for the happy path.
+
+## Step 1: Gather context
+
+Run all three commands:
+
+```bash
+git branch --show-current
+```
+
+```bash
+git status --short
+```
+
+```bash
+aigon board --list --active
+```
+
+## Step 2: Parse the branch name
+
+Extract context from the branch name using the pattern `feature-<ID>-<agent>-<description>` or `research-<ID>-<agent>-<description>`:
+
+- **Type**: `feature` or `research`
+- **ID**: numeric ID (e.g., `25`)
+- **Agent**: agent code (e.g., `cc`, `gg`, `cx`, `cu`) — if absent, this is a Drive branch
+- **Description**: slug description
+
+**Drive vs worktree**: if the agent segment is one of `cc`, `gg`, `cx`, `cu`, this is a Fleet worktree branch — `feature-do` runs automatically on open and must NOT be suggested. If the agent segment is absent (branch is `feature-<ID>-<description>`), this is a Drive branch — `feature-do` must be run manually.
+
+If the branch is `main` (or `master`), skip to **Path D: Main branch**.
+
+## Step 3: Apply the decision tree
+
+### Path A: Feature branch with uncommitted changes
+
+**Condition**: Branch matches `feature-<ID>-*` AND `git status --short` is non-empty
+
+**Suggestion**:
+> You have uncommitted changes on feature branch `<branch>`.
+>
+> **Suggested next step:**
+> Commit your changes, update your feature log, then run:
+> `aigon agent-status implementation-complete`
+>
+> Implementation is only complete after `aigon agent-status implementation-complete` succeeds.
+
+---
+
+### Path B: Feature branch with no uncommitted changes
+
+**Condition**: Branch matches `feature-<ID>-*` AND `git status --short` is empty
+
+**Check**: Run `git log main..HEAD --oneline` to count commits on this branch beyond the base. Also check whether this is a Drive branch (no agent code) or a worktree branch (agent code present).
+
+#### B1: Drive branch, no implementation commits yet (only the spec-move commit or zero commits)
+
+> You are on Drive branch `<branch>` with no uncommitted changes and no implementation yet.
+>
+> **Suggested next step:**
+> `/aigon:feature-do <ID>`
+>
+> This opens the feature spec and starts the implementation session.
+
+#### B2: Drive branch with implementation commits
+
+> You are on Drive branch `<branch>` with commits and no uncommitted changes.
+>
+> **Suggested next steps:**
+>
+> 1. `aigon agent-status implementation-complete` — mark implementation complete and signal ready for review
+> 2. `/aigon:feature-do <ID>` — continue implementing if not yet done
+
+#### B3: Worktree branch (agent code present), any state
+
+> You are in a Fleet worktree (`<branch>`). `feature-do` runs automatically on worktree open — do not suggest it.
+>
+> **Suggested next step:**
+> `aigon agent-status implementation-complete` — once your implementation and log updates are complete
+
+---
+
+### Path C: Research branch
+
+**Condition**: Branch matches `research-<ID>-*`
+
+**Check**: Does `aigon board --list --active` show findings already written for this research ID?
+
+**If no findings yet**:
+> You are on research branch `<branch>`.
+>
+> **Suggested next step:**
+> `/aigon:research-do <ID>`
+>
+> This will guide you through writing your research findings.
+
+**If findings exist**:
+> You are on research branch `<branch>` with findings already written.
+>
+> **Suggested next steps:**
+>
+> 1. `/aigon:research-close <ID>` — if research is complete
+> 2. `/aigon:research-do <ID>` — to continue or update findings
+
+---
+
+### Path D: Main branch
+
+**Condition**: Branch is `main` or `master`
+
+Check `aigon board --list --active` output for in-progress items.
+
+#### D1: In-progress features found
+
+Count the worktrees for each in-progress feature (from board output — look for `Fleet (cc, gg...)` vs `Drive`).
+
+**Fleet mode** (2+ agents): Suggest eval
+> Feature `#<ID> <name>` is in progress (Fleet mode).
+>
+> **Suggested next step:**
+> `/aigon:feature-eval <ID>`
+>
+> This will compare all agent implementations and select the best one.
+
+**Drive mode** (1 agent, no agent code in branch name): Check whether implementation has been done.
+
+Look at the board output for agent status. If the agent shows `complete` or `done`, suggest close. Otherwise suggest do. Note: Drive mode requires the user to manually run `feature-do`; it is NOT run automatically.
+
+**If not yet complete**:
+> Feature `#<ID> <name>` is in progress (Drive mode).
+>
+> **Suggested next step:**
+> `/aigon:feature-do <ID>`
+>
+> This starts the implementation session on the Drive branch.
+
+**If complete/done**:
+> Feature `#<ID> <name>` is implemented and complete.
+>
+> **Suggested next step:**
+> `/aigon:feature-close <ID>`
+>
+> This will merge your implementation.
+
+#### D2: In-progress research found
+
+> Research `#<ID> <name>` is in progress.
+>
+> **Suggested next step:**
+> `/aigon:research-close <ID>`
+>
+> Or to continue conducting: `/aigon:research-do <ID>`
+
+#### D3: Nothing active — backlog or inbox items available
+
+Show the board summary and suggest starting something new:
+
+> Nothing is currently in progress.
+>
+> **Suggested next steps:**
+>
+> 1. `/aigon:feature-now <name>` — fast-track a new or inbox feature
+> 2. `/aigon:board` — view the full Kanban board to pick what to work on next
+
+---
+
+### Path E: Ambiguous or unrecognised context
+
+**Condition**: Branch name doesn't match any known pattern, or context is unclear
+
+Fall back to showing the board and suggesting the user pick:
+> Context is ambiguous (branch: `<branch>`).
+>
+> **Showing board instead:**
+
+Run `aigon board` and display the output. Then suggest:
+> Run `/aigon:board` for details, or `/aigon:feature-now <name>` to start something new.
+
+---
+
+## Step 4: Present the suggestion
+
+- Display the suggestion(s) clearly as a ready-to-copy Aigon agent command
+- If there are multiple plausible actions, show a short numbered list (max 3 options)
+- Always include a one-line explanation of what the command does
+- Do NOT auto-execute the suggested command — always let the user confirm
