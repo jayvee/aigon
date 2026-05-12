@@ -16,18 +16,20 @@ git push                   share              cut                publish
                                                              stable→@latest)
 ```
 
-## Mode selection
+## Step 0 — Ask mode first (MANDATORY, no exceptions)
 
-Match the user's phrasing:
+**Before doing anything else** — even before running git commands — use `AskUserQuestion` to ask which mode they want. Do not infer from phrasing. Do not skip this step.
 
-| User says | Mode |
-|---|---|
-| "just push", "save my work" | **`git push`** (NOT ship — no test gate needed) |
-| "share to origin", "push with tests" | **share** |
-| "tag a version", "cut beta N+1" | **cut** |
-| "release", "publish", "ship to npm" | **publish** |
+```
+Question: "What kind of release do you want?"
+Options:
+  - git push          — push commits to origin, no tests, no version bump
+  - share             — run test:deploy then push (no version tag)
+  - cut               — version + tag + CHANGELOG entry (no npm publish)
+  - publish to npm    — full release: tests + version + tag + npm publish
+```
 
-If ambiguous, ask. The escalation matters — `publish` is irreversible.
+Only proceed to the steps below once the user has selected a mode.
 
 ## share — `npm run ship -- share`
 
