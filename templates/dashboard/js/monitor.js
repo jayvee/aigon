@@ -269,7 +269,7 @@
           return (waitingCards ? '<span class="pill-filter waiting" style="font-size:10px;padding:1px 6px">' + waitingCards + ' waiting</span>' : '') + ' <span style="color:var(--text-tertiary);font-size:11px" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
         },
         openFeatureSpec(e, feature) {
-          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.btn')) return;
           if (!feature.specPath) return;
           openDrawer(feature.specPath, feature.name, feature.stage, feature.repoPath || null, {
             entityId: feature.id,
@@ -277,7 +277,7 @@
           });
         },
         openSpecItem(e, item, prefix) {
-          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.btn')) return;
           if (!item.specPath) return;
           openDrawer(item.specPath, item.name, item.stage || 'in-progress', item.repoPath || null, {
             entityId: item.id,

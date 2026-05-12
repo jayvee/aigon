@@ -1215,7 +1215,7 @@
       card.style.cursor = 'pointer';
       card.addEventListener('click', (e) => {
         if (wasDragged) { wasDragged = false; return; }
-        if (e.target.closest('button') || e.target.closest('.btn')) return;
+        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.btn')) return;
         if (feature.specPath) {
           const displayName = feature.name.replace(/-/g, ' ');
           openDrawer(feature.specPath, displayName, feature.stage, repoPath, {
