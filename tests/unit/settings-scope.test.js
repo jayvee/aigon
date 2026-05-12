@@ -56,15 +56,15 @@ test('every schema entry carries a valid scope', () => {
     }
 });
 
-test('schema user-scope tags match USER_SCOPE_KEYS in lib/config', () => {
+test('schema user-scope tags match config scope logic', () => {
     const schema = dashboardServer.DASHBOARD_SETTINGS_SCHEMA;
     const schemaUserKeys = schema.filter(d => d.scope === 'user').map(d => d.key).sort();
-    const configUserKeys = [...config.USER_SCOPE_KEYS].sort();
-    // The schema can be a subset (schema is what's UI-visible). But every
-    // schema-user key MUST appear in config's USER_SCOPE_KEYS — otherwise the
-    // resolver won't short-circuit and the UI will be lying.
+    
+    // Every schema-user key MUST be recognised as user-scope by config's
+    // isUserScopeKey logic — otherwise the resolver won't short-circuit
+    // and the UI will be lying.
     for (const k of schemaUserKeys) {
-        assert.ok(configUserKeys.includes(k), `schema user-scope key "${k}" missing from USER_SCOPE_KEYS`);
+        assert.ok(config.isUserScopeKey(k), `schema user-scope key "${k}" not recognised by config.isUserScopeKey`);
     }
 });
 
