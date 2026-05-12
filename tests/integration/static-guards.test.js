@@ -135,4 +135,24 @@ test('dashboard wires perf-bench settings (script order + Pro asset proxy + no O
     const cfg = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/config.js'), 'utf8');
     assert.ok(!cfg.includes('/api/benchmarks'), 'OSS must not register /api/benchmarks — Pro owns it via pro-bridge');
 });
+// REGRESSION F524: feature-do prompt must not inject any package-manager / depCheck recipe.
+// Aigon has zero opinion about the target repo's stack — operators declare `worktreeSetup`.
+test('feature-do prompt has no depCheck injection (F524)', () => {
+    const pp = require('../../lib/profile-placeholders');
+    const repoRoot = path.join(__dirname, '../..');
+    // 1. Profile preset string-files map carries no depCheck entry.
+    assert.ok(!('depCheck' in pp.PROFILE_PRESET_STRING_FILES), 'PROFILE_PRESET_STRING_FILES.depCheck must be removed');
+    // 2. Every resolved profile lacks a depCheck field.
+    for (const name of Object.keys(pp.PROFILE_PRESETS)) {
+        const profile = pp.PROFILE_PRESETS[name];
+        assert.ok(!('depCheck' in profile), `profile ${name} must not carry depCheck`);
+    }
+    // 3. profiles.json string-files map has no depCheck key.
+    const profilesJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'templates/profiles.json'), 'utf8'));
+    assert.ok(!('depCheck' in profilesJson.stringFiles), 'templates/profiles.json stringFiles.depCheck must be removed');
+    // 4. The feature-do generic template has no WORKTREE_DEP_CHECK placeholder or stack-specific install lines.
+    const tpl = fs.readFileSync(path.join(repoRoot, 'templates/generic/commands/feature-do.md'), 'utf8');
+    assert.ok(!tpl.includes('WORKTREE_DEP_CHECK'), 'feature-do.md must not reference WORKTREE_DEP_CHECK');
+    assert.ok(!tpl.includes('Install dependencies if needed'), 'feature-do.md must not inject dep-check block');
+});
 report();

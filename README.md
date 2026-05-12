@@ -99,6 +99,22 @@ aigon feature-eval dark-mode                 # Compare results, pick the winner
 
 Or spin up the web dashboard (`aigon server start`) and click "New Feature" on the kanban board. Same specs, three surfaces — pick whichever fits the moment.
 
+### Per-worktree setup
+
+Worktrees are fresh checkouts — they don't share `node_modules`, virtualenvs, or other build artefacts with the main repo. If your agents need those before they start, declare a setup command in `.aigon/config.json`:
+
+```json
+{ "worktreeSetup": "npm ci" }
+```
+
+or, when your stack tolerates a linked `node_modules`:
+
+```json
+{ "worktreeSetup": "ln -s ../../node_modules node_modules" }
+```
+
+The command runs once per worktree, after `git worktree add` and before the agent launches, with a 120-second timeout. Failure warns and continues. Aigon does not detect or guess your stack — if you need setup, declare it explicitly.
+
 ## Demo
 
 <p align="center">

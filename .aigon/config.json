@@ -31,7 +31,7 @@
       }
     }
   },
-  "worktreeSetup": "npm install",
+  "worktreeSetup": "ln -sfn \"$(dirname \"$(git rev-parse --git-common-dir)\")/node_modules\" node_modules",
   "github": {
     "prCheck": false
   }

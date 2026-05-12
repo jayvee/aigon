@@ -87,6 +87,37 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
 | `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
 | `devProxy.basePort` | Project | Starting port for allocation | Default: `3000` |
+| `worktreeSetup` | Project | Shell command run once per worktree after `git worktree add` | String (single line; use `&&` for composition) |
+
+## Per-worktree setup (`worktreeSetup`)
+
+Worktrees are fresh checkouts — they do not share `node_modules`, virtualenvs, or any other build artefacts with your main repo. If your agents need those to exist before they start, set `worktreeSetup` in `.aigon/config.json`:
+
+```json
+{
+  "worktreeSetup": "npm ci"
+}
+```
+
+**When it runs:** after `git worktree add` and `.env.local` is written, before the agent launches. One execution per worktree.
+
+**Where to set it:** `.aigon/config.json` (project scope). Aigon does not detect or guess your stack — you tell it what to do.
+
+**Examples:**
+
+```json
+{ "worktreeSetup": "npm ci" }
+```
+
+```json
+{ "worktreeSetup": "ln -s ../../node_modules node_modules" }
+```
+
+The symlink form is faster (under a second) when your project's tooling tolerates a linked `node_modules`. The install form is safer when it doesn't.
+
+**Failure semantics:** the command runs with a 120-second timeout. If it fails or times out, Aigon warns and continues — the agent launches anyway and can retry.
+
+**Anti-pattern:** Aigon does not detect or guess your stack. There is no built-in `pnpm`/`yarn`/`bun`/`pip`/`cargo` fallback. If you need per-worktree setup, declare it explicitly via `worktreeSetup`.
 
 ## Precedence
 
