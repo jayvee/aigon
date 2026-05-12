@@ -54,7 +54,8 @@ This feature introduces an explicit `scope: 'user' | 'shared' | 'repo'` field pe
   - **Terminal app** (moved here from Repository Settings) — picker bound to `terminalApp`.
   - **Bring terminal to foreground when starting a session** — toggle bound to `terminal.focusOnLaunch`. Closes F520's discoverability gap.
   - Both rows visually match the existing hand-coded controls but write via the schema-aware settings API (so source-of-truth stays the same).
-- [ ] **Settings → Preferences** (NEW top-level section): renders all `scope: 'user'` entries that aren't already shown in Terminal. Initial contents: Background agents, Auto-nudge enabled, Idle visible/nudge/escalate seconds. **No "shared" vs "project" override column** — single value, single source.
+- [ ] **Settings Navigation**: Update `templates/dashboard/index.html` (or equivalent nav template) to place the new "Preferences" section above "Repository Settings" in the sidebar.
+- [ ] **Settings → Preferences** (NEW top-level section): renders all `scope: 'user'` entries that aren't already shown in Terminal. Initial contents: Background agents, Auto-nudge enabled, Idle visible/nudge/escalate seconds, agent CLI paths and flags. **No "shared" vs "project" override column** — single value, single source.
 - [ ] **Settings → Repository Settings** (existing, slimmed down): renders only `scope: 'shared'` entries. The "global default | per-repo override" two-column layout stays for these. After restructure, this section is roughly 3-5 controls (default agent, security enabled, security mode, plus per-agent model defaults if they live here).
 - [ ] **Repo-intrinsic info** (`scope: 'repo'`): Profile and Dev server enabled render as **read-only context cards** at the top of the repo-specific settings view. They describe the repo; they aren't an editable "default with override."
 
