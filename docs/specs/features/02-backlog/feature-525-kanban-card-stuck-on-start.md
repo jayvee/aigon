@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-12T07:00:32.591Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: kanban-card-stuck-on-start
