@@ -545,14 +545,188 @@
         body: JSON.stringify({ scope: scope, key: key, value: value, repoPath: repoPath })
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+      if (!res.ok) {
+        // F521: scope_violation responses carry a human-readable `message`.
+        const msg = payload && payload.error === 'scope_violation' && payload.message
+          ? payload.message
+          : (payload.error || ('HTTP ' + res.status));
+        const err = new Error(msg);
+        err.scopeViolation = payload && payload.error === 'scope_violation';
+        throw err;
+      }
       return payload;
+    }
+
+    // F521: render the two schema-driven user-scope rows inside the existing
+    // hand-coded Terminal section (terminalApp + terminal.focusOnLaunch). The
+    // rows visually match the legacy "term-settings-row" controls but write via
+    // the schema-aware settings API.
+    function renderTerminalSchemaRows(section, globalSettingsData, refresh) {
+      // Idempotent: clear any previously-rendered schema rows.
+      section.querySelectorAll('.term-settings-row.f521-schema-row').forEach(r => r.remove());
+      const all = (globalSettingsData && globalSettingsData.settings) || [];
+      const wanted = ['terminalApp', 'terminal.focusOnLaunch'];
+      const defs = wanted.map(k => all.find(d => d.key === k)).filter(Boolean);
+      defs.forEach(def => {
+        const row = document.createElement('div');
+        row.className = 'term-settings-row f521-schema-row';
+        row.dataset.settingsKey = def.key;
+        row.dataset.settingsScope = 'global';
+        const lbl = document.createElement('div');
+        lbl.className = 'term-settings-label';
+        lbl.textContent = def.label;
+        const hint = document.createElement('div');
+        hint.className = 'term-settings-hint';
+        hint.textContent = def.description || '';
+        const ctrl = document.createElement('div');
+        ctrl.className = 'term-target-control';
+        const value = def.effectiveValue;
+        (def.options || []).forEach(opt => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'term-target-btn' + (String(value) === String(opt) ? ' active' : '');
+          btn.textContent = opt;
+          btn.dataset.val = opt;
+          btn.onclick = async () => {
+            try {
+              await updateDashboardSetting('global', def.key, opt, '');
+              showToast('Updated ' + def.label);
+              if (typeof refresh === 'function') refresh();
+            } catch (e) {
+              showToast('Update failed: ' + e.message, null, null, { error: true });
+            }
+          };
+          ctrl.appendChild(btn);
+        });
+        row.appendChild(lbl);
+        row.appendChild(ctrl);
+        row.appendChild(hint);
+        section.appendChild(row);
+      });
+    }
+
+    // F521: Preferences section — every scope:'user' entry except the two
+    // shown in the Terminal section (they live next to other terminal
+    // controls there). No "shared default vs project override" column.
+    function renderPreferencesSection(section, globalSettingsData, refresh) {
+      section.querySelectorAll('.preferences-content').forEach(n => n.remove());
+      const all = (globalSettingsData && globalSettingsData.settings) || [];
+      const SHOWN_IN_TERMINAL = new Set(['terminalApp', 'terminal.focusOnLaunch']);
+      const userDefs = all.filter(d => !d.group && d.scope === 'user' && !SHOWN_IN_TERMINAL.has(d.key));
+      if (userDefs.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'settings-empty preferences-content';
+        empty.textContent = 'No preferences yet.';
+        section.appendChild(empty);
+        return;
+      }
+      const wrap = document.createElement('div');
+      wrap.className = 'preferences-content';
+      const card = document.createElement('div');
+      card.className = 'agent-model-card';
+      const header = document.createElement('div');
+      header.className = 'agent-model-header';
+      header.textContent = 'Your preferences';
+      card.appendChild(header);
+
+      const table = document.createElement('table');
+      table.className = 'agent-model-table';
+      table.innerHTML = '<thead><tr><th>Setting</th><th>Value</th></tr></thead>';
+      const tbody = document.createElement('tbody');
+
+      userDefs.forEach(def => {
+        const tr = document.createElement('tr');
+        tr.dataset.settingsKey = def.key;
+        tr.dataset.settingsScope = 'global';
+        const tdLbl = document.createElement('td');
+        tdLbl.className = 'agent-model-task';
+        tdLbl.innerHTML = escHtml(def.label) +
+          (def.description ? ' <button type="button" class="settings-help settings-help-inline" data-settings-tooltip="' + escHtml(def.description) + '">?</button>' : '');
+        tr.appendChild(tdLbl);
+
+        const tdCtrl = document.createElement('td');
+        const ctrl = buildUserScopeControl(def, refresh);
+        tdCtrl.appendChild(ctrl);
+        tr.appendChild(tdCtrl);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+      wrap.appendChild(card);
+      section.appendChild(wrap);
+    }
+
+    function buildUserScopeControl(def, refresh) {
+      const value = def.effectiveValue;
+      const onSaved = () => { if (typeof refresh === 'function') refresh(); };
+      if (def.type === 'boolean') {
+        const sw = document.createElement('label'); sw.className = 'toggle-switch';
+        const input = document.createElement('input'); input.type = 'checkbox';
+        input.checked = !!value;
+        input.dataset.settingsKey = def.key; input.dataset.settingsScope = 'global';
+        input.onchange = async () => {
+          try {
+            await updateDashboardSetting('global', def.key, !!input.checked, '');
+            showToast('Updated ' + def.label); onSaved();
+          } catch (e) {
+            showToast('Update failed: ' + e.message, null, null, { error: true });
+            input.checked = !!value;
+          }
+        };
+        const track = document.createElement('span'); track.className = 'toggle-track';
+        sw.appendChild(input); sw.appendChild(track);
+        return sw;
+      }
+      if (def.type === 'enum' || def.type === 'select') {
+        const input = document.createElement('select');
+        input.className = 'settings-select settings-input-compact';
+        const emptyOpt = document.createElement('option'); emptyOpt.value = ''; emptyOpt.textContent = ''; input.appendChild(emptyOpt);
+        (def.options || []).forEach(opt => {
+          const el = document.createElement('option'); el.value = opt; el.textContent = opt;
+          input.appendChild(el);
+        });
+        input.value = value == null ? '' : String(value);
+        input.dataset.settingsKey = def.key; input.dataset.settingsScope = 'global';
+        input.onchange = async () => {
+          try {
+            await updateDashboardSetting('global', def.key, input.value, '');
+            showToast('Updated ' + def.label); onSaved();
+          } catch (e) {
+            showToast('Update failed: ' + e.message, null, null, { error: true });
+            input.value = value == null ? '' : String(value);
+          }
+        };
+        return input;
+      }
+      // string / number / fallback
+      const input = document.createElement('input');
+      input.type = def.type === 'number' ? 'number' : 'text';
+      input.className = 'settings-input settings-input-compact';
+      input.placeholder = 'Unset';
+      input.value = value == null ? '' : String(value);
+      input.dataset.settingsKey = def.key; input.dataset.settingsScope = 'global';
+      input.onchange = async () => {
+        try {
+          await updateDashboardSetting('global', def.key, input.value, '');
+          showToast('Updated ' + def.label); onSaved();
+        } catch (e) {
+          showToast('Update failed: ' + e.message, null, null, { error: true });
+          input.value = value == null ? '' : String(value);
+        }
+      };
+      return input;
     }
 
     function renderDefaultsAndOverridesSection(section, globalSettingsData, repoSettingsData, repoPath) {
       const projectName = formatSettingsRepoPath(repoPath) || 'selected repo';
-      const globalSettings = (globalSettingsData.settings || []).filter(d => !d.group);
-      const repoSettings = (repoSettingsData && repoSettingsData.settings ? repoSettingsData.settings : []).filter(d => !d.group);
+      // F521: this section now renders only scope:'shared' entries. User-scope
+      // settings live under Preferences; repo-scope entries render as read-only
+      // Repo Context cards.
+      const isShared = (d) => (d.scope || 'shared') === 'shared';
+      const globalSettings = (globalSettingsData.settings || []).filter(d => !d.group && isShared(d));
+      const repoSettings = (repoSettingsData && repoSettingsData.settings ? repoSettingsData.settings : []).filter(d => !d.group && isShared(d));
+      const repoContextDefs = (repoSettingsData && repoSettingsData.settings ? repoSettingsData.settings : []).filter(d => !d.group && d.scope === 'repo');
 
       function makeInput(def, scope, value, repoPathForUpdate, disabled) {
         const input = document.createElement('input');
@@ -692,6 +866,53 @@
       repoSection.className = 'settings-subsection';
       repoSection.innerHTML = '<h4>Repository settings</h4><p>Choose a repository, set any repository-specific values, and check the final result in the same row.</p>';
       renderDefaultsScopeSelector(repoSection);
+
+      // F521: read-only "Repo Context" cards for scope:'repo' entries (profile,
+      // devServer.enabled). These describe what the repo *is* — not a "shared
+      // default with override," so no editable column.
+      if (repoContextDefs.length && repoPath) {
+        const ctxWrap = document.createElement('div');
+        ctxWrap.className = 'settings-repo-context';
+        const ctxHeader = document.createElement('h5');
+        ctxHeader.textContent = 'Repo context';
+        ctxWrap.appendChild(ctxHeader);
+        const ctxNote = document.createElement('p');
+        ctxNote.className = 'settings-repo-context-note';
+        ctxNote.textContent = 'These describe the repository itself. Edit them in this repo’s settings; they have no global default.';
+        ctxWrap.appendChild(ctxNote);
+        const ctxGrid = document.createElement('div');
+        ctxGrid.className = 'settings-repo-context-grid';
+        repoContextDefs.forEach(def => {
+          const card = document.createElement('div');
+          card.className = 'settings-repo-context-card';
+          card.dataset.settingsKey = def.key;
+          card.dataset.settingsScope = 'repo';
+          const cardLabel = document.createElement('div');
+          cardLabel.className = 'settings-repo-context-label';
+          cardLabel.textContent = def.label;
+          card.appendChild(cardLabel);
+          const cardValue = document.createElement('div');
+          cardValue.className = 'settings-repo-context-value';
+          const value = def.effectiveValue;
+          if (value == null || value === '') {
+            cardValue.classList.add('settings-repo-context-unset');
+            cardValue.textContent = 'Unset';
+          } else {
+            cardValue.textContent = typeof value === 'string' ? value : JSON.stringify(value);
+          }
+          card.appendChild(cardValue);
+          if (def.description) {
+            const cardHint = document.createElement('div');
+            cardHint.className = 'settings-repo-context-hint';
+            cardHint.textContent = def.description;
+            card.appendChild(cardHint);
+          }
+          ctxGrid.appendChild(card);
+        });
+        ctxWrap.appendChild(ctxGrid);
+        repoSection.appendChild(ctxWrap);
+      }
+
       const compareCopy = document.createElement('div');
       compareCopy.className = 'settings-compare-intro';
       compareCopy.innerHTML = repoPath
@@ -1282,6 +1503,14 @@
       renderTerminalSettings();
       shell.observeSection(termSection);
 
+      // F521: Preferences section — all scope:'user' settings (besides the two
+      // already shown above in Terminal). Single value, single source — no
+      // "per-repo override" column tempts the user.
+      const prefsSection = shell.addSection('preferences', 'Preferences', 'Preferences',
+        'Settings about you, applied to every repository. No per-repo overrides.');
+      prefsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading preferences...</div>');
+      shell.observeSection(prefsSection);
+
       const modelsSection = shell.addSection('models', 'Models', 'Models', 'Set global model defaults first, then choose a repository below to override them and see the effective model.');
       modelsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading models...</div>');
       shell.observeSection(modelsSection);
@@ -1308,6 +1537,10 @@
           if (loadingModels) loadingModels.remove();
           const loadingDefaults = defaultsSection.querySelector('.settings-loading');
           if (loadingDefaults) loadingDefaults.remove();
+          const loadingPrefs = prefsSection.querySelector('.settings-loading');
+          if (loadingPrefs) loadingPrefs.remove();
+          renderTerminalSchemaRows(termSection, globalPayload, renderSettings);
+          renderPreferencesSection(prefsSection, globalPayload, renderSettings);
           renderModelsSection(modelsSection, globalPayload, modelRepoPayload, modelRepoPath);
           renderDefaultsAndOverridesSection(defaultsSection, globalDefaultsPayload, repoDefaultsPayload, repoPath);
           restoreDetailScrollTop(scrollTop);
@@ -1317,6 +1550,7 @@
           if (renderToken !== settingsUiState.renderToken) return;
           modelsSection.innerHTML += '<p class="settings-empty">Failed to load model settings: ' + escHtml(err.message) + '</p>';
           defaultsSection.innerHTML += '<p class="settings-empty">Failed to load defaults and overrides: ' + escHtml(err.message) + '</p>';
+          prefsSection.innerHTML += '<p class="settings-empty">Failed to load preferences: ' + escHtml(err.message) + '</p>';
           restoreDetailScrollTop(scrollTop);
         });
 
