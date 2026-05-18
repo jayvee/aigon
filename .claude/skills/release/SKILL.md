@@ -95,6 +95,10 @@ npm run ship -- <mode> --version=<version> --yes
 
 `ship.js` handles: re-running test:deploy, bumping `package.json`, the `vX.Y.Z` tag, push, and (for `publish`) `npm run release` which auto-routes the dist-tag.
 
+**Dirty-tree gotcha — dashboard server regenerates `.aigon/install-manifest.json` + `.aigon/version`.** If the local dashboard is running it self-installs on every CLI invocation, re-dirtying the tree between dry-run and real run. Before publish: `node aigon-cli.js server stop`, then `git stash push -m release-prep -- .aigon/install-manifest.json .aigon/version`. Restart later with `aigon server restart`.
+
+**npm 2FA — `EOTP` is expected and you cannot complete it.** npm publish on 2FA-enabled accounts prints a browser-approval URL that Claude Code redacts to `***` in tool output (the URL also can't be fished out of `~/.npm/_logs/*.log` — same redaction). If the user's `npm login` worked but `npm publish` returns `EOTP`, do **not** retry in-session and do **not** ask for an OTP code (browser-approval is not OTP-typed). Tell the user to run `npm publish --tag <next|latest>` in their own terminal so they can see and click the URL; surface the package version + dist-tag so they don't have to look it up. Resume from §6 once they confirm.
+
 ### 6. Post-publish housekeeping (publish only)
 
 Templates may have changed during the bump — regenerate the manifest:
@@ -118,5 +122,6 @@ git push origin main
 
 - `prepublishOnly` failure → it ran `check-template-leaks.js`, `check-install-manifest-clean.js`, or `check-pack.js`. Read the error, fix the root cause (don't bypass).
 - `cut` fails on "CHANGELOG has no [vX.Y.Z] heading" → you forgot step 3 or the version mismatched.
-- `npm publish 403` → 2FA / not logged in. Surface verbatim.
+- `npm publish 403` → not logged in or no publish rights. Surface verbatim.
+- `npm publish EOTP` → 2FA browser-approval required. The auth URL is redacted in Claude Code output; hand off to the user's own terminal (see §5 note). Don't retry in-session.
 - `npm publish E409` → version already exists. Bump.
