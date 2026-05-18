@@ -1,15 +1,34 @@
-# Seed Repos
+# Seed Repos (Maintainer Guide)
 
-Seed repos are demo projects used for testing (perf-bench, smoke tests, manual demos). Each seed has **two GitHub repos** with different roles.
+> **Note for end users:** if you're trying out Aigon with a demo repo, `aigon install-seed brewboard` clones the demo to `~/src/brewboard` and strips `origin` — the result is an isolated local sandbox. `aigon seed-reset` wipes that sandbox and re-clones. No remote pushes happen. The two-repo workflow described below applies only to seed maintainers who publish demo content.
 
-## Two-repo architecture
+Seed repos are demo projects used for testing (perf-bench, smoke tests, manual demos). Each seed has **two GitHub repos** with different roles, owned by the seed maintainer.
+
+## Two-repo architecture (maintainer-only)
 
 | Repo | Role | URL |
 |------|------|-----|
 | `brewboard-seed.git` | **Source of truth** — cloned from on reset | `https://github.com/jayvee/brewboard-seed.git` |
 | `brewboard.git` | Working copy — feature branches land here | `https://github.com/jayvee/brewboard.git` |
 
-`aigon seed-reset brewboard` always clones from `brewboard-seed.git`. After provisioning (agent install, npm, commits), it force-pushes to **both** repos to keep them in sync.
+Maintainers opt into the two-repo workflow by setting `seedWorkingRepos` in `~/.aigon/config.json`:
+
+```json
+{
+  "seedWorkingRepos": {
+    "brewboard": "https://github.com/jayvee/brewboard.git",
+    "trailhead": "https://github.com/jayvee/trailhead.git"
+  }
+}
+```
+
+When a working repo is configured for a seed, `aigon seed-reset <name>`:
+- Closes open feature/research PRs on the working repo
+- Deletes feature/research branches on the seed and working remotes
+- Repoints `origin` to the working repo after clone
+- Force-pushes the provisioned baseline to both remotes after provision
+
+When `seedWorkingRepos` is absent or doesn't contain the seed (the default for end users), `seed-reset` is a local-only operation — no PR cleanup, no branch deletion, no force-pushes — and `origin` is removed entirely after clone.
 
 ## Critical rule: push to both repos
 

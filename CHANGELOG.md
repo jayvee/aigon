@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.66.0-beta.2] — 2026-05-18
+
+### Fixed
+
+- `aigon seed-reset` no longer tries to force-push to the seed maintainer's GitHub repo. End users running `aigon seed-reset brewboard` (or `trailhead`) on a demo sandbox now get a purely local re-clone: `origin` is removed after clone (matching `install-seed`), and no PR cleanup, branch deletion, or remote pushes are attempted. Seed maintainers opt into the two-repo workflow by setting `seedWorkingRepos` in `~/.aigon/config.json`. See `docs/seeds.md`.
+
 ## [2.66.0-beta.1] — 2026-05-12
 
 Fleet startup phases, settings scopes, and background launches.
