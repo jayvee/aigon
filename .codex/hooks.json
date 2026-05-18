@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/zsh -l -c \"aigon check-version --notice-only\"",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "/bin/zsh -l -c \"aigon project-context\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/zsh -l -c \"aigon check-agent-submitted\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
