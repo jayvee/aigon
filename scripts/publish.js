@@ -22,10 +22,15 @@ if (channel === 'next' && !version.includes('-')) {
     process.exit(1);
 }
 
-process.stdout.write(`publish: ${version}  →  dist-tag "${channel}"\n`);
+// Provenance attaches a Sigstore attestation linking the tarball to the exact
+// CI run + commit that built it. Only works when publishing from a supported CI
+// (GitHub Actions, GitLab) with OIDC. Local publishes silently skip it.
+const provenanceFlag = process.env.CI && process.env.NPM_PROVENANCE !== 'off' ? ' --provenance' : '';
+
+process.stdout.write(`publish: ${version}  →  dist-tag "${channel}"${provenanceFlag ? ' (with provenance)' : ''}\n`);
 
 try {
-    execSync(`npm publish --tag ${channel}`, { stdio: 'inherit' });
+    execSync(`npm publish --tag ${channel}${provenanceFlag}`, { stdio: 'inherit' });
 } catch (err) {
     process.exit(typeof err.status === 'number' ? err.status : 1);
 }
