@@ -649,6 +649,33 @@ a {
   margin: 1.5rem auto 2.5rem;
 }
 
+/* ── Hero Video ──────────────────────────────────────────── */
+
+.hero-video {
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.hero-video-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+  background: #000;
+}
+
+.hero-video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
 /* ── Hero Fleet Showcase ────────────────────────────────── */
 
 .hero-fleet-showcase {
