@@ -26,7 +26,7 @@
     "hasEmailAttribution": true
   },
   "capabilities": {
-    "supportsModelFlag": false,
+    "supportsModelFlag": true,
     "transcriptTelemetry": false,
     "resolvesSlashCommands": true
   },
@@ -47,17 +47,88 @@
     "reviewPrompt": "/aigon-feature-code-review {featureId}",
     "reviewCheckPrompt": "/aigon-feature-code-revise {featureId}",
     "models": {
-      "review": "composer-2"
+      "review": "composer-2.5"
     },
-    "modelOptions": [],
+    "modelOptions": [
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "composer-2",
+        "label": "Composer 2",
+        "pricing": null,
+        "notes": {
+          "spec_review": null,
+          "implement": "Previous-gen Cursor in-house model; superseded by Composer 2.5.",
+          "review": "Previous-gen Cursor in-house model; usable as a diversity reviewer.",
+          "spec": null,
+          "research": null
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-05-19T00:00:00.000Z"
+      },
+      {
+        "value": "composer-2.5",
+        "label": "Composer 2.5",
+        "pricing": {
+          "input": 0.5,
+          "output": 2.5
+        },
+        "notes": {
+          "spec_review": "Strong instruction-following; suitable for spec review passes.",
+          "implement": "Cursor's flagship in-house model; built on Moonshot K2.5 with heavy task-specific RL. ~10x cheaper than frontier models at comparable SWE-Bench scores.",
+          "review": "Reliable diversity reviewer; pairs well with frontier Claude/GPT models for cross-checks.",
+          "spec": "Capable spec drafter at low cost.",
+          "research": null
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-05-19T00:00:00.000Z"
+      },
+      {
+        "value": "composer-2.5-fast",
+        "label": "Composer 2.5 Fast",
+        "pricing": {
+          "input": 3,
+          "output": 15
+        },
+        "notes": {
+          "spec_review": null,
+          "implement": "Priority-routed variant of Composer 2.5 — lower latency, higher per-token price. Use when iteration speed matters more than cost.",
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-05-19T00:00:00.000Z"
+      }
+    ],
     "effortOptions": [],
     "complexityDefaults": {
-      "low":       { "model": null, "effort": null },
-      "medium":    { "model": null, "effort": null },
-      "high":      { "model": null, "effort": null },
-      "very-high": { "model": null, "effort": null }
+      "low":       { "model": "composer-2.5", "effort": null },
+      "medium":    { "model": "composer-2.5", "effort": null },
+      "high":      { "model": "composer-2.5", "effort": null },
+      "very-high": { "model": "composer-2.5", "effort": null }
     },
-    "modelFlag": null,
+    "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,
     "submitKey": "Enter"
