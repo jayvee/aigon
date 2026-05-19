@@ -19,12 +19,12 @@ The AIGON server runs as a foreground process with a fixed identity and URL: `ht
 
 ## Dev Proxy Stack
 
-The dashboard is accessed via `http://aigon.localhost`, not `localhost:PORT`. This uses the aigon-proxy daemon, a tiny Node.js reverse proxy:
+The dashboard is accessed via `http://aigon.localhost`, not `localhost:PORT`. This uses **Caddy** as a reverse proxy:
 
 ```
-Browser ──► http://aigon.localhost ──► aigon-proxy (port 80 or 4080) ──► localhost:4100 (Dashboard)
-                                            │
-       http://cc-63.aigon.localhost ────────┘──► localhost:4202 (worktree instance)
+Browser ──► http://aigon.localhost ──► Caddy (port 80 or 4080) ──► localhost:4100 (Dashboard)
+                                           │
+       http://cc-63.brewboard.localhost ───┘──► localhost:4202 (worktree dev server)
 ```
 
 `.localhost` domains resolve to `127.0.0.1` automatically per RFC 6761 — **no DNS configuration needed**.
@@ -32,17 +32,20 @@ Browser ──► http://aigon.localhost ──► aigon-proxy (port 80 or 4080)
 ### Setup
 
 ```bash
-aigon proxy start    # Start the proxy daemon
-aigon proxy install  # Optional: install launchd plist for auto-start on boot
+brew install caddy       # Install Caddy (one-time)
+aigon proxy install      # Install Caddy as a system daemon on port 80 (requires sudo)
 ```
+
+Without `aigon proxy install`, run `aigon proxy start` for a session-local Caddy on port 4080 — URLs will include the port (e.g. `http://aigon.localhost:4080`).
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
-| `~/.aigon/dev-proxy/servers.json` | Registry of AIGON server instances and dev servers |
-| `~/.aigon/dev-proxy/proxy.pid` | PID of the running aigon-proxy daemon |
+| `~/.aigon/dev-proxy/Caddyfile` | Caddy config — routes for dashboard and all dev servers |
+| `~/.aigon/ports.json` | Port allocation registry (project name → base port) |
 | `~/.aigon/dashboard.log` | AIGON server log for dashboard/UI traffic |
+| `/Library/LaunchDaemons/com.aigon.caddy.plist` | System daemon plist (created by `aigon proxy install`) |
 
 ### Ports
 
@@ -55,20 +58,11 @@ aigon proxy install  # Optional: install launchd plist for auto-start on boot
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `aigon.localhost` returns 404 | AIGON server not registered or proxy not running | `aigon proxy start`, then restart the server |
+| `aigon.localhost` returns connection refused | Caddy not running | `aigon proxy start` or `aigon proxy install` |
+| `aigon.localhost` requires a port (`:4080`) | Caddy running without system daemon | Run `aigon proxy install` to bind port 80 |
 | Dead worktree instances in status | Old AIGON server worktree instances not cleaned up | `aigon dev-server gc` |
-| `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4080` directly |
+| `aigon.localhost` not resolving | Rare: OS doesn't handle `.localhost` wildcard | Use `http://localhost:4100` directly |
 | Dashboard shows wrong data | Config parse error or stale registry | Check `~/.aigon/dashboard.log` for `[*] Warning:` lines |
-
-### Startup validation
-
-On every startup, `runDashboardServer()` calls `validateRegistry()` which:
-1. Reads `~/.aigon/dev-proxy/servers.json`
-2. For each entry, verifies the registered PID is alive (or port is in use if no PID)
-3. Removes stale entries (dead processes, crashed dev servers)
-4. Logs a summary: `Registry: N live, M stale removed`
-
-The summary is always written to `~/.aigon/dashboard.log`. If stale entries were removed, it is also printed to the console.
 
 ### Error logging
 
@@ -83,18 +77,16 @@ tail -50 ~/.aigon/dashboard.log
 
 | File | Purpose |
 |------|---------|
-| `~/.aigon/dev-proxy/servers.json` | Registry of all live AIGON server instances + embedded port allocations (`_portRegistry` key) |
+| `~/.aigon/dev-proxy/Caddyfile` | Caddy route config — dashboard + all dev servers |
+| `~/.aigon/ports.json` | Port allocation registry (project name → base port) |
 | `~/.aigon/dashboard.log` | AIGON server log (warnings, startup messages, notifications) |
-
-> **Note:** Port allocation data was previously stored in `~/.aigon/ports.json`. As of v2.50, it is merged into `servers.json` under the `_portRegistry` key. The legacy file is migrated and removed automatically on first access.
 
 ## Key Files (Source Code)
 
 | File | Role |
 |------|------|
 | `lib/dashboard-server.js` | AIGON server HTTP/UI module: polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
-| `lib/proxy.js` | Port allocation, registry management, dev server registration, aigon-proxy integration |
-| `lib/aigon-proxy.js` | Standalone proxy daemon — routes by Host header, handles WebSocket upgrades |
+| `lib/proxy.js` | Caddy management — Caddyfile read/write/reload, port allocation, dev server routing |
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
 | `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
@@ -116,11 +108,12 @@ tail -50 ~/.aigon/dashboard.log
 
 | Function | Purpose |
 |----------|---------|
-| `registerDevServer(appId, serverId, ...)` | Adds to servers.json (proxy reads it live) |
-| `deregisterDevServer(appId, serverId)` | Removes from servers.json |
-| `reconcileProxyRoutes()` | Cleans dead entries from servers.json |
+| `addCaddyRoute(hostname, port)` | Adds a reverse_proxy route to Caddyfile and reloads Caddy |
+| `removeCaddyRoute(hostname)` | Removes a route from Caddyfile and reloads Caddy |
+| `parseCaddyRoutes()` | Reads current routes from Caddyfile |
+| `writeCaddyfile(routes)` | Writes a new Caddyfile from a route list |
 | `getDevProxyUrl(appId, serverId)` | Returns `http://{serverId}.{appId}.localhost` |
-| `isProxyAvailable()` | Checks if aigon-proxy daemon is running |
+| `isProxyAvailable()` | Checks if Caddy admin API is reachable (port 2019) |
 
 ## How It Works
 

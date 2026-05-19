@@ -34,6 +34,15 @@ You need **Node.js 18+**. That's it.
 
 The setup wizard installs everything else it needs (`tmux`, `lsof`, `gh`) once Aigon is on your PATH.
 
+<Callout type="info">
+  **Optional: named `.localhost` URLs**
+  Aigon works at `http://localhost:4100` out of the box. For clean subdomain URLs like `http://aigon.localhost` and `http://cc-01.yourproject.localhost`, install [Caddy](https://caddyserver.com/) and run `aigon proxy install` once:
+  ```bash
+  brew install caddy      # macOS — see caddyserver.com/docs/install for Linux
+  aigon proxy install     # installs Caddy as a system daemon on port 80 (requires sudo)
+  ```
+</Callout>
+
 ## Install Aigon
 
 <Tabs items={['macOS', 'Linux']}>
