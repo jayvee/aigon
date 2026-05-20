@@ -38,7 +38,10 @@
     "sessionStrategy": "gemini-chats",
     "telemetryStrategy": "gemini-transcript",
     "trustInstallScope": "worktree-base",
-    "resume": { "kind": "append", "flag": "--resume" }
+    "resume": {
+      "kind": "append",
+      "flag": "--resume"
+    }
   },
   "quota": {
     "errorPatterns": [
@@ -50,7 +53,10 @@
         "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?|\\d{10,13})"
       }
     ],
-    "successPatterns": ["^PONG$", "PONG"],
+    "successPatterns": [
+      "^PONG$",
+      "PONG"
+    ],
     "unknownPolicy": "permit"
   },
   "cli": {
@@ -167,7 +173,10 @@
           "since": "2026-04-28",
           "reason": "Hook execution failure on SessionStart: aigon check-version and project-context hooks both fail when this model is selected. Root cause unknown — may be a Gemini CLI version incompatibility with the 05-20 preview build.",
           "evidence": "aigon agent-probe gg --all: FAIL after 3.3s with 'Hook execution for SessionStart: 0 succeeded, 2 failed'",
-          "supersededBy": ["gemini-2.5-flash", "gemini-3-flash-preview"]
+          "supersededBy": [
+            "gemini-2.5-flash",
+            "gemini-3-flash-preview"
+          ]
         }
       },
       {
@@ -192,6 +201,197 @@
           "research": 3
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
+      },
+      {
+        "value": "gemini-2.0-flash",
+        "label": "Gemini 2.0 Flash",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.0-flash-001",
+        "label": "Gemini 2.0 Flash 001",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.0-flash-lite-001",
+        "label": "Gemini 2.0 Flash-Lite 001",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.0-flash-lite",
+        "label": "Gemini 2.0 Flash-Lite",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-flash-preview-tts",
+        "label": "Gemini 2.5 Flash Preview TTS",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-pro-preview-tts",
+        "label": "Gemini 2.5 Pro Preview TTS",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-flash-latest",
+        "label": "Gemini Flash Latest",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-flash-lite-latest",
+        "label": "Gemini Flash-Lite Latest",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-pro-latest",
+        "label": "Gemini Pro Latest",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-flash-lite",
+        "label": "Gemini 2.5 Flash-Lite",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-flash-image",
+        "label": "Nano Banana",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3-pro-preview",
+        "label": "Gemini 3 Pro Preview",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-pro-preview-customtools",
+        "label": "Gemini 3.1 Pro Preview Custom Tools",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-flash-lite-preview",
+        "label": "Gemini 3.1 Flash Lite Preview",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-flash-lite",
+        "label": "Gemini 3.1 Flash Lite",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3-pro-image-preview",
+        "label": "Nano Banana Pro",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-flash-image-preview",
+        "label": "Nano Banana 2",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.5-flash",
+        "label": "Gemini 3.5 Flash",
+        "pricing": {
+          "input": 1.5,
+          "output": 9
+        },
+        "notes": {
+          "spec_review": "Capable spec reviewer; trails 3.1 Pro on long-context academic reasoning but fast and cheap relative to Pro.",
+          "implement": "Top-tier coding/agentic Flash model — beats 3.1 Pro on Terminal-Bench 2.1 (76.2% vs 70.3%) at a fraction of Pro's output cost.",
+          "review": "Strong code reviewer; particularly good at agentic/tool-use code paths. Slightly behind Pro on subtle architectural critique.",
+          "spec": "Fast spec drafting with 1M context; solid structured output. Pro still wins on nuanced requirements analysis.",
+          "research": "Decent synthesis; gives up ground vs Pro on academic reasoning depth but useful when speed/cost matters."
+        },
+        "score": {
+          "spec_review": 3.5,
+          "implement": 5,
+          "review": 4,
+          "spec": 3.5,
+          "research": 3.5
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-flash-tts-preview",
+        "label": "Gemini 3.1 Flash TTS Preview",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-robotics-er-1.5-preview",
+        "label": "Gemini Robotics-ER 1.5 Preview",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-robotics-er-1.6-preview",
+        "label": "Gemini Robotics-ER 1.6 Preview",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-computer-use-preview-10-2025",
+        "label": "Gemini 2.5 Computer Use Preview 10-2025",
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
       }
     ],
     "effortOptions": [],
@@ -205,11 +405,11 @@
         "effort": null
       },
       "high": {
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-3.5-flash",
         "effort": null
       },
       "very-high": {
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-3.5-flash",
         "effort": null
       }
     },
