@@ -68,7 +68,7 @@ telemetryRetention: {
 }
 ```
 
-**Cross-machine path concern.** Per-session telemetry files contain `repoPath: /Users/jviner/src/aigon` — an absolute path tied to the writing machine. After `backup pull` on a different machine with a different `$HOME`, that field is stale but harmless (it's read-only metadata, not a lookup key). Document this in the migration note; do not rewrite paths on pull (would be invasive and mostly pointless).
+**Cross-machine path concern.** Per-session telemetry files contain `repoPath: <home>/src/aigon` — an absolute path tied to the writing machine. After `backup pull` on a different machine with a different `$HOME`, that field is stale but harmless (it's read-only metadata, not a lookup key). Document this in the migration note; do not rewrite paths on pull (would be invasive and mostly pointless).
 
 ## Dependencies
 

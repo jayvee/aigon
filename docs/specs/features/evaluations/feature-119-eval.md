@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-119-security-scan-foundatio
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-119-cc-security-scan-foundation`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-119-cx-security-scan-foundation`
+- [x] **cc** (Claude): `<worktrees>/feature-119-cc-security-scan-foundation`
+- [x] **cx** (Codex): `<worktrees>/feature-119-cx-security-scan-foundation`
 
 ## Evaluation Criteria
 

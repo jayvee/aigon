@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-154-dashboard-dev-server-ac
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-154-cc-dashboard-dev-server-actions`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-154-cx-dashboard-dev-server-actions`
+- [x] **cc** (Claude): `<worktrees>/feature-154-cc-dashboard-dev-server-actions`
+- [x] **cx** (Codex): `<worktrees>/feature-154-cx-dashboard-dev-server-actions`
 
 ## Evaluation Criteria
 

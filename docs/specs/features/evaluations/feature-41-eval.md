@@ -8,9 +8,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-41-conductor-web-dashboard.
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-41-cc-conductor-web-dashboard`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-41-cx-conductor-web-dashboard`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-41-gg-conductor-web-dashboard`
+- [x] **cc** (Claude): `<worktrees>/feature-41-cc-conductor-web-dashboard`
+- [x] **cx** (Codex): `<worktrees>/feature-41-cx-conductor-web-dashboard`
+- [x] **gg** (Gemini): `<worktrees>/feature-41-gg-conductor-web-dashboard`
 
 ## Evaluation Criteria
 

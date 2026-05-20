@@ -61,7 +61,7 @@ If AutoConductor is waiting on Codex and the session ends without readiness bein
 
 ## Dependencies
 
-- [feature-remove-feature-submit-and-enforce-feature-do-submission.md](/Users/jviner/src/aigon/docs/specs/features/01-inbox/feature-remove-feature-submit-and-enforce-feature-do-submission.md)
+- [feature-remove-feature-submit-and-enforce-feature-do-submission.md](<aigon>/docs/specs/features/01-inbox/feature-remove-feature-submit-and-enforce-feature-do-submission.md)
 - `templates/generic/commands/feature-do.md`
 - `templates/generic/docs/agent.md`
 - `docs/agents/codex.md`
@@ -80,5 +80,5 @@ If AutoConductor is waiting on Codex and the session ends without readiness bein
 
 ## Related
 
-- [feature-214-feature-automation-profiles.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-214-feature-automation-profiles.md)
-- [feature-212-fix-autopilot-to-use-workflow-core-engine.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-212-fix-autopilot-to-use-workflow-core-engine.md)
+- [feature-214-feature-automation-profiles.md](<aigon>/docs/specs/features/05-done/feature-214-feature-automation-profiles.md)
+- [feature-212-fix-autopilot-to-use-workflow-core-engine.md](<aigon>/docs/specs/features/05-done/feature-212-fix-autopilot-to-use-workflow-core-engine.md)

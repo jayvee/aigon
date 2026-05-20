@@ -157,19 +157,19 @@ These ship as **two separate Aigon features**. Feature A first — the server-si
 ## Critical files
 
 ### Feature A
-- `/Users/jviner/src/aigon/lib/quota-mid-run-detector.js` — async + activity-gated scan
-- `/Users/jviner/src/aigon/lib/dashboard-server.js` — async `pollStatus`, async dep-graph rebuild, pass configs to `getDashboardAgents`
-- `/Users/jviner/src/aigon/lib/feature-dependencies.js` — new `buildDependencyGraphAsync` export
-- `/Users/jviner/src/aigon/lib/agent-registry.js` — `defaultImplementModel` etc. on `getDashboardAgents()`
-- `/Users/jviner/src/aigon/templates/dashboard/js/spec-drawer.js` — delete dead code
-- `/Users/jviner/src/aigon/templates/dashboard/js/init.js` — fingerprint-gated render
-- `/Users/jviner/src/aigon/templates/dashboard/js/actions.js` — parallelise modal
+- `<aigon>/lib/quota-mid-run-detector.js` — async + activity-gated scan
+- `<aigon>/lib/dashboard-server.js` — async `pollStatus`, async dep-graph rebuild, pass configs to `getDashboardAgents`
+- `<aigon>/lib/feature-dependencies.js` — new `buildDependencyGraphAsync` export
+- `<aigon>/lib/agent-registry.js` — `defaultImplementModel` etc. on `getDashboardAgents()`
+- `<aigon>/templates/dashboard/js/spec-drawer.js` — delete dead code
+- `<aigon>/templates/dashboard/js/init.js` — fingerprint-gated render
+- `<aigon>/templates/dashboard/js/actions.js` — parallelise modal
 
 ### Feature B
-- `/Users/jviner/src/aigon/templates/dashboard/index.html` — bump core, drop image addon
-- `/Users/jviner/src/aigon/templates/dashboard/js/terminal.js` — options + ResizeObserver debounce
-- `/Users/jviner/src/aigon/lib/pty-session-handler.js` — 32 KB high-water flush
-- `/Users/jviner/src/aigon/tests/dashboard-e2e/review-badges.spec.js` — drop ImageAddon assertion
+- `<aigon>/templates/dashboard/index.html` — bump core, drop image addon
+- `<aigon>/templates/dashboard/js/terminal.js` — options + ResizeObserver debounce
+- `<aigon>/lib/pty-session-handler.js` — 32 KB high-water flush
+- `<aigon>/tests/dashboard-e2e/review-badges.spec.js` — drop ImageAddon assertion
 
 ---
 

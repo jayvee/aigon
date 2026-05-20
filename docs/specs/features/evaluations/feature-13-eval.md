@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-13-feedback-foundation.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-13-cc-feedback-foundation`
-- [x] **cu** (Cursor): `/Users/jviner/src/aigon-worktrees/feature-13-cu-feedback-foundation`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-13-cx-feedback-foundation`
+- [x] **cc** (Claude): `<worktrees>/feature-13-cc-feedback-foundation`
+- [x] **cu** (Cursor): `<worktrees>/feature-13-cu-feedback-foundation`
+- [x] **cx** (Codex): `<worktrees>/feature-13-cx-feedback-foundation`
 
 ## Evaluation Criteria
 

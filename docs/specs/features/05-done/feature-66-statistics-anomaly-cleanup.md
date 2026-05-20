@@ -87,7 +87,7 @@ Apply via targeted `updateLogFrontmatterInPlace()` calls or a one-time script. T
 
 ## Dependencies
 
-- Feature 64: [feature-64-dashboard-statistics.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-64-dashboard-statistics.md) — the Statistics tab being cleaned up.
+- Feature 64: [feature-64-dashboard-statistics.md](<aigon>/docs/specs/features/05-done/feature-64-dashboard-statistics.md) — the Statistics tab being cleaned up.
 
 ## Out of Scope
 
@@ -105,4 +105,4 @@ Apply via targeted `updateLogFrontmatterInPlace()` calls or a one-time script. T
 ## Related
 
 - Research:
-- Feature: [feature-64-dashboard-statistics.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-64-dashboard-statistics.md)
+- Feature: [feature-64-dashboard-statistics.md](<aigon>/docs/specs/features/05-done/feature-64-dashboard-statistics.md)

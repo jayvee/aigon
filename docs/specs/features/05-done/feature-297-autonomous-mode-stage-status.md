@@ -110,8 +110,8 @@ Visual intent:
 - Should completed autonomous stages remain visible after the feature closes, or only while the card is still outside `done`?
 
 ## Related
-- [docs/autonomous-mode.md](/Users/jviner/src/aigon/docs/autonomous-mode.md)
-- [docs/architecture.md](/Users/jviner/src/aigon/docs/architecture.md)
-- [lib/workflow-definitions.js](/Users/jviner/src/aigon/lib/workflow-definitions.js)
-- [lib/dashboard-status-collector.js](/Users/jviner/src/aigon/lib/dashboard-status-collector.js)
-- [templates/dashboard/js/pipeline.js](/Users/jviner/src/aigon/templates/dashboard/js/pipeline.js)
+- [docs/autonomous-mode.md](<aigon>/docs/autonomous-mode.md)
+- [docs/architecture.md](<aigon>/docs/architecture.md)
+- [lib/workflow-definitions.js](<aigon>/lib/workflow-definitions.js)
+- [lib/dashboard-status-collector.js](<aigon>/lib/dashboard-status-collector.js)
+- [templates/dashboard/js/pipeline.js](<aigon>/templates/dashboard/js/pipeline.js)

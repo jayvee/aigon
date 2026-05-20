@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-06-readme-uplift.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-06-cc-readme-uplift` - ✅ IMPLEMENTED
-- [x] **cu** (Cursor): `/Users/jviner/src/aigon-worktrees/feature-06-cu-readme-uplift` - ✅ IMPLEMENTED
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-06-cx-readme-uplift` - ✅ IMPLEMENTED
+- [x] **cc** (Claude): `<worktrees>/feature-06-cc-readme-uplift` - ✅ IMPLEMENTED
+- [x] **cu** (Cursor): `<worktrees>/feature-06-cu-readme-uplift` - ✅ IMPLEMENTED
+- [x] **cx** (Codex): `<worktrees>/feature-06-cx-readme-uplift` - ✅ IMPLEMENTED
 
 ## Implementation Stats
 

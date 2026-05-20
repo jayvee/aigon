@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-129-background-agents-and-d
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-129-cc-background-agents-and-dashboard-settings`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-129-cx-background-agents-and-dashboard-settings`
+- [x] **cc** (Claude): `<worktrees>/feature-129-cc-background-agents-and-dashboard-settings`
+- [x] **cx** (Codex): `<worktrees>/feature-129-cx-background-agents-and-dashboard-settings`
 
 ## Evaluation Criteria
 

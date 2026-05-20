@@ -10,7 +10,7 @@
 
 ### 1. Natural lifecycle mapping should be category-based, not status-name based
 
-Aigon's current lifecycle is `inbox -> backlog -> in-progress -> in-evaluation -> done -> paused` for both features and research, with Fleet-specific gating handled separately via agent status and "all submitted" checks in [`lib/state-machine.js`](/Users/jviner/src/aigon/lib/state-machine.js). Jira workflows are project-specific and often have custom status names, so a hardcoded mapping to `"To Do"`, `"In Progress"`, or `"Done"` would be brittle. The stable abstraction is:
+Aigon's current lifecycle is `inbox -> backlog -> in-progress -> in-evaluation -> done -> paused` for both features and research, with Fleet-specific gating handled separately via agent status and "all submitted" checks in [`lib/state-machine.js`](<aigon>/lib/state-machine.js). Jira workflows are project-specific and often have custom status names, so a hardcoded mapping to `"To Do"`, `"In Progress"`, or `"Done"` would be brittle. The stable abstraction is:
 
 | Aigon stage | Jira mapping | Linear mapping | Notes |
 |-------------|--------------|----------------|-------|

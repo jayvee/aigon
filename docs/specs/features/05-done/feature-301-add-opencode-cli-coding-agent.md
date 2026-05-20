@@ -96,9 +96,9 @@ Because this feature is also a regression test for feature 246's simplification,
 - Should `op.json` omit task-model entries entirely, or keep nullable/example values for compatibility with existing CLI-config readers?
 
 ## Related
-- [feature-246-agent-registry-single-source-of-truth](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-246-agent-registry-single-source-of-truth.md)
-- [feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic.md)
-- [feature-277-harden-autonomous-loop-write-paths](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-277-harden-autonomous-loop-write-paths.md)
+- [feature-246-agent-registry-single-source-of-truth](<aigon>/docs/specs/features/05-done/feature-246-agent-registry-single-source-of-truth.md)
+- [feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic](<aigon>/docs/specs/features/05-done/feature-201-pluggable-agent-architecture-zero-hardcoded-agent-logic.md)
+- [feature-277-harden-autonomous-loop-write-paths](<aigon>/docs/specs/features/05-done/feature-277-harden-autonomous-loop-write-paths.md)
 - OpenCode CLI: https://opencode.ai/docs/cli/
 - OpenCode agents/permissions: https://opencode.ai/docs/agents/
 - OpenCode config/models: https://opencode.ai/docs/config/

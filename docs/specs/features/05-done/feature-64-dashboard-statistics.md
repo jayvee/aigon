@@ -301,9 +301,9 @@ The trend chart visualises this progression, motivating the user to continue imp
 
 ## Dependencies
 
-- Feature 31: [feature-31-log-status-tracking.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-31-log-status-tracking.md) for the existing log-file front matter contract.
-- Feature 41: [feature-41-conductor-web-dashboard.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-41-conductor-web-dashboard.md) for the current dashboard UI and `/api/status` model.
-- Feature 45: [feature-45-aigon-radar.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-45-aigon-radar.md) for the unified AIGON server direction and multi-repo registry.
+- Feature 31: [feature-31-log-status-tracking.md](<aigon>/docs/specs/features/05-done/feature-31-log-status-tracking.md) for the existing log-file front matter contract.
+- Feature 41: [feature-41-conductor-web-dashboard.md](<aigon>/docs/specs/features/05-done/feature-41-conductor-web-dashboard.md) for the current dashboard UI and `/api/status` model.
+- Feature 45: [feature-45-aigon-radar.md](<aigon>/docs/specs/features/05-done/feature-45-aigon-radar.md) for the unified AIGON server direction and multi-repo registry.
 
 ## Out of Scope
 
@@ -324,4 +324,4 @@ The trend chart visualises this progression, motivating the user to continue imp
 ## Related
 
 - Research:
-- Feature: [feature-agent-cost-awareness.md](/Users/jviner/src/aigon/docs/specs/features/01-inbox/feature-agent-cost-awareness.md) for adjacent analytics ideas, though this feature is explicitly about throughput and delivery statistics rather than cost.
+- Feature: [feature-agent-cost-awareness.md](<aigon>/docs/specs/features/01-inbox/feature-agent-cost-awareness.md) for adjacent analytics ideas, though this feature is explicitly about throughput and delivery statistics rather than cost.

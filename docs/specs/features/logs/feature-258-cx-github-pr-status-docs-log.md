@@ -31,7 +31,7 @@ Agent: cx
 
 ## Progress
 - Ran `aigon feature-start 258`; CLI reported feature already active in solo worktree mode.
-- Verified workspace: branch `feature-258-cx-github-pr-status-docs`, cwd `/Users/jviner/.aigon/worktrees/aigon/feature-258-cx-github-pr-status-docs`.
+- Verified workspace: branch `feature-258-cx-github-pr-status-docs`, cwd `<home>/.aigon/worktrees/aigon/feature-258-cx-github-pr-status-docs`.
 - Ran `aigon feature-do 258` and used the printed spec as implementation source.
 - Ran `aigon agent-status implementing`.
 - Created `site/content/guides/github-integration.mdx` with prerequisites, on-demand/manual refresh usage, status reference, close warning context, and limitations.

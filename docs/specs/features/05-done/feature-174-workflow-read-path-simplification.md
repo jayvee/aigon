@@ -105,7 +105,7 @@ Implementation constraints:
 
 ## Related
 - Research:
-- [docs/architecture.md](/Users/jviner/src/aigon/docs/architecture.md)
-- [docs/workflow-rules.md](/Users/jviner/src/aigon/docs/workflow-rules.md)
-- [feature-review-signalling-and-viewing.md](/Users/jviner/src/aigon/docs/specs/features/01-inbox/feature-review-signalling-and-viewing.md)
-- [feature-seed-reset-rewrite.md](/Users/jviner/src/aigon/docs/specs/features/01-inbox/feature-seed-reset-rewrite.md)
+- [docs/architecture.md](<aigon>/docs/architecture.md)
+- [docs/workflow-rules.md](<aigon>/docs/workflow-rules.md)
+- [feature-review-signalling-and-viewing.md](<aigon>/docs/specs/features/01-inbox/feature-review-signalling-and-viewing.md)
+- [feature-seed-reset-rewrite.md](<aigon>/docs/specs/features/01-inbox/feature-seed-reset-rewrite.md)

@@ -332,7 +332,7 @@ The best fit for Aigon is a **hybrid of three patterns**: per-entity state manif
   "agent": "cc",
   "status": "implementing",
   "updatedAt": "2026-03-18T10:00:00Z",
-  "worktreePath": "/Users/jviner/src/aigon-worktrees/feature-55-cc-unified-state"
+  "worktreePath": "<worktrees>/feature-55-cc-unified-state"
 }
 ```
 

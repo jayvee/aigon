@@ -42,7 +42,7 @@ Agent: cc
 - Added `/api/stats-aggregate` endpoint (supports `?force=1` + `?repo=<path>`).
 - Added `aigon stats` command in `lib/commands/misc.js` with human-readable output, `--json`, `--agents`, `--rebuild`.
 - Added `--rebuild-stats` flag to `aigon doctor` (forces rebuild across every registered repo + prints per-repo record counts).
-- Smoke-tested against `/Users/jviner/src/aigon`: 26 records, $338.84 total, agents cc/cx/cu correctly rolled up. Cache file written to `.aigon/cache/stats-aggregate.json`.
+- Smoke-tested against `<home>/src/aigon`: 26 records, $338.84 total, agents cc/cx/cu correctly rolled up. Cache file written to `.aigon/cache/stats-aggregate.json`.
 - Added regression test `tests/integration/stats-aggregate.test.js` (25 LOC): covers scanning, totals, perAgent (both code paths), fastest/mostExpensive, cache freshness, forced rebuild, mtime-based invalidation.
 - Updated `CLAUDE.md` Module Map.
 

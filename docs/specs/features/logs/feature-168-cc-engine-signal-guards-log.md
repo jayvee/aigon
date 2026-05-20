@@ -61,5 +61,5 @@ Both checks happen inside the file lock (TOCTOU prevention).
 - None needed.
 
 ### Notes
-- Reviewed the `emitSignal()` lock-and-check path in [lib/workflow-core/engine.js](/Users/jviner/src/aigon-worktrees/feature-168-cc-engine-signal-guards/lib/workflow-core/engine.js) and the new coverage in [lib/workflow-core/workflow-core.test.js](/Users/jviner/src/aigon-worktrees/feature-168-cc-engine-signal-guards/lib/workflow-core/workflow-core.test.js).
+- Reviewed the `emitSignal()` lock-and-check path in [lib/workflow-core/engine.js](<worktrees>/feature-168-cc-engine-signal-guards/lib/workflow-core/engine.js) and the new coverage in [lib/workflow-core/workflow-core.test.js](<worktrees>/feature-168-cc-engine-signal-guards/lib/workflow-core/workflow-core.test.js).
 - Verified with `node lib/workflow-core/workflow-core.test.js` in the feature worktree: 50 passed, 0 failed.

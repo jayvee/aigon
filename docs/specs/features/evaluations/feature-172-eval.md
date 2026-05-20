@@ -8,8 +8,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-172-aigon-server.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-172-cc-aigon-server`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-172-cx-aigon-server`
+- [x] **cc** (Claude): `<worktrees>/feature-172-cc-aigon-server`
+- [x] **cx** (Codex): `<worktrees>/feature-172-cx-aigon-server`
 
 ## Evaluation Criteria
 

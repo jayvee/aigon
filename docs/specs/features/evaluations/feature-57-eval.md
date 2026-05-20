@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-57-control-surface-dashboar
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-57-cc-control-surface-dashboard-operator-console`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-57-cx-control-surface-dashboard-operator-console`
+- [x] **cc** (Claude): `<worktrees>/feature-57-cc-control-surface-dashboard-operator-console`
+- [x] **cx** (Codex): `<worktrees>/feature-57-cx-control-surface-dashboard-operator-console`
 
 ## Evaluation Criteria
 

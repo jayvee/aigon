@@ -59,8 +59,8 @@ osascript -e 'display notification "cc is waiting on #30 board-action-hub" with 
 // ~/.aigon/config.json
 {
   "repos": [
-    "/Users/jviner/src/aigon",
-    "/Users/jviner/src/my-web-app"
+    "<home>/src/aigon",
+    "<home>/src/my-web-app"
   ]
 }
 ```

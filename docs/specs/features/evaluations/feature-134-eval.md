@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-134-unified-pipeline-stages
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-134-cc-unified-pipeline-stages`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-134-cx-unified-pipeline-stages`
+- [x] **cc** (Claude): `<worktrees>/feature-134-cc-unified-pipeline-stages`
+- [x] **cx** (Codex): `<worktrees>/feature-134-cx-unified-pipeline-stages`
 
 ## Evaluation Criteria
 

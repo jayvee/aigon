@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-20-cross-provider-eval.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-20-cc-cross-provider-eval`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-20-cx-cross-provider-eval`
+- [x] **cc** (Claude): `<worktrees>/feature-20-cc-cross-provider-eval`
+- [x] **cx** (Codex): `<worktrees>/feature-20-cx-cross-provider-eval`
 
 ## Evaluation Criteria
 

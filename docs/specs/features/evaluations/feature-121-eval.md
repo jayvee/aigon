@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-121-docs-merge-repos.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-121-cc-docs-merge-repos`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-121-cx-docs-merge-repos`
+- [x] **cc** (Claude): `<worktrees>/feature-121-cc-docs-merge-repos`
+- [x] **cx** (Codex): `<worktrees>/feature-121-cx-docs-merge-repos`
 
 ## Evaluation Criteria
 

@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-140-flagged-feature-close-o
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-140-cc-flagged-feature-close-on-new-workflow-engine`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-140-cx-flagged-feature-close-on-new-workflow-engine`
+- [x] **cc** (Claude): `<worktrees>/feature-140-cc-flagged-feature-close-on-new-workflow-engine`
+- [x] **cx** (Codex): `<worktrees>/feature-140-cx-flagged-feature-close-on-new-workflow-engine`
 
 ## Evaluation Criteria
 

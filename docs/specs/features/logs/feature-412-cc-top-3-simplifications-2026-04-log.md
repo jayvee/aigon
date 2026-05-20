@@ -24,4 +24,4 @@ tokens_per_line_changed: null
 # Implementation Log: Feature 412 - top-3-simplifications-2026-04
 Agent: cc
 
-Audit-only task: report + 3 inbox specs committed on `main` from `/Users/jviner/src/aigon` (feature-create's worktree guard blocks running it from this worktree); see `docs/reports/simplifications-2026-04.md`.
+Audit-only task: report + 3 inbox specs committed on `main` from `<home>/src/aigon` (feature-create's worktree guard blocks running it from this worktree); see `docs/reports/simplifications-2026-04.md`.

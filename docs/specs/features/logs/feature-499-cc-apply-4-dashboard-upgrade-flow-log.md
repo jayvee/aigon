@@ -65,4 +65,4 @@ All acceptance criteria met. Three-phase chrome pill (npm → restart → apply)
 ## Test Coverage
 
 - Iterate gate (`npm run test:iterate`): lint (3 changed lib files), workflow diagrams, 11 scoped integration tests, 4 Playwright smoke E2E — all green.
-- Live verification against the worktree dashboard (port 4100): `/api/version-status` returned 7 repos with correct stale flags; `/api/apply/preview?repoPath=/Users/jviner/src/aigon` returned the expected single-file delta; MCP `browser_snapshot` confirmed Phase 3 a11y tree renders pill + per-repo rows + Preview/Re-apply buttons.
+- Live verification against the worktree dashboard (port 4100): `/api/version-status` returned 7 repos with correct stale flags; `/api/apply/preview?repoPath=<home>/src/aigon` returned the expected single-file delta; MCP `browser_snapshot` confirmed Phase 3 a11y tree renders pill + per-repo rows + Preview/Re-apply buttons.

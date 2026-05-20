@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-110-rationalise-readme-guid
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-110-cc-rationalise-readme-guide`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-110-cx-rationalise-readme-guide`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-110-gg-rationalise-readme-guide`
+- [x] **cc** (Claude): `<worktrees>/feature-110-cc-rationalise-readme-guide`
+- [x] **cx** (Codex): `<worktrees>/feature-110-cx-rationalise-readme-guide`
+- [x] **gg** (Gemini): `<worktrees>/feature-110-gg-rationalise-readme-guide`
 
 ## Evaluation Criteria
 

@@ -64,5 +64,5 @@ Important edge cases and unintended consequences to account for:
 
 ## Related
 - Research:
-- [feature-close.js](/Users/jviner/src/aigon/lib/feature-close.js)
-- [feature-127-cc-manifest-and-branch-safety-log.md](/Users/jviner/src/aigon/docs/specs/features/logs/feature-127-cc-manifest-and-branch-safety-log.md)
+- [feature-close.js](<aigon>/lib/feature-close.js)
+- [feature-127-cc-manifest-and-branch-safety-log.md](<aigon>/docs/specs/features/logs/feature-127-cc-manifest-and-branch-safety-log.md)

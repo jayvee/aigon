@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-60-dashboard-sessions-comma
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-60-cc-dashboard-sessions-command-runner`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-60-gg-dashboard-sessions-command-runner`
+- [x] **cc** (Claude): `<worktrees>/feature-60-cc-dashboard-sessions-command-runner`
+- [x] **gg** (Gemini): `<worktrees>/feature-60-gg-dashboard-sessions-command-runner`
 
 ## Evaluation Criteria
 

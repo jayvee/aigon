@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-62-unified-state-machine.md
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-62-cc-unified-state-machine`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-62-cx-unified-state-machine`
+- [x] **cc** (Claude): `<worktrees>/feature-62-cc-unified-state-machine`
+- [x] **cx** (Codex): `<worktrees>/feature-62-cx-unified-state-machine`
 
 ## Evaluation Criteria
 

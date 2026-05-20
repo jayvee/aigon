@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-155-pipeline-card-layout-re
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-155-cc-pipeline-card-layout-redesign`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-155-cx-pipeline-card-layout-redesign`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-155-gg-pipeline-card-layout-redesign`
+- [x] **cc** (Claude): `<worktrees>/feature-155-cc-pipeline-card-layout-redesign`
+- [x] **cx** (Codex): `<worktrees>/feature-155-cx-pipeline-card-layout-redesign`
+- [x] **gg** (Gemini): `<worktrees>/feature-155-gg-pipeline-card-layout-redesign`
 
 ## Evaluation Criteria
 

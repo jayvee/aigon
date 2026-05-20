@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-25-context-aware-next.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-25-cc-context-aware-next`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-25-cx-context-aware-next`
+- [x] **cc** (Claude): `<worktrees>/feature-25-cc-context-aware-next`
+- [x] **cx** (Codex): `<worktrees>/feature-25-cx-context-aware-next`
 
 ## Evaluation Criteria
 

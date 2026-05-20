@@ -14,7 +14,7 @@ Recommended default: create or update the PR when an implementation reaches `sub
 
 Why:
 - `feature-close` is currently the merge step. Waiting until close to create the PR defeats human review, branch protection, CI gating, and automated reviewer workflows.
-- Aigon already pushes the feature branch during `feature-close` in [lib/feature-close.js](/Users/jviner/src/aigon/lib/feature-close.js), so the branch mechanics already exist; the missing piece is shifting push/PR creation earlier in the lifecycle.
+- Aigon already pushes the feature branch during `feature-close` in [lib/feature-close.js](<aigon>/lib/feature-close.js), so the branch mechanics already exist; the missing piece is shifting push/PR creation earlier in the lifecycle.
 - GitHub's `gh pr create` supports explicit base/head selection, draft PRs, reviewer assignment, templates, and body-file input, which maps cleanly to Aigon's spec-driven flow.
 
 Options considered:
@@ -185,7 +185,7 @@ Pro (`@aigon/pro`)
 - PR comment/review publishing
 - dashboard PR widgets with host-specific links and statuses
 
-This matches the existing [lib/pro.js](/Users/jviner/src/aigon/lib/pro.js) pattern and the documented modularity recommendation to keep OSS as the bridge, not the implementation of commercial behavior.
+This matches the existing [lib/pro.js](<aigon>/lib/pro.js) pattern and the documented modularity recommendation to keep OSS as the bridge, not the implementation of commercial behavior.
 
 ### 9. Command changes needed in Aigon
 
@@ -276,7 +276,7 @@ Inference: team-facing review orchestration is commonly monetized, so PR workflo
 - Vercel Agent PR review docs: https://vercel.com/docs/agent/pr-review
 - Vercel Agent pricing: https://vercel.com/docs/agent/pricing
 - Vercel Agent product page: https://vercel.com/agent/
-- Aigon codebase: [lib/commands/feature.js](/Users/jviner/src/aigon/lib/commands/feature.js), [lib/feature-close.js](/Users/jviner/src/aigon/lib/feature-close.js), [lib/worktree.js](/Users/jviner/src/aigon/lib/worktree.js), [lib/pro.js](/Users/jviner/src/aigon/lib/pro.js), [lib/dashboard-status-collector.js](/Users/jviner/src/aigon/lib/dashboard-status-collector.js), [docs/architecture.md](/Users/jviner/src/aigon/docs/architecture.md)
+- Aigon codebase: [lib/commands/feature.js](<aigon>/lib/commands/feature.js), [lib/feature-close.js](<aigon>/lib/feature-close.js), [lib/worktree.js](<aigon>/lib/worktree.js), [lib/pro.js](<aigon>/lib/pro.js), [lib/dashboard-status-collector.js](<aigon>/lib/dashboard-status-collector.js), [docs/architecture.md](<aigon>/docs/architecture.md)
 
 ## Recommendation
 

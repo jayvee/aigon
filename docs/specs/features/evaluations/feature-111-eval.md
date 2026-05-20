@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-111-add-comparisons.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-111-cc-add-comparisons`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-111-cx-add-comparisons`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-111-gg-add-comparisons`
+- [x] **cc** (Claude): `<worktrees>/feature-111-cc-add-comparisons`
+- [x] **cx** (Codex): `<worktrees>/feature-111-cx-add-comparisons`
+- [x] **gg** (Gemini): `<worktrees>/feature-111-gg-add-comparisons`
 
 ## Evaluation Criteria
 

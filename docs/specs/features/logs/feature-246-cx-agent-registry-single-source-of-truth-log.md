@@ -58,7 +58,7 @@ Agent: cx
 - `aigon server restart`
 
 ## Issues Encountered
-- `aigon install-agent cx` completed but could not write the main checkout's git config (`/Users/jviner/src/aigon/.git/config`) from this worktree and could not pre-seed `~/.codex/config.toml`; both are environment-permission issues outside the edited workspace.
+- `aigon install-agent cx` completed but could not write the main checkout's git config (`<aigon>/.git/config`) from this worktree and could not pre-seed `~/.codex/config.toml`; both are environment-permission issues outside the edited workspace.
 - `aigon server restart` reported `Load failed: 5: Input/output error` before printing `✅ Server restarting via system service.` The restart command still returned success.
 
 ## Conversation Summary

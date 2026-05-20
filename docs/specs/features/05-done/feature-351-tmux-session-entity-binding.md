@@ -33,8 +33,8 @@ Once stored, all internal routing uses `-t $12` rather than `-t aigon-f332-do-cc
   "entityId": "332",
   "agent": "cc",
   "role": "do",
-  "repoPath": "/Users/jviner/src/aigon",
-  "worktreePath": "/Users/jviner/.aigon/worktrees/aigon/feature-332-cc-...",
+  "repoPath": "<home>/src/aigon",
+  "worktreePath": "<home>/.aigon/worktrees/aigon/feature-332-cc-...",
   "createdAt": "2026-04-24T00:01:46.228Z"
 }
 ```
@@ -51,8 +51,8 @@ Proposed structure adds `category`, `tmuxId`, and `shellPid`:
   "entityId": "332",
   "agent": "cc",
   "role": "do",
-  "repoPath": "/Users/jviner/src/aigon",
-  "worktreePath": "/Users/jviner/.aigon/worktrees/aigon/feature-332-cc-...",
+  "repoPath": "<home>/src/aigon",
+  "worktreePath": "<home>/.aigon/worktrees/aigon/feature-332-cc-...",
   "createdAt": "2026-04-24T00:01:46.228Z"
 }
 ```

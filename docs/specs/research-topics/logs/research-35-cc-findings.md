@@ -94,7 +94,7 @@ Confidence: the injection points above are verifiable from source (`lib/commands
 
 - Repo file measurements run 2026-04-20 during this research session:
   - `wc -l` over `templates/generic/commands/*.md`, `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/development_workflow.md`.
-  - `wc -l /Users/jviner/.codex/config.toml` = 2069; `grep -c '^\[' ...` = 684 sections; `grep '^\[' | sed s/\\..*// | sort -u` breakdown (679 `[projects]`, 1 each of `[sandbox_workspace_write]`, `[notice]`, `[mcp_servers]`, `[features]`).
+  - `wc -l <home>/.codex/config.toml` = 2069; `grep -c '^\[' ...` = 684 sections; `grep '^\[' | sed s/\\..*// | sort -u` breakdown (679 `[projects]`, 1 each of `[sandbox_workspace_write]`, `[notice]`, `[mcp_servers]`, `[features]`).
   - `wc -l ~/.claude/projects/-Users-jviner-src-aigon/memory/*.md` = 710.
 - Code: `lib/commands/feature.js` (`feature-do` inline behavior at ~line 1489; `__run-loop` poll cadence at lines 2755, 2990, 3006, 3044, 3223); `lib/commands/setup.js` (`project-context` impl at 1967-1973); `lib/telemetry.js` (parser signatures at 438, 502, 592, 711).
 - Live run of `aigon project-context` — confirms 7-line doc-pointer output; no inlined doc bodies.

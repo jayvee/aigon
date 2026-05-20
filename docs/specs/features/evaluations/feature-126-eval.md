@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-126-docs-site-build.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-126-cc-docs-site-build`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-126-cx-docs-site-build`
+- [x] **cc** (Claude): `<worktrees>/feature-126-cc-docs-site-build`
+- [x] **cx** (Codex): `<worktrees>/feature-126-cx-docs-site-build`
 
 ## Evaluation Criteria
 

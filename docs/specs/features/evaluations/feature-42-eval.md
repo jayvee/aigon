@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-42-conductor.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-42-cc-conductor`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-42-cx-conductor`
-- [x] **gg** (Gemini): `/Users/jviner/src/aigon-worktrees/feature-42-gg-conductor`
+- [x] **cc** (Claude): `<worktrees>/feature-42-cc-conductor`
+- [x] **cx** (Codex): `<worktrees>/feature-42-cx-conductor`
+- [x] **gg** (Gemini): `<worktrees>/feature-42-gg-conductor`
 
 ## Evaluation Criteria
 

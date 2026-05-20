@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-128-docs-content.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-128-cc-docs-content`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-128-cx-docs-content`
+- [x] **cc** (Claude): `<worktrees>/feature-128-cc-docs-content`
+- [x] **cx** (Codex): `<worktrees>/feature-128-cx-docs-content`
 
 ## Evaluation Criteria
 

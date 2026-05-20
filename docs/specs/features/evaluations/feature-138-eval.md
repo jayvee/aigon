@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-138-import-aigon-next-workf
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-138-cc-import-aigon-next-workflow-core`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-138-cx-import-aigon-next-workflow-core`
+- [x] **cc** (Claude): `<worktrees>/feature-138-cc-import-aigon-next-workflow-core`
+- [x] **cx** (Codex): `<worktrees>/feature-138-cx-import-aigon-next-workflow-core`
 
 ## Evaluation Criteria
 

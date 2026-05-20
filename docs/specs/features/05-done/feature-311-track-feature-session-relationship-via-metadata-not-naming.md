@@ -44,8 +44,8 @@ npm test
   "entityId": "7",
   "agent": "cc",
   "role": "do",
-  "repoPath": "/Users/jviner/src/aigon",
-  "worktreePath": "/Users/jviner/.aigon/worktrees/aigon/feature-007-cc",
+  "repoPath": "<home>/src/aigon",
+  "worktreePath": "<home>/.aigon/worktrees/aigon/feature-007-cc",
   "createdAt": "2026-04-09T01:00:00.000Z"
 }
 ```

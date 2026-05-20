@@ -43,9 +43,9 @@ Unintended consequences to guard against:
 - Any test harness should model the stale-drive-branch case explicitly, because that is what made the bug visible in practice.
 
 ## Dependencies
-- Existing merge-gate scanner infrastructure in [security.js](/Users/jviner/src/aigon/lib/security.js)
-- Existing close orchestrator in [feature-close.js](/Users/jviner/src/aigon/lib/feature-close.js)
-- Semgrep-based security gate introduced by [feature-149-security-scan-sast.md](/Users/jviner/src/aigon/docs/specs/features/05-done/feature-149-security-scan-sast.md)
+- Existing merge-gate scanner infrastructure in [security.js](<aigon>/lib/security.js)
+- Existing close orchestrator in [feature-close.js](<aigon>/lib/feature-close.js)
+- Semgrep-based security gate introduced by [feature-149-security-scan-sast.md](<aigon>/docs/specs/features/05-done/feature-149-security-scan-sast.md)
 
 ## Out of Scope
 - Rewriting Semgrep rule policy or changing severity thresholds
@@ -60,6 +60,6 @@ Unintended consequences to guard against:
 
 ## Related
 - Research:
-- [security.md](/Users/jviner/src/aigon/docs/security.md)
-- [feature-close.js](/Users/jviner/src/aigon/lib/feature-close.js)
-- [security.js](/Users/jviner/src/aigon/lib/security.js)
+- [security.md](<aigon>/docs/security.md)
+- [feature-close.js](<aigon>/lib/feature-close.js)
+- [security.js](<aigon>/lib/security.js)

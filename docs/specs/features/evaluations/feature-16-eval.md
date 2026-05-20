@@ -7,9 +7,9 @@ See: `./docs/specs/features/04-in-evaluation/feature-16-ralph-wiggum.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-16-cc-ralph-wiggum` — ❌ No changes
-- [x] **cu** (Cursor): `/Users/jviner/src/aigon-worktrees/feature-16-cu-ralph-wiggum` — ❌ No changes
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-16-cx-ralph-wiggum` — ✅ Full implementation
+- [x] **cc** (Claude): `<worktrees>/feature-16-cc-ralph-wiggum` — ❌ No changes
+- [x] **cu** (Cursor): `<worktrees>/feature-16-cu-ralph-wiggum` — ❌ No changes
+- [x] **cx** (Codex): `<worktrees>/feature-16-cx-ralph-wiggum` — ✅ Full implementation
 
 ## Evaluation Criteria
 

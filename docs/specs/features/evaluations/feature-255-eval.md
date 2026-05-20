@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-255-feature-close-remote-re
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/.aigon/worktrees/aigon/feature-255-cc-feature-close-remote-review-gate`
-- [x] **cx** (Codex): `/Users/jviner/.aigon/worktrees/aigon/feature-255-cx-feature-close-remote-review-gate`
+- [x] **cc** (Claude): `<home>/.aigon/worktrees/aigon/feature-255-cc-feature-close-remote-review-gate`
+- [x] **cx** (Codex): `<home>/.aigon/worktrees/aigon/feature-255-cx-feature-close-remote-review-gate`
 
 ## Evaluation Criteria
 

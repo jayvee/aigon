@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-210-analogies-for-landing-p
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/.aigon/worktrees/aigon/feature-210-cc-analogies-for-landing-page`
-- [x] **cu** (Cursor): `/Users/jviner/.aigon/worktrees/aigon/feature-210-cu-analogies-for-landing-page`
+- [x] **cc** (Claude): `<home>/.aigon/worktrees/aigon/feature-210-cc-analogies-for-landing-page`
+- [x] **cu** (Cursor): `<home>/.aigon/worktrees/aigon/feature-210-cu-analogies-for-landing-page`
 
 ## Evaluation Criteria
 

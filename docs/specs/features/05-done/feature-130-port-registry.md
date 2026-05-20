@@ -32,9 +32,9 @@ aigon doctor  # should show port assignments without conflicts
 
 ```json
 {
-  "/Users/jviner/src/farline": { "basePort": 3000, "allocatedAt": "2026-03-22" },
-  "/Users/jviner/src/aigon": { "basePort": 3010, "allocatedAt": "2026-03-22" },
-  "/Users/jviner/src/brewboard": { "basePort": 3020, "allocatedAt": "2026-03-22" }
+  "<home>/src/farline": { "basePort": 3000, "allocatedAt": "2026-03-22" },
+  "<home>/src/aigon": { "basePort": 3010, "allocatedAt": "2026-03-22" },
+  "<home>/src/brewboard": { "basePort": 3020, "allocatedAt": "2026-03-22" }
 }
 ```
 

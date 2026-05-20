@@ -68,8 +68,8 @@
 ## Sources
 
 - Aigon code and docs (local):
-  - `aigon-cli.js` (`.aigon/version`, update flow, global registry): `/Users/jviner/src/aigon/aigon-cli.js`
-  - `docs/GUIDE.md` generated-files guidance: `/Users/jviner/src/aigon/docs/GUIDE.md`
+  - `aigon-cli.js` (`.aigon/version`, update flow, global registry): `<aigon>/aigon-cli.js`
+  - `docs/GUIDE.md` generated-files guidance: `<aigon>/docs/GUIDE.md`
 - Claude Code hooks:
   - https://docs.anthropic.com/en/docs/claude-code/hooks
 - Cursor hooks and rules:

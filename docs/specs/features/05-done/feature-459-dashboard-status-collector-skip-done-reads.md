@@ -8,7 +8,7 @@ transitions:
 
 ## Summary
 
-The dashboard status poll takes 5-7 seconds at this user's scale (7 repos, 665 features, 39 research). Confirmed via `/Users/jviner/.aigon/dashboard.log` showing `Poll complete (7 repos, 665F/39R, 6021ms)` consistently. While the loop is busy, every `/api/spec` request queues — that's the multi-second "Loading…" hang in the spec drawer.
+The dashboard status poll takes 5-7 seconds at this user's scale (7 repos, 665 features, 39 research). Confirmed via `<home>/.aigon/dashboard.log` showing `Poll complete (7 repos, 665F/39R, 6021ms)` consistently. While the loop is busy, every `/api/spec` request queues — that's the multi-second "Loading…" hang in the spec drawer.
 
 Root cause: `collectDoneSpecs` (`lib/dashboard-status-collector.js:147`) iterates `.aigon/workflows/{features,research}/<id>/`, reads every `snapshot.json`, then walks every `events.jsonl` line-by-line to find the close-event timestamp — for hundreds of immutable, already-done features, every poll. F454 fixed F446's quota scan and the dep-graph rebuild; this is the dominant cost it didn't touch.
 
@@ -62,7 +62,7 @@ After this `lib/*.js` edit, run `aigon server restart` (CLAUDE.md hot rule).
 
 - `npm run test:iterate` (covers `engine-first-folder-fallback.test.js`).
 - Pre-push: `npm test && MOCK_DELAY=fast npm run test:ui && bash scripts/check-test-budget.sh`.
-- Manual confirmation: `tail -f /Users/jviner/.aigon/dashboard.log` and watch `Poll complete (...)` lines drop from ~6000 ms to <200 ms within one poll cycle of restart. Click 10 spec drawers in rapid succession — `GET /api/spec` should always be <50 ms with no observable "Loading…" pause.
+- Manual confirmation: `tail -f <home>/.aigon/dashboard.log` and watch `Poll complete (...)` lines drop from ~6000 ms to <200 ms within one poll cycle of restart. Click 10 spec drawers in rapid succession — `GET /api/spec` should always be <50 ms with no observable "Loading…" pause.
 
 ## Dependencies
 

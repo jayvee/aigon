@@ -63,10 +63,10 @@ I'm proposing **two separate feature specs**, both in this plan, sequenced so th
 
 ### Files
 
-- **`/Users/jviner/src/aigon/.mcp.json`** *(new, checked in)* — registers `@playwright/mcp` at project scope. Claude Code prompts each contributor to opt-in on first session, so checking it in is safe.
-- **`/Users/jviner/src/aigon/CONTRIBUTING.md`** *(modify, ~10 lines)* — short "Browser MCP" section: what it is, that CC will prompt to enable, how to verify it loaded (`/mcp` slash command).
-- **`/Users/jviner/src/aigon/CLAUDE.md`** *(modify, ~6 lines under Hot rules)* — agent guidance: for dashboard visual checks prefer `mcp__playwright__browser_snapshot` (a11y tree) over writing one-off Playwright scripts; drop to `browser_take_screenshot` only when pixel fidelity matters. Cross-reference Hot rule #4 (which currently mandates Playwright screenshot after `templates/dashboard/index.html` edits — update to allow a11y snapshot as the cheaper default).
-- **`/Users/jviner/src/aigon/.gitignore`** *(verify only)* — `.playwright-mcp/` (the MCP's runtime cache directory) should already be ignored by the existing `.playwright/` rule; if not, add it.
+- **`<aigon>/.mcp.json`** *(new, checked in)* — registers `@playwright/mcp` at project scope. Claude Code prompts each contributor to opt-in on first session, so checking it in is safe.
+- **`<aigon>/CONTRIBUTING.md`** *(modify, ~10 lines)* — short "Browser MCP" section: what it is, that CC will prompt to enable, how to verify it loaded (`/mcp` slash command).
+- **`<aigon>/CLAUDE.md`** *(modify, ~6 lines under Hot rules)* — agent guidance: for dashboard visual checks prefer `mcp__playwright__browser_snapshot` (a11y tree) over writing one-off Playwright scripts; drop to `browser_take_screenshot` only when pixel fidelity matters. Cross-reference Hot rule #4 (which currently mandates Playwright screenshot after `templates/dashboard/index.html` edits — update to allow a11y snapshot as the cheaper default).
+- **`<aigon>/.gitignore`** *(verify only)* — `.playwright-mcp/` (the MCP's runtime cache directory) should already be ignored by the existing `.playwright/` rule; if not, add it.
 
 ### `.mcp.json` content
 
@@ -107,9 +107,9 @@ Builds on top of `tests/dashboard-e2e/` (existing fresh-server + brewboard-fixtu
 
 ### Files
 
-- **`/Users/jviner/src/aigon/tests/dashboard-e2e/workflow-e2e.spec.js`** *(new, ≤180 LOC budget)* — full lifecycle spec.
-- **`/Users/jviner/src/aigon/tests/dashboard-e2e/_helpers.js`** *(modify, ~50 LOC added)* — new helpers (see below).
-- **`/Users/jviner/src/aigon/tests/dashboard-e2e/screenshots/`** — no new baselines; spec uses a11y assertions, not visual diff.
+- **`<aigon>/tests/dashboard-e2e/workflow-e2e.spec.js`** *(new, ≤180 LOC budget)* — full lifecycle spec.
+- **`<aigon>/tests/dashboard-e2e/_helpers.js`** *(modify, ~50 LOC added)* — new helpers (see below).
+- **`<aigon>/tests/dashboard-e2e/screenshots/`** — no new baselines; spec uses a11y assertions, not visual diff.
 - **`scripts/check-test-budget.sh`** — do NOT modify. Suite has ample headroom at current ceiling (~6,869 LOC against 9,540). If implementation overflows, that's a signal to refactor into helpers, not raise the ceiling.
 
 ### Spec outline (`workflow-e2e.spec.js`)

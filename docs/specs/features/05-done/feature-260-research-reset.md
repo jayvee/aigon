@@ -52,13 +52,13 @@ Research needs the same user-facing reset concept as features, but not the same 
 
 ### 1. Add first-class command support
 
-- Add `research-reset` to the research command registry in [`lib/commands/research.js`](</Users/jviner/src/aigon/lib/commands/research.js>).
-- Add command metadata in [`lib/templates.js`](</Users/jviner/src/aigon/lib/templates.js>) and create a matching template in `templates/generic/commands/research-reset.md`.
+- Add `research-reset` to the research command registry in [`lib/commands/research.js`](<<aigon>/lib/commands/research.js>).
+- Add command metadata in [`lib/templates.js`](<<aigon>/lib/templates.js>) and create a matching template in `templates/generic/commands/research-reset.md`.
 - Update agent docs/templates so the command shows up in the generated help/inventory where appropriate.
 
 ### 2. Add workflow-core API for research reset
 
-`feature-reset` already depends on [`wf.resetFeature(...)`](</Users/jviner/src/aigon/lib/workflow-core/engine.js:737>). Research should get the symmetric API:
+`feature-reset` already depends on [`wf.resetFeature(...)`](<<aigon>/lib/workflow-core/engine.js:737>). Research should get the symmetric API:
 
 ```js
 async function resetResearch(repoPath, researchId) {
@@ -73,7 +73,7 @@ Recommendation: expose `resetResearch` from workflow-core rather than hardcoding
 
 ### 3. Research-specific reset handler
 
-Implement `research-reset` in [`lib/commands/research.js`](</Users/jviner/src/aigon/lib/commands/research.js>) with this sequence:
+Implement `research-reset` in [`lib/commands/research.js`](<<aigon>/lib/commands/research.js>) with this sequence:
 
 1. Resolve/pad the ID consistently.
 2. Close sessions for that research ID using shared session-closing infrastructure.
@@ -91,9 +91,9 @@ This should not delete feature branches/worktrees unless the codebase has some g
 The research workflow rules currently expose no reset action, while features already have one. Add the equivalent research action path:
 
 - add `ManualActionKind.RESEARCH_RESET`
-- add a research action candidate in [`lib/research-workflow-rules.js`](</Users/jviner/src/aigon/lib/research-workflow-rules.js>)
-- map it in [`lib/workflow-snapshot-adapter.js`](</Users/jviner/src/aigon/lib/workflow-snapshot-adapter.js>)
-- allow it in [`lib/dashboard-server.js`](</Users/jviner/src/aigon/lib/dashboard-server.js>)
+- add a research action candidate in [`lib/research-workflow-rules.js`](<<aigon>/lib/research-workflow-rules.js>)
+- map it in [`lib/workflow-snapshot-adapter.js`](<<aigon>/lib/workflow-snapshot-adapter.js>)
+- allow it in [`lib/dashboard-server.js`](<<aigon>/lib/dashboard-server.js>)
 - dispatch it in `templates/dashboard/js/actions.js`
 
 The UI should treat it as destructive, exactly like feature reset, but call `research-reset`.
@@ -138,10 +138,10 @@ Do not force research through feature terminology just to chase deduplication.
 
 ## Related
 
-- [`lib/commands/feature.js`](</Users/jviner/src/aigon/lib/commands/feature.js>) — existing `feature-reset` reference implementation
-- [`lib/commands/research.js`](</Users/jviner/src/aigon/lib/commands/research.js>) — add `research-reset`
-- [`lib/workflow-core/engine.js`](</Users/jviner/src/aigon/lib/workflow-core/engine.js>) — add `resetResearch`
-- [`lib/workflow-core/types.js`](</Users/jviner/src/aigon/lib/workflow-core/types.js>) — add `ManualActionKind.RESEARCH_RESET`
-- [`lib/research-workflow-rules.js`](</Users/jviner/src/aigon/lib/research-workflow-rules.js>) — expose dashboard action
-- [`lib/workflow-snapshot-adapter.js`](</Users/jviner/src/aigon/lib/workflow-snapshot-adapter.js>) — map action to `research-reset`
-- [`AGENTS.md`](</Users/jviner/src/aigon/AGENTS.md>) — command inventory and reset guidance
+- [`lib/commands/feature.js`](<<aigon>/lib/commands/feature.js>) — existing `feature-reset` reference implementation
+- [`lib/commands/research.js`](<<aigon>/lib/commands/research.js>) — add `research-reset`
+- [`lib/workflow-core/engine.js`](<<aigon>/lib/workflow-core/engine.js>) — add `resetResearch`
+- [`lib/workflow-core/types.js`](<<aigon>/lib/workflow-core/types.js>) — add `ManualActionKind.RESEARCH_RESET`
+- [`lib/research-workflow-rules.js`](<<aigon>/lib/research-workflow-rules.js>) — expose dashboard action
+- [`lib/workflow-snapshot-adapter.js`](<<aigon>/lib/workflow-snapshot-adapter.js>) — map action to `research-reset`
+- [`AGENTS.md`](<<aigon>/AGENTS.md>) — command inventory and reset guidance

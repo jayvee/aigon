@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-40-tmux-terminal-sessions.m
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-40-cc-tmux-terminal-sessions`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-40-cx-tmux-terminal-sessions`
+- [x] **cc** (Claude): `<worktrees>/feature-40-cc-tmux-terminal-sessions`
+- [x] **cx** (Codex): `<worktrees>/feature-40-cx-tmux-terminal-sessions`
 
 ## Evaluation Criteria
 

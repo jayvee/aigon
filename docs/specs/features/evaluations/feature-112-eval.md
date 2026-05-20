@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-112-promotional-gif-demos-f
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-112-cc-promotional-gif-demos-for-aigon-dashboard-and-cli`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-112-cx-promotional-gif-demos-for-aigon-dashboard-and-cli`
+- [x] **cc** (Claude): `<worktrees>/feature-112-cc-promotional-gif-demos-for-aigon-dashboard-and-cli`
+- [x] **cx** (Codex): `<worktrees>/feature-112-cx-promotional-gif-demos-for-aigon-dashboard-and-cli`
 
 ## Evaluation Criteria
 

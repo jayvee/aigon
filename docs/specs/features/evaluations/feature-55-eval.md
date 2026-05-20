@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-55-control-surface-radar-in
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-55-cc-control-surface-radar-interactive-api`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-55-cx-control-surface-radar-interactive-api`
+- [x] **cc** (Claude): `<worktrees>/feature-55-cc-control-surface-radar-interactive-api`
+- [x] **cx** (Codex): `<worktrees>/feature-55-cx-control-surface-radar-interactive-api`
 
 ## Evaluation Criteria
 

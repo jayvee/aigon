@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-130-port-registry.md`
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-130-cc-port-registry`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-130-cx-port-registry`
+- [x] **cc** (Claude): `<worktrees>/feature-130-cc-port-registry`
+- [x] **cx** (Codex): `<worktrees>/feature-130-cx-port-registry`
 
 ## Evaluation Criteria
 

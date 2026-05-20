@@ -7,8 +7,8 @@ See: `./docs/specs/features/04-in-evaluation/feature-117-rename-setup-to-start.m
 
 ## Implementations to Compare
 
-- [x] **cc** (Claude): `/Users/jviner/src/aigon-worktrees/feature-117-cc-rename-setup-to-start`
-- [x] **cx** (Codex): `/Users/jviner/src/aigon-worktrees/feature-117-cx-rename-setup-to-start`
+- [x] **cc** (Claude): `<worktrees>/feature-117-cc-rename-setup-to-start`
+- [x] **cx** (Codex): `<worktrees>/feature-117-cx-rename-setup-to-start`
 
 ## Evaluation Criteria
 
