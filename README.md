@@ -18,6 +18,10 @@
 </p>
 
 <p align="center">
+  ▶ <a href="https://www.youtube.com/watch?v=koMR4JILMnQ">Watch the 3-minute intro on YouTube</a>
+</p>
+
+<p align="center">
   <img src="site/public/img/aigon-dashboard-kanban.png" alt="Aigon Dashboard — kanban view" width="880"/>
 </p>
 
@@ -29,9 +33,9 @@
 
 ## What is Aigon?
 
-Aigon is a spec-driven harness for orchestrating multiple AI coding agents on the same codebase. Each feature is a Markdown spec in git; each agent runs in its own git worktree under tmux; the lifecycle moves through inbox → backlog → in-progress → review → done on a local Kanban board. Aigon doesn't try to be a model — it orchestrates Claude Code, Gemini CLI, and Codex CLI as engines.
+Aigon is a spec-driven harness for orchestrating multiple AI coding agents on the same codebase. Each feature is a Markdown spec in git; each agent runs in its own git worktree under tmux; the lifecycle moves through inbox → backlog → in-progress → review → done on a local Kanban board. Aigon doesn't try to be a model — it orchestrates a growing list of agent CLIs as engines.
 
-You work with Aigon from wherever you already are: **slash commands** inside your agent (Claude Code, Gemini CLI, Codex CLI, Cursor), a **web dashboard** on `localhost`, or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
+You work with Aigon from wherever you already are: a **web dashboard** on `localhost`, **slash commands** inside your agent (Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, Kimi), or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
 
 It works with the AI coding tools you already use:
 
@@ -39,12 +43,14 @@ It works with the AI coding tools you already use:
 - 💎 **Gemini CLI** (`gg`)
 - 📟 **Codex CLI** (`cx`)
 - 🎯 **Cursor** (`cu`)
+- 🧭 **OpenCode** (`op`)
+- 🌙 **Kimi Code CLI** (`km`)
 
 Mix and match. Aigon doesn't care which model writes the code — it just manages the workflow around them.
 
 ## Why Aigon?
 
-- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor); no separate Aigon billing, no token packs, no markup.
+- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor, OpenCode, Kimi); no separate Aigon billing, no token packs, no markup.
 - **Stay in the flow when a subscription lapses** — switch agents or accounts mid-session instead of being stuck on one vendor's meter.
 - **Spec-driven development you control** — features and research live as Markdown specs that can be built, shipped, reset, and rebuilt for clean handoffs and retries.
 - **Autonomous and multi-agent workflows** — configure who drafts, implements, and reviews, then run long loops through a pre-built push/merge lifecycle.
@@ -66,12 +72,28 @@ aigon setup
 
 # Bring aigon into your project
 cd /path/to/your/project
-aigon apply                   # Bootstraps .aigon/, kanban folders, hooks
-aigon install-agent cc        # Install the Claude Code agent
-aigon doctor                  # Verify environment
+aigon apply                            # Bootstraps .aigon/, kanban folders, hooks
+aigon install-agent cc                 # Install the Claude Code agent (others: gg, cx, cu, op, km)
+aigon doctor                           # Verify environment
 ```
 
-Create and implement your first feature — the fastest path is `/aigon:feature-now` from **inside Claude Code**:
+Aigon gives you three surfaces over the same Markdown specs in your repo. Pick the one that fits the moment — the state is identical across all three.
+
+### 1. Dashboard — the recommended starting point
+
+The dashboard is the daily command center. It's always-on after `aigon setup` and gives you the Kanban view of every feature, research topic, and piece of feedback across its lifecycle:
+
+```bash
+aigon server start                     # Starts at http://localhost:4100
+```
+
+Open the dashboard, click **"New Feature"**, write a one-line description, and drag the card from inbox → backlog → in-progress. Click an agent button (`cc`, `cx`, `cu`, …) and a worktree spins up with a live tmux session you can attach to. Watch progress in the Monitor tab, review the diff in the in-evaluation column, and merge with one click. No commands to memorise.
+
+The Reports tab shows cycle time, commits per feature, and rework ratio across your whole pipeline. Telemetry breaks down token spend per agent and activity. Open it on your phone over LAN or Tailscale to check in from the couch.
+
+### 2. Slash commands — when you're already inside an agent
+
+If you're already in Claude Code, Gemini CLI, Codex, Cursor, OpenCode, or Kimi, drive Aigon from where you are. The fastest path is `/aigon:feature-now`:
 
 ```
 /aigon:feature-now dark-mode
@@ -79,15 +101,17 @@ Add a dark mode toggle with system preference detection, persist
 the choice in localStorage, and default to the system preference.
 ```
 
-That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo. You stay in your agent the whole time.
+That one command creates the spec, assigns an ID, creates a feature branch, and starts implementing — all in your current repo, using your default agent. You stay in the agent the whole time.
 
-Prefer the terminal? Run `feature-create` with a short description and draft the spec collaboratively with an agent:
+### 3. CLI — terminal-native flow
+
+For terminal-first workflows or scripting, drive Aigon by command. `feature-create` writes a bare spec from your description and launches Claude Code (`cc`) **interactively** with the drafting context pre-loaded:
 
 ```bash
 aigon feature-create dark-mode --agent cc "dark mode toggle with system preference detection, persisted in localStorage"
 ```
 
-Aigon writes a bare spec from your description, then launches Claude Code (`cc`) **interactively** in your terminal with the drafting context pre-loaded. You have a real conversation with the agent — it asks clarifying questions, proposes user stories and acceptance criteria, you push back and iterate, and when you're satisfied you exit the session. The drafted spec lands in `docs/specs/features/01-inbox/` for a final review — nothing is committed, no branch is created, no work starts yet. When you're happy with the draft, move it forward:
+You have a real conversation with the agent — it asks clarifying questions, proposes user stories and acceptance criteria, you push back and iterate, and when you're satisfied you exit the session. The drafted spec lands in `docs/specs/features/01-inbox/` for a final review. When you're happy with the draft, move it forward:
 
 ```bash
 aigon feature-prioritise dark-mode           # Assigns an ID, moves to backlog
@@ -97,31 +121,19 @@ aigon feature-start dark-mode cc cx          # Fleet mode — Claude and Codex r
 aigon feature-eval dark-mode                 # Compare results, pick the winner
 ```
 
-Or spin up the web dashboard (`aigon server start`) and click "New Feature" on the kanban board. Same specs, three surfaces — pick whichever fits the moment.
-
-### Per-worktree setup
-
-Worktrees are fresh checkouts — they don't share `node_modules`, virtualenvs, or other build artefacts with the main repo. If your agents need those before they start, declare a setup command in `.aigon/config.json`:
-
-```json
-{ "worktreeSetup": "npm ci" }
-```
-
-or, when your stack tolerates a linked `node_modules`:
-
-```json
-{ "worktreeSetup": "ln -s ../../node_modules node_modules" }
-```
-
-The command runs once per worktree, after `git worktree add` and before the agent launches, with a 120-second timeout. Failure warns and continues. Aigon does not detect or guess your stack — if you need setup, declare it explicitly.
-
 ## Demo
 
 <p align="center">
-  <img src="site/public/img/aigon-dashboard-02-fleet-evaluation.gif" alt="Aigon Fleet mode — evaluation in progress" width="880"/>
+  <a href="https://www.youtube.com/watch?v=koMR4JILMnQ">
+    <img src="https://img.youtube.com/vi/koMR4JILMnQ/maxresdefault.jpg" alt="Introducing Aigon — spec-driven development with parallel agents & AFK mode" width="720"/>
+  </a>
 </p>
 
-The [Aigon dashboard](https://www.aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and the repo-wide All Items index for features, research, and feedback. Above: a Fleet-mode feature being evaluated across three agents.
+<p align="center">
+  ▶ <a href="https://www.youtube.com/watch?v=koMR4JILMnQ"><em>Introducing Aigon — Spec-Driven Development with Parallel Agents & AFK Mode</em></a> (3 min)
+</p>
+
+The [Aigon dashboard](https://www.aigon.build/docs/guides/dashboard) shows features across their full lifecycle — inbox → backlog → in-progress → in-evaluation → done — with live agent session status, commit activity, telemetry, and the repo-wide All Items index for features, research, and feedback.
 
 ## Documentation
 
@@ -131,19 +143,19 @@ Full documentation lives at **[aigon.build/docs](https://www.aigon.build/docs)**
 - 🧭 [Core Concepts](https://www.aigon.build/docs/concepts) — workflows, execution modes, reliability
 - 🛠 [Guides](https://www.aigon.build/docs/guides) — Drive, Fleet, Autopilot, Research, Dashboard, Telemetry
 - 📚 [CLI Reference](https://www.aigon.build/docs/reference/commands) — every command documented
-- 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Gemini, Codex, Cursor setup
+- 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Gemini, Codex, Cursor, OpenCode, Kimi setup
 
-## Aigon Pro (coming later)
+## Aigon Pro
 
-Aigon Pro is a planned commercial tier that extends the free workflow with three things the open-source side intentionally doesn't do:
+Aigon Pro is a commercial tier that extends the free workflow with three things the open-source side intentionally doesn't do:
 
 - **Autonomous orchestration** — AutoConductor runs implement → review → close unattended, so you can hand off a feature and come back to a merged PR
 - **Insights** — deeper analytics over your whole feature history: agent quality trends, cost per delivered change, token efficiency over time, agent-vs-agent comparisons
 - **AI-powered coaching** — recommendations based on your workflow patterns, so the system learns what "shipping well" looks like for your team
 
-**Aigon Pro is now in private beta.** Access is by invitation — email [john@aigon.build](mailto:john@aigon.build) with your GitHub username to request access. See the [installation guide](/docs/guides/pro-installation) for setup instructions.
+Aigon Pro is in **private beta — invitation only**. Email [john@aigon.build](mailto:john@aigon.build) with your GitHub username to request access. Once you have a key, the [installation guide](https://www.aigon.build/docs/guides/pro-installation) walks through setup; the [Pro page](https://www.aigon.build/pro) has the full feature overview.
 
-The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source. See the [Pro page](https://www.aigon.build/pro) for a full feature overview.
+The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source.
 
 ## Community and support
 
