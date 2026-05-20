@@ -4,8 +4,8 @@ title: "conductor menubar and research-open should show research tmux sessions"
 status: "inbox"
 type: "feature-gap"
 reporter:
-  name: "jviner"
-  identifier: "jviner"
+  name: ""
+  identifier: ""
 source:
   channel: "internal"
   reference: ""

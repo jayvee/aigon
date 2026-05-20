@@ -92,11 +92,4 @@ remove Pro-internal framing while preserving the OSS narrative:
   the OSS data series only; chart rendering moved to aigon-pro)
 - `research-19-ai-native-workflow-metrics`
 - `research-19-{cc,cx,gg}-findings`
-
-## Recovery / context
-
-- Pre-split aigon HEAD: `3e942326a0b5dd48097f8b59058414d80e2dd850`
-- Post-split aigon HEAD: `a88b8beec7fba7add8e2bccaaccf5c6f18c7b643`
-- Backup tarballs: `~/Backups/aigon-2026-04-07.tar.gz`,
-  `~/Backups/aigon-pro-2026-04-07.tar.gz`
 - Backup notes: `~/Backups/aigon-split-notes-2026-04-07.md`

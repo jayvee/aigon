@@ -8,7 +8,7 @@ transitions:
 
 ## Summary
 
-Spinning up a 4-agent fleet currently takes ~50s end-to-end (last measured: brewboard f09, `~/Downloads/slow_fleet_startup.gif`). The dashboard's optimistic UI flips the card to "in progress" instantly, then the user stares at a static card for ~50s. This feature parallelises the per-agent worktree work, parallelises tmux session creation, removes redundant git commits from the critical path, and adds greppable phase-timing markers so the next regression is obvious. Target: ≤15s wall-clock for a 4-agent brewboard fleet start.
+Spinning up a 4-agent fleet currently takes ~50s end-to-end (last measured: brewboard f09). The dashboard's optimistic UI flips the card to "in progress" instantly, then the user stares at a static card for ~50s. This feature parallelises the per-agent worktree work, parallelises tmux session creation, removes redundant git commits from the critical path, and adds greppable phase-timing markers so the next regression is obvious. Target: ≤15s wall-clock for a 4-agent brewboard fleet start.
 
 ## Problem
 

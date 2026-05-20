@@ -10,10 +10,10 @@ Running `aigon perf-bench brewboard --all` is a black box: there is no way to se
 
 ## User Stories
 
-- As John running a full matrix sweep, I want to run `aigon bench-status` and immediately see which model is currently being benchmarked, how long it has been running, and whether it has exceeded the expected ceiling — so I can decide whether to intervene.
-- As John reviewing a completed sweep, I want the summary table printed at the end to show cost per run alongside timing, and I want the `all-*.json` summary file to contain that data so I can analyse it later.
-- As John cleaning up after a crash, I want to know that when a benchmark times out the orchestrator kills the underlying opencode/agent process — so I never again find a 10-hour zombie burning credits.
-- As John iterating on model selection, I want the bench harness to notice when a model has failed N consecutive runs and automatically add a quarantine block to its entry in the agent JSON — so I don't have to quarantine manually and the problem can't recur silently.
+- As the operator running a full matrix sweep, I want to run `aigon bench-status` and immediately see which model is currently being benchmarked, how long it has been running, and whether it has exceeded the expected ceiling — so I can decide whether to intervene.
+- As the operator reviewing a completed sweep, I want the summary table printed at the end to show cost per run alongside timing, and I want the `all-*.json` summary file to contain that data so I can analyse it later.
+- As the operator cleaning up after a crash, I want to know that when a benchmark times out the orchestrator kills the underlying opencode/agent process — so I never again find a 10-hour zombie burning credits.
+- As the operator iterating on model selection, I want the bench harness to notice when a model has failed N consecutive runs and automatically add a quarantine block to its entry in the agent JSON — so I don't have to quarantine manually and the problem can't recur silently.
 
 ## Acceptance Criteria
 
