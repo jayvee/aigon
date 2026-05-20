@@ -1,6 +1,6 @@
 # Promotional GIF Demos
 
-This folder stores promotional GIF demos used in README/docs/marketing.
+This folder stores promotional GIF demos used in the README and on the docs site.
 
 ## Deliverables
 - `gifs/01-board-at-a-glance.gif`

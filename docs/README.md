@@ -10,6 +10,9 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 - [dashboard.md](dashboard.md) — Dashboard surface map: tabs, server-owned `validActions`, read-only rule.
 - [workflow-rules.md](workflow-rules.md) — Action registry contract for feature/research/set workflow rules.
 - [autonomous-mode.md](autonomous-mode.md) — AutoConductor loop, supervisor rules, what is and is not auto-decided.
+- [adding-agents.md](adding-agents.md) — How to integrate a new agent CLI (the `templates/agents/<id>.json` schema, capabilities, install hints).
+- [seeds.md](seeds.md) — Maintainer guide for the demo seed repos (brewboard, trailhead); two-repo workflow for seed publishers.
+- [card-design-wireframe.html](card-design-wireframe.html) — Canonical pipeline-card reference design — vocabulary, layout, all card states. Open in a browser before any visual change to cards.
 - [testing.md](testing.md) — Unit/integration discipline, the test-suite LOC ceiling (see `scripts/check-test-budget.sh` for the live value), REGRESSION-comment rule.
 - [testing-dashboard.md](testing-dashboard.md) — Playwright harness, when `npm run test:ui` runs, mid-iteration skip rule.
 - [testing-linux-docker.md](testing-linux-docker.md) — End-to-end Linux install verification via Docker/OrbStack.
@@ -23,17 +26,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 
 ## Reference
 
-- [competitive/](competitive/) — Landscape, matrix, weaknesses, per-competitor entries.
-- [marketing/](marketing/) — Positioning, multi-agent narrative, screenshots.
-- [reports/](reports/) — Dated investigation reports (dependency sweeps, simplification rounds).
 - [generated/](generated/) — Auto-generated artifacts (workflow diagrams). Do not hand-edit.
-
-## Proposals
-
-Forward-looking design docs that are not yet (or may never be) implemented.
-
-- [proposals/aigon-next-operator-brief.md](proposals/aigon-next-operator-brief.md) — Short Codex handoff prompt for the aigon-next prototype.
-- [proposals/aigon-next-prototype-bootstrap.md](proposals/aigon-next-prototype-bootstrap.md) — Long-form bootstrap document for a new workflow-core prototype.
 
 ## Reviews
 
