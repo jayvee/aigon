@@ -9,7 +9,7 @@ transitions:
 ## Summary
 Refactor the public landing page hero so it becomes a concise above-the-fold introduction with clear calls to action, while preserving the strongest current payoff copy in a dedicated section immediately below the hero. This is a static-site refactor of `site/public/home.html` and `site/public/css/style.css`: no new assets, no new design system tokens, and no broad redesign beyond relocating existing content, tightening copy, restoring CTAs, and merging the two documentation sections into one get-started section.
 
-Source brief: `tmp/feature-landing-hero-slim.md`.
+Source brief: `./assets/feature-470/feature-landing-hero-slim.md`.
 Design rationale reference: `Landing Page Review v2.html` at repo root, if present.
 
 ## User Stories
@@ -125,5 +125,5 @@ None.
 - Should the new `#why` section reuse `hero-payoff` class names or get neutral names like `payoff-card`? Default to the smallest clean diff: keep existing card classes if the CSS can be safely moved out of hero-only scope.
 
 ## Related
-- Design brief: `tmp/feature-landing-hero-slim.md`
+- Design brief: `./assets/feature-470/feature-landing-hero-slim.md`
 - Reference mock/rationale: `Landing Page Review v2.html`

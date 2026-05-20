@@ -26,9 +26,9 @@ Agent: cx
   - `node --check templates/dashboard/js/monitor.js`
   - `node --check templates/dashboard/js/pipeline.js`
 - UI verification screenshots:
-  - `temp/feature-108-monitor-dev-server-link.png`
-  - `temp/feature-108-monitor-dev-server-overflow.png`
-  - `temp/feature-108-pipeline-overflow-fix.png`
+  - `./assets/feature-108/feature-108-monitor-dev-server-link.png`
+  - `./assets/feature-108/feature-108-monitor-dev-server-overflow.png`
+  - `./assets/feature-108/feature-108-pipeline-overflow-fix.png`
 
 ## Decisions
 - Simplified dev-server URL behavior to deterministic reconstruction for eligible agent rows (`http://<agent>-<feature>.<appId>.localhost`) rather than requiring runtime liveness checks for icon visibility.
