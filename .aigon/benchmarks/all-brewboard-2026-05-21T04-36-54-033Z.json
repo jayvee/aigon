@@ -1,0 +1,65 @@
+{
+  "pairs": [
+    {
+      "agentId": "cu",
+      "modelValue": "composer-2",
+      "modelLabel": "Composer 2",
+      "ok": true,
+      "totalMs": 41446,
+      "costUsd": null,
+      "tokenUsage": {
+        "inputTokens": 14991,
+        "cachedInputTokens": 154112,
+        "freshInputTokens": 0,
+        "outputTokens": 2481,
+        "thinkingTokens": 0,
+        "totalTokens": 17472,
+        "billableTokens": 17472,
+        "sessions": 1,
+        "costUsd": null,
+        "model": "composer-2"
+      }
+    },
+    {
+      "agentId": "cu",
+      "modelValue": "composer-2.5",
+      "modelLabel": "Composer 2.5",
+      "ok": true,
+      "totalMs": 34436,
+      "costUsd": 0.0634,
+      "tokenUsage": {
+        "inputTokens": 14747,
+        "cachedInputTokens": 104704,
+        "freshInputTokens": 0,
+        "outputTokens": 1463,
+        "thinkingTokens": 0,
+        "totalTokens": 16210,
+        "billableTokens": 16210,
+        "sessions": 1,
+        "costUsd": 0.0634,
+        "model": "composer-2.5"
+      }
+    },
+    {
+      "agentId": "cu",
+      "modelValue": "composer-2.5-fast",
+      "modelLabel": "Composer 2.5 Fast",
+      "ok": true,
+      "totalMs": 26364,
+      "costUsd": 0.4417,
+      "tokenUsage": {
+        "inputTokens": 23992,
+        "cachedInputTokens": 116288,
+        "freshInputTokens": 0,
+        "outputTokens": 1390,
+        "thinkingTokens": 0,
+        "totalTokens": 25382,
+        "billableTokens": 25382,
+        "sessions": 1,
+        "costUsd": 0.4417,
+        "model": "composer-2.5-fast"
+      }
+    }
+  ],
+  "timestamp": "2026-05-21T04:36:54.033Z"
+}
