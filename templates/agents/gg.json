@@ -359,7 +359,16 @@
           "spec": 3.5,
           "research": 3.5
         },
-        "lastRefreshAt": "2026-05-20T00:00:00.000Z"
+        "lastRefreshAt": "2026-05-20T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-05-22",
+          "reason": "Listed in the Gemini Models API discovery response but generateContent calls via the @google/gemini-cli endpoint return 404 ModelNotFoundError. Pricing/scores from Google's published benchmarks are retained for when API access lands; unquarantine after re-probe passes.",
+          "evidence": "gemini -p \"say PONG\" -m gemini-3.5-flash: ModelNotFoundError (code 404) on 2026-05-20 AND 2026-05-22. aigon agent-probe gg --model gemini-3.5-flash: FAIL.",
+          "supersededBy": [
+            "gemini-2.5-flash",
+            "gemini-3.1-pro-preview"
+          ]
+        }
       },
       {
         "value": "gemini-3.1-flash-tts-preview",
