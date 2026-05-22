@@ -94,11 +94,11 @@ test('set conductor encodes explicit agents into the detached run-loop command',
         sessionName: 'brewboard-shomepage-polish-auto',
         explicitAgents: ['cc'],
         reviewAgent: 'gg',
-        models: 'cc=sonnet,gg:gemini-1',
-        efforts: 'cc=high,gg:default',
+        models: 'cc=sonnet,gg=gemini-1',
+        efforts: 'cc=high,gg=default',
     });
-    assert.ok(withModels.includes('--models=cc=sonnet,gg:gemini-1'), 'REGRESSION: set run passes per-agent triplet + review to each feature-autonomous-start');
-    assert.ok(withModels.includes('--efforts=cc=high,gg:default'), 'REGRESSION: set run passes effort overrides to feature-autonomous-start');
+    assert.ok(withModels.includes('--models=cc=sonnet,gg=gemini-1'), 'REGRESSION: set run passes per-agent triplet + review to each feature-autonomous-start');
+    assert.ok(withModels.includes('--efforts=cc=high,gg=default'), 'REGRESSION: set run passes effort overrides to feature-autonomous-start');
 });
 // F319: failure pause/resume state transitions
 test('paused-on-failure: failedFeature persisted and completed list preserved', () => withTempDir('aigon-set-pause-', async (repo) => {

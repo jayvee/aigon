@@ -7,6 +7,18 @@
       name: agent.displayName || agent.id
     }));
 
+    function isSidebarKnownAgentModelValue(agentId, value) {
+      const modelValue = value == null ? '' : String(value);
+      if (!modelValue) return false;
+      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
+      const agent = agents.find(a => a.id === agentId);
+      const modelOptions = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+      const concreteValues = modelOptions
+        .map(opt => (!opt || opt.value == null) ? null : String(opt.value))
+        .filter(Boolean);
+      return concreteValues.length === 0 || concreteValues.includes(modelValue);
+    }
+
     function getAskAgent() {
       const preferred = localStorage.getItem(lsKey('askAgent'));
       if (preferred && ASK_AGENTS.some(agent => agent.id === preferred)) return preferred;
@@ -121,7 +133,9 @@
             const agentId = m[1];
             const taskType = m[2];
             if (!agentModelMap[agentId]) agentModelMap[agentId] = {};
-            if (def.effectiveValue) agentModelMap[agentId][taskType] = def.effectiveValue;
+            if (def.effectiveValue && isSidebarKnownAgentModelValue(agentId, def.effectiveValue)) {
+              agentModelMap[agentId][taskType] = def.effectiveValue;
+            }
           });
           return agentModelMap;
         })

@@ -998,8 +998,8 @@ async function handleSetAction(va, setCard, repoPath, btn) {
       const reviewAgent = String(pick.reviewAgent || '').trim();
       const reviewModel = String(pick.reviewModel || '').trim();
       const reviewEffort = String(pick.reviewEffort || '').trim();
-      const mergedModels = [modelsCsv, reviewAgent && reviewModel ? (`${reviewAgent}:${reviewModel}`) : ''].filter(Boolean).join(',');
-      const mergedEfforts = [effortsCsv, reviewAgent && reviewEffort ? (`${reviewAgent}:${reviewEffort}`) : ''].filter(Boolean).join(',');
+      const mergedModels = [modelsCsv, reviewAgent && reviewModel ? (`${reviewAgent}=${reviewModel}`) : ''].filter(Boolean).join(',');
+      const mergedEfforts = [effortsCsv, reviewAgent && reviewEffort ? (`${reviewAgent}=${reviewEffort}`) : ''].filter(Boolean).join(',');
       const args = [slug, ...agentIds, '--stop-after=close'];
       if (reviewAgent) args.push(`--review-agent=${reviewAgent}`);
       if (mergedModels) args.push(`--models=${mergedModels}`);
