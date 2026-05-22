@@ -43,6 +43,25 @@ git push https://github.com/jayvee/brewboard-seed.git main  # brewboard-seed.git
 
 Pushing only to `origin` (`brewboard.git`) is silently wiped when `seed-reset` runs next.
 
+> ### ⚠️ Push from a clean main only
+>
+> `git push <seed-url> main` shoves whatever is on local `main` into the seed —
+> including merged feature commits left behind by `aigon feature-close`. Pushing
+> after running a feature poisons the seed: every subsequent reset re-clones
+> the contaminated state and the demo no longer represents an unimplemented
+> backlog. (Past incidents: F02 brewery-import, F09 dark-mode.)
+>
+> Before pushing, verify `git log --oneline origin/main..main` only shows
+> commits you intend as permanent seed content — never `Merge feature N`,
+> `feat: ...`, or anything an agent produced.
+>
+> `seed-reset` itself now refuses to force-push when the provisioned HEAD
+> contains commits outside the allowlist (`chore: install Aigon v…`,
+> `chore: update Aigon to v…`, `chore: strip stale seed config`) — see
+> `validateSeedProvisionCommits` in `lib/commands/setup/seed-reset.js`. That
+> guard catches contamination introduced through the reset cycle; this manual
+> push path is on you.
+
 ## What lives in the seed
 
 The seed repo contains the application source and aigon specs. Aigon runtime state is gitignored and rebuilt by `seed-reset`.
