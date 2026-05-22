@@ -4,6 +4,10 @@
 //   phase-2 — installed CLI is newer than the dashboard process (offer restart).
 //   phase-3 — applied templates drift from installed CLI (offer per-repo apply).
 //
+// F535 — phase-3 uses two vocabularies based on data.devMode:
+//   user mode  — "applied vX" / "Re-apply vX"; staleness = version mismatch only.
+//   dev  mode  — "Templates edited locally" / "Sync"; staleness = digest drift.
+//
 // No phase auto-advances; every action requires an explicit user click.
 // Polling: 5s while document.visibilityState==='visible', 60s otherwise.
 
@@ -32,6 +36,40 @@
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Two audiences, two vocabularies (F535). User mode = normal npm install;
+  // dev mode = maintainer running from a local checkout, where templates can
+  // change between version bumps so digest drift is the real signal.
+  const LABELS = {
+    user: {
+      currentWord: 'up to date',
+      needsApplyWord: 'needs re-apply',
+      neverWord: 'never applied',
+      actionLabel: (installed) => `Re-apply v${installed}`,
+      actionRunningLabel: 'Applying…',
+      bannerOne: (installed, n) => `Re-apply aigon v${installed} to ${n} repo`,
+      bannerMany: (installed, n) => `Re-apply aigon v${installed} to ${n} repos`,
+      bannerCurrentOnly: (installed) => `Re-apply aigon v${installed} (this repo is up to date — see registered repos below)`,
+      applyAllLabel: (n) => `Re-apply all ${n}`,
+      flashLabel: (installed) => installed ? `All repos applied at v${installed}` : 'All repos applied',
+    },
+    dev: {
+      currentWord: 'synced',
+      needsApplyWord: 'out of sync',
+      neverWord: 'never synced',
+      actionLabel: () => 'Sync',
+      actionRunningLabel: 'Syncing…',
+      bannerOne: (_installed, n) => `Templates edited locally — ${n} repo out of sync`,
+      bannerMany: (_installed, n) => `Templates edited locally — ${n} repos out of sync`,
+      bannerCurrentOnly: () => 'Templates edited locally — registered repos out of sync',
+      applyAllLabel: (n) => `Sync all ${n}`,
+      flashLabel: () => 'All repos synced',
+    },
+  };
+
+  function getLabels(data) {
+    return (data && data.devMode) ? LABELS.dev : LABELS.user;
   }
 
   function derivePhase(data) {
@@ -87,25 +125,43 @@
   }
 
   function renderRepoRow(repo) {
+    const data = state.data || {};
+    const labels = getLabels(data);
+    const installed = data.installedCli || '';
     const op = state.activeRepoOps.get(repo.repoPath);
     const opStatus = op && op.status;
     const opMsg = op && op.message;
     const opClass = opStatus ? ` op-${opStatus}` : '';
     const previewOpen = state.previewRepoPath === repo.repoPath;
-    const status = repo.stale ? 'stale' : 'current';
-    const delta = repo.contentDelta ? ` · ${escapeHtml(repo.contentDelta)}` : '';
-    const versionInfo = repo.appliedVersion ? `applied v${escapeHtml(repo.appliedVersion)}` : 'never applied';
+    const neverApplied = !repo.appliedVersion;
+    const statusClass = repo.stale ? 'stale' : 'current';
+    const statusWord = neverApplied
+      ? labels.neverWord
+      : (repo.stale ? labels.needsApplyWord : labels.currentWord);
+
+    // Meta line: user mode shows the version stamp (the signal that matters);
+    // dev mode shows the content delta (the signal that matters there). Avoids
+    // the old "applied vX next to a Re-apply button" contradiction.
+    let metaText;
+    if (data.devMode) {
+      metaText = repo.contentDelta ? escapeHtml(repo.contentDelta) : (neverApplied ? '' : '');
+    } else {
+      metaText = repo.appliedVersion ? `applied v${escapeHtml(repo.appliedVersion)}` : 'never applied';
+    }
+
+    const actionLabel = opStatus === 'running' ? labels.actionRunningLabel : labels.actionLabel(escapeHtml(installed));
+
     return `
       <div class="aigon-pill-repo${opClass}" data-repo-path="${escapeHtml(repo.repoPath)}">
         <div class="aigon-pill-repo-h">
           <span class="aigon-pill-repo-name">${escapeHtml(repo.name || repo.repoPath)}</span>
-          <span class="aigon-pill-repo-meta">${versionInfo}${delta}</span>
-          <span class="aigon-pill-repo-state ${status}">${status}</span>
+          <span class="aigon-pill-repo-meta">${metaText}</span>
+          <span class="aigon-pill-repo-state ${statusClass}">${statusWord}</span>
           <span class="aigon-pill-repo-actions">
             ${repo.stale ? `
               <button class="aigon-pill-btn" data-pill-action="preview" data-repo="${escapeHtml(repo.repoPath)}">${previewOpen ? 'Hide preview' : 'Preview'}</button>
-              <button class="aigon-pill-btn primary" data-pill-action="apply-one" data-repo="${escapeHtml(repo.repoPath)}" ${opStatus === 'running' ? 'disabled' : ''}>${opStatus === 'running' ? 'Applying…' : 'Re-apply'}</button>
-            ` : '<span class="aigon-pill-dim">up to date</span>'}
+              <button class="aigon-pill-btn primary" data-pill-action="apply-one" data-repo="${escapeHtml(repo.repoPath)}" ${opStatus === 'running' ? 'disabled' : ''}>${actionLabel}</button>
+            ` : `<span class="aigon-pill-dim">${neverApplied ? labels.neverWord : labels.currentWord}</span>`}
           </span>
         </div>
         ${opMsg ? `<div class="aigon-pill-repo-msg">${escapeHtml(opMsg)}</div>` : ''}
@@ -126,20 +182,21 @@
     }
 
     const installed = escapeHtml(data.installedCli);
+    const labels = getLabels(data);
     const expanded = state.expanded;
     const staleCount = stale.length;
     const summary = staleCount === 0
-      ? `Re-apply aigon v${installed} (this repo is up to date — see registered repos below)`
+      ? labels.bannerCurrentOnly(installed)
       : (staleCount === 1
-        ? `Re-apply aigon v${installed} to ${staleCount} repo`
-        : `Re-apply aigon v${installed} to ${staleCount} repos`);
+        ? labels.bannerOne(installed, staleCount)
+        : labels.bannerMany(installed, staleCount));
 
     return `
       <div class="aigon-pill phase-3" role="status" aria-label="apply needed">
         <span class="aigon-pill-icon">↻</span>
         <span class="aigon-pill-text">${summary}</span>
         <button class="aigon-pill-btn" data-pill-action="toggle">${expanded ? 'Hide repos ▴' : 'Show repos ▾'}</button>
-        ${staleCount > 1 ? `<button class="aigon-pill-btn primary" data-pill-action="apply-all">Re-apply all ${staleCount}</button>` : ''}
+        ${staleCount > 1 ? `<button class="aigon-pill-btn primary" data-pill-action="apply-all">${labels.applyAllLabel(staleCount)}</button>` : ''}
       </div>
       ${expanded ? `
         <div class="aigon-pill-expanded">
@@ -161,7 +218,8 @@
     const data = state.data;
     if (state.flashUntil > Date.now()) {
       const installed = (data && data.installedCli) || '';
-      root.innerHTML = renderFlash(installed ? `All repos applied at v${installed}` : 'All repos applied');
+      const labels = getLabels(data);
+      root.innerHTML = renderFlash(labels.flashLabel(installed));
       root.removeAttribute('data-hidden');
       return;
     }
