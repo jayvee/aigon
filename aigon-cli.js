@@ -103,7 +103,21 @@ const commandArgs = args.slice(1);
 const cleanCommand = commandName ? commandName.replace(/^aigon-/, '') : null;
 const resolvedCommand = cleanCommand ? (COMMAND_ALIASES[cleanCommand] || cleanCommand) : cleanCommand;
 
-const SKIP_FIRST_RUN = new Set(['onboarding', 'setup', '--version', '-v', 'version', '--help', '-h', 'help', 'check-version', 'apply', 'update', 'installed-notice']);
+const SKIP_FIRST_RUN = new Set([
+    ...PLUMBING_COMMANDS,
+    'onboarding',
+    'setup',
+    '--version',
+    '-v',
+    'version',
+    '--help',
+    '-h',
+    'help',
+    'check-version',
+    'apply',
+    'update',
+    'installed-notice',
+]);
 
 function firstRunComplete() {
     const os = require('os');

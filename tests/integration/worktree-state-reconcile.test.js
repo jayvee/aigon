@@ -90,11 +90,46 @@ test('cc do wrapper: cleanup trap is timed, heartbeat sidecar has parent-alive +
     // REGRESSION (fix B): sidecar previously only checked `kill -0 $$` — if parent hung in EXIT trap the loop ran forever.
     const cmd = buildAgentCommand({ agent: 'cc', featureId: '10', path: '/tmp/aigon-cc-wrapper-test-wt', repoPath: process.cwd() }, 'do');
     assert.ok(cmd.includes('_aigon_run_timed') && cmd.includes('AIGON_STATUS_TIMEOUT_SECS'), cmd.slice(0, 400));
-    assert.ok(cmd.includes('_aigon_run_timed aigon agent-status implementation-complete'), cmd);
+    assert.ok(cmd.includes('_aigon_run_timed env AIGON_SKIP_FIRST_RUN=1 aigon agent-status implementation-complete'), cmd);
     assert.ok(!cmd.match(/^\s+aigon agent-status implementation-complete\s*$/m), 'unguarded agent-status call found');
     assert.ok(cmd.includes('kill -0 $$'), 'parent-alive guard'); // Guard 1
     assert.ok(cmd.includes('AIGON_HEARTBEAT_MAX_SECS'), 'time-ceiling guard'); // Guard 2
     assert.ok(cmd.includes('tmux has-session'), 'tmux-session guard'); // Guard 3
+}));
+test('agent wrapper resets stale tmux-server test environment before plumbing calls', () => withLiveAgentMode(() => {
+    // REGRESSION: a tmux server first started by dashboard e2e kept HOME/AIGON_TEST_MODE
+    // in its global environment; later real agent panes inherited that stale env and
+    // `aigon agent-status implementing` launched the first-run wizard.
+    const prev = {
+        HOME: process.env.HOME,
+        AIGON_TEST_MODE: process.env.AIGON_TEST_MODE,
+        PLAYWRIGHT_TEST: process.env.PLAYWRIGHT_TEST,
+        MOCK_DELAY: process.env.MOCK_DELAY,
+        GIT_CONFIG_GLOBAL: process.env.GIT_CONFIG_GLOBAL,
+        GIT_CONFIG_SYSTEM: process.env.GIT_CONFIG_SYSTEM,
+        PORT: process.env.PORT,
+    };
+    process.env.HOME = '/Users/example';
+    delete process.env.AIGON_TEST_MODE;
+    delete process.env.PLAYWRIGHT_TEST;
+    delete process.env.MOCK_DELAY;
+    delete process.env.GIT_CONFIG_GLOBAL;
+    delete process.env.GIT_CONFIG_SYSTEM;
+    delete process.env.PORT;
+    try {
+        const cmd = buildAgentCommand({ agent: 'cc', featureId: '11', path: '/tmp/aigon-cc-env-test-wt', repoPath: process.cwd() }, 'do');
+        assert.ok(cmd.includes("export HOME='/Users/example'"), cmd.slice(0, 300));
+        assert.ok(cmd.includes('unset AIGON_TEST_MODE'), cmd.slice(0, 300));
+        assert.ok(cmd.includes('unset PLAYWRIGHT_TEST'), cmd.slice(0, 300));
+        assert.ok(cmd.includes('unset MOCK_DELAY'), cmd.slice(0, 300));
+        assert.ok(cmd.includes('unset GIT_CONFIG_GLOBAL'), cmd.slice(0, 300));
+        assert.ok(cmd.includes('AIGON_SKIP_FIRST_RUN=1 AIGON_TASK_TYPE=do aigon agent-status implementing'), cmd);
+    } finally {
+        for (const [key, value] of Object.entries(prev)) {
+            if (value === undefined) delete process.env[key];
+            else process.env[key] = value;
+        }
+    }
 }));
 test('headless research spec-review launches inline instructions instead of recursive shell guidance', () => {
     // REGRESSION: Gemini spec-review sessions were told to run `aigon research-spec-review`
