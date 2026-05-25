@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-25T08:56:49.671Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: onboard-ampcode-agent
