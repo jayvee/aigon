@@ -1,0 +1,32 @@
+{
+  "pairs": [
+    {
+      "agentId": "am",
+      "modelValue": "rush",
+      "modelLabel": "Rush (GPT-5.5 fast)",
+      "ok": true,
+      "totalMs": 79563,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "am",
+      "modelValue": "smart",
+      "modelLabel": "Smart (Claude Opus 4.7)",
+      "ok": true,
+      "totalMs": 66454,
+      "costUsd": null,
+      "tokenUsage": null
+    },
+    {
+      "agentId": "am",
+      "modelValue": "deep",
+      "modelLabel": "Deep (GPT-5.5 reasoning)",
+      "ok": true,
+      "totalMs": 85636,
+      "costUsd": null,
+      "tokenUsage": null
+    }
+  ],
+  "timestamp": "2026-05-25T10:08:27.177Z"
+}
