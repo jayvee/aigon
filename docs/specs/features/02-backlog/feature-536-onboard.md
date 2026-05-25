@@ -60,7 +60,7 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
      - `cli.command: "amp"`
      - `cli.implementFlag`: set to `"--no-ide --no-jetbrains --no-notifications --dangerously-allow-all"` if Step 1 smoke confirms the flag combination is accepted; otherwise use the minimal verified flags and document the reason in the commit message.
      - `cli.injectPromptViaTmux: true`
-     - `cli.injectViaTmuxSkillCommand`: set to `true` — Amp has a native skills system under `.agents/skills/` and the outputs config (below) installs Aigon skills there. This matches the km pattern where the injection subshell invokes the skill directly rather than pasting the raw prompt body.
+     - `cli.injectViaTmuxSkillCommand`: set to `true` only if the Step 1 smoke proves Amp accepts a pasted `/skill:aigon-feature-do <ID>`-style invocation from its TUI. Amp has native project skills under `.agents/skills/`, but direct invocation syntax must be verified. If that syntax is not stable, leave `injectViaTmuxSkillCommand` unset/false and use the proven OpenCode-style raw prompt paste path.
      - `cli.implementPrompt/evalPrompt/reviewPrompt/reviewCheckPrompt`: `"feature-do"`, `"feature-eval"`, `"feature-code-review"`, `"feature-code-revise"` (skill names, not slash commands — TUI-inject agents)
      - `cli.submitKey: "Enter"`
      - `capabilities.supportsModelFlag: true`
@@ -86,15 +86,19 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
    - Use `complexityDefaults` to make low-complexity work default to `rush`, medium to `smart`, and high / very-high to `deep`. Set the same mode defaults in `cli.models` for `research`, `implement`, `evaluate`, and `review` only if needed by the existing config resolver.
    - Leave `effortOptions` empty in v1. Amp's `--effort` values vary by mode; that is a follow-up feature.
 
-3. **Fix hardcoded `--model` in the foreground launch path**
+3. **Fix hardcoded `--model` in foreground/direct launch paths**
    - The **tmux launch path** (`lib/worktree.js` → `lib/agent-launch.js:103-111`) already uses `agentRegistry.getModelFlag(agentId)` and is correct — no changes needed there.
-   - The **foreground/direct launch path** in `lib/commands/entity-commands.js:132` hardcodes `['--model', model]`. Change this to use the agent's registry `modelFlag`:
+   - The **foreground/direct launch paths** currently include hardcoded `['--model', model]` construction in at least:
+     - `lib/commands/entity-commands.js` (`launchPromptCommand`)
+     - `lib/feature-do.js`
+     - `lib/feature-eval.js`
+   - Change each path to use the agent's registry `modelFlag`:
      ```js
      const agentConfig = agentRegistry.getAgent(agentId);
      const modelFlag = agentConfig?.cli?.modelFlag || '--model';
      const modelTokens = (model && agentRegistry.supportsModelFlag(agentId)) ? [modelFlag, model] : [];
      ```
-   - Verify no other foreground paths build `--model` directly (grep for `'--model'` in `lib/`).
+   - Verify no other foreground paths build `--model` directly (grep for `'--model'` in `lib/`). If any are only help text or docs, leave them alone; if they build launch args, route them through `cli.modelFlag`.
    - Keep the change generic: if an agent's `cli.modelFlag` is `--model`, behavior stays unchanged; if it is `--mode`, the same picker value is passed through that flag.
 
 4. **Install generated project instructions as Amp skills**
@@ -115,7 +119,7 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
      - command includes `--mode <selected-mode>` when the feature start payload or config supplies a selected Amp mode;
      - command does not include `amp -x`, `amp --execute`, `--model`, or `exec bash -l`;
      - command includes `tmux load-buffer`, `tmux paste-buffer`, `tmux send-keys`, and the universal trap (TUI-inject pattern).
-   - Add a regression test for the `entity-commands.js` foreground path fix (Step 3): an agent with `modelFlag: "--mode"` launches with `--mode smart`, not `--model smart`. Existing agents with `modelFlag: "--model"` must be unaffected.
+   - Add regression coverage for the foreground/direct launch fixes in Step 3: an agent with `modelFlag: "--mode"` launches with `--mode smart`, not `--model smart`. Existing agents with `modelFlag: "--model"` must be unaffected.
    - Extend `tests/integration/agent-registry-contract.test.js` if current contract coverage does not automatically include every `templates/agents/*.json` file.
 
 7. **Add Amp-specific agent docs**
