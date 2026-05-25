@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aigon | Spec-Driven Multi-Agent Harness for Claude Code, Gemini CLI, Codex CLI</title>
+    <title>Aigon | Spec-Driven Multi-Agent Harness for Claude Code, Gemini CLI, Codex CLI and more</title>
     <meta
       name="description"
       content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review."
@@ -56,7 +56,6 @@
             <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
             <li><a href="/docs" class="nav-link">Docs</a></li>
             <li><a href="/pro" class="nav-link">Pro</a></li>
-            <li><a href="#community" class="nav-link">Community</a></li>
           </ul>
         </nav>
         <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noreferrer">
@@ -66,25 +65,15 @@
     </header>
 
     <main id="main">
-      <div class="pro-strip">
-        <div class="container pro-strip-inner">
-          <span class="pro-strip-badge">Pro</span>
-          <span class="pro-strip-text">Agent quality metrics, trend charts &amp; AI-powered coaching</span>
-          <a href="/pro" class="pro-strip-link">See what&#8217;s coming&#8202;→</a>
-        </div>
-      </div>
-
       <section class="hero section reveal" id="top">
         <div class="container hero-grid">
-          <div class="hero-copy">
-            <p class="hero-kicker">
-              <span class="hero-kicker-mark" aria-hidden="true"></span>
-              <span class="hero-kicker-brand">Aigon</span>
-              <span class="hero-kicker-divider" aria-hidden="true">/</span>
-              <span class="hero-kicker-tag">Multi-agent coding harness</span>
-            </p>
-            <h1>A spec-driven harness that orchestrates Claude Code, Codex, Cursor CLI and more.</h1>
-            <p class="hero-subtitle">Write a spec once. Launch competing implementations. Let one agent judge another. Merge the diff that survives review. Do it all from an intuitive kanban board.</p>
+          <div class="hero-copy"> 
+            <h1>Aigon is a spec-driven harness that orchestrates Claude Code, Codex, Cursor CLI and more.</h1>
+            <p class="hero-subtitle">Your specs can be implemented by one or more agents, reviewed by a different set of agents, and evaluated by an LLM as a judge.You track and control the workflow from an intuitive kanban board.</p>
+
+            <p class="hero-subtitle">Aigon is open source, you bring your own subscriptions, everything is stored locally in your repos and there are no third party systems required.</p>
+
+
             <div class="hero-actions">
               <a href="#get-started" class="button hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@next">
                 <span class="hero-install-cta-label">$ npm install -g @senlabsai/aigon@next</span>
@@ -97,14 +86,6 @@
               </a>
               <!-- TODO: add aigon apply CTA -->
             </div>
-            <p class="hero-copy-status" id="hero-copy-status" aria-live="polite"></p>
-            <ul class="hero-facts">
-              <li>Open-source</li>
-              <li>Spec-driven</li>
-              <li>BYO subscriptions</li>
-              <li>No SaaS lock-in</li>
-              <li>Local-first</li>
-            </ul>
           </div>
         </div>
         <div class="container">
@@ -120,23 +101,22 @@
             </div>
           </div>
           <div class="hero-fleet-showcase">
-            <p class="hero-fleet-modes">Aigon ships four modes — <strong>Drive</strong>, <strong>Fleet</strong>, <strong>Autopilot</strong>, and <strong>Swarm</strong>. Here's Fleet in 30 seconds:</p>
-            <p class="hero-fleet-intro">Claude Code and Cursor compete, Codex evaluates — best implementation wins.</p>
+            <p class="hero-fleet-modes">You can run Aigon in four modes — <strong>Drive</strong>, <strong>Fleet</strong>, <strong>Autopilot</strong>, and <strong>Swarm</strong>.</p>
             <div class="fleet-demo-steps">
               <div class="fleet-demo-step">
-                <p class="fleet-demo-label">1. Fleet started — agents implementing in parallel</p>
+                <p class="fleet-demo-label">1. Kick off the dark-mode feature in Fleet mode - with both Cursor and Claude Code implementing in an isolated worktrees</p>
                 <div class="fleet-demo-frame">
-                  <img class="gif-lazy" src="img/aigon-dashboard-01-fleet-start-poster.png" data-src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet started — Codex and Gemini implementing in parallel" width="1200" height="632">
+                  <img class="gif-lazy" src="img/aigon-dashboard-01-fleet-start-poster.png" data-src="img/aigon-dashboard-01-fleet-start.gif" alt="Fleet Mode — implement the dark-mode feature with both Codex and Gemini in isolated worktrees" width="1200" height="632">
                 </div>
               </div>
               <div class="fleet-demo-step">
-                <p class="fleet-demo-label">2. Both submitted — Codex evaluating</p>
+                <p class="fleet-demo-label">2. Both agents (Cursor, Claude Code) have completed - review each worktree's running site, then choose an evaluation agent/model (Kimi K2.6)</p>
                 <div class="fleet-demo-frame">
-                  <img class="gif-lazy" src="img/aigon-dashboard-02-fleet-evaluation-poster.png" data-src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="Claude Code evaluating the implementations" width="1200" height="641">
+                  <img class="gif-lazy" src="img/aigon-dashboard-02-fleet-evaluation-poster.png" data-src="img/aigon-dashboard-02-fleet-evaluation.gif" alt="2. Both agents (Cursor, Claude Code) have completed - review each worktree's running site, then choose an evaluation agent/model (Kimi K2.6)" width="1200" height="641">
                 </div>
               </div>
               <div class="fleet-demo-step">
-                <p class="fleet-demo-label">3. Evaluation complete — winner, Claude Code merged, with the best from Cursor implementation</p>
+                <p class="fleet-demo-label">3. Evaluation is complete — merge the winner (Claude Code), include the best parts from the Cursor implementation</p>
                 <div class="fleet-demo-frame">
                   <img class="gif-lazy" src="img/aigon-dashboard-03-fleet-submitted-poster.png" data-src="img/aigon-dashboard-03-fleet-submitted.gif" alt="Evaluation complete — winner selected and merged" width="1200" height="631">
                 </div>
@@ -150,51 +130,27 @@
         <div class="container">
           <div class="section-head">
             <p class="eyebrow">Why use Aigon?</p>
-            <h2>Four reasons one agent isn't enough.</h2>
           </div>
           <div class="hero-why-grid">
             <article class="hero-payoff">
               <p class="hero-payoff-num">01</p>
-              <h3 class="hero-payoff-title">Catch what one model misses.</h3>
-              <p class="hero-payoff-body">Different model families catch different classes of bug. When Claude reviews Claude, the reviewer shares the implementer's blind spots. Aigon Fleet runs Claude Code, Codex, Cursor CLI (and more) in parallel against the same spec, with a different coding agent as the merge reviewer.</p>
+              <h3 class="hero-payoff-title">More models lead to better quality.</h3>
+              <p class="hero-payoff-body">Different model families catch different classes of bug and have different strengths. Aigon aims to improve overall quality by running multiple agents in parallel or running implementation and review phases across multiple agents.</p>
             </article>
             <article class="hero-payoff">
               <p class="hero-payoff-num">02</p>
-              <h3 class="hero-payoff-title">Stop hitting quota walls.</h3>
-              <p class="hero-payoff-body">Agent subscriptions hit 5-hour quota limits. Aigon polls your quotas every 30 minutes, surfaces headroom on the dashboard, and auto-fails over to whichever coding agent still has quota. Three subscriptions, one elastic pool. Schedule specs to run when you have quota or while you sleep -- no more FONUT (Fear Of Not Using Tokens).</p>
+              <h3 class="hero-payoff-title">Options when your Agent quota runs out.</h3>
+              <p class="hero-payoff-body">Aigon surfaces the state of your quotas for all configured agents to help you choose the best agent at any given time. It will also route mid-implementation features from one agent to another when quotas run out.</p>
             </article>
             <article class="hero-payoff">
               <p class="hero-payoff-num">03</p>
-              <h3 class="hero-payoff-title">Use the subscriptions you already own.</h3>
-              <p class="hero-payoff-body">Aigon never sits in your billing path. Spend the Claude Pro, ChatGPT Plus, and Cursor Pro subscriptions you already have &mdash; Aigon orchestrates the agent CLIs, not their underlying model APIs. No tokens, no markup, no metering.</p>
+              <h3 class="hero-payoff-title">Use your own subscriptions.</h3>
+              <p class="hero-payoff-body">Aigon has no billing information or settings, it simply orchestrates your agent CLIs. It does no metering and does not mark up token spend.</p>
             </article>
             <article class="hero-payoff">
               <p class="hero-payoff-num">04</p>
-              <h3 class="hero-payoff-title">Watch the work happen, locally.</h3>
-              <p class="hero-payoff-body">Each agent runs in its own git worktree under tmux &mdash; <code>tmux attach</code> to any session and watch the work happen live. Specs live in your repo as Markdown; every workflow move is a git diff. No cloud sandbox, no opaque execution.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section reveal" id="why-aigon">
-        <div class="container">
-          <div class="section-head">
-            <p class="eyebrow">On disk, in your repo</p>
-            <h2>Where your work lives &mdash; in plain files, in git.</h2>
-          </div>
-          <div class="advantage-grid">
-            <article class="advantage-card">
-              <h3>The spec is the durable unit of work.</h3>
-              <p>Each feature is a Markdown spec in your repo &mdash; not session state, not chat history. Build a feature, ship it, then run the same spec through a different agent if you want a fresh take. The spec is the constant; implementations come and go.</p>
-            </article>
-            <article class="advantage-card">
-              <h3>Source code, plus the &ldquo;why&rdquo; behind it.</h3>
-              <p>Aigon doesn&rsquo;t just store specs &mdash; it links them into a graph. Research findings feed feature specs. Feature implementations feed evaluations. Evaluations feed the next round. By the tenth feature, the eleventh agent doesn&rsquo;t start cold &mdash; it reads the source code AND the full chain of intent that led to it.</p>
-            </article>
-            <article class="advantage-card">
-              <h3>Three workflows, one loop.</h3>
-              <p>Most coding tools only handle &ldquo;write the code.&rdquo; Aigon ships three workflows that link: research investigates open questions, features deliver shipped code, feedback triages user input. Research findings become feature specs. User feedback becomes prioritised work. The loop before and after the build, not just the build.</p>
+              <h3 class="hero-payoff-title">Local data and simple local tools.</h3>
+              <p class="hero-payoff-body">Each agent runs in its own git worktree as a agent CLI running in a tmux session. You can attach to that session any time and control the work that is happening. Specs and logs live in your repo as Markdown</p>
             </article>
           </div>
         </div>
@@ -204,7 +160,7 @@
         <div class="container">
           <div class="section-head">
             <p class="eyebrow">CLI in action</p>
-            <h2>Slash commands inside your agent — one workflow at every level of control.</h2>
+            <h2>Aigon slash commands can be run from any agent.</h2>
           </div>
           <div class="cli-demo-visual">
             <div class="agent-selector" role="group" aria-label="Choose agent demo">
@@ -291,35 +247,30 @@
 
           <div class="section-sub">
             <div class="section-head">
-              <p class="eyebrow">Choose your mode</p>
-              <h3>Hands-on or hands-off, one agent or many.</h3>
+              <p class="eyebrow">Aigon modes</p>
             </div>
             <div class="feature-grid">
               <article class="feature-card">
-                <p class="feature-tag">Hands-on + one agent</p>
-                <h3>Drive mode</h3>
-                <p>Use when you want tight control over implementation details and review checkpoints.</p>
+                <p class="feature-tag">One agent</p>
+                <p>Use when you only ever use one agent but want to use a spec driven approach.</p>
                 <pre><code>aigon feature-start 07</code></pre>
                 <p>Outcome: one guided implementation branch with a full spec and log trail.</p>
               </article>
               <article class="feature-card">
-                <p class="feature-tag">Hands-on + multi-agent</p>
-                <h3>Fleet mode</h3>
+                <p class="feature-tag">Multi-agent</p>
                 <p>Orchestrate competing implementations you can evaluate and adopt the best from.</p>
                 <pre><code>aigon feature-start 07 cc gg cx</code></pre>
                 <p>Outcome: parallel worktrees and comparable outputs for structured selection.</p>
               </article>
               <article class="feature-card">
-                <p class="feature-tag">Hands-off + one agent</p>
-                <h3>Autonomous mode, Single Agent</h3>
-                <p>Use when the scope is clear, but you want the peace of mind of a reviewing agent.</p>
+                <p class="feature-tag">Autonomous - one implementation agent, one review agent</p>
+                <p>Choose one implementation agent you are confident in, with a strong review agent to find the gaps.</p>
                 <pre><code>aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</code></pre>
-                <p>Outcome: automated implement-validate loop that stops when checks pass or budget ends.</p>
+                <p>Outcome: automated implement-review loop that stops when checks pass.</p>
               </article>
               <article class="feature-card">
-                <p class="feature-tag">Hands-off + multi-agent</p>
-                <h3>Autonomous mode, Multi Agent</h3>
-                <p>Fully orchestrated, fully autonomous — parallel agent runs converge into comparable outputs ready for auto evaluation and completion.</p>
+                <p class="feature-tag">Autonomous - multi-agent automated evaluation</p>
+                <p>Autonomous parallel agent runs converge into comparable outputs ready for auto evaluation and completion with an optional review stage.</p>
                 <pre><code>aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</code></pre>
                 <p>Outcome: concurrent autonomous runs across agents with logs ready for comparison.</p>
               </article>
@@ -370,7 +321,7 @@
             <h2>A Kanban board for spec-driven development.</h2>
           </div>
           <p class="lead">
-            The Aigon Dashboard is the visual way into your spec-driven workflow. Same pipeline, same agents — but managed through a browser UI instead of CLI commands. Drag features across columns, launch agent sessions with one click, and watch your pipeline move in real time. No terminal required.
+            The Aigon Dashboard is a visual way to run and monitor your spec-driven workflow. When you have multiple concurrent features in active development across many agents and tmux sessions, the dashboard provides a single pane to control and view progress. Drag features across columns, launch agent sessions with one click, and watch your pipeline move in real time. A web-based tmux session view allows you to interact with your agents without ever leaving the dashboard.
           </p>
 
           <div class="dashboard-gallery">
@@ -394,26 +345,6 @@
           </div>
 
           <div class="feature-grid">
-            <article class="feature-card">
-              <p class="feature-tag">Visual Workflow</p>
-              <h3>Drag specs from inbox to done</h3>
-              <p>Move features through your development pipeline with a familiar Kanban interface. Every column maps to an Aigon workflow state — no commands to memorise.</p>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Monitor</p>
-              <h3>See every agent, every repo, at a glance</h3>
-              <p>The monitor tab shows running sessions, attention items, and recent events across all your repositories — everything you need to know at a glance.</p>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Reports</p>
-              <h3>Track what matters in your AI workflow</h3>
-              <p>Five aligned charts — features completed, commits, cycle time, commits per feature, and rework ratio — show whether your team is shipping faster, writing tighter code, and fixing less. Summary cards, agent leaderboard, and filterable detail tables give you the full picture.</p>
-            </article>
-            <article class="feature-card">
-              <p class="feature-tag">Telemetry</p>
-              <h3>Cost &amp; token visibility across all agents</h3>
-              <p>Track token usage and cost across Claude, Gemini, and Codex sessions — broken down by activity type (implement, evaluate, review) and attributed per agent. See exactly where your spend goes. <a href="/docs/guides/telemetry">Learn more &rarr;</a></p>
-            </article>
             <article class="feature-card feature-card--remote">
               <p class="feature-tag">Remote Access</p>
               <h3>Monitor agents from your phone</h3>
@@ -442,10 +373,10 @@
 
       <section class="section reveal" id="reports">
         <div class="container">
-          <div class="section-head" style="text-align:center;max-width:640px;margin:0 auto 2.5rem">
+          <div class="section-head" style="margin-bottom:2.5rem">
             <p class="eyebrow">Workflow Intelligence</p>
             <h2>Know if your AI workflow is actually working</h2>
-            <p style="color:var(--text-muted,#666);margin-top:0.75rem">Five aligned charts track the metrics that matter: are features shipping faster? Are agents producing cleaner code? Is rework going down? Reports gives you the data to answer these questions — across every repo, every agent, every period.</p>
+            <p style="color:var(--text-muted,#666);margin-top:0.75rem">Aigon comes with charts that track the metrics that help you answer questions such as: Are features shipping faster? Is rework going down? Is token usage increasing per feature?</p>
           </div>
           <img
             src="img/aigon-dashboard-reports-charts.png"
@@ -756,7 +687,6 @@
         <div class="container docs-grid">
           <div class="section-head docs-head">
             <p class="eyebrow">Get started</p>
-            <h2>Install in one command. Read what you need.</h2>
           </div>
           <pre class="quickstart"><code>npm install -g @senlabsai/aigon@next</code></pre>
           <div class="docs-links">
@@ -788,29 +718,13 @@
         </div>
       </section>
 
-      <section class="section reveal" id="community">
-        <div class="container community">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h2>Help shape the next generation of collaborative AI development.</h2>
-            <p>
-              Contribute specs, improve workflows, and share real-world patterns for running multi-agent engineering
-              teams effectively.
-            </p>
-          </div>
-          <div class="community-actions">
-            <a href="https://github.com/jayvee/aigon" class="button" target="_blank" rel="noreferrer">Star on GitHub</a>
-            <a href="/docs/getting-started" class="button button-ghost">Install guide</a>
-          </div>
-        </div>
-      </section>
       <section class="section reveal pro-cta-section" id="pro-cta">
         <div class="container">
           <div class="pro-cta-inner">
             <div class="pro-cta-copy">
               <p class="eyebrow">Aigon Pro</p>
               <h2 class="pro-cta-heading">From running features to operating a workflow.</h2>
-              <p class="pro-cta-lead">Aigon Pro is the layer between &ldquo;I shipped a feature&rdquo; and &ldquo;my workflow ships features&rdquo; &mdash; autonomous runs on a schedule, agent quality metrics with AI coaching, benchmarks, and portable state across machines.</p>
+              <p class="pro-cta-lead">Aigon Pro adds advanced features and insights: autonomous runs on a schedule, agent quality metrics with AI coaching, benchmarks, and portable state across machines.</p>
               <ul class="pro-cta-list">
                 <li>First-pass rate, rework ratio &amp; agent leaderboard</li>
                 <li>Five synchronized trend charts &mdash; cycle time, commits, rework</li>
