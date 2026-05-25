@@ -46,46 +46,62 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
      - Amp can run shell commands;
      - the session returns to an interactive Amp prompt after completion;
      - `aigon agent-status implementation-complete` can be invoked from inside the session.
+   - Also verify whether `--dangerously-allow-all` is accepted and whether Amp blocks tool execution without it (determines the `cli.implementFlag` value in Step 2).
    - Do not use `amp -x` for the primary workflow unless this smoke proves the interactive TUI path cannot work.
 
 2. **Add `templates/agents/am.json`**
-   - Model it closest to `templates/agents/op.json`, not `cx.json`.
-   - Suggested core fields:
-     - `id: "am"`, `name/displayName: "Amp"`, aliases `["amp", "ampcode", "am"]`
-     - `portOffset: 7`
+   - Model it closest to `templates/agents/op.json` (TUI-inject, `supportsModelFlag: true`), not `cx.json`.
+   - Required fields (see `templates/feature-template-agent-onboard.md` for the full checklist):
+     - `id: "am"`, `name: "Amp"`, `displayName: "Amp"`, `shortName: "AM"`, `aliases: ["amp", "ampcode", "am"]`
+     - `providerFamily: "router"`, `portOffset: 7`
+     - `terminalColor` / `bannerColor`: pick unused values (check existing agents)
+     - `defaultFleetAgent: false`
+     - `installHint` / `installCommand`: use the install URLs from Agent Identity above
      - `cli.command: "amp"`
-     - `cli.implementFlag: "--no-ide --no-jetbrains --no-notifications --dangerously-allow-all"` if the smoke confirms the flag combination is accepted; otherwise use the minimal verified flags and document the reason.
+     - `cli.implementFlag`: set to `"--no-ide --no-jetbrains --no-notifications --dangerously-allow-all"` if Step 1 smoke confirms the flag combination is accepted; otherwise use the minimal verified flags and document the reason in the commit message.
      - `cli.injectPromptViaTmux: true`
-     - `cli.implementPrompt/evalPrompt/reviewPrompt/reviewCheckPrompt`: `feature-do`, `feature-eval`, `feature-code-review`, `feature-code-revise`
+     - `cli.injectViaTmuxSkillCommand`: set to `true` — Amp has a native skills system under `.agents/skills/` and the outputs config (below) installs Aigon skills there. This matches the km pattern where the injection subshell invokes the skill directly rather than pasting the raw prompt body.
+     - `cli.implementPrompt/evalPrompt/reviewPrompt/reviewCheckPrompt`: `"feature-do"`, `"feature-eval"`, `"feature-code-review"`, `"feature-code-revise"` (skill names, not slash commands — TUI-inject agents)
+     - `cli.submitKey: "Enter"`
      - `capabilities.supportsModelFlag: true`
      - `capabilities.transcriptTelemetry: false`
      - `capabilities.resolvesSlashCommands: false`
-     - `runtime.telemetryStrategy: null`, `runtime.sessionStrategy: null`
+     - `runtime`: `{ "telemetryStrategy": null, "sessionStrategy": null, "trustInstallScope": "worktree-base", "resume": null }`
      - `signals.shellTrap: true`, `signals.heartbeatSidecar: true`
+     - `git.hasEmailAttribution: true` (verify during smoke — does Amp commit with an email?)
+     - `worktreeEnv: {}`
+   - **Placeholders block** (required for skill installation and prompt template resolution):
+     - `AGENT_ID: "am"`, `AGENT_NAME: "Amp"`, `AGENT_TITLE: "Amp Configuration"`
+     - `ARG_SYNTAX: "$ARGUMENTS"`, `ARG1_SYNTAX: "$1"`, `CMD_PREFIX: "aigon-"` (skill prefix, not slash)
+   - **Outputs array** (plural `outputs`, not singular `output` — see op.json for the canonical shape):
+     - Entry 1 (skill-md): `{ "format": "skill-md", "commandDir": ".agents/skills", "commandFilePrefix": "aigon-", "commandFileExtension": "", "skillFileName": "SKILL.md", "global": false }`
+     - If Amp also supports a separate markdown command format, add a second entry; otherwise one skill-md entry is sufficient.
+   - **Top-level doc fields**: `supportsAgentsMd: true`, `agentFile: "amp.md"`, `templatePath: "generic/docs/agent.md"`, `rootFile: null`
    - Add `cli.modelFlag: "--mode"` and `cli.modelOptions` for the supported Amp modes:
-     - `null`: `Default`
-     - `smart`: `Smart mode (Claude Opus 4.7)`
-     - `deep`: `Deep mode (GPT-5.5 reasoning)`
-     - `rush`: `Rush mode (GPT-5.5 fast)`
-   - Do not include `large` in the normal picker because the Amp manual currently marks it as not recommended. If the JSON keeps it for audit, quarantine it so dashboard picker surfaces hide it.
+     - `{ "value": null, "label": "Default" }`
+     - `{ "value": "smart", "label": "Smart (Claude Opus 4.7)" }`
+     - `{ "value": "deep", "label": "Deep (GPT-5.5 reasoning)" }`
+     - `{ "value": "rush", "label": "Rush (GPT-5.5 fast)" }`
+   - `large` mode: include it quarantined with `reason: "Amp manual marks as not recommended"`. Do not omit — quarantine preserves the audit trail per project convention.
    - Use `complexityDefaults` to make low-complexity work default to `rush`, medium to `smart`, and high / very-high to `deep`. Set the same mode defaults in `cli.models` for `research`, `implement`, `evaluate`, and `review` only if needed by the existing config resolver.
-   - Leave `effortOptions` empty in v1 unless the smoke test proves stable values across selected modes. Amp's `--effort` is a separate follow-up because supported effort levels vary by mode.
+   - Leave `effortOptions` empty in v1. Amp's `--effort` values vary by mode; that is a follow-up feature.
 
-3. **Make picker launch flags registry-driven everywhere**
-   - The normal tmux launch path already has `buildAgentLaunchInvocation()` and `agentRegistry.getModelFlag()`, which can emit `--mode <value>` for Amp.
-   - Audit foreground/direct launch paths such as `feature-do`, `feature-eval`, and `launchPromptCommand()` in `lib/commands/entity-commands.js`. Any path still building `['--model', model]` directly must be changed to use the agent's registry `modelFlag`.
+3. **Fix hardcoded `--model` in the foreground launch path**
+   - The **tmux launch path** (`lib/worktree.js` → `lib/agent-launch.js:103-111`) already uses `agentRegistry.getModelFlag(agentId)` and is correct — no changes needed there.
+   - The **foreground/direct launch path** in `lib/commands/entity-commands.js:132` hardcodes `['--model', model]`. Change this to use the agent's registry `modelFlag`:
+     ```js
+     const agentConfig = agentRegistry.getAgent(agentId);
+     const modelFlag = agentConfig?.cli?.modelFlag || '--model';
+     const modelTokens = (model && agentRegistry.supportsModelFlag(agentId)) ? [modelFlag, model] : [];
+     ```
+   - Verify no other foreground paths build `--model` directly (grep for `'--model'` in `lib/`).
    - Keep the change generic: if an agent's `cli.modelFlag` is `--model`, behavior stays unchanged; if it is `--mode`, the same picker value is passed through that flag.
 
 4. **Install generated project instructions as Amp skills**
-   - Use the existing skill output shape:
-     - `output.format: "skill-md"`
-     - `output.commandDir: ".agents/skills"`
-     - `output.commandFilePrefix: "aigon-"`
-     - `output.commandFileExtension: ""`
-     - `output.skillFileName: "SKILL.md"`
-     - `supportsAgentsMd: true`
-     - `agentFile: "amp.md"`
-     - `templatePath: "generic/docs/agent.md"`
+   - The `outputs` array and top-level doc fields defined in Step 2 drive `install-agent am`. No additional config is needed here — this step validates that the install produces the expected files.
+   - Verify `aigon install-agent am` produces:
+     - `.agents/skills/aigon-feature-do/SKILL.md` (and other skill dirs for eval, review, etc.)
+     - `.aigon/docs/agents/amp.md`
    - Keep installed templates stack-neutral. Do not add target-repo package-manager commands.
 
 5. **Avoid new hardcoded agent lists**
@@ -95,11 +111,11 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
 6. **Add focused regression tests**
    - Extend `tests/integration/worktree-state-reconcile.test.js` with an Amp assertion block:
      - `buildAgentCommand({ agent: "am", ... }, "do")` contains bare `amp`;
-     - command includes the verified flags;
+     - command includes the verified flags from Step 1;
      - command includes `--mode <selected-mode>` when the feature start payload or config supplies a selected Amp mode;
      - command does not include `amp -x`, `amp --execute`, `--model`, or `exec bash -l`;
-     - command includes `tmux load-buffer`, `tmux paste-buffer`, `tmux send-keys`, and the universal trap.
-   - Add or extend a direct-launch unit/integration test proving registry model flags are honoured: an agent with `modelFlag: "--mode"` launches with `--mode smart`, while existing agents still launch with `--model <id>`.
+     - command includes `tmux load-buffer`, `tmux paste-buffer`, `tmux send-keys`, and the universal trap (TUI-inject pattern).
+   - Add a regression test for the `entity-commands.js` foreground path fix (Step 3): an agent with `modelFlag: "--mode"` launches with `--mode smart`, not `--model smart`. Existing agents with `modelFlag: "--model"` must be unaffected.
    - Extend `tests/integration/agent-registry-contract.test.js` if current contract coverage does not automatically include every `templates/agents/*.json` file.
 
 7. **Add Amp-specific agent docs**
@@ -132,8 +148,8 @@ Primary classification from `docs/adding-agents.md`: **TUI-inject**, pending fin
 
 - [ ] `templates/agents/am.json` exists and `node -e "require('./lib/agent-registry').getAgent('am')"` exits 0.
 - [ ] `am` appears in registry-derived agent lists without new hardcoded lists.
-- [ ] The dashboard/start modal model picker for `am` exposes Amp modes, at least `Default`, `Rush`, `Smart`, and `Deep`, with labels making clear these are Amp modes.
-- [ ] Selecting an Amp picker value passes `--mode <value>` to `amp` in every launch path that honours model overrides; no Amp path emits `--model`.
+- [ ] The dashboard/start modal model picker for `am` exposes Amp modes with labels `"Default"`, `"Rush (GPT-5.5 fast)"`, `"Smart (Claude Opus 4.7)"`, and `"Deep (GPT-5.5 reasoning)"` (or equivalent format showing the underlying model). `large` is quarantined and hidden from the picker.
+- [ ] Selecting an Amp picker value passes `--mode <value>` to `amp` in the tmux launch path (`buildAgentCommand`) and the foreground launch path (`entity-commands.js`); no Amp path emits `--model`.
 - [ ] `aigon install-agent am` completes in a test repo and writes Amp-compatible skills under `.agents/skills/`.
 - [ ] A generated Amp agent doc exists and explains launch mode, login/API-key setup, IDE isolation flags, and telemetry limitations.
 - [ ] `buildAgentCommand()` launches bare `amp` in interactive mode and injects the prompt through tmux; it does not use `amp -x` / `--execute` for normal feature sessions.
@@ -174,10 +190,9 @@ aigon session-list
 
 ## Open Questions
 
-- Does `--dangerously-allow-all` need to be included on every Aigon-launched Amp session, or is Amp's default permission behavior enough for non-blocking feature work?
-- Does Amp expose the active thread id in the TUI or logs in a way Aigon can capture after launch?
-- Does direct skill invocation have a stable syntax that could replace full prompt injection later, or should Aigon keep using inlined prompts for Amp?
-- Should Amp default thread visibility be forced private for Aigon-launched sessions, or should Aigon leave visibility entirely to the user's Amp settings?
+- Does `--dangerously-allow-all` need to be included on every Aigon-launched Amp session, or is Amp's default permission behavior enough for non-blocking feature work? (Step 1 smoke must answer this — it determines `cli.implementFlag`.)
+- Does Amp expose the active thread id in the TUI, shell env, or logs in a way Aigon can capture after launch? (Deferred to transcript telemetry follow-up, but note findings from the Step 1 smoke.)
+- Should Amp default thread visibility be forced private for Aigon-launched sessions, or should Aigon leave visibility entirely to the user's Amp settings? (v1: leave to user settings; revisit if worktree isolation concerns arise.)
 
 ## Related
 
