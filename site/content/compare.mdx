@@ -58,7 +58,7 @@ If you want a comparison table, this is the only one that matters. Everything el
 | **Devin (multiple Devins)** | ✓ | ✓ | — | — | — |
 | **Aigon Fleet** | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-The last column isn't just a posture claim — it's a feature claim. Aigon ships a quota poller that checks Claude Code, Codex, Gemini CLI, and Kimi every 30 minutes, surfaces headroom on the dashboard and at feature-start, and auto-fails over to a vendor with quota when one runs out.
+The last column isn't just a posture claim — it's a feature claim. Aigon ships a quota poller that checks Claude Code, Codex, Gemini CLI, Kimi, and Amp every 30 minutes, surfaces headroom on the dashboard and at feature-start, and auto-fails over to a vendor with quota when one runs out.
 
 **OSS vs Pro split:** The quota poller, exhaustion event vocabulary, and dashboard quota display are OSS. Automatic failover (`policy: switch`) and the manual "Failover now" dashboard button are [Aigon Pro](/docs/getting-started#aigon-pro-beta-access) features. Without Pro, exhaustion events are still recorded in `events.jsonl` and the supervisor logs a warning, but no agent switch is triggered. See the [Agent Failover guide](/docs/guides/agent-failover) for configuration details.
 

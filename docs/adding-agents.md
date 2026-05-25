@@ -35,7 +35,7 @@ Answer these 5 questions in order to determine the correct configuration for any
 
 **Q1: Does the CLI accept an initial prompt as a command-line argument?**
 
-- **NO** → type: **TUI-inject** — set `cli.injectPromptViaTmux: true`, `capabilities.resolvesSlashCommands: false`. The agent's TUI is launched bare; aigon pastes the prompt into the live pane after auth. Examples: `op` (opencode), `km` (kimi)
+- **NO** → type: **TUI-inject** — set `cli.injectPromptViaTmux: true`, `capabilities.resolvesSlashCommands: false`. The agent's TUI is launched bare; aigon pastes the prompt into the live pane after auth. Examples: `op` (opencode), `km` (kimi), `am` (amp)
 - **YES** → go to Q2
 
 **Q2: Does the CLI understand `/slash-command` syntax natively?**
@@ -66,7 +66,7 @@ Answer these 5 questions in order to determine the correct configuration for any
 |---|---|---|---|
 | Slash-command | `cc` (claude), `gg` (gemini), `cu` (agent/cursor) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
 | File-prompt | `cx` (codex) | `$(< /tmp/aigon-prompt-XX.md)` shell expansion | Stays at agent's interactive prompt |
-| TUI-inject | `op` (opencode), `km` (kimi) | Pasted via `tmux paste-buffer` after TUI is ready | Stays at agent's interactive prompt |
+| TUI-inject | `op` (opencode), `km` (kimi), `am` (amp) | Pasted via `tmux paste-buffer` after TUI is ready | Stays at agent's interactive prompt |
 
 ---
 
@@ -78,4 +78,4 @@ Read these before adding a new agent:
 - **`lib/agent-registry.js`** — queries capabilities at runtime (`supportsModelFlag`, `isSlashCommandInvocable`, `getProcessDetectionMap`, etc.)
 - **`lib/worktree.js`** `buildRawAgentCommand` / `buildAgentCommand` — how the config drives the tmux launch; the `injectPromptViaTmux` path and the slash-command path diverge here
 - **`lib/config.js`** `getAgentLaunchFlagTokens` — flag injection logic per launch type
-- **`tests/integration/worktree-state-reconcile.test.js`** — add one assertion block per new agent covering its launch command shape; see existing blocks for `cc`, `cu`, `op`, `km`, `gg` as examples
+- **`tests/integration/worktree-state-reconcile.test.js`** — add one assertion block per new agent covering its launch command shape; see existing blocks for `cc`, `cu`, `op`, `km`, `gg`, `am` as examples
