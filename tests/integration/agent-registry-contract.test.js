@@ -70,6 +70,20 @@ test('dashboard bootstrap payload renders exactly the registry agents', () => {
     const jsonStr = html.slice(start + prefix.length, i);
     assertExactAgentSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
 });
+test('Amp registry contract exposes modes and quarantines large mode from picker', () => {
+    const amp = agentRegistry.getAgent('am');
+    assert.strictEqual(amp.cli.command, 'amp');
+    assert.strictEqual(amp.cli.modelFlag, '--mode');
+    assert.strictEqual(amp.capabilities.resolvesSlashCommands, false);
+    assert.strictEqual(amp.capabilities.transcriptTelemetry, false);
+    const pickerValues = agentRegistry.getModelOptions('am').map(o => o.value);
+    assert.deepStrictEqual(pickerValues, [null, 'rush', 'smart', 'deep']);
+    const allValues = agentRegistry.getModelOptions('am', { includeQuarantined: true }).map(o => o.value);
+    assert.deepStrictEqual(allValues, [null, 'rush', 'smart', 'deep', 'large']);
+    const dashboardAmp = agentRegistry.getDashboardAgents().find(agent => agent.id === 'am');
+    assert.ok(dashboardAmp, 'Amp missing from dashboard registry projection');
+    assert.deepStrictEqual(dashboardAmp.modelOptions.map(o => o.value), [null, 'rush', 'smart', 'deep']);
+});
 test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
     // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).
     const f = dashboardServer.parseDashboardActionRequest({ action: 'feature-delete', args: ['5'] });

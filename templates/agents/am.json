@@ -1,0 +1,171 @@
+{
+  "id": "am",
+  "name": "Amp",
+  "aliases": [
+    "amp",
+    "ampcode",
+    "am"
+  ],
+  "displayName": "Amp",
+  "shortName": "AM",
+  "providerFamily": "router",
+  "portOffset": 7,
+  "terminalColor": "red",
+  "bannerColor": "#EF4444",
+  "defaultFleetAgent": false,
+  "installHint": "curl -fsSL https://ampcode.com/install.sh | bash  (or: brew install ampcode/tap/ampcode)",
+  "installCommand": "curl -fsSL https://ampcode.com/install.sh | bash",
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": false,
+    "resolvesSlashCommands": false
+  },
+  "runtime": {
+    "telemetryStrategy": null,
+    "sessionStrategy": null,
+    "trustInstallScope": "worktree-base",
+    "resume": null
+  },
+  "cli": {
+    "command": "amp",
+    "implementFlag": "--no-ide --no-jetbrains --no-notifications --dangerously-allow-all",
+    "planFlag": null,
+    "injectPromptViaTmux": true,
+    "injectViaTmuxSkillCommand": false,
+    "implementPrompt": "feature-do",
+    "evalPrompt": "feature-eval",
+    "reviewPrompt": "feature-code-review",
+    "reviewCheckPrompt": "feature-code-revise",
+    "models": {
+      "research": "smart",
+      "implement": "smart",
+      "evaluate": "smart",
+      "review": "smart"
+    },
+    "modelOptions": [
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "rush",
+        "label": "Rush (GPT-5.5 fast)",
+        "notes": {
+          "implement": "Amp rush mode: fast GPT-5.5-backed work for low-complexity tasks."
+        },
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-25T00:00:00.000Z"
+      },
+      {
+        "value": "smart",
+        "label": "Smart (Claude Opus 4.7)",
+        "notes": {
+          "implement": "Amp smart mode: balanced default using Claude Opus 4.7 per Amp model docs."
+        },
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-25T00:00:00.000Z"
+      },
+      {
+        "value": "deep",
+        "label": "Deep (GPT-5.5 reasoning)",
+        "notes": {
+          "implement": "Amp deep mode: higher-reasoning GPT-5.5-backed work for high-complexity tasks."
+        },
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-25T00:00:00.000Z"
+      },
+      {
+        "value": "large",
+        "label": "Large (not recommended)",
+        "notes": {
+          "implement": "Amp large mode is kept for auditability but hidden from picker surfaces."
+        },
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-05-25T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-05-25",
+          "reason": "Amp manual marks large mode as not recommended.",
+          "evidence": "Amp CLI/manual model-mode guidance",
+          "supersededBy": [
+            "smart",
+            "deep",
+            "rush"
+          ]
+        }
+      }
+    ],
+    "effortOptions": [],
+    "modelFlag": "--mode",
+    "effortFlag": null,
+    "effortEnv": null,
+    "submitKey": "Enter",
+    "complexityDefaults": {
+      "low": {
+        "model": "rush",
+        "effort": null
+      },
+      "medium": {
+        "model": "smart",
+        "effort": null
+      },
+      "high": {
+        "model": "deep",
+        "effort": null
+      },
+      "very-high": {
+        "model": "deep",
+        "effort": null
+      }
+    }
+  },
+  "placeholders": {
+    "AGENT_ID": "am",
+    "AGENT_NAME": "Amp",
+    "AGENT_TITLE": "Amp Configuration",
+    "ARG_SYNTAX": "$ARGUMENTS",
+    "ARG1_SYNTAX": "$1",
+    "CMD_PREFIX": "aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": "",
+    "PERMISSION_SAVE_NOTE": "",
+    "AGENT_PITFALLS": "- Amp is launched as an interactive TUI. Aigon intentionally does not use `amp -x` / `--execute` for normal workflow sessions because execute mode exits after one turn.\n- Aigon's model picker maps to Amp modes and launches with `--mode <rush|smart|deep>`, not `--model`.\n- Amp transcript and usage telemetry are not captured by Aigon v1.",
+    "AGENT_DEV_SERVER_NOTE": ""
+  },
+  "outputs": [
+    {
+      "format": "skill-md",
+      "commandDir": ".agents/skills",
+      "commandFilePrefix": "aigon-",
+      "commandFileExtension": "",
+      "skillFileName": "SKILL.md",
+      "frontmatter": [
+        "name",
+        "description"
+      ],
+      "global": false
+    }
+  ],
+  "rootFile": null,
+  "supportsAgentsMd": true,
+  "agentFile": "amp.md",
+  "templatePath": "generic/docs/agent.md",
+  "extras": {},
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": null
+  },
+  "commandExcludes": []
+}

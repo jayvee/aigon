@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const { reconcileWorktreeJson, resolveHeartbeatStateDir, buildRawAgentCommand, buildAgentCommand } = require('../../lib/worktree');
+const { buildModelArgTokens } = require('../../lib/agent-launch');
 
 // Helper: most agent-command tests need AIGON_TEST_MODE cleared so the wrapper emits the
 // live agent-status / heartbeat plumbing. Wrap each test body in this to amortise the boilerplate.
@@ -72,6 +73,31 @@ test('OpenCode launches interactive TUI with prompt injected via tmux paste-buff
     assert.ok(cmd.includes('tmux load-buffer') && cmd.includes('tmux paste-buffer') && cmd.includes('tmux send-keys'), cmd);
     assert.ok(cmd.includes('trap _aigon_cleanup EXIT'), cmd);
 }));
+test('Amp launches interactive TUI with prompt injected via tmux paste-buffer and --mode model flag', () => withLiveAgentMode(() => {
+    const cmd = buildAgentCommand({
+        agent: 'am',
+        featureId: '06',
+        path: '/tmp/aigon-am-linger-test-wt',
+        repoPath: process.cwd(),
+        launcherModel: 'smart',
+    }, 'do');
+    assert.ok(/\bamp\b/.test(cmd), cmd);
+    assert.ok(cmd.includes('--no-ide') && cmd.includes('--no-jetbrains') && cmd.includes('--no-notifications'), cmd);
+    assert.ok(cmd.includes('--dangerously-allow-all'), cmd);
+    assert.ok(cmd.includes('--mode smart'), cmd);
+    assert.ok(!/\bamp\s+(-x|--execute)\b/.test(cmd), cmd);
+    assert.ok(!cmd.includes('--model'), cmd);
+    assert.ok(!cmd.includes('exec bash -l'), cmd);
+    assert.ok(cmd.includes('tmux load-buffer') && cmd.includes('tmux paste-buffer') && cmd.includes('tmux send-keys'), cmd);
+    assert.ok(cmd.includes('trap _aigon_cleanup EXIT'), cmd);
+    assert.ok(cmd.includes('AIGON_ENTITY_TYPE=') && cmd.includes('AIGON_ENTITY_ID='), cmd);
+    assert.ok(cmd.includes('AIGON_AGENT_ID=') && cmd.includes('AIGON_PROJECT_PATH='), cmd);
+}));
+test('foreground model args use each agent registry modelFlag', () => {
+    assert.deepStrictEqual(buildModelArgTokens('am', 'smart'), ['--mode', 'smart']);
+    assert.deepStrictEqual(buildModelArgTokens('cx', 'gpt-5.5'), ['--model', 'gpt-5.5']);
+    assert.deepStrictEqual(buildModelArgTokens('km', 'kimi-k2'), []);
+});
 test('Kimi launches bare `kimi` TUI with prompt injected via tmux send-keys skill command', () => withLiveAgentMode(() => {
     // F483: km uses injectViaTmuxSkillCommand — send-keys -l instead of paste-buffer.
     // `kimi term` requires Python 3.14; bare `kimi` is the native interactive TUI.
