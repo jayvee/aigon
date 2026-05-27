@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-27T09:48:43.327Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: iterate-gate-kills-live-dashboard
