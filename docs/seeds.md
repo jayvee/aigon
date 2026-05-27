@@ -2,7 +2,7 @@
 
 > **Note for end users:** if you're trying out Aigon with a demo repo, `aigon install-seed brewboard` clones the demo to `~/src/brewboard` and strips `origin` — the result is an isolated local sandbox. `aigon seed-reset` wipes that sandbox and re-clones. No remote pushes happen. The two-repo workflow described below applies only to seed maintainers who publish demo content.
 
-Seed repos are demo projects used for testing (perf-bench, smoke tests, manual demos). Each seed has **two GitHub repos** with different roles, owned by the seed maintainer.
+Seed repos are demo projects used for testing (smoke tests, manual demos, maintainer benchmarks). Each seed has **two GitHub repos** with different roles, owned by the seed maintainer.
 
 ## Two-repo architecture (maintainer-only)
 
@@ -78,15 +78,13 @@ The seed repo contains the application source and aigon specs. Aigon runtime sta
 - `.aigon/state/` — per-agent status files
 - `.aigon/locks/`, `.aigon/worktrees/`
 
-This means: if you want a pre-baked workflow state for a feature (e.g. `code_review_in_progress` for a review bench), you cannot store it in the seed git. The perf-bench machinery must bootstrap that state at runtime after reset.
+This means: if you want a pre-baked workflow state for a feature (e.g. `code_review_in_progress` for a review bench), you cannot store it in the seed git. The benchmark machinery must bootstrap that state at runtime after reset.
 
 ## Current seeds
 
 ### brewboard (`~/src/brewboard`)
 
-A Next.js beer catalogue app. Used by:
-- `aigon perf-bench brewboard cc` — implementation bench (feature 07: add-footer)
-- `aigon perf-bench brewboard-review` — review bench fixture (feature 08: rating-filter, pre-baked with 5 planted weaknesses)
+A Next.js beer catalogue app. Used by maintainer benchmarks (feature 07: add-footer) and review bench fixtures (feature 08: rating-filter, pre-baked with 5 planted weaknesses).
 
 Feature 08 (rating-filter) has a working implementation intentionally left with weaknesses for review bench scoring. Do not "fix" these weaknesses — they are the test signal:
 1. `style={{ fontWeight }}` mixing inline styles with Tailwind
