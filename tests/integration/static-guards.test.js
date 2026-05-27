@@ -122,7 +122,7 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
 });
 // REGRESSION F420: Pro benchmark matrix wiring is OSS-thin — script tag, settings mount, asset proxy.
 // Pro owns the data + UI; OSS must NOT register /api/benchmarks/latest.
-test('dashboard wires perf-bench settings (script order + Pro asset proxy + no OSS API)', () => {
+test('dashboard wires benchmark settings placeholder (script order + Pro asset proxy + no OSS API)', () => {
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
     const iBench = idx.indexOf('/js/benchmark-matrix.js');
     const iSettings = idx.indexOf('/js/settings.js');

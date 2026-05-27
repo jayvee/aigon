@@ -18,7 +18,6 @@ export default {
   "token-window": "token-window",
   status: "status",
   repair: "repair",
-  "matrix-apply": "matrix-apply",
   "security-scan": "security-scan",
   workflow: { title: withPro("workflow") },
   help: "help",

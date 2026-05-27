@@ -19,17 +19,11 @@ const ROOT = path.resolve(__dirname, '..');
 const TEMPLATES = path.join(ROOT, 'templates');
 
 // Directories under templates/ whose contents are installed into user repos or embedded
-// into installed templates. Top-level `agents/`, `aigon-eval/`, `contributing/`,
-// `dashboard/`, `profiles/`, `recurring/` are aigon-internal and intentionally not scanned.
+// into installed templates. Top-level `agents/`, `contributing/`, `dashboard/`,
+// `profiles/`, `recurring/` are aigon-internal and intentionally not scanned.
 const SCAN_DIRS = ['generic', 'docs', 'specs', 'prompts', 'sections'];
 
-// File-level exceptions: paths (relative to templates/) of files that legitimately
-// reference aigon-internal paths because they are maintainer-only commands. These
-// SHOULD ideally be moved out of templates/ so they don't ship to user repos at all;
-// until they are, suppress the check here so this script stays useful.
-const FILE_EXCEPTIONS = new Set([
-    'generic/commands/model-refresh.md', // maintainer command — edits aigon's own agent registry
-]);
+const FILE_EXCEPTIONS = new Set();
 
 // Patterns that indicate a leak of aigon-internal references OR target-repo assumptions
 // into user-facing templates. Aigon has ZERO opinion about the target repo's language,

@@ -42,9 +42,7 @@ Current command families:
 | `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
 | `lib/commands/workflow.js` | `workflow` definition CRUD and reporting |
 | `lib/commands/set.js` | `set-*` feature-set actions and derived set operations |
-| `lib/commands/bench.js` | `bench-*` and benchmark/model-refresh helpers |
 | `lib/commands/signal-health.js` | `signal-health` diagnostics over signal telemetry |
-| `lib/commands/aigon-eval.js` | Internal `aigon eval` model-qualification harness |
 | `lib/commands/security-scan.js` | Standalone `security-scan` CLI surface |
 | `lib/commands/pro.js` | `pro activate/status` free-tier activation/status commands |
 | `lib/commands/recurring.js`, `lib/commands/schedule.js`, `lib/commands/agent-launch.js` | OSS stubs that delegate to `@aigon/pro` when installed, otherwise print the standard "Pro feature — coming later" notice |
@@ -97,8 +95,6 @@ Current shared modules:
   `recordSignalEvent`, `readSignalEvents`, `summarizeSignalEvents`, `recordMissedSignalIfDue`, `gcSignalHealth`
 - `lib/auto-nudge.js` (~190 lines): dashboard-side idle ladder. Combines idle-at-prompt detection with stale agent status writes, derives visible idle / nudged / needs-attention state, optionally sends one nudge per session, and records signal-health telemetry.
   `computeIdleLadder`, `pauseAutoNudgeForSession`
-- `lib/aigon-eval-runner.js` / `lib/aigon-eval-checks.js` (~360/~190 lines): internal model-qualification harness behind `aigon eval`. It runs canned feature/research workloads, consumes signal-health telemetry for lifecycle and SLA checks, writes `.aigon/benchmarks/aigon-eval/`, and updates model-option quarantine metadata without deleting entries.
-  `runEvaluationMatrix`, `runSingleEval`, `runCheckMatrix`
 - `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for slash-invocable agents (cc/gg/cu) and inlines the canonical `templates/generic/commands/feature-*.md` body for non-invocable agents (cx/op/km). Membership is derived from `capabilities.resolvesSlashCommands` in each `templates/agents/<id>.json`, so adding a new agent requires no code change here
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
@@ -128,7 +124,7 @@ Current shared modules:
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
-- `lib/quota-probe.js` / `lib/quota-poller.js` (~340/~95 lines): agent quota availability layer. Wraps `scripts/probe-agent.js`, classifies probe output via per-agent JSON regex packs, caches `.aigon/state/quota.json`, gates `feature-start`, filters depleted `perf-bench --all` pairs, and exposes dashboard/server refreshes without touching workflow-core state.
+- `lib/quota-probe.js` / `lib/quota-poller.js` (~340/~95 lines): agent quota availability layer. Wraps `scripts/probe-agent.js`, classifies probe output via per-agent JSON regex packs, caches `.aigon/state/quota.json`, gates `feature-start`, and exposes dashboard/server refreshes without touching workflow-core state.
   `classifyProbeResult`, `probePair`, `readQuotaState`, `startQuotaPoller`
 
 **Domain modules** (logic lives in the module itself):
