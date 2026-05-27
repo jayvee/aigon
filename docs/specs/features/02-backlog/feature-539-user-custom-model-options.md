@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-27T14:09:39.315Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: user-custom-model-options
