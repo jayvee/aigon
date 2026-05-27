@@ -8,7 +8,7 @@ transitions:
 
 ## Summary
 
-Complete visual redesign of both the Aigon OSS landing page (`site/public/home.html` + `site/public/css/style.css`) and the Aigon Pro landing page (`site/app/pro/page.tsx`) using the "Swiss Light" design direction. The current pages have classic AI-generated aesthetics — warm cream backgrounds with radial gradients, orange+teal dual accent, three font families (Sora + Manrope + IBM Plex Mono), pill-shaped gradient buttons, numbered value-prop cards — that are immediately recognizable as AI-designed. The redesign adopts a disciplined, handcrafted visual language: one font family, one accent color, strict grid, border-based depth, and zero decorative elements.
+Complete visual redesign of both the Aigon OSS landing page (`site/public/home.html` + `site/public/css/style.css`) and the Aigon Pro landing page using the "Swiss Light" design direction. The Pro page is also converted from a Next.js React component (`site/app/pro/page.tsx`) to static HTML (`site/public/pro.html`) so both landing pages are plain HTML/CSS with no build step or dev server required. The current pages have classic AI-generated aesthetics — warm cream backgrounds with radial gradients, orange+teal dual accent, three font families (Sora + Manrope + IBM Plex Mono), pill-shaped gradient buttons, numbered value-prop cards — that are immediately recognizable as AI-designed. The redesign adopts a disciplined, handcrafted visual language: one font family, one accent color, strict grid, border-based depth, and zero decorative elements.
 
 ## Background & Design Research
 
@@ -94,18 +94,26 @@ What makes AI pages look AI-generated (the 5 tells to eliminate):
 - [ ] YouTube video embed preserved in hero section
 - [ ] All `<template>` blocks for terminal demos preserved (content unchanged, just restyled presentation)
 
-### Pro landing page (`site/app/pro/page.tsx`)
+### Pro landing page — convert to static HTML
 
+The Pro page is currently a Next.js React component (`site/app/pro/page.tsx`) that uses server-side `fs.existsSync()` to check if screenshot files exist. This is the only server-side dependency — everything else is just JSX + Tailwind that can be plain HTML/CSS. Converting to static HTML (`site/public/pro.html`) means:
+- Both landing pages are consistent (plain HTML/CSS, no build step)
+- Fleet mode agents can test by opening files directly — no dev server, no port conflicts
+- The docs site (`/docs/*`) still uses Next.js/Nextra for MDX pages — that's unchanged
+
+- [ ] **Convert `site/app/pro/page.tsx` to `site/public/pro.html`** — static HTML using the same `style.css` as the OSS page
+- [ ] **Remove the Next.js route** — delete `site/app/pro/page.tsx` (or keep as a redirect to `/pro.html` if Next.js routing requires it)
+- [ ] **Screenshot handling**: replace `fs.existsSync()` with a CSS/HTML approach — either `<img onerror="this.parentElement.classList.add('missing')" ...>` or just reference images directly (the placeholder state can be a CSS class)
 - [ ] Adopt the same Swiss Light design tokens — must look like the same site as the OSS page
-- [ ] Replace Tailwind classes referencing `aigon-orange`, `aigon-teal`, gradient backgrounds, and Sora font with Swiss Light equivalents
+- [ ] Share `style.css` with the OSS page (add Pro-specific classes to the same stylesheet)
 - [ ] Preview banner: restyle with the new accent color
 - [ ] Section eyebrows: use mono-styled labels (currently uses `aigon-teal` and `aigon-orange` alternating — switch to single muted color)
-- [ ] FeatureCard component: bordered grid cells (matching OSS why-grid pattern) instead of rounded shadow cards
-- [ ] ScreenshotFrame component: simple border, no shadow, no dark-mode gradient
-- [ ] Badge component: border-based, not gradient-based
+- [ ] Feature cards: bordered grid cells (matching OSS why-grid pattern) instead of rounded shadow cards
+- [ ] Screenshot frames: simple border, no shadow, no gradient
+- [ ] Badge: border-based, not gradient-based
 - [ ] "Coming Soon" CTA section: bordered panel, no decorative gradient glow
 - [ ] Keep all existing Pro content sections: Agent Quality Metrics, Trend Charts, Cost Visibility, AI Insights, Reusable Workflows, Scheduled Features, Agent Benchmarks, Aigon Sync, Integrations
-- [ ] Keep all existing screenshot references (they may or may not exist as files — the ScreenshotFrame component already handles missing images with a placeholder)
+- [ ] Keep all existing screenshot references (missing images get a CSS placeholder state instead of server-side detection)
 
 ### Performance & compatibility
 
@@ -117,9 +125,13 @@ What makes AI pages look AI-generated (the 5 tells to eliminate):
 ## Validation
 
 ```bash
-# Visual check — open in browser and compare against sketch-a-swiss-light.html
-# Check mobile responsiveness at 375px
+# Both pages are static HTML — open directly in browser, no dev server needed:
+#   open site/public/home.html
+#   open site/public/pro.html
+# Compare against tmp/sketch-a-swiss-light.html for design direction
+# Check mobile responsiveness at 375px (Chrome DevTools device toolbar)
 # Verify all interactive elements work (tabs, copy, lightbox, etc.)
+# Fleet mode: each worktree can test independently — no port conflicts
 ```
 
 ## Technical Approach
@@ -135,11 +147,11 @@ What makes AI pages look AI-generated (the 5 tells to eliminate):
    - Remove decorative SVG lifecycle diagram (replace with simpler text or keep if it can be restyled cleanly)
    - Keep all `<template>` elements, all `<script>` blocks, all image references
 
-3. **`site/app/pro/page.tsx`** — update component styles to use Swiss Light tokens. The page uses Tailwind classes, so this means replacing color classes (`text-aigon-orange`, `bg-aigon-orange/10`, `border-aigon-orange/30`, `text-aigon-teal`, etc.) and font classes (`font-[family-name:var(--font-sora)]`) with Swiss Light equivalents. The FeatureCard, ScreenshotFrame, and Badge components are defined inline in this file and should be restyled.
+3. **`site/public/pro.html`** (NEW) — convert `site/app/pro/page.tsx` from Next.js/React/Tailwind to plain static HTML using the same `style.css`. All Pro content sections are preserved; JSX components become HTML with CSS classes; `fs.existsSync()` screenshot detection becomes an `<img onerror>` CSS fallback.
 
-4. **`site/tailwind.config.ts` or equivalent** — update/add Swiss Light color tokens so the Pro page Tailwind classes resolve correctly. Ensure `aigon-orange` references are replaced or remapped.
+4. **`site/app/pro/page.tsx`** — delete or replace with a redirect. The Next.js route is no longer needed since `/pro` is now served as static HTML from `site/public/pro.html`. Check if Vercel/Next.js needs a rewrite rule in `next.config.js` to route `/pro` to the static file, or if `public/pro.html` is served automatically.
 
-5. **Font loading** — update the Google Fonts `<link>` in `home.html` to load DM Sans + DM Mono only. Update any font declarations in the Next.js app layout for the Pro page.
+5. **Font loading** — update the Google Fonts `<link>` in both `home.html` and `pro.html` to load DM Sans + DM Mono only. No Tailwind config changes needed since the Pro page no longer uses Tailwind.
 
 ### Design reference
 
@@ -174,9 +186,8 @@ The approved sketch is at `tmp/sketch-a-swiss-light.html` — a self-contained H
 
 - Content rewrites beyond copy tone adjustments (the sections, features listed, and product descriptions stay the same)
 - New screenshots or images (use existing assets)
-- New pages or routes
 - Dark mode / theme toggle
-- Changes to the docs site (Nextra/MDX pages under `/docs`)
+- Changes to the docs site (Nextra/MDX pages under `/docs`) — these still use Next.js/Nextra and are unaffected
 - Changes to the dashboard itself (`templates/dashboard/index.html`)
 - SEO changes beyond preserving existing meta tags
 - New JavaScript functionality
