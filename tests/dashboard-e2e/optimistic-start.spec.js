@@ -13,7 +13,7 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
-const FEATURE_NAME = 'e2e drive feature';
+const FEATURE_NAME = 'e2e solo feature';
 
 async function columnRepoPath(card) {
     const repoPath = await card.evaluate(el => {

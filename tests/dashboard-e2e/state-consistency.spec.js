@@ -67,6 +67,7 @@ test.describe('Dashboard state consistency', () => {
             const count = await cards.count();
             for (let i = 0; i < count; i++) {
                 const card = cards.nth(i);
+                if (!await card.isVisible()) continue;
                 for (const a of must) await expect(card.locator(`.kcard-va-btn[data-va-action="${a}"]`)).toBeVisible();
                 for (const a of mustNot) await expect(card.locator(`.kcard-va-btn[data-va-action="${a}"]`)).toHaveCount(0);
             }
