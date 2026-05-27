@@ -34,7 +34,7 @@ git branch --show-current
 **CRITICAL RULES for research:**
 - You MUST NOT modify any source code files (`.js`, `.ts`, `.py`, `.json`, etc.)
 - You MUST NOT modify other agents' findings files
-- You MUST ONLY write to YOUR findings file: `docs/specs/research-topics/logs/research-{ID}-km-findings.md`
+- You MUST ONLY write to YOUR findings file: `docs/specs/research-topics/logs/research-{ID}-am-findings.md`
 - You MUST NOT run `git checkout`, `git branch`, or create new branches — stay where you are
 
 ## Required Lifecycle Step
@@ -52,7 +52,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 1. **Find the research topic** in `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
 
 2. **Check for worktree/Fleet mode**: Look for your findings file at:
-   `docs/specs/research-topics/logs/research-{ID}-km-findings.md`
+   `docs/specs/research-topics/logs/research-{ID}-am-findings.md`
 
 3. **Conduct deep research** to answer each question in the research doc. Go broad before going deep:
 
@@ -91,12 +91,12 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    git diff --name-only
    git diff --cached --name-only
    ```
-   The ONLY file that should appear is `docs/specs/research-topics/logs/research-{ID}-km-findings.md`. If you see any other files, run `git checkout -- <file>` to discard those changes before committing.
+   The ONLY file that should appear is `docs/specs/research-topics/logs/research-{ID}-am-findings.md`. If you see any other files, run `git checkout -- <file>` to discard those changes before committing.
 
 2. **Commit your findings file (and ONLY your findings file):**
    ```bash
-   git add docs/specs/research-topics/logs/research-*-km-findings.md
-   git commit -m "docs: research findings for km"
+   git add docs/specs/research-topics/logs/research-*-am-findings.md
+   git commit -m "docs: research findings for am"
    ```
 
 3. **Signal completion immediately after the commit:**
@@ -105,7 +105,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    ```
    If this exits non-zero because the session context wasn't detected (e.g. you're on `main`), run it with explicit args:
    ```bash
-   aigon agent-status research-complete $ARGUMENTS km
+   aigon agent-status research-complete $ARGUMENTS am
    ```
 
    The command **must exit 0** before you can claim your research is complete.

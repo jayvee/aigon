@@ -63,6 +63,7 @@ description: Show Aigon commands
 | cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
 | op | OpenCode | `opencode` | Workspace-write, smart approval |
 | km | Kimi Code CLI | `kimi --yolo` | Auto-approves all |
+| am | Amp | `amp --no-ide --no-jetbrains --no-notifications --dangerously-allow-all` | --no-ide --no-jetbrains --no-notifications --dangerously-allow-all |
 
 **Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
 
