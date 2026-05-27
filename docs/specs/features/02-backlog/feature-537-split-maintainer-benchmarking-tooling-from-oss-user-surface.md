@@ -28,7 +28,8 @@ This feature is release-cleanup work before the next npm cut. The goal is a smal
   - `aigon model-refresh`
   - `aigon bench-refresh`
   - `aigon matrix-apply`
-  - benchmark-only model probe/quarantine flows if they are not part of ordinary user support
+  - `aigon agent-quarantine` (registry mutation; see Open Questions for user-side emergency hiding)
+  - `aigon agent-probe --include-bench` (benchmark-specific probe flags; keep `--quota` if it serves user diagnostics)
 - [ ] Normal lifecycle evaluation remains intact:
   - `aigon feature-eval`
   - `aigon research-eval`
@@ -45,10 +46,11 @@ This feature is release-cleanup work before the next npm cut. The goal is a smal
   - `pricing`
   - `lastRefreshAt`
   - `quarantined`
-- [ ] Raw benchmark generation and refresh code is removed from OSS command dispatch and help surfaces, or replaced with thin Pro-delegating stubs that are hidden from normal help.
+- [ ] Raw benchmark generation and refresh code is removed from OSS command dispatch and help surfaces. No Pro-delegating stubs — commands become unknown (see resolved Open Question).
 - [ ] Benchmark/eval runner implementation files are removed from the OSS npm package unless they are still required for read-only matrix display:
-  - candidate removal/move targets include `lib/perf-bench.js`, `lib/commands/bench.js`, `lib/commands/aigon-eval.js`, `lib/aigon-eval-runner.js`, `lib/aigon-eval-checks.js`, `lib/benchmark-judge.js`, and `templates/aigon-eval/**`.
-  - keep read-only files if still needed by OSS UI, such as `lib/agent-matrix.js` and curated `templates/agents/*.json`.
+  - candidate removal/move targets: `lib/perf-bench.js`, `lib/commands/bench.js`, `lib/commands/aigon-eval.js`, `lib/aigon-eval-runner.js`, `lib/aigon-eval-checks.js`, `lib/benchmark-judge.js`, `lib/matrix-apply.js`, and `templates/aigon-eval/**`.
+  - keep read-only files needed by OSS UI: `lib/agent-matrix.js` and curated `templates/agents/*.json`.
+- [ ] `templates/generic/commands/model-refresh.md` is removed (this is a slash-command template that installs into user repos via `install-agent`).
 - [ ] OSS docs no longer tell ordinary users to run benchmark/model-refresh commands.
 - [ ] Pro/internal docs or code receives enough implementation notes to recreate the moved command surface later. If the actual Pro move is out of scope for this feature, the OSS removal must clearly document where the code was removed from and what Pro needs to own.
 - [ ] Untracked/generated `.aigon/benchmarks/*.json` files are not committed as part of this feature unless a deliberately curated static fixture is introduced for read-only display.
@@ -61,9 +63,12 @@ This feature is release-cleanup work before the next npm cut. The goal is a smal
 node -c aigon-cli.js
 npm test
 node -e "const m=require('./lib/agent-matrix'); const rows=m.buildMatrix(); if (!rows.length) throw new Error('agent matrix empty'); console.log(rows.length)"
-! node aigon-cli.js help | grep -E "perf-bench|model-refresh|aigon-eval"
+! node aigon-cli.js help | grep -E "perf-bench|model-refresh|bench-refresh|aigon-eval|matrix-apply|agent-quarantine"
 node aigon-cli.js help | grep "feature-eval"
 node aigon-cli.js help | grep "research-eval"
+test ! -f templates/generic/commands/model-refresh.md
+test ! -f lib/commands/bench.js
+test ! -f lib/commands/aigon-eval.js
 ```
 
 If the implementation removes tests or code paths that are currently part of `npm test`, update the validation command list before closing. The final validation must prove both halves of the split: maintainer commands are gone from OSS user surfaces, and read-only model intelligence still renders/serves.
@@ -89,30 +94,27 @@ Move to Pro/internal:
 - Pending model queue machinery.
 - Benchmark judge implementation.
 - Raw `.aigon/benchmarks` artifact generation and monthly benchmark recurring template.
-- Matrix mutation tooling such as `matrix-apply` if it exists only to apply maintainer feedback to agent registry JSON.
-- Agent quarantine/probe subflows if their only purpose is maintaining benchmark/model qualification metadata rather than normal user support.
+- `lib/matrix-apply.js` and the `matrix-apply` command — exists only to apply maintainer feedback to agent registry JSON.
+- `agent-quarantine` command (pending open question resolution).
+- `agent-probe --include-bench` flag (keep `agent-probe --quota` for user diagnostics).
 
 ### 2. Remove maintainer commands from public dispatch
 
-Audit the command registration path:
+Audit and remove from these command registration sites:
 
-- `aigon-cli.js`
-- `lib/commands/shared.js`
-- `lib/commands/misc.js`
-- `lib/commands/bench.js`
-- `lib/commands/aigon-eval.js`
-- `templates/help.txt`
-- `lib/templates.js` `COMMAND_REGISTRY`
-- `templates/generic/commands/model-refresh.md`
-- site command reference pages, if present
+1. **`aigon-cli.js`** — lazy-require of `createAigonEvalCommands` (line ~63). Remove the require and its command registrations.
+2. **`lib/commands/bench.js`** — exports `perf-bench`, `bench-refresh`, `model-refresh`. Remove the entire file.
+3. **`lib/commands/aigon-eval.js`** — exports `aigon eval` model-qualification harness. Remove the entire file.
+4. **`lib/commands/misc.js`** — the `names` array (line ~1997) registers `perf-bench`, `matrix-apply`, `agent-probe`, `agent-quarantine`. Remove those entries. Also remove `matrix-apply` and `agent-quarantine` command implementations from this file.
+5. **`templates/help.txt`** — line ~135 mentions `aigon-eval`. Remove that line.
+6. **`templates/generic/commands/model-refresh.md`** — installed slash-command template. Remove the file.
+7. **`lib/templates.js` `COMMAND_REGISTRY`** — check for any bench/eval entries and remove.
 
-Prefer complete removal from normal OSS command maps over adding more visible "Pro required" stubs. A hidden Pro-delegating stub is acceptable only if it is needed for backward compatibility or Pro bridge routing, and it must not appear in `aigon help` or installed agent slash-command lists.
+Complete removal, no Pro stubs — commands become unknown in OSS.
 
-Be careful with names:
+**Name collision guard** — be careful with names:
 
-- Remove only `aigon eval` from `lib/commands/aigon-eval.js`.
-- Do not remove `feature-eval`.
-- Do not remove `research-eval`.
+- Remove only `aigon eval` from `lib/commands/aigon-eval.js`. The word "eval" also appears in `feature-eval` and `research-eval` — those are lifecycle evaluation commands in `lib/commands/feature.js` and `lib/commands/research.js` and must not be touched.
 - Do not remove general dashboard evaluation/review flows.
 
 ### 3. Preserve read-only model intelligence
@@ -136,7 +138,13 @@ The Pro benchmark panel is already gated:
 - dashboard `/api/benchmarks*` returns a Pro-required payload when Pro is absent.
 - `/js/benchmark-matrix.js` is served from `@aigon/pro` when available.
 
-For this feature, OSS can keep the Pro placeholder. Remove OSS implementation paths that generate or mutate benchmark data. If `lib/bench-hydrate.js` is only used for Pro or benchmark command support, either move it to Pro or leave a tiny read-only helper only if another OSS path still uses it.
+For this feature, OSS keeps the Pro placeholder. Remove OSS implementation paths that generate or mutate benchmark data.
+
+`lib/bench-hydrate.js` is consumed by two OSS callers:
+- `lib/dashboard-routes/analytics.js` — `mergeBenchVerdictsIntoQuota` for the `/api/quota` response.
+- `lib/commands/misc.js` `agent-probe --include-bench` — hydrates bench verdicts into probe output.
+
+Decision: keep `lib/bench-hydrate.js` as a read-only hydration helper (it reads `.aigon/benchmarks/*.json` but does not generate them). Remove the `--include-bench` flag from `agent-probe` as part of the command cleanup; the analytics route may still call it if Pro-generated benchmark files happen to be present.
 
 ### 5. Update docs and templates
 
@@ -150,7 +158,16 @@ Remove ordinary-user references to benchmark/model-refresh workflows from:
 
 Keep or rewrite docs that explain the Agent Capability Matrix as read-only curated information.
 
-### 6. Keep generated state out of the release
+### 6. Execution order
+
+1. Remove command registrations (step 2) — unblocks everything else.
+2. Delete implementation files (`lib/perf-bench.js`, `lib/commands/bench.js`, `lib/commands/aigon-eval.js`, `lib/aigon-eval-runner.js`, `lib/aigon-eval-checks.js`, `lib/benchmark-judge.js`, `lib/matrix-apply.js`).
+3. Remove `templates/generic/commands/model-refresh.md` and `templates/aigon-eval/` directory.
+4. Update `templates/help.txt` and any site docs.
+5. Fix broken tests — update or remove tests that exercise deleted commands/files.
+6. Run full validation script.
+
+### 7. Keep generated state out of the release
 
 Do not commit local `.aigon/benchmarks/*.json` outputs. If a future static curated benchmark dataset is desired for OSS display, introduce a deliberate, small, documented file with stable schema instead of committing raw run artifacts.
 
@@ -171,11 +188,11 @@ Do not commit local `.aigon/benchmarks/*.json` outputs. If a future static curat
 
 ## Open Questions
 
-- Should OSS keep a hidden Pro-delegating stub for removed commands, or should the commands become unknown in OSS?
-- Should `agent-probe --quota` remain as user support tooling for quota diagnosis, while benchmark-specific `--include-bench` behavior moves to Pro?
-- Should `agent-quarantine` remain available for emergency user-side hiding of broken models, or should all registry mutation become maintainer-only?
-- Should `matrix-apply` move entirely to Pro/internal, or stay hidden as a maintainer-only command unavailable from help/slash commands?
-- Should the public docs mention that model scores are curated by maintainers, or simply present them as product metadata?
+- **[RESOLVED — remove]** ~~Should OSS keep a hidden Pro-delegating stub for removed commands?~~ No. Commands become unknown in OSS. Stubs add maintenance surface for no user benefit.
+- **[RESOLVED — keep probe, strip bench flag]** ~~Should `agent-probe --quota` remain?~~ Yes. `agent-probe --quota` is user-facing diagnostics. Remove `--include-bench` flag only.
+- **Needs decision:** Should `agent-quarantine` remain available for emergency user-side hiding of broken models, or should all registry mutation become maintainer-only? (Current spec treats it as removed — reverse if user needs emergency model hiding without maintainer access.)
+- **[RESOLVED — remove]** ~~Should `matrix-apply` move entirely to Pro/internal?~~ Yes. `matrix-apply` exists only to apply maintainer benchmark feedback to agent JSON; remove from OSS.
+- **Needs decision:** Should the public docs mention that model scores are curated by maintainers, or simply present them as product metadata? (Recommendation: present as product metadata — avoids implying users should contribute.)
 
 ## Related
 
