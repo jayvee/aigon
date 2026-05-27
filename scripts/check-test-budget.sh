@@ -36,7 +36,7 @@ set -euo pipefail
 # (computeRebaseNeeded removed in 84945ebe), tests/op-model-video/ (orphaned env-specific E2E not in any runner),
 # 3 static-guards tests (private-internal string checks). Net: -347 LOC. Ceiling 9540→10400.
 # F474 post-review: review restored dashboard-commits-route.test.js (F481, 200 LOC) that was missing from
-# worktree baseline; deleted perf-bench.test.js (78 LOC, non-standard format, narrow helper coverage).
+# worktree baseline after removing a narrow, non-standard integration fixture.
 # Net ceiling raise 10400→10550.
 # 2026-05-12 aggressive cleanup: parameterised card-headline/quota-classifier/prioritise-set-flag,
 # deleted dashboard-list-detail-split + dashboard-spec-revise-route + install-manifest-lockstep

@@ -7,7 +7,6 @@ const { test, withTempDir, report } = require('../_helpers');
 const {
     copySessionToDurable,
     finaliseEntityTranscripts,
-    snapshotQuarantineTranscripts,
     renameTranscriptDirSync,
     findDurablePath,
     resolveTranscriptEntityDir,
@@ -67,42 +66,6 @@ test('finaliseEntityTranscripts copies session body to hot tier', () => withTemp
     assert.ok(meta.nativeBodyBytes > 0);
     assert.strictEqual(meta.complete, true);
     assert.strictEqual(meta.finalisedBy, 'feature-close');
-}));
-
-// REGRESSION: quarantine → snapshot directory created
-test('snapshotQuarantineTranscripts creates quarantine snapshot directory', () => withTempDir('aigon-ts-', (tmp) => {
-    const sessionsDir = path.join(tmp, '.aigon', 'sessions');
-    fs.mkdirSync(sessionsDir, { recursive: true });
-
-    const nativeBody = path.join(tmp, 'uuid-gg.json');
-    fs.writeFileSync(nativeBody, '{"gemini":"session"}\n');
-
-    makeSession(sessionsDir, 'aigon-f10-do-gg', {
-        entityType: 'f', entityId: '10', agent: 'gg',
-        agentSessionId: 'uuid-gg', agentSessionPath: nativeBody,
-    });
-
-    // Session for a different agent — must NOT appear in gg quarantine snapshot
-    makeSession(sessionsDir, 'aigon-f10-do-cc', {
-        entityType: 'f', entityId: '10', agent: 'cc',
-        agentSessionId: 'uuid-cc', agentSessionPath: nativeBody,
-    });
-
-    const result = snapshotQuarantineTranscripts(tmp, 'gg', 'gemini-1.5-pro');
-    assert.ok(result.dir.includes('quarantine'), 'snapshot dir should be under quarantine/');
-    assert.strictEqual(result.copied, 1, 'only the gg session should be copied');
-
-    // Dir must exist and contain files
-    assert.ok(fs.existsSync(result.dir), 'quarantine dir must exist');
-    const files = fs.readdirSync(path.join(result.dir, 'gg'));
-    assert.ok(files.some(f => !f.endsWith('.meta.json')), 'body file must be present');
-    assert.ok(files.some(f => f.endsWith('.meta.json')), 'meta file must be present');
-
-    // meta must declare finalisedBy: agent-quarantine
-    const metaFile = files.find(f => f.endsWith('.meta.json'));
-    const meta = JSON.parse(fs.readFileSync(path.join(result.dir, 'gg', metaFile), 'utf8'));
-    assert.strictEqual(meta.finalisedBy, 'agent-quarantine');
-    assert.strictEqual(meta.quarantinedModel, 'gemini-1.5-pro');
 }));
 
 // REGRESSION: prioritise → slug directory renamed to numeric ID

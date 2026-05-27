@@ -4,7 +4,7 @@ This document is the **single source of truth** for what models may appear in `t
 
 It exists because every Aigon role (spec, spec-review, implement, review, research) is an **agentic coding loop**: the model is invoked inside an interactive CLI session that reads files, edits files, and runs shell commands across multi-turn tool use. Any model that cannot do that — or can do that but for a non-coding domain — does not belong in `modelOptions`.
 
-The policy is **enforced in code** (see `lib/commands/bench.js` `isIrrelevantForCoding` + `assessModel`) and **gated by a human** (see `lib/commands/bench.js` `promptIncludeExclude`). Adding a model that violates this policy in a manual edit is a bug; the catalog refresh path will never persist a violation on its own.
+The policy is enforced by maintainer tooling outside the OSS CLI and gated by a human before curated registry updates are published back to this repo. Adding a model that violates this policy in a manual OSS edit is a bug.
 
 ---
 
@@ -20,7 +20,7 @@ A model is **never** eligible if its primary modality or domain is not "text-in,
 | `-image\b`, `-image-preview`, `nano-banana`, `imagen` | Image generation pipelines. |
 | `/glm-[0-9.]+v` | z-ai vision variants. |
 | `-latest`, `-current` (alias suffixes) | Provider-side mutable pointers. Aigon's benchmark-and-score model is **per-version**; aliases drift under us and corrupt the score table. Pin to the dated/numeric ID instead. |
-| `-thinking`, `-thinking-\d`, `:thinking`, `-r1`, `deepseek-r1`, `thinking-2507` | Reasoning-mode variants where the model spends arbitrary tokens before responding. Agentic tool-use loops with reasoning mode rarely complete inside the wall-time budget and burn through quota even when they do. *Exception:* an explicit opt-in score from `aigon eval`; only then may a thinking model be added with a manual `notes.implement` warning. |
+| `-thinking`, `-thinking-\d`, `:thinking`, `-r1`, `deepseek-r1`, `thinking-2507` | Reasoning-mode variants where the model spends arbitrary tokens before responding. Agentic tool-use loops with reasoning mode rarely complete inside the wall-time budget and burn through quota even when they do. *Exception:* an explicit maintainer score may add one with a manual `notes.implement` warning. |
 | Single-digit-B (non-MoE) parameter counts (`\b[1-9]b\b` without a `\d{2,}b` or `-a\d` marker) | Too weak for multi-file edits. Empirically below the threshold where Aigon's review/eval steps return useful signal. |
 
 If a future provider invents a new non-coding modality (e.g. `-video-`, `-music-`, `-3d-`), add a pattern here in the **same PR** that adds the discovery filter — do not let one slip in unfiltered.
@@ -45,8 +45,8 @@ A model is rejected if:
 The following are **flagged but not auto-rejected**. The approval prompt surfaces them so the human can decide:
 
 - Suffix `-preview` / `-beta` / `-rc` — provider may yank or change the model. Acceptable for a single benchmark sweep, but un-suitable for a default in `complexityDefaults` until promoted.
-- "Custom tools" / "tool-variants" of an existing base model (e.g. `gemini-3.1-pro-preview-customtools`). Treat as a separate row only if `aigon eval` produces a meaningfully different score from the base; otherwise prefer the base ID and use config to opt into the variant.
-- Provider-published score (Terminal-Bench, SWE-bench, etc.) without an `aigon eval` sweep. Acceptable to add with `score.implement: null` and a `notes.implement` describing the published number, but the agent's `cli.complexityDefaults` must **not** route to it until `aigon eval --agent <id> --model <model>` produces a brewboard score.
+- "Custom tools" / "tool-variants" of an existing base model (e.g. `gemini-3.1-pro-preview-customtools`). Treat as a separate row only if maintainer qualification produces a meaningfully different score from the base; otherwise prefer the base ID and use config to opt into the variant.
+- Provider-published score (Terminal-Bench, SWE-bench, etc.) without maintainer qualification. Acceptable to add with `score.implement: null` and a `notes.implement` describing the published number, but the agent's `cli.complexityDefaults` must **not** route to it until maintainer qualification produces a score.
 
 ## 5. Lifecycle requirements
 
@@ -60,21 +60,11 @@ Every entry in `cli.modelOptions` must have:
 - `notes: { <role>: string }` — one paragraph per role. **Required** for any model promoted into a `cli.complexityDefaults` slot. Optional otherwise — but encouraged at addition time so the next reviewer doesn't have to re-derive the rationale.
 - `quarantined: { since, reason, evidence, supersededBy }` — added when a probe / sweep reveals the model is broken. **Never delete a quarantined entry** — the record is the audit trail. Un-quarantine only when a clean re-probe passes.
 
-## 6. Approval flow — no exceptions
+## 6. Approval flow
 
-There is **one** way for a model to enter `cli.modelOptions`: through `aigon model-refresh`, with a human on the approval prompt. This holds even for "obviously good" candidates.
+There is **one** way for a model to enter OSS `cli.modelOptions`: a maintainer publishes a curated registry update from Pro/internal tooling after human review. The OSS CLI intentionally does not ship model discovery, benchmark sweeps, pending-model queues, or registry mutation commands.
 
-```
-aigon model-refresh                 # interactive: discover → assess → prompt human → write
-aigon model-refresh --dry-run       # discover → assess → print, write nothing
-aigon model-refresh --approve-pending  # interactive review of the pending queue
-```
-
-**Non-interactive contexts** (scheduled jobs, CI, autonomous mode) write candidates to `.aigon/pending-models.json`. They do **not** write to `templates/agents/<id>.json` directly. The pending file accumulates until a human runs `aigon model-refresh --approve-pending` to drain it.
-
-`aigon perf-bench` may **discover** new models as a side-effect of a benchmark sweep, but it must **not** persist them. Discovery results from a perf-bench run land in the same pending queue and require the same approval flow.
-
-This means the catalog can never grow without a human reading the candidate IDs and pricing on a terminal prompt. There is no "auto-approve suitable models" flag and no config switch to add one.
+This means the public catalog can never grow as a side effect of an end-user command. There is no OSS "auto-approve suitable models" flag and no config switch to add one.
 
 ## 7. Removal flow
 
@@ -86,27 +76,26 @@ To remove a model from `cli.modelOptions`:
 
 ## 8. Bypass paths — there are none
 
-Any code path that mutates `cli.modelOptions` outside the `aigon model-refresh` flow is a bug. Specifically prohibited:
+Any OSS code path that mutates `cli.modelOptions` as a user command is a bug. Specifically prohibited:
 
-- Direct `JSON.stringify(modelOptions)` writes in any file other than `lib/commands/bench.js` (and its tests).
-- Adding entries by hand in `templates/agents/*.json` PRs without a paired `aigon model-refresh` audit line in the commit message.
-- Setting `benchConfig.autoAddModels: true` — the config key is removed; the perf-bench writer is gone.
+- Reintroducing `model-refresh`, `bench-refresh`, `perf-bench`, `matrix-apply`, `agent-quarantine`, or model-qualification command dispatch in OSS.
+- Adding entries by hand in `templates/agents/*.json` PRs without maintainer review context.
+- Setting `benchConfig.autoAddModels: true` — the config key is removed; the OSS writer is gone.
 
-The discovery-time filter (`isIrrelevantForCoding`) is invoked **inside** `discoverGgModels` / `discoverOpModels`, not at the prompt boundary. Any caller — interactive, non-interactive, future — sees an already-filtered candidate list.
+The discovery-time filter belongs in the maintainer tooling that generates curated updates, not in OSS user workflows.
 
 ### Known limitations
 
-- **Concurrent writes to `.aigon/pending-models.json`** are not locked. Aigon expects a single human operator per repo; two simultaneous `aigon perf-bench` runs on the same workstation could race and lose entries. If this ever bites, add a `proper-lockfile`-style file lock around `writePendingModels`. Out of scope today.
-- **Latency and historical reliability** from `aigon eval` runs are not yet folded into `assessModel`. A model that benchmarks slow but otherwise looks suitable will pass the prompt; the human is expected to read the score and notes columns in `templates/agents/<id>.json` before promoting it into a `cli.complexityDefaults` slot. Folding eval data into the approval prompt is a future improvement.
+- OSS users see curated score, pricing, notes, refresh timestamps, and quarantine status, but not the raw maintainer machinery that generated them.
 
 ---
 
 ## Appendix — the 2026-05-22 incident (why this document exists)
 
-On 2026-05-20 a `aigon perf-bench --all` run with `autoAddModels: true` (the default) discovered 19 new Gemini models from the v1beta `models?key=…` endpoint and wrote all 19 into `gg.json` directly, without invoking the modality filter or any human prompt. The dropdown in the Choose-agent modal grew to 30+ entries including TTS variants, robotics-ER, computer-use, image-gen ("Nano Banana"), and four `-latest` alias pointers — none of which can drive a coding loop.
+On 2026-05-20 a maintainer benchmark run with `autoAddModels: true` discovered 19 new Gemini models from the v1beta `models?key=...` endpoint and wrote all 19 into `gg.json` directly, without invoking the modality filter or any human prompt. The dropdown in the Choose-agent modal grew to 30+ entries including TTS variants, robotics-ER, computer-use, image-gen ("Nano Banana"), and four `-latest` alias pointers — none of which can drive a coding loop.
 
-Root cause: the `isIrrelevantForCoding` filter and the `promptIncludeExclude` human-approval prompt both lived **only** on the `aigon model-refresh` path. The `aigon perf-bench` discovery path had two doors and no lock on the second one.
+Root cause: the discovery filter and the human-approval prompt lived on only one maintainer path. A benchmark discovery path had two doors and no lock on the second one.
 
-The fix in code: collapse the writer paths into one, push the filter into discovery itself, and replace the non-interactive "auto-approve suitable" mode with a pending-models queue that requires a human to drain.
+The fix in OSS: keep only curated read-only metadata in `templates/agents/*.json`; move discovery, qualification, refresh, and registry mutation to Pro/internal maintainer tooling.
 
 The fix in process: this document.
