@@ -17,6 +17,7 @@ export default {
   "feedback-workflow": "Feedback Workflow",
   telemetry: "Telemetry & Analytics",
   "pipeline-quota": "Usage limits (Pipeline)",
+  "local-models": "Local Models",
   "agent-matrix": "Agent Matrix & Recommender",
   "agent-quota-awareness": "Agent Quota Awareness",
   "github-integration": "GitHub Integration",

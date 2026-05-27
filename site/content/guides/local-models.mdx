@@ -1,0 +1,186 @@
+---
+title: Local Models
+description: Run local LLMs alongside cloud agents using customModelOptions and any OpenAI-compatible endpoint.
+---
+
+import { Callout } from "nextra/components";
+
+Aigon can mix local and cloud models in the same workflow. Implement a feature on your own hardware, then review it through a cloud provider — or vice versa. This guide walks through the setup using OpenCode with Ollama, but the same pattern works with any agent that supports an OpenAI-compatible endpoint (LM Studio, llama.cpp, vLLM, etc.).
+
+## Prerequisites
+
+- Aigon installed and a project initialised (`aigon init`)
+- [OpenCode](https://opencode.ai/docs) installed (`npm i -g opencode-ai`) and the `op` agent configured (`aigon install-agent op`)
+- A local model server — this guide uses [Ollama](https://ollama.com)
+
+## 1. Pull a local model
+
+Pick a model that fits your hardware. As a rough guide:
+
+| RAM | Model | Size | Notes |
+|-----|-------|------|-------|
+| 8 GB | `qwen3:4b` | 2.5 GB | Good for testing the pipeline |
+| 16 GB | `qwen3:8b` | 5.2 GB | Basic coding tasks |
+| 32 GB+ | `devstral:24b` | 14 GB | Mistral's coding-agent model |
+
+```bash
+ollama pull qwen3:4b
+```
+
+Start the server if it isn't already running:
+
+```bash
+ollama serve
+```
+
+## 2. Configure OpenCode to use the local provider
+
+OpenCode uses the Vercel AI SDK and supports any OpenAI-compatible endpoint via the `@ai-sdk/openai-compatible` adapter.
+
+Add an Ollama provider to your OpenCode config at `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "qwen3:4b": {
+          "name": "Qwen3 4B (local)",
+          "limit": { "context": 32768, "output": 8192 }
+        }
+      }
+    }
+  }
+}
+```
+
+OpenCode also needs an auth entry, even for local servers that don't require one. Add a placeholder to `~/.local/share/opencode/auth.json`:
+
+```json
+{
+  "ollama": { "type": "api", "key": "sk-local" }
+}
+```
+
+<Callout type="info">
+  If you already have an `auth.json` with other providers (e.g. OpenRouter), add the `"ollama"` key alongside them.
+</Callout>
+
+## 3. Add the model to Aigon's dashboard
+
+Aigon's model dropdowns are driven by each agent's model options. To add your local model without editing any Aigon source files, use the `customModelOptions` key in your config.
+
+For a per-user setting, add to `~/.aigon/config.json`:
+
+```json
+{
+  "agents": {
+    "op": {
+      "customModelOptions": [
+        {
+          "value": "ollama/qwen3:4b",
+          "label": "Qwen3 4B via Ollama (local)",
+          "pricing": { "input": 0, "output": 0 }
+        }
+      ]
+    }
+  }
+}
+```
+
+For a per-project setting, add the same block to `.aigon/config.json` in your repo.
+
+Custom models appear at the top of the dropdown, above the shipped cloud options. Restart the dashboard to pick up the change:
+
+```bash
+aigon server restart
+```
+
+## 4. Test the connection
+
+Verify OpenCode can reach your local model:
+
+```bash
+opencode --model ollama/qwen3:4b
+```
+
+You should see `Build · Qwen3 4B (local) Ollama (local)` in the OpenCode TUI. Type a simple prompt to confirm the model responds.
+
+## Mix local and cloud models
+
+The real value is using different models for different steps. For example:
+
+```bash
+# Implement with your local model (free)
+aigon feature-start <ID> op --model ollama/qwen3:4b
+
+# Review with a cloud model (different perspective)
+aigon feature-code-review <ID> op --model openrouter/qwen/qwen3-235b-a22b-07-25
+```
+
+Or select the models from the dashboard start modal — your local model appears in the model dropdown alongside the cloud options.
+
+## Adding more models
+
+To add another local model, pull it with Ollama, add it to both configs:
+
+1. Register it in OpenCode's config (`~/.config/opencode/opencode.json` → `provider.ollama.models`)
+2. Add it to Aigon's config (`customModelOptions` array)
+
+Multiple custom models are supported — they all appear at the top of the dropdown.
+
+## Other local model servers
+
+The same pattern works with any OpenAI-compatible server. Replace the provider block in your OpenCode config:
+
+**LM Studio** (default port 1234):
+```json
+{
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (local)",
+      "options": { "baseURL": "http://127.0.0.1:1234/v1" },
+      "models": {
+        "your-model-id": { "name": "Your Model" }
+      }
+    }
+  }
+}
+```
+
+**llama.cpp / llama-server** (default port 8080):
+```json
+{
+  "provider": {
+    "llama.cpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama-server (local)",
+      "options": { "baseURL": "http://127.0.0.1:8080/v1" },
+      "models": {
+        "your-model-id": { "name": "Your Model" }
+      }
+    }
+  }
+}
+```
+
+<Callout type="warning">
+  The model ID key in the `models` map must exactly match the string your server returns in its model listing. Use `/models` inside OpenCode to verify.
+</Callout>
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| "could not connect to ollama server" | Run `ollama serve` first |
+| Model doesn't appear in dashboard | Check `customModelOptions` in your Aigon config and restart the server (`aigon server restart`) |
+| OpenCode shows "No endpoints found" | Check the `baseURL` in your OpenCode config — it must include `/v1` |
+| Auth error from OpenCode | Add a dummy auth entry to `~/.local/share/opencode/auth.json` |
+| Mac crashes or freezes | Model is too large for your RAM — use a smaller variant |
