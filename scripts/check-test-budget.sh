@@ -43,7 +43,10 @@ set -euo pipefail
 # + 3 legacy-version migration tests, merged prioritise-commit-isolation + feature-close trio
 # + state-render-meta. Definition narrowed to test code only (excludes helpers/setup/playwright.config).
 # Net: -1,300 LOC. Hard ceiling reset 10550→10000.
-CEILING="${CEILING:-10000}"
+# tmux-inject: +80 LOC for lib/tmux-inject.js regression tests (copy-mode guard, timeout,
+# input validation). Deleted check-version-non-mutating.test.js (-77 LOC; static grep
+# covered by static-guards, hook exit codes are advisory-only). Net +3 LOC, ceiling +100.
+CEILING="${CEILING:-10100}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
