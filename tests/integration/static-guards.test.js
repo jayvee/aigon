@@ -132,8 +132,16 @@ test('dashboard wires benchmark settings placeholder (script order + Pro asset p
     const settings = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/settings.js'), 'utf8');
     assert.ok(settings.includes("addSection('perf-benchmarks'"), 'settings.js must add the perf-benchmarks section');
     assert.ok(settings.includes('AigonProBenchmarkMatrix'), 'settings.js must mount via window.AigonProBenchmarkMatrix');
+    assert.ok(!settings.includes('aigon perf-bench'), 'OSS settings copy must not tell users to run removed perf-bench command');
     const cfg = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/config.js'), 'utf8');
     assert.ok(!cfg.includes('/api/benchmarks'), 'OSS must not register /api/benchmarks — Pro owns it via pro-bridge');
+});
+// REGRESSION F537: benchmark-specific agent-probe flag was removed from OSS.
+test('agent-probe rejects removed benchmark flag without launching probe', () => {
+    const cli = path.join(__dirname, '../../aigon-cli.js');
+    const res = spawnSync(process.execPath, [cli, 'agent-probe', '--include-bench'], { encoding: 'utf8' });
+    assert.notStrictEqual(res.status, 0);
+    assert.ok(String(res.stderr).includes('removed from OSS Aigon'));
 });
 // REGRESSION F524: feature-do prompt must not inject any package-manager / depCheck recipe.
 // Aigon has zero opinion about the target repo's stack — operators declare `worktreeSetup`.

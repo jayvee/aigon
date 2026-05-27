@@ -229,6 +229,12 @@ function resolveTargets(config, { explicitModel = null, allModels = false } = {}
 }
 
 function main(argv = process.argv.slice(2)) {
+    if (argv.includes('--include-bench')) {
+        console.error('Error: --include-bench was removed from OSS Aigon.');
+        console.error('Benchmark results are Pro/maintainer-owned. Use --quota through aigon agent-probe for user diagnostics.');
+        return 1;
+    }
+
     const allAgentsFlag = argv.includes('--all-agents');
     const allModelsFlag = argv.includes('--all') || argv.includes('--all-models');
     const modelArgIdx = argv.indexOf('--model');

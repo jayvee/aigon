@@ -1560,7 +1560,7 @@
 
       // ── Agent Matrix section ───────────────────────────────────────────────
       const matrixSection = shell.addSection('agent-matrix', 'Agent Matrix', 'Agent Capability Matrix',
-        'Read-only view of all agents and models. Rows: (agent, model). Columns: qualitative score per operation. Pricing is public API equivalent (value-for-money signal, not billing). Scores are populated by benchmarks (F371); — means no data yet. Quarantined models are greyed.');
+        'Read-only view of all agents and models. Rows: (agent, model). Columns: qualitative score per operation. Pricing is public API equivalent (value-for-money signal, not billing). Scores are curated by maintainers from benchmark and review data; — means no data yet. Quarantined models are greyed.');
 
       const matrixWrap = document.createElement('div');
       matrixWrap.className = 'matrix-section';
@@ -1791,7 +1791,7 @@
 
       // Agent benchmarks (Pro) — F420. OSS only mounts; data + UI live in @aigon/pro.
       const perfBenchSection = shell.addSection('perf-benchmarks', 'Agent benchmarks', 'Agent benchmarks',
-        'Latest run times from aigon perf-bench. JSON lives under .aigon/benchmarks/ in the repo selected for defaults above.',
+        'Latest maintainer benchmark results from Aigon Pro for the repo selected for defaults above.',
         { proBadge: true });
       if (window.AigonProBenchmarkMatrix && typeof window.AigonProBenchmarkMatrix.mount === 'function') {
         try {
