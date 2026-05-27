@@ -2068,6 +2068,11 @@ pre code {
     grid-template-columns: 1fr;
   }
 
+  .hero-install-beta {
+    justify-self: start;
+    width: auto;
+  }
+
   .community-actions {
     width: 100%;
   }
@@ -2502,6 +2507,12 @@ pre code {
 
 .hero-install-cta {
   gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.hero-install-cta-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hero-install-cta-label,
