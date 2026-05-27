@@ -1068,14 +1068,33 @@ aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</cod
 
         cta.addEventListener("click", function (event) {
           var text = cta.getAttribute("data-copy-text");
-          if (!text || !navigator.clipboard || !navigator.clipboard.writeText) return;
+          if (!text) return;
           event.preventDefault();
+          function fallbackCopy() {
+            var input = document.createElement("textarea");
+            input.value = text;
+            input.setAttribute("readonly", "");
+            input.style.position = "fixed";
+            input.style.top = "-999px";
+            document.body.appendChild(input);
+            input.select();
+            try {
+              document.execCommand("copy");
+              setCopied("Copied install command to clipboard.");
+            } catch (err) {
+              status.textContent = "Copy failed. Select the install command manually.";
+              state.textContent = "Copy";
+            } finally {
+              document.body.removeChild(input);
+            }
+          }
+          if (!navigator.clipboard || !navigator.clipboard.writeText) {
+            fallbackCopy();
+            return;
+          }
           navigator.clipboard.writeText(text).then(function () {
             setCopied("Copied install command to clipboard.");
-          }).catch(function () {
-            status.textContent = "Copy failed. The install section is just below.";
-            state.textContent = "Copy";
-          });
+          }).catch(fallbackCopy);
         });
       })();
 
