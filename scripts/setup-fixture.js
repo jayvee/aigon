@@ -292,12 +292,7 @@ function writeFixtureConfig(repoDir) {
         agents: {
             cc: { models: {} },
             gg: { models: {} },
-            cx: {
-                research: { model: 'gpt-5.1-codex-mini' },
-                implement: { model: 'gpt-5.1-codex-mini' },
-                evaluate: { model: 'gpt-5.1-codex-mini' },
-                review: { model: 'gpt-5.1-codex-mini' },
-            },
+            cx: { models: {} },
             cu: {
                 research: { model: 'composer-1.5' },
                 implement: { model: 'composer-1.5' },

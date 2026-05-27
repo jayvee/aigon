@@ -17,13 +17,16 @@ Follow the `aigon-model-refresh` slash command from start to finish.
 
 ## Acceptance Criteria
 
-- [ ] `aigon model-refresh` run interactively — new candidates reviewed and approved/rejected
+- [ ] `aigon model-refresh` run interactively — new candidates reviewed and approved/rejected per the inclusion policy
+- [ ] Any pending queue entries from prior non-interactive runs drained: `aigon model-refresh --approve-pending`
 - [ ] Benchmarks run for any newly added models: `aigon perf-bench brewboard --all --agents op`
 - [ ] Every timeout or error researched (web search) — classified as TRANSIENT INFRA, MODEL DEGRADED, DEPRECATED, or ROUTING BROKEN
 - [ ] Registry updated: notes, scores, and quarantine entries reflect research findings
 - [ ] Report written to `.aigon/reports/model-refresh-{{YYYY-MM}}.md`
 - [ ] Server restarted: `aigon server restart`
 - [ ] Changes committed
+
+> Inclusion policy: `docs/model-inclusion-policy.md` is the canonical contract for what models qualify. Any deviation from approve/reject defaults needs a one-line justification in the report.
 
 ## Technical Approach
 

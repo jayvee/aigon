@@ -5,15 +5,26 @@ You are running a full model registry refresh. This is an **agent-driven** workf
 do not just call the CLI and stop. You must assess results, research failures, and update
 the registry with evidence-backed conclusions.
 
+The single source of truth for what models qualify lives in
+**`docs/model-inclusion-policy.md`**. Re-read §1 (modality / domain hard exclusions)
+and §6 (approval flow) before you accept any candidate. There is no "approve all" flag
+— a human types y/n on every candidate or the model does not enter the registry.
+
 ## Step 1: Discover new models
 
 ```bash
-aigon model-refresh
+aigon model-refresh                       # discover + interactive approval
+aigon model-refresh --approve-pending     # drain .aigon/pending-models.json
 ```
 
-This opens the interactive approval flow. For each candidate:
+The first command opens the interactive approval flow. For each candidate:
 - ✅ suitable (tool-capable, not thinking-mode, not too small/expensive) → include unless you have a specific reason not to
 - ⚠️ risky → review the stated reason; include only if you have evidence the risk doesn't apply
+
+The second drains any candidates that earlier non-interactive discovery runs
+(`aigon perf-bench`, scheduled jobs) wrote into the pending queue. Always run
+`--approve-pending` *before* running discovery — otherwise you may re-discover the
+same candidates.
 
 After approval, any added models are written to `templates/agents/op.json` and/or `templates/agents/gg.json`.
 
