@@ -4,7 +4,9 @@ Quick reference for agents working on the Aigon dashboard UI and the AIGON serve
 
 ## Overview
 
-The dashboard is a single-page web app. It is served by the AIGON server, a foreground Node.js process whose HTTP/UI module lives in `lib/dashboard-server.js`. The dashboard is the interface; the AIGON server is the process that serves the HTML, exposes the JSON API, polls workflow state every 10 seconds, and runs the runtime concerns around it.
+The dashboard is a single-page web app served by the AIGON server, a foreground Node.js process whose HTTP/UI transport lives in `lib/dashboard-server.js`. The dashboard is the interface; the AIGON server serves static UI assets, exposes the JSON API, polls workflow state, and handles runtime concerns such as WebSocket terminal relay and notifications.
+
+The UI source is split across `templates/dashboard/index.html`, `templates/dashboard/styles.css`, and browser modules under `templates/dashboard/js/`. The server reads these assets fresh from disk on each request; frontend-only edits usually do not require a server restart.
 
 ## Starting & Stopping
 
@@ -85,24 +87,39 @@ tail -50 ~/.aigon/dashboard.log
 
 | File | Role |
 |------|------|
-| `lib/dashboard-server.js` | AIGON server HTTP/UI module: polling, WebSocket relay, notifications, action dispatch, dashboard HTML builder |
+| `lib/dashboard-server.js` | AIGON server HTTP transport: serves static assets, owns polling orchestration, WebSocket relay, notifications, and route dispatch |
+| `lib/dashboard-status-collector.js` | Dashboard read-side collector: repo/entity status assembly, log/detail reads, summaries, set payloads, and derived dashboard state |
+| `lib/dashboard-routes.js` + `lib/dashboard-routes/*.js` | API route dispatcher and per-domain endpoint modules |
 | `lib/proxy.js` | Caddy management — Caddyfile read/write/reload, port allocation, dev server routing |
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
-| `templates/dashboard/index.html` | Entire SPA — HTML, CSS, and JS in one file |
+| `templates/dashboard/index.html` | SPA shell and markup templates; loads CSS and JS modules |
+| `templates/dashboard/styles.css` | Dashboard styling |
+| `templates/dashboard/js/*.js` | Browser-side modules: state, API, actions, monitor, pipeline, settings, terminal, reports, etc. |
 | `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
 | `lib/state-queries.js` | Pure action/transition derivation for feedback entities — used by the AIGON server for feedback dashboard behavior. Feature/research actions come from workflow-core exclusively |
 | `lib/workflow-snapshot-adapter.js` | Maps engine snapshots to dashboard display formats served by the AIGON server |
+
+### Server/read-model boundary
+
+`lib/dashboard-server.js` should stay transport-focused. It should not directly parse workflow snapshots, spec folders, logs, or agent status file formats; those reads belong in read-side owner modules such as `dashboard-status-collector.js`, `workflow-read-model.js`, `workflow-snapshot-adapter.js`, `feature-spec-resolver.js`, `agent-status.js`, and `feedback.js`. Mutations should flow through CLI commands or route handlers that delegate to the relevant command/workflow modules, not through ad-hoc frontend eligibility logic.
 
 ### Key functions in `lib/dashboard-server.js`
 
 | Function | Purpose |
 |----------|---------|
 | `runDashboardServer(port)` | Start the AIGON server HTTP/UI module |
-| `collectDashboardStatusData()` | Scans specs, logs, worktrees, tmux for status |
 | `runDashboardInteractiveAction()` | Executes actions triggered from dashboard UI |
 | `buildDashboardHtml(initialData, instanceName)` | Renders the SPA HTML |
 | `sendMacNotification(message, title)` | Sends macOS desktop notifications |
+
+### Key read-side functions
+
+| Function | Purpose |
+|----------|---------|
+| `collectDashboardStatusData()` in `lib/dashboard-status-collector.js` | Assembles dashboard status by reading workflow snapshots, specs, logs, worktrees, tmux, and feedback metadata through owner modules |
+| `getFeatureDashboardState()` / `getResearchDashboardState()` in `lib/workflow-read-model.js` | Convert workflow-core state plus live runtime data into dashboard row state |
+| `snapshotToDashboardActions()` in `lib/workflow-snapshot-adapter.js` | Converts engine snapshots into server-owned actions and CTAs |
 
 ### Key functions in `lib/proxy.js`
 
@@ -118,18 +135,19 @@ tail -50 ~/.aigon/dashboard.log
 ## How It Works
 
 ```
-┌─────────────┐  poll /api/status   ┌──────────────────┐  reads files   ┌─────────────────┐
-│  Browser     │ ◄──── every 10s ──►│  AIGON server     │ ◄────────────► │  docs/specs/     │
-│  (SPA)       │                    │  Server           │                │  (workflow state)│
-│              │  POST /api/action  │                   │  spawns CLI    │                  │
-│              │ ──────────────────►│                   │ ──────────────►│  aigon <command> │
-│              │                    │                   │                │                  │
-│              │  WS /ws/terminal   │                   │  tmux relay    │                  │
-│              │ ◄═════════════════►│                   │ ◄════════════► │  tmux sessions   │
-└─────────────┘                    └───────────────────┘                └─────────────────┘
+┌─────────────┐  poll /api/status   ┌──────────────────┐  read model    ┌────────────────────┐
+│  Browser    │ ◄──── every 10s ──► │  AIGON server    │ ◄────────────► │ dashboard-status   │
+│  (SPA)      │                     │  HTTP transport  │                │ collector/adapters │
+│             │  POST /api/action   │                  │                └─────────┬──────────┘
+│             │ ──────────────────► │                  │                          │
+│             │                     │                  │                          ▼
+│             │  WS /ws/terminal    │                  │                ┌────────────────────┐
+│             │ ◄═════════════════► │                  │ ◄════════════► │ workflow snapshots │
+└─────────────┘                     └──────────────────┘  tmux relay    │ specs/status/tmux  │
+                                                                         └────────────────────┘
 ```
 
-**Server-side polling**: The AIGON server polls `collectDashboardStatusData()` every **10 seconds**, scanning spec files, log files, and worktree directories across all registered repos. It also detects tmux sessions for agent status.
+**Server-side polling**: The AIGON server polls `collectDashboardStatusData()` on an active/idle cadence (currently **20 seconds** while work is active and **60 seconds** when idle), assembling status through read-side modules across all registered repos. It combines workflow snapshots, visible spec projections, logs, worktrees, per-agent status files, and tmux sessions.
 
 **Client-side polling**: The browser fetches `GET /api/status` every **10 seconds** and re-renders the active view.
 

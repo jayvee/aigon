@@ -10,7 +10,7 @@ This document gives agents and contributors a fast map of the Aigon codebase. It
 - `lib/`: shared implementation modules used by the CLI.
 - `lib/commands/`: command-family handlers. This is where most command behavior should live.
 - `templates/`: prompt, docs, agent, and spec templates used by install and scaffolding commands.
-- `templates/dashboard/index.html`: the dashboard UI — read fresh on every request, no restart needed for frontend changes.
+- `templates/dashboard/`: dashboard UI assets — `index.html`, `styles.css`, and browser modules under `templates/dashboard/js/`. These are read fresh on every request, so frontend-only changes do not require a server restart.
 - `tests/`: automated test suites. `tests/integration/` and `tests/workflow-core/` are the core non-browser suites; `tests/dashboard-e2e/` contains Playwright E2E tests (the slow browser tier).
 - `docs/specs/`: workflow state for features, research, feedback, logs, and evaluations.
 - `.aigon/docs/`: aigon-vendored documentation installed into consumer projects (F421). Includes `development_workflow.md`, `feature-sets.md`, and `agents/<id>.md` per installed agent. Marker blocks in `agents/<id>.md` are updated by `install-agent`. The consumer's own `docs/` folder is never touched.
@@ -40,13 +40,23 @@ Current command families:
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
 | `lib/commands/setup.js` | `init`, `install-agent`, `remove`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
+| `lib/commands/workflow.js` | `workflow` definition CRUD and reporting |
+| `lib/commands/set.js` | `set-*` feature-set actions and derived set operations |
+| `lib/commands/bench.js` | `bench-*` and benchmark/model-refresh helpers |
+| `lib/commands/signal-health.js` | `signal-health` diagnostics over signal telemetry |
+| `lib/commands/aigon-eval.js` | Internal `aigon eval` model-qualification harness |
+| `lib/commands/security-scan.js` | Standalone `security-scan` CLI surface |
+| `lib/commands/pro.js` | `pro activate/status` free-tier activation/status commands |
+| `lib/commands/recurring.js`, `lib/commands/schedule.js`, `lib/commands/agent-launch.js` | OSS stubs that delegate to `@aigon/pro` when installed, otherwise print the standard "Pro feature — coming later" notice |
+
+`aigon-cli.js` is the executable's authoritative composition point: it imports and spreads every command factory above into the runtime command map. `lib/commands/shared.js` still exists for tests and legacy helper callers that need a ctx-overridable command map; do not assume it includes every user-facing command wired by the executable.
 
 ### The ctx pattern
 
 Commands receive dependencies via a `ctx` object rather than flat destructuring:
 
 ```js
-// lib/commands/shared.js builds ctx and composes all domains
+// lib/commands/shared.js builds ctx for ctx-aware command domains
 function buildCtx(overrides = {}) {
     return {
         utils:      { ...utils, ...overrides },
@@ -488,15 +498,15 @@ Components:
 - `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
-## Scheduler (`aigon schedule add`) — when to use which kind
+## Scheduling and recurring work
 
-The scheduler (`lib/scheduled-kickoff.js`) supports three job kinds. Pick by what you want to *fire*:
+Scheduled and recurring work is no longer implemented in the OSS package. The former scheduler engine and `agent_prompt` runner moved to `@aigon/pro` with feature 236. In this repo:
 
-- **`feature_autonomous` <id>** — start an autonomous run on a specific spec that already exists in `02-backlog/` or `03-in-progress/`. Use this to defer/queue a known feature; the scheduler validates the spec is present and dispatches `feature-autonomous-start` at `runAt`.
-- **`research_start` <id>** — start a research run on a spec already in `02-backlog/` or `03-in-progress/`. Same shape as `feature_autonomous` but for research entities.
-- **`agent_prompt`** — spawn a fresh agent session (no entity required) carrying an arbitrary prompt or slash command (e.g. `--prompt=/security-review`). Optional `--cron=<expr>` re-arms the job after each fire, so this is the right kind for **periodic agent tasks** like a weekly security digest, an architecture audit, or a TODO sweep. The scheduler shells into `aigon agent-launch` (a dedicated internal CLI) which opens a tmux tab in the target repo. The agent is responsible for everything that happens in-session, including filing follow-up features via `afc` for any work it discovers.
+- `lib/commands/schedule.js` keeps the `aigon schedule` verb as a thin delegating stub.
+- `lib/commands/recurring.js` keeps `aigon recurring-run` and `aigon recurring-list` as thin delegating stubs.
+- `lib/commands/agent-launch.js` keeps the internal `aigon agent-launch` primitive as a thin delegating stub.
 
-`agent_prompt` jobs use the `--label` slug as their `entityId` (since there is no backing entity); the dashboard schedule glyph index ignores them. They appear only in `aigon schedule list`.
+Each stub tries to load the matching `@aigon/pro/commands/*` implementation when Pro is installed. Without Pro, it prints the standard "Pro feature — coming later" notice and exits non-zero. Do not add scheduler engine behavior back to OSS unless the free/pro boundary changes.
 
 ## Aigon Pro (`@aigon/pro`)
 
