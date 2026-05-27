@@ -25,7 +25,7 @@
     <meta name="twitter:title" content="Aigon | Spec-Driven Multi-Agent Harness">
     <meta name="twitter:description" content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review.">
     <meta name="twitter:image" content="https://www.aigon.build/img/og-image.png">
-    <meta name="theme-color" content="#f7f2e8">
+    <meta name="theme-color" content="#ffffff">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="icon" type="image/svg+xml" href="img/aigon-icon-32.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
@@ -34,7 +34,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Manrope:wght@400;500;700;800&amp;family=Sora:wght@600;700;800&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=DM+Sans:wght@400;500;700&amp;display=swap"
       rel="stylesheet"
     >
     <link rel="stylesheet" href="css/style.css">
@@ -52,10 +52,9 @@
         </a>
         <nav aria-label="Primary">
           <ul class="site-nav">
+            <li><a href="/docs" class="nav-link">Docs</a></li>
             <li><a href="#workflow" class="nav-link">Workflow</a></li>
             <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
-            <li><a href="/docs" class="nav-link">Docs</a></li>
-            <li><a href="/pro" class="nav-link">Pro</a></li>
           </ul>
         </nav>
         <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noreferrer">
@@ -68,10 +67,9 @@
       <section class="hero section reveal" id="top">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <h1>Aigon is a spec-driven harness that orchestrates Claude Code, Codex, Cursor CLI and more.</h1>
-            <p class="hero-subtitle">Your specs can be implemented by one or more agents, reviewed by a different set of agents, and evaluated by an LLM as a judge. You track and control the workflow from an intuitive kanban board.</p>
-
-            <p class="hero-subtitle">Aigon is open source, you bring your own subscriptions, everything is stored locally in your repos, and there are no third-party systems required.</p>
+            <h1>One spec, many agents, the best diff wins.</h1>
+            <p class="hero-subtitle">Aigon is a spec-driven orchestration layer for Claude Code, Codex, Gemini CLI, Cursor CLI and more. Launch isolated worktrees, compare implementations, review with another model, then merge the result you trust.</p>
+            <p class="hero-meta">Open source · MIT · Bring your own subscriptions</p>
 
 
             <div class="hero-actions">
@@ -81,10 +79,9 @@
               </a>
               <span class="hero-install-beta" title="Public beta — APIs and config formats may change">Beta</span>
               <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noopener noreferrer">
-                <span aria-hidden="true">&#9733;</span>
                 <span>Star on GitHub</span>
               </a>
-              <!-- TODO: add aigon apply CTA -->
+              <p class="copy-status" id="hero-copy-status" aria-live="polite"></p>
             </div>
           </div>
         </div>
@@ -130,32 +127,23 @@
         <div class="container">
           <div class="section-head">
             <p class="eyebrow">Why use Aigon?</p>
+            <h2>Different model families expose different failure modes.</h2>
           </div>
           <div class="hero-why-grid">
             <article class="hero-payoff">
               <p class="hero-payoff-num">01</p>
-              <h3 class="hero-payoff-title">More models lead to better quality.</h3>
+              <h3 class="hero-payoff-title">Different models catch different bugs.</h3>
               <p class="hero-payoff-body">Different model families catch different classes of bug and have different strengths. Aigon aims to improve overall quality by running multiple agents in parallel or running implementation and review phases across multiple agents.</p>
             </article>
             <article class="hero-payoff">
               <p class="hero-payoff-num">02</p>
-              <h3 class="hero-payoff-title">Options when your Agent quota runs out.</h3>
-              <p class="hero-payoff-body">Aigon surfaces the state of your quotas for all configured agents to help you choose the best agent at any given time. It will also route mid-implementation features from one agent to another when quotas run out.</p>
-            </article>
-            <article class="hero-payoff">
-              <p class="hero-payoff-num">03</p>
-              <h3 class="hero-payoff-title">Use your own subscriptions.</h3>
+              <h3 class="hero-payoff-title">Your subscriptions, zero markup.</h3>
               <p class="hero-payoff-body">Aigon has no billing information or settings, it simply orchestrates your agent CLIs. It does no metering and does not mark up token spend.</p>
             </article>
             <article class="hero-payoff">
-              <p class="hero-payoff-num">04</p>
+              <p class="hero-payoff-num">03</p>
               <h3 class="hero-payoff-title">Local data and simple local tools.</h3>
               <p class="hero-payoff-body">Each agent runs in its own git worktree as an agent CLI in a tmux session. You can attach to that session any time and control the work that is happening. Specs and logs live in your repo as Markdown.</p>
-            </article>
-            <article class="hero-payoff">
-              <p class="hero-payoff-num">05</p>
-              <h3 class="hero-payoff-title">Mix local and cloud models.</h3>
-              <p class="hero-payoff-body">Run models on your own hardware alongside cloud providers. Implement with a local model, review through OpenRouter — pick the right model for each step from a single dashboard.</p>
             </article>
           </div>
         </div>
@@ -185,100 +173,29 @@
             <h2>Research, build, learn — on repeat.</h2>
           </div>
 
-          <svg class="lifecycle-loop" viewBox="0 0 800 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aigon lifecycle: Research and Feedback feed into Features, which flow through Build, Evaluate, and Ship, then loop back as user feedback">
-            <!-- Nodes -->
-            <!-- Research -->
-            <rect x="16" y="20" width="120" height="52" rx="12" fill="#0f7775" fill-opacity="0.12" stroke="#0f7775" stroke-width="1.5"/>
-            <text x="76" y="42" text-anchor="middle" fill="#0f7775" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Research</text>
-            <text x="76" y="58" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Investigate options</text>
-
-            <!-- Feedback -->
-            <rect x="16" y="100" width="120" height="52" rx="12" fill="#1f4f8a" fill-opacity="0.12" stroke="#1f4f8a" stroke-width="1.5"/>
-            <!-- Person icon -->
-            <circle cx="42" cy="118" r="5" fill="none" stroke="#1f4f8a" stroke-width="1.2"/>
-            <path d="M34 134 a8 6 0 0 1 16 0" fill="none" stroke="#1f4f8a" stroke-width="1.2"/>
-            <text x="84" y="122" text-anchor="middle" fill="#1f4f8a" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Feedback</text>
-            <text x="84" y="138" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">From real users</text>
-
-            <!-- Arrows: Research → Features -->
-            <path d="M136 46 L192 76" stroke="#0f7775" stroke-width="1.5" marker-end="url(#loop-arrow)"/>
-            <!-- Arrows: Feedback → Features -->
-            <path d="M136 126 L192 96" stroke="#1f4f8a" stroke-width="1.5" marker-end="url(#loop-arrow)"/>
-
-            <!-- Features -->
-            <rect x="196" y="60" width="120" height="52" rx="12" fill="#d55f2a" fill-opacity="0.12" stroke="#d55f2a" stroke-width="1.5"/>
-            <text x="256" y="82" text-anchor="middle" fill="#d55f2a" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Features</text>
-            <text x="256" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Spec-driven tasks</text>
-
-            <!-- Arrow: Features → Build -->
-            <path d="M316 86 L372 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Build -->
-            <rect x="376" y="60" width="120" height="52" rx="12" fill="rgba(27,23,17,0.06)" stroke="rgba(27,23,17,0.18)" stroke-width="1.5"/>
-            <text x="436" y="82" text-anchor="middle" fill="#1b1711" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Build</text>
-            <text x="436" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Agents implement</text>
-
-            <!-- Arrow: Build → Evaluate -->
-            <path d="M496 86 L552 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Evaluate -->
-            <rect x="556" y="60" width="120" height="52" rx="12" fill="rgba(27,23,17,0.06)" stroke="rgba(27,23,17,0.18)" stroke-width="1.5"/>
-            <text x="616" y="82" text-anchor="middle" fill="#1b1711" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Evaluate</text>
-            <text x="616" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Compare &amp; merge</text>
-
-            <!-- Arrow: Evaluate → Ship -->
-            <path d="M676 86 L722 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Ship -->
-            <rect x="726" y="60" width="58" height="52" rx="12" fill="#0f7775" fill-opacity="0.08" stroke="#0f7775" stroke-width="1.5"/>
-            <text x="755" y="90" text-anchor="middle" fill="#0f7775" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Ship</text>
-
-            <!-- Return arrow: Ship → Feedback (curves down and back) -->
-            <path d="M755 112 L755 160 Q755 170 745 170 L76 170 Q66 170 66 160 L66 152" stroke="#1f4f8a" stroke-width="1.5" stroke-dasharray="6 3" fill="none" marker-end="url(#loop-arrow-blue)"/>
-
-            <!-- Arrow markers -->
-            <defs>
-              <marker id="loop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="#0f7775"/>
-              </marker>
-              <marker id="loop-arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="rgba(27,23,17,0.3)"/>
-              </marker>
-              <marker id="loop-arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="#1f4f8a"/>
-              </marker>
-            </defs>
-          </svg>
+          <p class="lead">Aigon keeps the workflow in plain files and git operations: create a spec, run agents in branches or worktrees, evaluate the outputs, and close the feature when the diff is ready.</p>
 
           <div class="section-sub">
             <div class="section-head">
               <p class="eyebrow">Aigon modes</p>
             </div>
-            <div class="feature-grid">
-              <article class="feature-card">
-                <p class="feature-tag">One agent</p>
-                <p>Use when you only ever use one agent but want to use a spec driven approach.</p>
-                <pre><code>aigon feature-start 07</code></pre>
-                <p>Outcome: one guided implementation branch with a full spec and log trail.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Multi-agent</p>
-                <p>Orchestrate competing implementations you can evaluate and adopt the best from.</p>
-                <pre><code>aigon feature-start 07 cc gg cx</code></pre>
-                <p>Outcome: parallel worktrees and comparable outputs for structured selection.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Autonomous - one implementation agent, one review agent</p>
-                <p>Choose one implementation agent you are confident in, with a strong review agent to find the gaps.</p>
-                <pre><code>aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</code></pre>
-                <p>Outcome: automated implement-review loop that stops when checks pass.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Autonomous - multi-agent automated evaluation</p>
-                <p>Autonomous parallel agent runs converge into comparable outputs ready for auto evaluation and completion with an optional review stage.</p>
-                <pre><code>aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</code></pre>
-                <p>Outcome: concurrent autonomous runs across agents with logs ready for comparison.</p>
-              </article>
+            <div class="mode-showcase">
+              <div class="mode-tabs" role="tablist" aria-label="Execution modes">
+                <button class="mode-tab is-active" type="button" role="tab" aria-selected="true">Drive</button>
+                <button class="mode-tab" type="button" role="tab" aria-selected="false">Fleet</button>
+                <button class="mode-tab" type="button" role="tab" aria-selected="false">Autopilot</button>
+                <button class="mode-tab" type="button" role="tab" aria-selected="false">Swarm</button>
+              </div>
+              <div class="mode-panel">
+                <div>
+                  <h3>Four modes, one lifecycle.</h3>
+                  <p>Drive is a single guided branch. Fleet creates isolated worktrees and compares the outputs. Autopilot runs implementation and validation loops. Swarm lets multiple agents iterate in parallel.</p>
+                </div>
+                <pre><code>aigon feature-start 07
+aigon feature-start 07 cc gg cx
+aigon feature-do 07 --iterate
+aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</code></pre>
+              </div>
             </div>
           </div>
 
@@ -742,7 +659,7 @@
                 <li>Set-level autonomous orchestration &mdash; start, stop, resume entire feature sets</li>
                 <li>Aigon Sync &mdash; private Git vault for portable workflow state across machines</li>
               </ul>
-              <a href="/pro" class="button pro-cta-btn">Explore Aigon Pro</a>
+              <a href="/pro.html" class="button pro-cta-btn">Explore Aigon Pro</a>
             </div>
             <div class="pro-cta-visual">
               <div class="pro-cta-frame">
@@ -765,6 +682,53 @@
     </footer>
 
     <script>
+      // Execution mode tabs
+      (function () {
+        var tabs = document.querySelectorAll(".mode-tab");
+        var panel = document.querySelector(".mode-panel");
+        if (!tabs.length || !panel) return;
+        var title = panel.querySelector("h3");
+        var body = panel.querySelector("p");
+        var code = panel.querySelector("code");
+        var modes = {
+          Drive: {
+            title: "Drive: one agent, one branch.",
+            body: "Use Drive when you want one guided implementation with a full spec and log trail.",
+            code: "aigon feature-start 07"
+          },
+          Fleet: {
+            title: "Fleet: competing worktrees.",
+            body: "Use Fleet when you want several agents to implement the same spec and compare the diffs.",
+            code: "aigon feature-start 07 cc gg cx"
+          },
+          Autopilot: {
+            title: "Autopilot: implement, validate, retry.",
+            body: "Use Autopilot when the validation loop is clear and you want a fresh agent session per attempt.",
+            code: "aigon feature-do 07 --iterate"
+          },
+          Swarm: {
+            title: "Swarm: autonomous parallel runs.",
+            body: "Use Swarm when multiple agents should iterate independently before evaluation and close.",
+            code: "aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed"
+          }
+        };
+        tabs.forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            tabs.forEach(function (t) {
+              t.classList.remove("is-active");
+              t.setAttribute("aria-selected", "false");
+            });
+            tab.classList.add("is-active");
+            tab.setAttribute("aria-selected", "true");
+            var data = modes[tab.textContent.trim()];
+            if (!data) return;
+            title.textContent = data.title;
+            body.textContent = data.body;
+            code.textContent = data.code;
+          });
+        });
+      })();
+
       // Hero analogy carousel
       (function () {
         var carousel = document.querySelector(".analogy-carousel");
