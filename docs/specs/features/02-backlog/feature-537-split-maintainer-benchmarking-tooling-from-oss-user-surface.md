@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-27T04:23:44.421Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: split maintainer benchmarking tooling from OSS user surface
