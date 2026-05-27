@@ -1,5 +1,7 @@
 ---
 complexity: very-high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-05-27T23:28:51.384Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: landing-page-redesign-swiss-light
