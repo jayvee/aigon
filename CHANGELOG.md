@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.66.0-beta.4] — 2026-05-28
+
+User-configurable model options — add local or custom models to any agent's dashboard picker.
+
+### Added
+
+- `customModelOptions` config key: add your own models (local Ollama, custom OpenRouter, etc.) to any agent's dashboard dropdown via `.aigon/config.json` or `~/.aigon/config.json` (F539)
+- Local models guide and landing page mention
+
+### Fixed
+
+- Amp TUI detection for tmux prompt injection
+- Bracketed paste mode for more reliable tmux inject across agents
+- Merge custom models correctly when shipped model list is absent
+
 ## [2.66.0-beta.3] — 2026-05-27
 
 Tmux injection hardening, dashboard pill split, benchmarking tooling cleanup.
