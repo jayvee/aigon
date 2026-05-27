@@ -29,6 +29,7 @@ tests/dashboard-e2e/screenshots/
 .aigon/sessions/
 .aigon/locks/
 .aigon/workflows/
+.aigon/benchmarks/
 .aigon/telemetry/
 .aigon/worktree.json
 .aigon/.board-map.json
