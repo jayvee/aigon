@@ -84,9 +84,20 @@
     return null;
   }
 
-  function staleRepos(data) {
-    if (!data || !Array.isArray(data.repos)) return [];
-    return data.repos.filter(r => r && r.stale);
+  function allRepos(data) {
+    if (!data) return [];
+    const cur = data.current || {};
+    const repos = Array.isArray(data.repos) && data.repos.length > 0
+      ? data.repos.slice()
+      : [];
+    if (cur && cur.repoPath && !repos.some(r => r.repoPath === cur.repoPath)) {
+      repos.unshift(cur);
+    }
+    return repos;
+  }
+
+  function staleApplyRepos(data) {
+    return allRepos(data).filter(r => r && r.stale);
   }
 
   // ── Phase renderers ───────────────────────────────────────────────────────
@@ -171,15 +182,8 @@
   }
 
   function renderPhase3(data) {
-    const stale = staleRepos(data);
-    const cur = data.current || {};
-    // Always include current repo even if it's not in the registered list.
-    const allRepos = Array.isArray(data.repos) && data.repos.length > 0
-      ? data.repos.slice()
-      : [{ ...cur }];
-    if (cur && cur.repoPath && !allRepos.some(r => r.repoPath === cur.repoPath)) {
-      allRepos.unshift(cur);
-    }
+    const stale = staleApplyRepos(data);
+    const repos = allRepos(data);
 
     const installed = escapeHtml(data.installedCli);
     const labels = getLabels(data);
@@ -200,7 +204,7 @@
       </div>
       ${expanded ? `
         <div class="aigon-pill-expanded">
-          ${allRepos.map(renderRepoRow).join('')}
+          ${repos.map(renderRepoRow).join('')}
         </div>` : ''}
     `;
   }
@@ -298,7 +302,7 @@
     } else if (action === 'apply-one') {
       runApply([repoPath]);
     } else if (action === 'apply-all') {
-      const stale = staleRepos(state.data).map(r => r.repoPath);
+      const stale = staleApplyRepos(state.data).map(r => r.repoPath);
       runApply(stale);
     }
   }
@@ -368,7 +372,7 @@
 
     // Refresh status to clear stale flags. If everything went green, flash and hide.
     await fetchStatus();
-    const remaining = staleRepos(state.data);
+    const remaining = staleApplyRepos(state.data);
     if (failures === 0 && remaining.length === 0) {
       state.flashUntil = Date.now() + 5000;
       state.activeRepoOps.clear();
