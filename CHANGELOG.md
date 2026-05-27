@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.66.0-beta.3] — 2026-05-27
+
+Tmux injection hardening, dashboard pill split, benchmarking tooling cleanup.
+
+### Added
+
+- Split dashboard version pill into dev and user modes (F535)
+- Add Amp agent registry support (F536)
+- Promote gemini-3.5-flash and refresh model catalog
+- Add Composer 2.5 model option and wire --model flag
+
+### Fixed
+
+- Centralise `send-keys -l` with copy-mode cancel guard — new `lib/tmux-inject.js` helper cancels copy-mode before literal injection and adds a 5s timeout (defence-in-depth against zombie send-keys)
+- Finish benchmark tooling split — remove OSS maintainer benchmarking commands, keep user-facing bench surface (F537)
+- Make F535 version pill staleness repo-aware
+- Carry autonomous reviewer model overrides
+- Guard push-back so feature merges can't poison the seed
+- Keep installed Caddy proxy on port 80
+- Prevent first-run wizard in agent tmux panes
+- Add package security checks to prepublishOnly
+
 ## [2.66.0-beta.2] — 2026-05-18
 
 ### Fixed
