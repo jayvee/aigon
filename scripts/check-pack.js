@@ -23,6 +23,8 @@ const ALLOWED_PREFIXES = [
     'assets/icon/',
     'scripts/fix-node-pty-perms.js',
     'scripts/probe-agent.js',
+    'scripts/check-package-security-config.js',
+    'scripts/check-suspicious-deps.js',
 ];
 
 function isAllowed(filePath) {

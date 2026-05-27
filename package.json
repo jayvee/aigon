@@ -2,6 +2,7 @@
   "name": "@senlabsai/aigon",
   "version": "2.66.0-beta.2",
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
+  "packageManager": "npm@11.14.1",
   "license": "Apache-2.0",
   "author": "Sen Labs (https://senlabs.ai)",
   "homepage": "https://www.aigon.build",
@@ -30,7 +31,9 @@
     "templates",
     "assets/icon",
     "scripts/fix-node-pty-perms.js",
-    "scripts/probe-agent.js"
+    "scripts/probe-agent.js",
+    "scripts/check-package-security-config.js",
+    "scripts/check-suspicious-deps.js"
   ],
   "publishConfig": {
     "access": "public"
@@ -63,6 +66,8 @@
     "test:all": "npm run test:deploy",
     "fixture:seed": "node scripts/setup-fixture.js",
     "fixture:reset": "node scripts/reset-fixture.js",
+    "security:package-config": "node scripts/check-package-security-config.js",
+    "security:suspicious-deps": "node scripts/check-suspicious-deps.js",
     "workflow:diagrams": "node scripts/generate-workflow-diagrams.js",
     "workflow:diagrams:check": "node scripts/generate-workflow-diagrams.js --check"
   },

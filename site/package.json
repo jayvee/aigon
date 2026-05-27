@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Aigon documentation and marketing site",
+  "packageManager": "npm@11.14.1",
   "scripts": {
     "predev": "test -d public/_pagefind || npm run build",
     "dev": "next dev",
