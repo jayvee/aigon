@@ -74,6 +74,8 @@ Verify it loaded:
 
 Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10× cheaper than pixels) and only fall back to `browser_take_screenshot` for pixel-fidelity checks. Declining the prompt is harmless — the old Playwright-script flow still works.
 
+**Screenshot path rule:** always save screenshots to `./tmp/` (e.g. `./tmp/my-feature-check.png`). Never write image files to the repo root — they accumulate as untracked noise. `tmp/` is gitignored.
+
 ## Submitting a PR
 
 1. Fork the repo, create a feature branch from `main`
