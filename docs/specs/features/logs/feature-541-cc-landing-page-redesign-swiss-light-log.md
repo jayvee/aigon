@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Complete — CSS rewrite, home.html restructured, pro.html created as static HTML.
 
 ## New API Surface
 
