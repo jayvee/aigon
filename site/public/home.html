@@ -25,7 +25,7 @@
     <meta name="twitter:title" content="Aigon | Spec-Driven Multi-Agent Harness">
     <meta name="twitter:description" content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review.">
     <meta name="twitter:image" content="https://www.aigon.build/img/og-image.png">
-    <meta name="theme-color" content="#f7f2e8">
+    <meta name="theme-color" content="#ffffff">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="icon" type="image/svg+xml" href="img/aigon-icon-32.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
@@ -34,7 +34,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Manrope:wght@400;500;700;800&amp;family=Sora:wght@600;700;800&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&amp;family=DM+Mono:wght@400;500&amp;display=swap"
       rel="stylesheet"
     >
     <link rel="stylesheet" href="css/style.css">
@@ -68,24 +68,19 @@
       <section class="hero section reveal" id="top">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <h1>Aigon is a spec-driven harness that orchestrates Claude Code, Codex, Cursor CLI and more.</h1>
-            <p class="hero-subtitle">Your specs can be implemented by one or more agents, reviewed by a different set of agents, and evaluated by an LLM as a judge. You track and control the workflow from an intuitive kanban board.</p>
-
-            <p class="hero-subtitle">Aigon is open source, you bring your own subscriptions, everything is stored locally in your repos, and there are no third-party systems required.</p>
-
+            <h1>One spec, many agents, the best diff wins.</h1>
+            <p class="hero-subtitle">Aigon orchestrates Claude Code, Gemini CLI, Codex, and Cursor from a single spec. Competing implementations, cross-agent review, merge the survivor.</p>
 
             <div class="hero-actions">
-              <a href="#get-started" class="button hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@next">
-                <span class="hero-install-cta-label">$ npm install -g @senlabsai/aigon@next</span>
+              <a href="#get-started" class="hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@next">
+                <span class="hero-install-cta-label"><span style="color:var(--text-muted);user-select:none">$ </span>npm install -g @senlabsai/aigon@next</span>
                 <span class="hero-install-cta-state" aria-hidden="true">Copy</span>
               </a>
               <span class="hero-install-beta" title="Public beta — APIs and config formats may change">Beta</span>
-              <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noopener noreferrer">
-                <span aria-hidden="true">&#9733;</span>
-                <span>Star on GitHub</span>
-              </a>
-              <!-- TODO: add aigon apply CTA -->
+              <a href="https://github.com/jayvee/aigon" class="button button-ghost" target="_blank" rel="noopener noreferrer">Star on GitHub</a>
             </div>
+            <p id="hero-copy-status" class="hero-copy-status" aria-live="polite"></p>
+            <p class="hero-meta">Open source &middot; MIT &middot; Bring your own subscriptions</p>
           </div>
         </div>
         <div class="container">
@@ -129,33 +124,20 @@
       <section class="section reveal" id="why">
         <div class="container">
           <div class="section-head">
-            <p class="eyebrow">Why use Aigon?</p>
+            <p class="eyebrow">Why Aigon</p>
           </div>
           <div class="hero-why-grid">
             <article class="hero-payoff">
-              <p class="hero-payoff-num">01</p>
-              <h3 class="hero-payoff-title">More models lead to better quality.</h3>
-              <p class="hero-payoff-body">Different model families catch different classes of bug and have different strengths. Aigon aims to improve overall quality by running multiple agents in parallel or running implementation and review phases across multiple agents.</p>
+              <h3 class="hero-payoff-title">Different models catch different bugs.</h3>
+              <p class="hero-payoff-body">Run implementations across model families. Review with a different agent than the one that wrote the code.</p>
             </article>
             <article class="hero-payoff">
-              <p class="hero-payoff-num">02</p>
-              <h3 class="hero-payoff-title">Options when your Agent quota runs out.</h3>
-              <p class="hero-payoff-body">Aigon surfaces the state of your quotas for all configured agents to help you choose the best agent at any given time. It will also route mid-implementation features from one agent to another when quotas run out.</p>
+              <h3 class="hero-payoff-title">Your subscriptions, zero markup.</h3>
+              <p class="hero-payoff-body">Aigon orchestrates your agent CLIs directly. No billing, no metering, no third-party systems.</p>
             </article>
             <article class="hero-payoff">
-              <p class="hero-payoff-num">03</p>
-              <h3 class="hero-payoff-title">Use your own subscriptions.</h3>
-              <p class="hero-payoff-body">Aigon has no billing information or settings, it simply orchestrates your agent CLIs. It does no metering and does not mark up token spend.</p>
-            </article>
-            <article class="hero-payoff">
-              <p class="hero-payoff-num">04</p>
-              <h3 class="hero-payoff-title">Local data and simple local tools.</h3>
-              <p class="hero-payoff-body">Each agent runs in its own git worktree as an agent CLI in a tmux session. You can attach to that session any time and control the work that is happening. Specs and logs live in your repo as Markdown.</p>
-            </article>
-            <article class="hero-payoff">
-              <p class="hero-payoff-num">05</p>
-              <h3 class="hero-payoff-title">Mix local and cloud models.</h3>
-              <p class="hero-payoff-body">Run models on your own hardware alongside cloud providers. Implement with a local model, review through OpenRouter — pick the right model for each step from a single dashboard.</p>
+              <h3 class="hero-payoff-title">Local data, simple tools.</h3>
+              <p class="hero-payoff-body">Git worktrees, tmux sessions, Markdown specs. Attach to any session, control any agent, any time.</p>
             </article>
           </div>
         </div>
@@ -378,20 +360,19 @@
 
       <section class="section reveal" id="reports">
         <div class="container">
-          <div class="section-head" style="margin-bottom:2.5rem">
+          <div class="section-head">
             <p class="eyebrow">Workflow Intelligence</p>
             <h2>Know if your AI workflow is actually working</h2>
-            <p style="color:var(--text-muted,#666);margin-top:0.75rem">Aigon comes with charts that track the metrics that help you answer questions such as: Are features shipping faster? Is rework going down? Is token usage increasing per feature?</p>
+            <p class="lead">Aigon comes with charts that track the metrics that help you answer questions such as: Are features shipping faster? Is rework going down? Is token usage increasing per feature?</p>
           </div>
           <img
             src="img/aigon-dashboard-reports-charts.png"
             alt="Aigon Reports — five aligned charts showing features completed, commits, cycle time, commits per feature, and rework ratio"
             class="landing-image"
-            style="width:100%;border-radius:12px;border:1px solid rgba(0,0,0,0.1)"
             width="1440"
             loading="lazy"
           >
-          <div class="feature-grid" style="margin-top:2rem">
+          <div class="feature-grid">
             <article class="feature-card">
               <h3>Feature velocity</h3>
               <p>Features completed and commits over time — stacked to show feature-attributed vs non-feature work.</p>
