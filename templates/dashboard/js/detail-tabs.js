@@ -54,6 +54,10 @@
         // If drawer was opened with an initial tab (e.g. from peek button), use it
         const initialTab = (typeof drawerState !== 'undefined' && drawerState._initialTab) || 'spec';
         if (drawerState && drawerState._initialTab) drawerState._initialTab = null;
+        if (typeof drawerState !== 'undefined' && drawerState._initialLogAgent) {
+          state.logSelectedAgent = drawerState._initialLogAgent;
+          drawerState._initialLogAgent = null;
+        }
         switchTab(initialTab);
       }
 

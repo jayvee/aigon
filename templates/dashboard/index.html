@@ -138,6 +138,7 @@
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.findingsPath" class="btn" x-on:click.stop="openResearchFindingsPeek(agent.findingsPath, 'R#' + item.id + ' ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id) + ' Findings')">View</button>
+                              <button x-show="!!agent.findingsPath" class="kcard-peek-btn" title="Open Agent Log" x-on:click.stop="openDrawer(item.specPath, item.name, item.stage || 'in-progress', item.repoPath || repo.path, { entityId: item.id, initialTab: 'log', initialLogAgent: agent.id })"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h6l4 4v10H4z"/><path d="M10 1v4h4"/><path d="M6 9h6M6 12h4"/></svg></button>
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
                               <span x-html="buildAgentOverflowHtml(agent, item, repo.path)"></span>
                             </span>

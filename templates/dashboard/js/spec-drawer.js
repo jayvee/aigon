@@ -123,6 +123,7 @@
       drawerState.entityId = opts.entityId || specIdFromPath(specPath);
       drawerState.detailFingerprint = opts.detailFingerprint || null;
       drawerState._initialTab = opts.initialTab || null;
+      drawerState._initialLogAgent = opts.initialLogAgent || null;
       drawerTitle.textContent = title;
       if (drawerId) {
         drawerId.textContent = drawerState.entityId ? `#${drawerState.entityId}` : '';
