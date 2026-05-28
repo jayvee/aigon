@@ -585,7 +585,8 @@ img {
   margin-bottom: 2rem;
 }
 
-.mode-tabs {
+.mode-tabs,
+.exec-mode-tabs {
   display: flex;
   gap: 0;
   border-bottom: 1px solid var(--border-1);
@@ -992,12 +993,6 @@ pre code {
   width: 100%;
   height: auto;
   display: block;
-}
-
-/* ── Lifecycle SVG (hidden in Swiss Light) ───────────────────── */
-
-.lifecycle-loop {
-  display: none;
 }
 
 /* ── Footer ──────────────────────────────────────────────────── */
@@ -1447,6 +1442,29 @@ pre code {
 
   .pro-cta-visual {
     order: -1;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-install-cta {
+    max-width: 100%;
+  }
+
+  .hero-install-cta-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mode-content {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -35,6 +35,10 @@ const config = {
         source: "/",
         destination: "/home.html",
       },
+      {
+        source: "/pro",
+        destination: "/pro.html",
+      },
     ];
   },
 };

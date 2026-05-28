@@ -167,100 +167,27 @@
             <h2>Research, build, learn — on repeat.</h2>
           </div>
 
-          <svg class="lifecycle-loop" viewBox="0 0 800 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aigon lifecycle: Research and Feedback feed into Features, which flow through Build, Evaluate, and Ship, then loop back as user feedback">
-            <!-- Nodes -->
-            <!-- Research -->
-            <rect x="16" y="20" width="120" height="52" rx="12" fill="#0f7775" fill-opacity="0.12" stroke="#0f7775" stroke-width="1.5"/>
-            <text x="76" y="42" text-anchor="middle" fill="#0f7775" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Research</text>
-            <text x="76" y="58" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Investigate options</text>
-
-            <!-- Feedback -->
-            <rect x="16" y="100" width="120" height="52" rx="12" fill="#1f4f8a" fill-opacity="0.12" stroke="#1f4f8a" stroke-width="1.5"/>
-            <!-- Person icon -->
-            <circle cx="42" cy="118" r="5" fill="none" stroke="#1f4f8a" stroke-width="1.2"/>
-            <path d="M34 134 a8 6 0 0 1 16 0" fill="none" stroke="#1f4f8a" stroke-width="1.2"/>
-            <text x="84" y="122" text-anchor="middle" fill="#1f4f8a" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Feedback</text>
-            <text x="84" y="138" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">From real users</text>
-
-            <!-- Arrows: Research → Features -->
-            <path d="M136 46 L192 76" stroke="#0f7775" stroke-width="1.5" marker-end="url(#loop-arrow)"/>
-            <!-- Arrows: Feedback → Features -->
-            <path d="M136 126 L192 96" stroke="#1f4f8a" stroke-width="1.5" marker-end="url(#loop-arrow)"/>
-
-            <!-- Features -->
-            <rect x="196" y="60" width="120" height="52" rx="12" fill="#d55f2a" fill-opacity="0.12" stroke="#d55f2a" stroke-width="1.5"/>
-            <text x="256" y="82" text-anchor="middle" fill="#d55f2a" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Features</text>
-            <text x="256" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Spec-driven tasks</text>
-
-            <!-- Arrow: Features → Build -->
-            <path d="M316 86 L372 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Build -->
-            <rect x="376" y="60" width="120" height="52" rx="12" fill="rgba(27,23,17,0.06)" stroke="rgba(27,23,17,0.18)" stroke-width="1.5"/>
-            <text x="436" y="82" text-anchor="middle" fill="#1b1711" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Build</text>
-            <text x="436" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Agents implement</text>
-
-            <!-- Arrow: Build → Evaluate -->
-            <path d="M496 86 L552 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Evaluate -->
-            <rect x="556" y="60" width="120" height="52" rx="12" fill="rgba(27,23,17,0.06)" stroke="rgba(27,23,17,0.18)" stroke-width="1.5"/>
-            <text x="616" y="82" text-anchor="middle" fill="#1b1711" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Evaluate</text>
-            <text x="616" y="98" text-anchor="middle" fill="#5d584f" font-family="Manrope, sans-serif" font-size="9">Compare &amp; merge</text>
-
-            <!-- Arrow: Evaluate → Ship -->
-            <path d="M676 86 L722 86" stroke="rgba(27,23,17,0.3)" stroke-width="1.5" marker-end="url(#loop-arrow-muted)"/>
-
-            <!-- Ship -->
-            <rect x="726" y="60" width="58" height="52" rx="12" fill="#0f7775" fill-opacity="0.08" stroke="#0f7775" stroke-width="1.5"/>
-            <text x="755" y="90" text-anchor="middle" fill="#0f7775" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">Ship</text>
-
-            <!-- Return arrow: Ship → Feedback (curves down and back) -->
-            <path d="M755 112 L755 160 Q755 170 745 170 L76 170 Q66 170 66 160 L66 152" stroke="#1f4f8a" stroke-width="1.5" stroke-dasharray="6 3" fill="none" marker-end="url(#loop-arrow-blue)"/>
-
-            <!-- Arrow markers -->
-            <defs>
-              <marker id="loop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="#0f7775"/>
-              </marker>
-              <marker id="loop-arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="rgba(27,23,17,0.3)"/>
-              </marker>
-              <marker id="loop-arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" fill="#1f4f8a"/>
-              </marker>
-            </defs>
-          </svg>
-
           <div class="section-sub">
             <div class="section-head">
               <p class="eyebrow">Aigon modes</p>
+              <h3>Four ways to run, same spec.</h3>
             </div>
-            <div class="feature-grid">
-              <article class="feature-card">
-                <p class="feature-tag">One agent</p>
-                <p>Use when you only ever use one agent but want to use a spec driven approach.</p>
-                <pre><code>aigon feature-start 07</code></pre>
-                <p>Outcome: one guided implementation branch with a full spec and log trail.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Multi-agent</p>
-                <p>Orchestrate competing implementations you can evaluate and adopt the best from.</p>
-                <pre><code>aigon feature-start 07 cc gg cx</code></pre>
-                <p>Outcome: parallel worktrees and comparable outputs for structured selection.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Autonomous - one implementation agent, one review agent</p>
-                <p>Choose one implementation agent you are confident in, with a strong review agent to find the gaps.</p>
-                <pre><code>aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</code></pre>
-                <p>Outcome: automated implement-review loop that stops when checks pass.</p>
-              </article>
-              <article class="feature-card">
-                <p class="feature-tag">Autonomous - multi-agent automated evaluation</p>
-                <p>Autonomous parallel agent runs converge into comparable outputs ready for auto evaluation and completion with an optional review stage.</p>
-                <pre><code>aigon feature-autonomous-start 07 gg cx --eval-agent=cc --stop-after=closed</code></pre>
-                <p>Outcome: concurrent autonomous runs across agents with logs ready for comparison.</p>
-              </article>
+            <div class="exec-mode-tabs" role="tablist" aria-label="Execution modes">
+              <button class="mode-tab active" data-exec-mode="drive" role="tab" aria-selected="true" aria-controls="exec-mode-panel">Drive</button>
+              <button class="mode-tab" data-exec-mode="fleet" role="tab" aria-selected="false" aria-controls="exec-mode-panel">Fleet</button>
+              <button class="mode-tab" data-exec-mode="autopilot" role="tab" aria-selected="false" aria-controls="exec-mode-panel">Autopilot</button>
+              <button class="mode-tab" data-exec-mode="swarm" role="tab" aria-selected="false" aria-controls="exec-mode-panel">Swarm</button>
+            </div>
+            <div class="mode-content" id="exec-mode-panel" role="tabpanel">
+              <div class="mode-desc" id="exec-mode-desc">
+                <h3>One agent, hands on.</h3>
+                <p>You guide a single agent through the spec. Full control, full visibility. The agent works in a dedicated branch, you review and submit when ready.</p>
+              </div>
+              <div class="mode-cmd" id="exec-mode-cmd">
+                <div><span class="prompt">$</span> aigon feature-start 07</div>
+                <div><span class="prompt">$</span> aigon feature-do 07</div>
+                <div><span class="prompt">$</span> aigon feature-close 07</div>
+              </div>
             </div>
           </div>
 
@@ -882,6 +809,54 @@
               img.src = screenshots[view].src + "?v=" + Date.now();
               img.alt = screenshots[view].alt;
             }
+          });
+        });
+      })();
+
+      // Execution mode tabs
+      (function () {
+        var tabs = document.querySelectorAll("[data-exec-mode]");
+        var descEl = document.getElementById("exec-mode-desc");
+        var cmdEl = document.getElementById("exec-mode-cmd");
+        if (!tabs.length || !descEl || !cmdEl) return;
+
+        var modes = {
+          drive: {
+            title: "One agent, hands on.",
+            desc: "You guide a single agent through the spec. Full control, full visibility. The agent works in a dedicated branch, you review and submit when ready.",
+            cmd: '<div><span class="prompt">$</span> aigon feature-start 07</div><div><span class="prompt">$</span> aigon feature-do 07</div><div><span class="prompt">$</span> aigon feature-close 07</div>'
+          },
+          fleet: {
+            title: "Competing agents, pick the winner.",
+            desc: "Launch the same spec across multiple agents in isolated worktrees. Each works independently, then you compare and merge the best implementation.",
+            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc gg cx</div><div><span class="prompt">$</span> aigon feature-open 07 --all</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
+          },
+          autopilot: {
+            title: "Iterate until checks pass.",
+            desc: "One agent runs autonomously through implement-review cycles. It retries until all validation checks pass, then submits.",
+            cmd: '<div><span class="prompt">$</span> aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</div>'
+          },
+          swarm: {
+            title: "All agents iterate autonomously.",
+            desc: "Multiple agents each iterate autonomously in parallel. When all have submitted, evaluate and merge the winner.",
+            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc gg cx</div><div><span class="prompt">$</span> aigon feature-do 07 --iterate</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
+          }
+        };
+
+        tabs.forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            var mode = tab.dataset.execMode;
+            var data = modes[mode];
+            if (!data) return;
+            tabs.forEach(function (t) {
+              t.classList.remove("active");
+              t.setAttribute("aria-selected", "false");
+            });
+            tab.classList.add("active");
+            tab.setAttribute("aria-selected", "true");
+            descEl.querySelector("h3").textContent = data.title;
+            descEl.querySelector("p").textContent = data.desc;
+            cmdEl.innerHTML = data.cmd;
           });
         });
       })();
