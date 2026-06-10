@@ -172,7 +172,13 @@ async function _pollPane(sessionName, regex, timeoutMs, tailOnly, label) {
     const deadline = Date.now() + timeoutMs;
     let last = '';
     while (Date.now() < deadline) {
-        const r = spawnSync('tmux', ['capture-pane', '-p', '-t', sessionName, '-S', '-200'], { encoding: 'utf8', stdio: 'pipe' });
+        const env = { ...process.env };
+        try {
+            const ctx = readCtx();
+            if (ctx && ctx.tmuxTmpDir) env.TMUX_TMPDIR = ctx.tmuxTmpDir;
+        } catch (_) { /* ctx may not exist yet */ }
+        delete env.TMUX;
+        const r = spawnSync('tmux', ['capture-pane', '-p', '-t', sessionName, '-S', '-200'], { encoding: 'utf8', stdio: 'pipe', env });
         if (r.status === 0) {
             last = String(r.stdout || '').replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');
             const target = tailOnly

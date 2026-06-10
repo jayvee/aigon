@@ -27,19 +27,18 @@ module.exports = async function globalTeardown() {
         try { process.kill(ctx.dashPid, 'SIGKILL'); } catch (_) {}
     }
 
-    // Kill any background tmux sessions created by AIGON_TEST_MODE during the run.
-    // Sessions are named `<repoName>-f<id>-<role>-<agent>-<desc>`, where repoName
-    // is the basename of the fixture tmpDir (e.g. `aigon-e2e-dashboard-XXXXXX`).
-    try {
-        const repoName = path.basename(ctx.tmpDir);
-        const sessions = execSync('tmux ls 2>/dev/null || true', { encoding: 'utf8' })
-            .split('\n')
-            .map(line => line.split(':')[0].trim())
-            .filter(name => name.startsWith(repoName + '-'));
-        for (const name of sessions) {
-            try { execSync(`tmux kill-session -t ${JSON.stringify(name)}`, { stdio: 'ignore' }); } catch (_) {}
-        }
-    } catch (_) { /* no tmux, nothing to clean */ }
+    if (ctx.tmuxTmpDir) {
+        try {
+            const tmuxEnv = { ...process.env, TMUX_TMPDIR: ctx.tmuxTmpDir };
+            // If tests run inside an Aigon tmux pane, inherited TMUX points at
+            // the real/default server and overrides TMUX_TMPDIR. Never keep it.
+            delete tmuxEnv.TMUX;
+            execSync('tmux kill-server 2>/dev/null || true', {
+                stdio: 'ignore',
+                env: tmuxEnv,
+            });
+        } catch (_) { /* isolated server already gone */ }
+    }
 
     try { fs.rmSync(ctx.tmpDir, { recursive: true, force: true }); } catch (_) {}
     try { fs.rmSync(ctx.worktreeBase, { recursive: true, force: true }); } catch (_) {}
