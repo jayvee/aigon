@@ -180,6 +180,52 @@
           "research": 5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
+      },
+      {
+        "value": "claude-fable-5",
+        "label": "Fable 5",
+        "pricing": {
+          "input": 10,
+          "output": 50
+        },
+        "notes": {
+          "spec_review": "Claude Fable 5 — newly added, unqualified; Anthropic's top-tier Mythos-class model.",
+          "implement": "Claude Fable 5 — newly added, unqualified; intended for demanding agentic coding work.",
+          "review": "Claude Fable 5 — newly added, unqualified; highest capability tier before scored eval.",
+          "spec": "Claude Fable 5 — newly added, unqualified; use after maintainer qualification for defaults.",
+          "research": "Claude Fable 5 — newly added, unqualified; 1M context supports large corpora."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-10T00:00:00.000Z"
+      },
+      {
+        "value": "claude-fable-5[1m]",
+        "label": "Fable 5 (1M context)",
+        "pricing": {
+          "input": 10,
+          "output": 50
+        },
+        "notes": {
+          "spec_review": "Same capability as Fable 5; handles large context windows — newly added, unqualified.",
+          "implement": "Fable 5 with 1M context — newly added, unqualified; for full-repo agentic work.",
+          "review": "Fable 5 (1M) — newly added, unqualified; use when reviewing across many files.",
+          "spec": "Same capability as Fable 5; use for large codebase context — newly added, unqualified.",
+          "research": "Fable 5 (1M) — newly added, unqualified; for very large research corpora."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-10T00:00:00.000Z"
       }
     ],
     "effortOptions": [
