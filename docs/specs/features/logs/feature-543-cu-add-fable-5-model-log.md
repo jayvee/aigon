@@ -35,3 +35,23 @@ N/A — standalone config change.
 - `getDashboardAgents()` — Fable 5 + Fable 5 (1M) present for cc
 - `aigon agent-probe cc --model claude-fable-5` — PASS
 - `aigon agent-probe cc --model claude-fable-5[1m]` — PASS
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-06-10
+
+### Fixes Applied
+- None — implementation was clean.
+
+### Validation
+- Validation not run by reviewer per policy.
+
+### Escalated Issues (exceptions only)
+- ESCALATE:ambiguous — AC asks for "qualitative implement quality" from a real feature task; implementer used `agent-probe` (PASS/PONG) as an existence check and deferred formal quality scoring. The spec itself labels this step "an existence-and-sanity check," making the deferral defensible for a config-only change.
+
+### Notes
+- All required fields present in both Fable 5 entries (value, label, pricing, score, notes, lastRefreshAt).
+- `docs/adding-models.md` covers all AC-required sections (eligibility, required fields, file to edit, server restart, complexityDefaults promotion, quarantine process).
+- Placement after Opus 4.7 [1m] is correct — array follows ascending cheap→capable order; most capable goes last.
+- JSON parses cleanly; no deleted files; no out-of-scope changes.
