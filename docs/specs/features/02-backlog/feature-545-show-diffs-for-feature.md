@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-10T12:40:21.627Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: show-diffs-for-feature
