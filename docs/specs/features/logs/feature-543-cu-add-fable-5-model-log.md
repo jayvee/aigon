@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 206
+lines_removed: 0
+lines_changed: 206
+files_touched: 3
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 543 - add-fable-5-model
 Agent: cu
 
