@@ -1,5 +1,7 @@
 ---
 complexity: low
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-10T01:55:27.340Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: add-fable-5-model
