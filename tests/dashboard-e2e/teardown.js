@@ -27,19 +27,17 @@ module.exports = async function globalTeardown() {
         try { process.kill(ctx.dashPid, 'SIGKILL'); } catch (_) {}
     }
 
-    // Kill any background tmux sessions created by AIGON_TEST_MODE during the run.
-    // Sessions are named `<repoName>-f<id>-<role>-<agent>-<desc>`, where repoName
-    // is the basename of the fixture tmpDir (e.g. `aigon-e2e-dashboard-XXXXXX`).
-    try {
-        const repoName = path.basename(ctx.tmpDir);
-        const sessions = execSync('tmux ls 2>/dev/null || true', { encoding: 'utf8' })
-            .split('\n')
-            .map(line => line.split(':')[0].trim())
-            .filter(name => name.startsWith(repoName + '-'));
-        for (const name of sessions) {
-            try { execSync(`tmux kill-session -t ${JSON.stringify(name)}`, { stdio: 'ignore' }); } catch (_) {}
-        }
-    } catch (_) { /* no tmux, nothing to clean */ }
+    // F544: the whole run used an isolated tmux server under ctx.tmuxTmpDir, so a
+    // single kill-server scoped to that socket reaps every background session the
+    // run created — and, crucially, never touches the developer's default server.
+    if (ctx.tmuxTmpDir) {
+        try {
+            execSync('tmux kill-server 2>/dev/null || true', {
+                stdio: 'ignore',
+                env: { ...process.env, TMUX_TMPDIR: ctx.tmuxTmpDir },
+            });
+        } catch (_) { /* isolated server already gone */ }
+    }
 
     try { fs.rmSync(ctx.tmpDir, { recursive: true, force: true }); } catch (_) {}
     try { fs.rmSync(ctx.worktreeBase, { recursive: true, force: true }); } catch (_) {}

@@ -84,12 +84,24 @@ module.exports = async function globalSetup() {
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-home-'));
     const aigonDir = path.join(tempHome, '.aigon');
     fs.mkdirSync(aigonDir, { recursive: true });
+    // F544: isolate ALL tmux usage to a per-run server under TMUX_TMPDIR so the
+    // e2e run can never bootstrap or mutate the developer's default tmux server
+    // (which would snapshot this fake HOME + AIGON_TEST_MODE into its global env
+    // and break every subsequent real agent session — the 2026-06-10 incident).
+    // TMUX_TMPDIR is honoured natively by tmux at EVERY call site, unlike a
+    // runTmux-only `-L` flag which would miss the ~20 direct spawnSync('tmux')
+    // callers across lib/ and split the run's sessions across two servers.
+    const tmuxTmpDir = path.join(tempHome, '.tmux');
+    fs.mkdirSync(tmuxTmpDir, { recursive: true, mode: 0o700 });
     // Worktrees land under ~/.aigon/worktrees/{repoName}/ — HOME=tempHome below,
     // so worktreeBase follows HOME.
     const worktreeBase = path.join(tempHome, '.aigon', 'worktrees', path.basename(tmpDir));
     fs.writeFileSync(path.join(aigonDir, 'config.json'), JSON.stringify({ repos: [tmpDir] }, null, 2));
     const dashEnv = {
         ...process.env, HOME: tempHome, PORT: String(PORT),
+        // TMUX_TMPDIR scopes the whole dashboard process tree to an isolated
+        // tmux server (F544) — see the comment where tmuxTmpDir is created.
+        TMUX_TMPDIR: tmuxTmpDir,
         // AIGON_TEST_MODE skips terminal.app launch; tmux still runs in background.
         // GEMINI_CLI=1 makes feature-eval run in eval-setup mode (no agent launch).
         // AIGON_FORCE_PRO=true ensures the process tree agrees on Pro availability.
@@ -103,7 +115,7 @@ module.exports = async function globalSetup() {
     dashProc.stderr.on('data', (d) => process.stderr.write('[dashboard] ' + d));
     await waitForServer(`http://127.0.0.1:${PORT}`);
     fs.writeFileSync(CTX_FILE, JSON.stringify({
-        tmpDir, tempHome, worktreeBase, port: PORT, dashPid: dashProc.pid,
+        tmpDir, tempHome, worktreeBase, tmuxTmpDir, port: PORT, dashPid: dashProc.pid,
     }, null, 2));
     console.log(`[e2e] Dashboard ready at http://127.0.0.1:${PORT}`);
     console.log(`[e2e] Fixture: ${tmpDir}`);

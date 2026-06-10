@@ -41,10 +41,10 @@ export const metadata: Metadata = {
     siteName: "Aigon",
     images: [
       {
-        url: "/img/og-image.png",
+        url: "/img/og-image-v2.png",
         width: 1200,
         height: 630,
-        alt: "Aigon — run AI coding agents head-to-head, ship the best one",
+        alt: "Aigon — one spec, many agents, the best diff wins",
       },
     ],
   },
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     title: "Aigon | Open-Source AI Agent Orchestration",
     description:
       "Open-source orchestration for Claude, Gemini, Cursor, and Codex — run them head-to-head and ship the best implementation.",
-    images: ["/img/og-image.png"],
+    images: ["/img/og-image-v2.png"],
   },
   icons: {
     icon: [

@@ -101,6 +101,12 @@ const SKIP_FIRST_RUN = new Set([
     ...PLUMBING_COMMANDS,
     'onboarding',
     'setup',
+    // F544: autonomous orchestration runs unattended inside a tmux pane (which
+    // HAS a TTY), so the interactive first-run gate must never fire here — a
+    // mis-resolved HOME would otherwise surface the setup wizard mid-run instead
+    // of executing the feature. The orchestrator also exports AIGON_SKIP_FIRST_RUN
+    // to its child aigon calls (see lib/feature-autonomous.js loopCmd).
+    'feature-autonomous-start',
     '--version',
     '-v',
     'version',

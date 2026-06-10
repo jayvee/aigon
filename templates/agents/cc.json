@@ -136,6 +136,52 @@
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
+        "value": "claude-opus-4-8",
+        "label": "Opus 4.8",
+        "pricing": {
+          "input": 15,
+          "output": 75
+        },
+        "notes": {
+          "spec_review": "Best reviewer; catches subtle inconsistencies and design flaws others miss.",
+          "implement": "Use for very-high-complexity features; overkill for routine changes.",
+          "review": "Most thorough code reviewer; worth the cost on high-risk changes.",
+          "spec": "Highest quality spec drafting; excellent at surfacing hidden requirements and edge cases.",
+          "research": "Best-in-class research synthesis; exceptional at connecting disparate findings and judgment."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-02T00:00:00.000Z"
+      },
+      {
+        "value": "claude-opus-4-8[1m]",
+        "label": "Opus 4.8 (1M context)",
+        "pricing": {
+          "input": 15,
+          "output": 75
+        },
+        "notes": {
+          "spec_review": "Same capability as Opus 4.8; handles large context windows.",
+          "implement": "Reserved for largest, most complex features with full-repo context.",
+          "review": "Most powerful review option; use on architectural or cross-cutting changes.",
+          "spec": "Same capability as Opus 4.8; use for large codebase context.",
+          "research": "Same as Opus 4.8; ideal for very large research corpora requiring full context."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-02T00:00:00.000Z"
+      },
+      {
         "value": "claude-opus-4-7",
         "label": "Opus 4.7",
         "pricing": {
@@ -156,7 +202,13 @@
           "spec": 4.5,
           "research": 5
         },
-        "lastRefreshAt": "2026-04-26T06:38:18.582Z"
+        "lastRefreshAt": "2026-04-26T06:38:18.582Z",
+        "quarantined": {
+          "since": "2026-06-02",
+          "reason": "Superseded by claude-opus-4-8.",
+          "evidence": "claude-opus-4-8 is now generally available.",
+          "supersededBy": "claude-opus-4-8"
+        }
       },
       {
         "value": "claude-opus-4-7[1m]",
@@ -179,6 +231,7 @@
           "spec": 4.5,
           "research": 5
         },
+<<<<<<< Updated upstream
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
@@ -226,6 +279,15 @@
           "research": null
         },
         "lastRefreshAt": "2026-06-10T00:00:00.000Z"
+=======
+        "lastRefreshAt": "2026-04-26T06:38:18.583Z",
+        "quarantined": {
+          "since": "2026-06-02",
+          "reason": "Superseded by claude-opus-4-8.",
+          "evidence": "claude-opus-4-8 is now generally available.",
+          "supersededBy": "claude-opus-4-8"
+        }
+>>>>>>> Stashed changes
       }
     ],
     "effortOptions": [
@@ -264,7 +326,7 @@
         "effort": "high"
       },
       "very-high": {
-        "model": "claude-opus-4-7[1m]",
+        "model": "claude-opus-4-8[1m]",
         "effort": "xhigh"
       }
     },
