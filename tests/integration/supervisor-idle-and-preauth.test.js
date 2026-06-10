@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 const a = require('assert'), fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
-const { test, withTempDir, report } = require('../_helpers');
+const { test, withTempDir, report, withIsolatedTmux } = require('../_helpers');
 const sup = require('../../lib/supervisor'), { readSpecSection } = require('../../lib/spec-crud');
 const tmux = (args) => spawnSync('tmux', args, { encoding: 'utf8', stdio: 'pipe' });
 const kill = (name) => { try { tmux(['kill-session', '-t', name]); } catch (_) {} };
 const w = (f, body = '') => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, body); };
 
 // REGRESSION feature 293: idle detection must honour role-aware tmux session names and clear on fresh progress events.
-test('supervisor idle detection: role-aware tmux session and signal clear', () => withTempDir('aigon-idle-', (repo) => {
+test('supervisor idle detection: role-aware tmux session and signal clear', () => withIsolatedTmux(() => withTempDir('aigon-idle-', (repo) => {
     const repoName = path.basename(repo), session = `${repoName}-f1-do-cc-idle-test`;
     const hb = path.join(repo, '.aigon', 'state', 'heartbeat-01-cc');
     const ev = path.join(repo, '.aigon', 'workflows', 'features', '01', 'events.jsonl');
@@ -30,10 +30,10 @@ test('supervisor idle detection: role-aware tmux session and signal clear', () =
     } finally {
         kill(session);
     }
-}));
+})));
 
 // Feature 365: idle-at-prompt capture-pane detection.
-test('supervisor idleAtPrompt: cc idle prompt fires; workingPattern overrides', () => withTempDir('aigon-idle365-', (repo) => {
+test('supervisor idleAtPrompt: cc idle prompt fires; workingPattern overrides', () => withIsolatedTmux(() => withTempDir('aigon-idle365-', (repo) => {
     const repoName = path.basename(repo), session = `${repoName}-f2-do-cc-365`;
     const hb = path.join(repo, '.aigon', 'state', 'heartbeat-02-cc');
     const snapshot = { lifecycle: 'in-progress', agents: { cc: { status: 'running' } } };
@@ -60,7 +60,7 @@ test('supervisor idleAtPrompt: cc idle prompt fires; workingPattern overrides', 
     } finally {
         kill(session);
     }
-}));
+})));
 
 // REGRESSION feature 293: spec pre-authorisations must be readable as plain bullet lines from the spec body.
 test('readSpecSection: returns pre-authorised bullets only', () => withTempDir('aigon-preauth-', (dir) => {

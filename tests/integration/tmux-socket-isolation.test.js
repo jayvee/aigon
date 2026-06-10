@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
-const { test, report } = require('../_helpers');
+const { test, testAsync, report } = require('../_helpers');
 
 function tmuxAvailable() {
     const r = spawnSync('tmux', ['-V'], { stdio: 'ignore' });
@@ -23,10 +23,14 @@ if (!tmuxAvailable()) {
 } else {
     const sentinel = `aigon-e2e-default-sentinel-${Date.now()}`;
     const tmuxTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-e2e-tmux-'));
-    const isoEnv = { ...process.env, TMUX_TMPDIR: tmuxTmpDir, HOME: tmuxTmpDir };
+    const ctxFile = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
+    const teardown = require('../dashboard-e2e/teardown');
+    const isoEnv = { ...process.env, TMUX_TMPDIR: tmuxTmpDir };
     delete isoEnv.TMUX;
+    const previousTmux = process.env.TMUX;
+    const previousTmuxTmpDir = process.env.TMUX_TMPDIR;
 
-    try {
+    (async () => {
         const created = tmux(['new-session', '-d', '-s', sentinel, 'sleep 120']);
         assert.strictEqual(created.status, 0, `default sentinel create failed: ${created.stderr}`);
         const inheritedTmux = execSync('tmux display-message -p "#{socket_path},#{pid},0"', { encoding: 'utf8' }).trim();
@@ -34,19 +38,36 @@ if (!tmuxAvailable()) {
         const isoCreated = tmux(['new-session', '-d', '-s', 'isolated-sentinel', 'sleep 120'], { env: isoEnv });
         assert.strictEqual(isoCreated.status, 0, `isolated sentinel create failed: ${isoCreated.stderr}`);
 
-        test('isolated tmux kill-server ignores inherited default TMUX socket', () => {
-            const teardownEnv = { ...process.env, TMUX: inheritedTmux, TMUX_TMPDIR: tmuxTmpDir };
-            delete teardownEnv.TMUX;
-            const killed = tmux(['kill-server'], { env: teardownEnv });
-            assert.strictEqual(killed.status, 0, `isolated kill-server failed: ${killed.stderr}`);
+        testAsync('dashboard e2e teardown ignores inherited default TMUX socket', async () => {
+            fs.writeFileSync(ctxFile, JSON.stringify({
+                tmuxTmpDir,
+                tmpDir: path.join(tmuxTmpDir, 'missing-tmp'),
+                worktreeBase: path.join(tmuxTmpDir, 'missing-worktrees'),
+                tempHome: path.join(tmuxTmpDir, 'missing-home'),
+            }));
+            process.env.TMUX = inheritedTmux;
+            process.env.TMUX_TMPDIR = tmuxTmpDir;
+
+            await teardown();
 
             const stillThere = tmux(['has-session', '-t', sentinel]);
             assert.strictEqual(stillThere.status, 0, 'default tmux server/session was killed');
-        });
-    } finally {
-        tmux(['kill-session', '-t', sentinel]);
-        fs.rmSync(tmuxTmpDir, { recursive: true, force: true });
-    }
 
-    report();
+            const isolatedGone = tmux(['has-session', '-t', 'isolated-sentinel'], { env: isoEnv });
+            assert.notStrictEqual(isolatedGone.status, 0, 'isolated tmux server/session was not cleaned up');
+        });
+
+        await report();
+    })().finally(() => {
+        tmux(['kill-session', '-t', sentinel]);
+        if (previousTmux === undefined) delete process.env.TMUX;
+        else process.env.TMUX = previousTmux;
+        if (previousTmuxTmpDir === undefined) delete process.env.TMUX_TMPDIR;
+        else process.env.TMUX_TMPDIR = previousTmuxTmpDir;
+        try { fs.unlinkSync(ctxFile); } catch (_) {}
+        fs.rmSync(tmuxTmpDir, { recursive: true, force: true });
+    }).catch((err) => {
+        console.error(err.stack || err.message);
+        process.exit(1);
+    });
 }

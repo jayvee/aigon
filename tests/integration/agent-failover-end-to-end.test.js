@@ -5,7 +5,7 @@ const a = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { testAsync, withTempDirAsync, report } = require('../_helpers');
+const { testAsync, withTempDirAsync, report, withIsolatedTmuxAsync } = require('../_helpers');
 const wf = require('../../lib/workflow-core');
 const { writeAgentStatusAt } = require('../../lib/agent-status');
 const {
@@ -53,7 +53,7 @@ function makeSwitchHandler(capturedSessionName) {
 
 // Run all three scenarios sequentially to avoid contaminating the module-level
 // exhaustionHandlers array that supervisor uses.
-testAsync('agent-failover-end-to-end: all scenarios', async () => {
+testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTmuxAsync(async () => {
     process.env.AIGON_TEST_MODE = '1';
 
     // -----------------------------------------------------------------------
@@ -203,6 +203,6 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => {
     });
 
     delete process.env.AIGON_TEST_MODE;
-});
+}));
 
 report();

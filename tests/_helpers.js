@@ -91,6 +91,56 @@ function withRepoCwd(repo, fn) {
 const { execFileSync, spawnSync } = require('child_process');
 const CLI_PATH = path.join(__dirname, '..', 'aigon-cli.js');
 
+function createIsolatedTmuxEnv(baseEnv = process.env) {
+    const tmuxTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-test-tmux-'));
+    const env = { ...baseEnv, TMUX_TMPDIR: tmuxTmpDir };
+    delete env.TMUX;
+    return { env, tmuxTmpDir };
+}
+
+function killIsolatedTmuxServer(tmuxTmpDir) {
+    if (!tmuxTmpDir) return;
+    const env = { ...process.env, TMUX_TMPDIR: tmuxTmpDir };
+    delete env.TMUX;
+    spawnSync('tmux', ['kill-server'], { stdio: 'ignore', env });
+}
+
+function withIsolatedTmux(fn) {
+    const previousTmux = process.env.TMUX;
+    const previousTmuxTmpDir = process.env.TMUX_TMPDIR;
+    const { tmuxTmpDir } = createIsolatedTmuxEnv();
+    process.env.TMUX_TMPDIR = tmuxTmpDir;
+    delete process.env.TMUX;
+    try {
+        return fn({ tmuxTmpDir });
+    } finally {
+        killIsolatedTmuxServer(tmuxTmpDir);
+        if (previousTmux === undefined) delete process.env.TMUX;
+        else process.env.TMUX = previousTmux;
+        if (previousTmuxTmpDir === undefined) delete process.env.TMUX_TMPDIR;
+        else process.env.TMUX_TMPDIR = previousTmuxTmpDir;
+        fs.rmSync(tmuxTmpDir, { recursive: true, force: true });
+    }
+}
+
+async function withIsolatedTmuxAsync(fn) {
+    const previousTmux = process.env.TMUX;
+    const previousTmuxTmpDir = process.env.TMUX_TMPDIR;
+    const { tmuxTmpDir } = createIsolatedTmuxEnv();
+    process.env.TMUX_TMPDIR = tmuxTmpDir;
+    delete process.env.TMUX;
+    try {
+        return await fn({ tmuxTmpDir });
+    } finally {
+        killIsolatedTmuxServer(tmuxTmpDir);
+        if (previousTmux === undefined) delete process.env.TMUX;
+        else process.env.TMUX = previousTmux;
+        if (previousTmuxTmpDir === undefined) delete process.env.TMUX_TMPDIR;
+        else process.env.TMUX_TMPDIR = previousTmuxTmpDir;
+        fs.rmSync(tmuxTmpDir, { recursive: true, force: true });
+    }
+}
+
 function initGitRepo(root, { seedCommit = true, branch } = {}) {
     const env = { ...process.env, ...GIT_SAFE_ENV };
     execFileSync('git', ['init', '-q'], { cwd: root, env, stdio: 'pipe' });
@@ -121,4 +171,5 @@ module.exports = {
     test, testAsync, withTempDir, withTempDirAsync, report,
     GIT_SAFE_ENV, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap, withRepoCwd,
     initGitRepo, runAigonCli, CLI_PATH,
+    createIsolatedTmuxEnv, killIsolatedTmuxServer, withIsolatedTmux, withIsolatedTmuxAsync,
 };
