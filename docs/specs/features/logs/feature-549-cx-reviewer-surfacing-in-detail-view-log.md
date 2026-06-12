@@ -3,14 +3,47 @@ Agent: cx
 
 ## Status
 
+Implemented in `0867d927`. The feature detail drawer now surfaces code-review participants
+that are present in workflow snapshots but absent from `snapshot.agents`.
+
 ## New API Surface
+
+`buildDetailPayload()` now includes `participantAgents`, derived from
+`snapshot.codeReview`, `snapshot.pendingCodeReviewer`, and code `reviewCycles`. Detail
+events for code review/revision are decorated with `displayLabel` and `displayActor` so the
+frontend can render human labels without reparsing workflow event variants.
 
 ## Key Decisions
 
+Kept the engine snapshot contract intact: reviewers and revision agents are read-only
+participants in the dashboard payload, not new `snapshot.agents` entries. The Agents tab
+receives synthetic rows only at the detail payload boundary, preserving existing lifecycle
+and analytics assumptions. The agentless implementation-log fallback still keys off the
+original implementation-agent list, so adding reviewer rows does not regress the previous
+post-close fallback work from feature 548.
+
 ## Gotchas / Known Issues
+
+Stats still depends on existing telemetry/deep-status sources for real token and cost data.
+When a reviewer has no telemetry row, the detail tab adds an explicit "no cost data
+(reviewer)" placeholder instead of inventing usage.
 
 ## Explicitly Deferred
 
+No attempt was made to capture new transcript cost for CLI reviewers or to change reviewer
+assignment semantics. Browser rendering now consumes derived payload metadata; broader
+analytics rollups remain out of scope.
+
 ## For the Next Feature in This Set
 
+The detail drawer now has a small payload-level participant model. If later detail-fidelity
+features need to surface non-implementer actors, prefer extending this derived participant
+shape over mutating workflow-core snapshots or adding frontend-only event parsing.
+
 ## Test Coverage
+
+Validation passed with `npm run test:iterate`, including eslint on `lib/dashboard-server.js`,
+workflow diagram checks, four scoped integration tests, and the dashboard Playwright smoke
+suite. Added `tests/integration/dashboard-detail-reviewer-participants.test.js` to pin that
+solo-worktree reviewers/revision agents appear in the detail payload while
+`rawManifest.agents` remains implementer-only.
