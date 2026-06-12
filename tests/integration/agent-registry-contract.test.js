@@ -70,6 +70,18 @@ test('dashboard bootstrap payload renders exactly the registry agents', () => {
     const jsonStr = html.slice(start + prefix.length, i);
     assertExactAgentSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
 });
+test('every modelOptions entry satisfies the inclusion-policy contract (docs/model-inclusion-policy.md)', () => {
+    // Keystone enforcement for the prose policy: each templates/agents/*.json
+    // model entry must carry the §5 fields (label, lastRefreshAt, score, valid
+    // pricing/notes shape) and clear the §1 modality / §5 alias hard-exclusions.
+    // Whoever adds a model — maintainer by hand or curated tooling — trips here.
+    const allErrors = [];
+    for (const id of expectedIds) {
+        const { errors } = agentRegistry.validateModelOptions(agentRegistry.getAgent(id));
+        allErrors.push(...errors);
+    }
+    assert.deepStrictEqual(allErrors, [], `modelOptions contract violations:\n  ${allErrors.join('\n  ')}`);
+});
 test('Amp registry contract exposes modes and quarantines large mode from picker', () => {
     const amp = agentRegistry.getAgent('am');
     assert.strictEqual(amp.cli.command, 'amp');

@@ -6,6 +6,27 @@ It exists because every Aigon role (spec, spec-review, implement, review, resear
 
 The policy is enforced by maintainer tooling outside the OSS CLI and gated by a human before curated registry updates are published back to this repo. Adding a model that violates this policy in a manual OSS edit is a bug.
 
+The structural half of this contract (§5 fields, §1 modality / §5 alias hard-exclusions) is enforced in code by `agentRegistry.validateModelOptions(agentConfig)` and asserted across every agent by `tests/integration/agent-registry-contract.test.js`. The judgement half (does this model belong, what scores, which `complexityDefaults` slot) stays human — that is the checklist below.
+
+---
+
+## 0. Adding a model — operator checklist
+
+This is the **only** sanctioned way to add a model to the public catalog (see §6). There is no `aigon` subcommand for it by design — it is a maintainer activity a few times a year, run by talking to the in-repo agent. The agent executes the steps; `validateModelOptions` + the contract test are the safety net.
+
+1. **Gate-check the ID first** against §1–§4. Refuse outright on a §1 modality match (vision/tts/audio/image/robotics/computer-use) or a §5 `-latest`/`-current` alias. Surface §4 soft signals (`-preview`/`-beta`/`-rc`, output > $5/MTok) for a human call. Skip to §7 if the model is announced-but-not-GA — quarantine instead of adding live.
+2. **Append the entry** to the right `templates/agents/<id>.json` → `cli.modelOptions` (source of truth — never an installed copy). Use the agent's existing entries as the shape reference. Required §5 fields:
+   - `value` — the literal, **pinned** ID the agent's CLI accepts (no aliases). Passed via that agent's `cli.modelFlag`.
+   - `label` — provider's market name, no fluff.
+   - `lastRefreshAt` — ISO timestamp confirming the model exists today.
+   - `score: { <role>: number|null }` — `null` is fine for a fresh, unscored model; the key being *present* is not optional.
+   - `pricing: { input, output }` USD/MTok — required for paid per-token SKUs; **omit** for plan-bundled SKUs (e.g. `cc`, `gg` on a subscription).
+   - `notes: { <role>: string }` — required only once the model is promoted into a `cli.complexityDefaults` slot (step 3); encouraged otherwise.
+3. **Decide `complexityDefaults` promotion.** Only wire a model into a `low`/`medium`/`high`/`very-high` slot once it has a real `score` for that role and `notes` prose. Leaving it as a pickable option with `score: null` is the correct default for a brand-new model.
+4. **Validate + verify.** Run `npm test` (the contract test now guards the file) → `aigon agent-probe <id> --model <value>` to confirm the model is reachable before anyone is routed to it.
+
+If any step needs benchmarking-derived numbers, those come from maintainer judgement / Pro tooling — not invented at edit time. A `score: null` placeholder is always preferable to a guessed number.
+
 ---
 
 ## 1. Hard exclusions — modality / domain
