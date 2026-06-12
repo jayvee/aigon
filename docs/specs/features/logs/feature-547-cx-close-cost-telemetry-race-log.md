@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 194
+lines_removed: 42
+lines_changed: 236
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 1636036
+output_tokens: 8268
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 1453568
+thinking_tokens: 950
+total_tokens: 1644304
+billable_tokens: 1645254
+cost_usd: 3.6289
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 547 - close-cost-telemetry-race
 Agent: cx
 
