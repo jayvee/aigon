@@ -10,10 +10,15 @@ Checks the current repository for Aigon install and workflow-state health.
 ```bash
 aigon doctor
 aigon doctor --fix
+aigon doctor --auth-only
 aigon doctor --reap-orphans --dry-run
 ```
 
-`doctor --fix` is the front-door repair command. It runs pending schema migrations, repairs safe workflow/install drift, bootstraps missing workflow snapshots where possible, and updates the install manifest.
+`doctor` checks prerequisites, agent authentication, configured model metadata, terminal app installation, registered repo versions, tmux liveness, dashboard health, shell PATH, git identity, port health, proxy health, signal health, install-manifest drift, and workflow-state drift.
+
+`doctor --auth-only` runs only the agent authentication section. It is useful for fast startup hooks or checking whether installed agent CLIs are currently signed in.
+
+`doctor --fix` is the front-door repair command. It runs pending schema migrations, repairs safe workflow/install drift, bootstraps missing workflow snapshots where possible, updates the install manifest, opens agent login sessions when auth checks expose a login command, and runs `aigon apply` in registered repos that are behind the current Aigon version.
 
 ## Common uses
 
