@@ -209,10 +209,11 @@
         const rows = events.map(ev => {
           const ts = ev.at || ev.ts || ev.timestamp || '';
           const kind = ev.type || ev.status || 'event';
-          const actor = ev.actor || ev.agent || ev.agentId || 'system';
+          const label = ev.displayLabel || kind;
+          const actor = ev.displayActor || ev.actor || ev.agent || ev.agentId || ev.reviewerId || ev.revisionAgentId || 'system';
           const summary = ev.message || ev.detail || '';
           let dotClass = 'timeline-dot';
-          let titleHtml = '<span class="timeline-kind">' + escHtml(kind) + '</span><span class="timeline-actor">' + escHtml(actor) + '</span>';
+          let titleHtml = '<span class="timeline-kind">' + escHtml(label) + '</span><span class="timeline-actor">' + escHtml(actor) + '</span>';
           let itemClass = 'timeline-item';
           if (kind === 'agent.token_exhausted') {
             dotClass = 'timeline-dot timeline-dot-warn';
@@ -252,12 +253,14 @@
           const ex = excerpts[id] || {};
           const excerpt = ex.plan || ex.progress || ex.findings || ex.summary || '';
           const flags = file.flags && typeof file.flags === 'object' ? Object.keys(file.flags) : [];
+          const roles = Array.isArray(file.roles) ? file.roles : (file.role ? [file.role] : []);
           return '<section class="agent-detail-card">' +
             '<div class="agent-detail-header">' +
               '<span class="agent-detail-id">' + escHtml(id) + '</span>' +
               '<span class="agent-detail-status status-' + escHtml(String(file.status || 'unknown').toLowerCase()) + '">' + escHtml(file.status || 'unknown') + '</span>' +
             '</div>' +
             '<dl class="agent-detail-grid">' +
+              '<div><dt>Role</dt><dd>' + escHtml(roles.length ? roles.join(', ') : 'implementer') + '</dd></div>' +
               '<div><dt>Updated</dt><dd>' + escHtml(formatIso(file.updatedAt || '')) + '</dd></div>' +
               '<div><dt>Worktree</dt><dd class="mono">' + escHtml(file.worktreePath || 'n/a') + '</dd></div>' +
               '<div><dt>Flags</dt><dd>' + escHtml(flags.length ? flags.join(', ') : 'none') + '</dd></div>' +
@@ -295,7 +298,16 @@
 
         // Cost section: per-agent breakdown table
         let costHtml = '';
-        const costByAgent = c.costByAgent || {};
+        const costByAgent = { ...(c.costByAgent || {}) };
+        Object.entries(payload.agentFiles || {}).forEach(([id, file]) => {
+          if (costByAgent[id]) return;
+          costByAgent[id] = {
+            agent: id,
+            model: null,
+            note: file && file.role === 'reviewer' ? 'no cost data (reviewer)' : 'no cost data',
+            hasRealData: false
+          };
+        });
         const costAgentIds = Object.keys(costByAgent).sort();
         if (costAgentIds.length > 0) {
           const fmt = n => String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -318,7 +330,7 @@
               totalCostUsd += Number(a.costUsd) || 0;
             }
             const displayAgent = (a.agent || id).toUpperCase();
-            const modelCell = escHtml(a.model || '—');
+            const modelCell = escHtml(a.model || a.note || 'no cost data');
             const inputCell = hasReal ? fmt(a.inputTokens) : '<span class="cost-na">n/a</span>';
             const cacheCell = hasReal ? (Number(a.cachedInputTokens) > 0 ? fmt(a.cachedInputTokens) : '0') : '<span class="cost-na">n/a</span>';
             const outputCell = hasReal ? fmt(a.outputTokens) : '<span class="cost-na">n/a</span>';
