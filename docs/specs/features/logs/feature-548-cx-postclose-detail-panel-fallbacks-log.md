@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 134
+lines_removed: 3
+lines_changed: 137
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 6049846
+output_tokens: 20978
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 5719296
+thinking_tokens: 2848
+total_tokens: 6070824
+billable_tokens: 6073672
+cost_usd: 13.4113
+sessions: 7
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 548 - postclose-detail-panel-fallbacks
 Agent: cx
 
