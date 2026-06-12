@@ -189,6 +189,57 @@ test('telemetry aggregator keeps feature-close normalization invariants', () => 
     assert.deepStrictEqual([agg.sessions, agg.input_tokens, agg.billable_tokens, agg.cost_usd, agg.model], [2, 150, 440, 0.55, 'claude-opus-4-6']); assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('777', 'solo', { repoPath: repo }).sessions, 2);
     assert.strictEqual(telemetry.aggregateNormalizedTelemetryRecords('999', 'cc', { repoPath: repo }), null);
 }));
+test('snapshotFinalStats prefers real telemetry over earlier close fallback', () => withTempDir('aigon-close-stats-', (repo) => {
+    const telemetry = require('../../lib/telemetry');
+    const close = require('../../lib/feature-close');
+    const { readStats } = require('../../lib/feature-status');
+    fs.mkdirSync(path.join(repo, '.aigon', 'workflows', 'features', '778'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'file.txt'), 'base\n');
+    execSync('git init -q', { cwd: repo });
+    execSync('git config user.email t@t', { cwd: repo });
+    execSync('git config user.name t', { cwd: repo });
+    execSync('git checkout -qb main', { cwd: repo });
+    execSync('git add . && git commit -qm init', { cwd: repo });
+    execSync('git checkout -qb feature-778-cc-race', { cwd: repo });
+    fs.writeFileSync(path.join(repo, 'file.txt'), 'base\nchange\n');
+    execSync('git add . && git commit -qm feature', { cwd: repo });
+    telemetry.writeAgentFallbackSession('778', 'cc', {
+        repoPath: repo,
+        source: 'feature-close-fallback',
+        sessionId: 'feature-778-cc-fallback-first',
+        model: 'cc-cli',
+    });
+    telemetry.writeNormalizedTelemetryRecord({
+        source: 'claude-transcript',
+        sessionId: 'real-after-fallback',
+        entityType: 'feature',
+        featureId: '778',
+        repoPath: repo,
+        agent: 'cc',
+        activity: 'implement',
+        model: 'claude-opus-4-6',
+        startAt: '2026-04-07T00:00:00Z',
+        endAt: '2026-04-07T01:00:00Z',
+        workflowRunId: '778-run',
+        tokenUsage: { input: 805000, output: 1000, cacheReadInput: 100, cacheCreationInput: 0, thinking: 0, total: 806100, billable: 806000 },
+        costUsd: 0.5852,
+    }, { repoPath: repo });
+    close.snapshotFinalStats({
+        num: '778',
+        repoPath: repo,
+        worktreePath: repo,
+        branchName: 'feature-778-cc-race',
+    }, {
+        getDefaultBranch: () => 'main',
+        preMergeBaseRef: 'main',
+    });
+    const stats = readStats(repo, 'feature', '778');
+    assert.strictEqual(stats.cost.sessions, 1);
+    assert.strictEqual(stats.cost.estimatedUsd, 0.5852);
+    assert.strictEqual(stats.cost.model, 'claude-opus-4-6');
+    assert.strictEqual(stats.cost.costByAgent.cc.sessions, 1);
+    assert.strictEqual(stats.cost.costByAgent.cc.hasRealData, true);
+}));
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
     for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });
     execSync('git init -q', { cwd: repo });
