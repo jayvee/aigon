@@ -187,6 +187,52 @@
           "research": 5
         },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
+      },
+      {
+        "value": "claude-opus-4-8",
+        "label": "Opus 4.8",
+        "pricing": {
+          "input": 5,
+          "output": 25
+        },
+        "notes": {
+          "spec_review": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "implement": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "review": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "spec": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "research": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-12T00:00:00.000Z"
+      },
+      {
+        "value": "claude-opus-4-8[1m]",
+        "label": "Opus 4.8 (1M context)",
+        "pricing": {
+          "input": 5,
+          "output": 25
+        },
+        "notes": {
+          "spec_review": "Same capability as Opus 4.8; handles large context windows. Not yet maintainer-benchmarked.",
+          "implement": "Same capability as Opus 4.8; for largest, most complex features. Not yet maintainer-benchmarked.",
+          "review": "Same capability as Opus 4.8; for architectural or cross-cutting changes. Not yet maintainer-benchmarked.",
+          "spec": "Same capability as Opus 4.8; for large codebase context. Not yet maintainer-benchmarked.",
+          "research": "Same capability as Opus 4.8; for very large research corpora. Not yet maintainer-benchmarked."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-06-12T00:00:00.000Z"
       }
     ],
     "effortOptions": [
