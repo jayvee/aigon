@@ -15,6 +15,12 @@
   "defaultFleetAgent": false,
   "installHint": "curl -fsSL https://ampcode.com/install.sh | bash  (or: brew install ampcode/tap/ampcode)",
   "installCommand": "curl -fsSL https://ampcode.com/install.sh | bash",
+  "authCheck": {
+    "method": "envVar",
+    "envVarName": "AMP_API_KEY",
+    "configFilePath": "~/.config/amp/credentials.json",
+    "loginHint": "Set AMP_API_KEY or sign in with the Amp CLI"
+  },
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true

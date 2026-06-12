@@ -14,6 +14,10 @@
   "defaultFleetAgent": false,
   "installHint": "Download from https://cursor.com",
   "installCommand": null,
+  "authCheck": {
+    "method": "none",
+    "loginHint": "Auth managed by Cursor IDE"
+  },
   "trust": {
     "type": "vscode-settings-bool",
     "path": "~/Library/Application Support/Cursor/User/settings.json",

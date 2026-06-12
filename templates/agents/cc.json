@@ -14,6 +14,13 @@
   "defaultFleetAgent": true,
   "installHint": "brew install claude  (or: npm i -g @anthropic-ai/claude-code)",
   "installCommand": "npm i -g @anthropic-ai/claude-code",
+  "authCheck": {
+    "method": "command",
+    "command": "claude auth status",
+    "successIndicator": "loggedIn",
+    "loginCommand": "claude login",
+    "loginHint": "Run claude login"
+  },
   "trust": {
     "type": "claude-json",
     "path": "~/.claude.json",

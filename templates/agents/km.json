@@ -14,6 +14,12 @@
   "defaultFleetAgent": false,
   "installHint": "uv tool install --python 3.13 kimi-cli  (requires uv — see: https://docs.astral.sh/uv/getting-started/installation/)",
   "installCommand": "uv tool install --python 3.13 kimi-cli",
+  "authCheck": {
+    "method": "envVar",
+    "envVarName": "MOONSHOT_API_KEY",
+    "configFilePath": "~/.config/kimi",
+    "loginHint": "Set MOONSHOT_API_KEY or configure Kimi under ~/.config/kimi/"
+  },
   "installPrerequisites": [
     {
       "binary": "uv",

@@ -14,6 +14,14 @@
   "defaultFleetAgent": false,
   "installHint": "npm i -g @openai/codex",
   "installCommand": "npm i -g @openai/codex",
+  "authCheck": {
+    "method": "envVar",
+    "envVarNames": [
+      "OPENAI_API_KEY",
+      "OPENAI_BASE_URL"
+    ],
+    "loginHint": "Set OPENAI_API_KEY or OPENAI_BASE_URL for Codex CLI auth"
+  },
   "trust": {
     "type": "toml-project",
     "path": "~/.codex/config.toml",

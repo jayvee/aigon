@@ -14,6 +14,11 @@
   "defaultFleetAgent": false,
   "installHint": "npm i -g opencode-ai  (see: https://opencode.ai/docs)",
   "installCommand": "npm i -g opencode-ai",
+  "authCheck": {
+    "method": "command",
+    "command": "opencode providers list",
+    "loginHint": "Configure a provider with opencode"
+  },
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
