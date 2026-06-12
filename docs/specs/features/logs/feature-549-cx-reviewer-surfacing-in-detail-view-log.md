@@ -47,3 +47,23 @@ workflow diagram checks, four scoped integration tests, and the dashboard Playwr
 suite. Added `tests/integration/dashboard-detail-reviewer-participants.test.js` to pin that
 solo-worktree reviewers/revision agents appear in the detail payload while
 `rawManifest.agents` remains implementer-only.
+
+## Code Review
+
+**Reviewed by**: cc (Opus)
+**Date**: 2026-06-12
+
+### Fixes Applied
+- `d835c7fd` fix(review): decorate code_revision.started events for label parity — projector emits both `code_revision.started` and `code_revision.completed`; only the latter had a `displayLabel`, leaving the timeline asymmetric.
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Read-model contract preserved: `snapshot.agents` untouched; participants derived at payload boundary.
+- `implementationAgentIds` snapshotted before reviewer injection so the agentless implementation-log fallback (F548) still keys off implementers only — correct.
+- Cost table synthetic injection uses `hasRealData: false`, so token cells render `n/a`; reviewer rows get the "no cost data (reviewer)" model-cell note. Matches acceptance criteria.
+- Edge case observation (not a bug): if the same agent ever both implements and reviews a feature, the merged `roles` would drop the implicit "implementer" label since implementer rows carry no `roles` field. Solo-worktree forbids this today; worth noting only if the model changes.
