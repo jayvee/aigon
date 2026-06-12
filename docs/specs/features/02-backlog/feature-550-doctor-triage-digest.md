@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: doctor-triage
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-12T05:29:51.818Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: doctor-triage-digest
