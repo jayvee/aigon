@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 505
+lines_removed: 1
+lines_changed: 506
+files_touched: 3
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 30784
+output_tokens: 75008
+cache_creation_input_tokens: 255964
+cache_read_input_tokens: 10847313
+thinking_tokens: 0
+total_tokens: 11209069
+billable_tokens: 105792
+cost_usd: 22.6037
+sessions: 2
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 550 - doctor-triage-digest
 Agent: cc
 
