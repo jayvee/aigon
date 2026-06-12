@@ -2,6 +2,7 @@
 Agent: cc
 
 ## Status
+Implemented `withSection` buffer wrapper in `doctor` command; healthy sections collapse to `✅ <Title> — <summary>`, warn/fail expand fully; `--full` restores legacy output. Port Health and Agent install paths are verbose-only.
 
 ## New API Surface
 
