@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-12T04:27:55.770Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Doctor Enhanced Health Checks
