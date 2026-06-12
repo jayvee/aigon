@@ -12,7 +12,12 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
-const { collectAgentLogs, AGENT_LOG_MAX_BYTES } = require('../../lib/dashboard-status-collector');
+const {
+    collectAgentLogs,
+    collectEntityAgentLogs,
+    readEntityLogExcerpts,
+    AGENT_LOG_MAX_BYTES,
+} = require('../../lib/dashboard-status-collector');
 
 const inDir = (fn) => withTempDir('aigon-log-', fn);
 const write = (dir, name, body) => fs.writeFileSync(path.join(dir, name), body);
@@ -54,6 +59,29 @@ test('YAML frontmatter is stripped so marked.parse does not render it', () => in
     assert.ok(!out.cc.content.includes('commit_count'));
     assert.ok(!out.cc.content.includes('---'));
     assert.ok(out.cc.content.includes('# Body'));
+}));
+
+test('agentless feature log is keyed to the known implementer for detail payloads', () => inDir((repo) => {
+    const logsDir = path.join(repo, 'docs', 'specs', 'features', 'logs');
+    fs.mkdirSync(logsDir, { recursive: true });
+    write(logsDir, 'feature-09-dark-mode-log.md', '# Implementation\n');
+    const worktreeLogsDir = path.join(repo, 'worktree', 'docs', 'specs', 'features', 'logs');
+    fs.mkdirSync(worktreeLogsDir, { recursive: true });
+    write(worktreeLogsDir, 'feature-09-cc-dark-mode-log.md', '');
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '05-done', 'feature-09-dark-mode.md');
+    const out = collectEntityAgentLogs(repo, 9, { cc: { worktreePath: path.join(repo, 'worktree') } }, specPath);
+    assert.deepStrictEqual(Object.keys(out), ['cc']);
+    assert.ok(out.cc.content.includes('Implementation'));
+}));
+
+test('agentless feature log can provide a single implementer excerpt', () => inDir((repo) => {
+    const logsDir = path.join(repo, 'docs', 'specs', 'features', 'logs');
+    fs.mkdirSync(logsDir, { recursive: true });
+    write(logsDir, 'feature-11-dark-mode-log.md', '## Summary\n\nRendered after close.\n');
+    const out = readEntityLogExcerpts(repo, 'feature', 11, 'cc', {
+        allowAgentlessFallback: true,
+    });
+    assert.strictEqual(out.summary.trim(), 'Rendered after close.');
 }));
 
 report();

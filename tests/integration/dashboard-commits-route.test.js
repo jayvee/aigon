@@ -147,6 +147,44 @@ testAsync('merged path: finds commits via merge-grep when worktree is gone', () 
     })
 );
 
+testAsync('merged path: ignores orphaned worktree directory without a valid .git link', () =>
+    withTempDirAsync(async (repo) => {
+        initRepo(repo);
+
+        gitRun(repo, ['checkout', '-q', '-b', 'feature-79-cx-orphan']);
+        fs.writeFileSync(path.join(repo, 'orphan.txt'), 'merged\n');
+        gitRun(repo, ['add', '.']);
+        gitRun(repo, ['commit', '-q', '-m', 'feat: merged work']);
+        gitRun(repo, ['checkout', '-q', 'main']);
+        gitRun(repo, ['merge', '--no-ff', 'feature-79-cx-orphan', '-m', 'Merge feature 79 from agent cx']);
+
+        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
+        const repoName = path.basename(repo);
+        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
+        const orphanPath = path.join(worktreeBase, 'feature-79-cx-orphan');
+        fs.mkdirSync(orphanPath, { recursive: true });
+        fs.writeFileSync(path.join(orphanPath, 'README.md'), 'leftover directory, not a git worktree\n');
+
+        const prevHome = process.env.HOME;
+        process.env.HOME = fakeHome;
+        try {
+            const ctx = buildStubServerCtx(repo);
+            const dispatcher = createDashboardRouteDispatcher(ctx);
+            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/79/commits?repoPath=${encodeURIComponent(repo)}`);
+            dispatcher.dispatchOssRoute('GET', '/api/feature/79/commits', req, res);
+            await done;
+            assert.strictEqual(getStatusCode(), 200);
+            const body = getBody();
+            assert.strictEqual(body.source, 'merged');
+            assert.strictEqual(body.commits.length, 1);
+            assert.strictEqual(body.commits[0].message, 'feat: merged work');
+        } finally {
+            process.env.HOME = prevHome;
+            fs.rmSync(fakeHome, { recursive: true, force: true });
+        }
+    })
+);
+
 testAsync('worktree path: filters commits with Aigon-Internal: true trailer', () =>
     withTempDirAsync(async (repo) => {
         initRepo(repo);
