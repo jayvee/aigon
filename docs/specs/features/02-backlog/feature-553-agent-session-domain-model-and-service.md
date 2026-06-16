@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: agent-session-runtime
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-16T22:06:52.564Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-session-domain-model-and-service
