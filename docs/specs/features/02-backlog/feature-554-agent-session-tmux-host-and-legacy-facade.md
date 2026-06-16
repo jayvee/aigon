@@ -2,7 +2,9 @@
 complexity: high
 set: agent-session-runtime
 depends_on:
-  - agent-session-domain-model-and-service
+  [553]
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-16T22:06:52.842Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-session-tmux-host-and-legacy-facade
