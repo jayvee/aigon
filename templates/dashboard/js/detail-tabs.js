@@ -899,7 +899,10 @@
           } catch (error) {
             state.diffCache.set(key, { status: 'error', message: error && error.message ? error.message : 'Failed to load diff' });
           }
-          renderCodeChanges(payload);
+          // Skip stale re-render while a tab refresh/reload is in flight (onDrawerRefresh).
+          if (!state.loading) {
+            renderCodeChanges(state.codeChangesPayload || payload);
+          }
           return;
         }
         const summaryEl = e.target.closest('.commit-summary');
