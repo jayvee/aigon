@@ -147,8 +147,34 @@ test('store reads and writes sidecar-compatible records', () => withTempDir('aig
     const raw = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'sessions', 'aigon-f553-do-cx.json'), 'utf8'));
     assert.strictEqual(raw.sessionName, 'aigon-f553-do-cx');
     assert.strictEqual(raw.entityType, 'f');
+    assert.strictEqual(raw.agent, 'cx');
     assert.strictEqual(raw.tmuxId, '$12');
     assert.strictEqual(raw.agentSessionId, 'codex-session-1');
+}));
+
+test('store list skips non-domain live sidecars without weakening strict reads', () => withTempDir('aigon-agent-sessions-', (repo) => {
+    writeSidecar(repo, 'aigon-f553-do-cx', {
+        category: 'entity',
+        sessionName: 'aigon-f553-do-cx',
+        agent: 'cx',
+        entityType: 'f',
+        entityId: '553',
+        role: 'do',
+    });
+    writeSidecar(repo, 'aigon-slaunch-auto', {
+        category: 'entity',
+        sessionName: 'aigon-slaunch-auto',
+        agent: null,
+        entityType: 'S',
+        entityId: 'launch',
+        role: 'auto',
+    });
+
+    const store = createAgentSessionStore({ repoPath: repo });
+    const records = store.listSessions();
+    assert.strictEqual(records.length, 1);
+    assert.strictEqual(records[0].sessionId, 'aigon-f553-do-cx');
+    assert.throws(() => store.readSession('aigon-slaunch-auto'), /Invalid entity type/);
 }));
 
 test('service starts sessions with a fake host and mutates records', () => withTempDir('aigon-agent-sessions-', (repo) => {
@@ -179,7 +205,11 @@ test('service starts sessions with a fake host and mutates records', () => withT
 
     const listed = service.listSessions({ entity: { type: 'feature', id: '553' }, role: SESSION_ROLES.DO, agentId: 'cx' });
     assert.strictEqual(listed.length, 1);
+    assert.strictEqual(listed[0].agent.slotAgentId, 'cx');
     assert.strictEqual(service.findSession({ entity: { type: 'feature', id: '553' }, role: SESSION_ROLES.DO, agentId: 'cx' }).sessionId, started.sessionId);
+    const rawAfterStart = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'sessions', 'aigon-f553-do-cx.json'), 'utf8'));
+    assert.strictEqual(rawAfterStart.agent, 'cx');
+    assert.strictEqual(rawAfterStart.slotAgentId, 'cx');
 
     const rebound = service.updateTranscriptBinding(started.sessionId, {
         provider: 'codex',
