@@ -57,7 +57,12 @@ An `AgentSession` means: a long-lived, interactive agent process context created
   - `transcriptBinding`: optional `{ provider, providerSessionId?, path?, capturedAt? }`.
   - `createdAt`, `updatedAt`, `startedAt`, `stoppedAt`.
   - `metadata`: optional plain object for future compatibility.
-- [ ] `AgentSessionStore` reads existing `.aigon/sessions/{sessionName}.json` sidecars and normalizes them into the model without requiring a migration. Existing F351/F357 fields (`tmuxId`, `shellPid`, `category`, `agentSessionId`, `agentSessionPath`) must be preserved in normalized records.
+- [ ] `AgentSessionStore` reads existing `.aigon/sessions/{sessionName}.json` sidecars and normalizes them into the model without requiring a migration. The current live sidecar shape is `{ category, sessionName, repoPath, worktreePath, createdAt, agent, tmuxId, shellPid, entityType, entityId, role }`, with optional F351/F357 transcript fields (`agentSessionId`, `agentSessionPath`). The normalizer must:
+  - map `sessionName` → `sessionId` (the session name remains the id, per Open Questions default).
+  - map `entityType` (`'f'` → `'feature'`, `'r'` → `'research'`) and `entityId` → `entity: { type, id }`; set `entity: null` when `category === 'repo'`.
+  - fold `tmuxId`/`shellPid` into `host: { kind: 'tmux', handle: { tmuxId, shellPid } }` while leaving the raw fields accessible.
+  - fold `agentSessionId`/`agentSessionPath` into `transcriptBinding` when present.
+  - These legacy fields must round-trip: a normalized record written back must still satisfy existing readers.
 - [ ] The store writes records in a backwards-compatible JSON shape under `.aigon/sessions/`; existing readers that expect the old fields continue to work.
 - [ ] The service can be created with an injected fake `SessionHost` and supports testable operations:
   - `startSession(request)`.
@@ -83,7 +88,9 @@ npm test
 
 Add focused tests for:
 
-- normalizing current sidecars with `tmuxId`, `shellPid`, `category`, and transcript binding fields.
+- normalizing a real live sidecar (`{ category, sessionName, entityType, entityId, role, tmuxId, shellPid, ... }`) and asserting `sessionId === sessionName`, `entity.type` maps `'f'`→`'feature'` / `'r'`→`'research'`, and `host.handle` carries `tmuxId`/`shellPid`.
+- normalizing a `category: 'repo'` sidecar and asserting `entity === null` and `role === null`.
+- normalizing transcript binding fields (`agentSessionId`, `agentSessionPath`) into `transcriptBinding`.
 - rejecting invalid roles, invalid entity types, malformed timestamps, and missing ids.
 - service behavior with a fake host and temporary `.aigon/sessions/` directory.
 - verifying `lib/agent-sessions/` does not import workflow/dashboard/worktree modules.
@@ -106,7 +113,7 @@ lib/agent-sessions/
 
 `model.js` should contain plain JavaScript constants and normalizers. Avoid classes unless they clearly reduce complexity; this codebase mostly uses functions and objects.
 
-`store.js` should default to the current repo's `.aigon/sessions` path but accept `{ repoPath }` so dashboard collectors can read other repos later. For JSON I/O, prefer the central helper from F515 if that feature has landed. If F515 has not landed, keep local JSON read/write code tiny and mark the call sites for follow-up.
+`store.js` should default to the current repo's `.aigon/sessions` path but accept `{ repoPath }` so dashboard collectors can read other repos later. F515 has landed: use `lib/io/json.js` (`readJsonSafe`, `writeJsonAtomic`, `ensureDir`) for all JSON I/O — do not hand-roll `fs.readFileSync`/`JSON.parse` in this module.
 
 `service.js` should accept dependencies:
 
