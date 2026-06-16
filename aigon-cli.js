@@ -163,10 +163,11 @@ const TEMPLATE_DRIFT_SKIP = new Set([
 async function maybeRunTemplateDriftLayers(cmd) {
     if (TEMPLATE_DRIFT_SKIP.has(cmd)) return;
     if (process.env.AIGON_SKIP_TEMPLATE_DRIFT === '1') return;
-    let driftLib, installManifestLib, fs, path;
+    let driftLib, installManifestLib, repoIdentity, fs, path;
     try {
         driftLib = require('./lib/template-drift');
         installManifestLib = require('./lib/install-manifest');
+        repoIdentity = require('./lib/repo-identity');
         fs = require('fs');
         path = require('path');
     } catch (_) { return; }
@@ -185,6 +186,7 @@ async function maybeRunTemplateDriftLayers(cmd) {
         const pkgVersion = require('./package.json').version;
         const autoReinstall = projectCfg.autoReinstallOnVersionChange !== false;
         if (autoReinstall
+            && !repoIdentity.isAigonSourceRepo(repoRoot)
             && process.env.AIGON_NO_AUTO_REINSTALL !== '1'
             && manifest && manifest.aigonVersion && manifest.aigonVersion !== pkgVersion) {
             const installedAgents = installManifestLib.getInstalledAgents(manifest);
