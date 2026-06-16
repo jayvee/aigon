@@ -2,7 +2,9 @@
 complexity: very-high
 set: agent-session-runtime
 depends_on:
-  - agent-session-tmux-host-and-legacy-facade
+  [554]
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-16T22:06:53.101Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-session-workflow-signal-bridge
