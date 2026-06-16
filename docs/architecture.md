@@ -131,8 +131,11 @@ Current shared modules:
 
 - `lib/proxy.js` (~865 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~2,800 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
-  `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
+- `lib/dashboard-server.js` (~1,360 lines): AIGON server HTTP/UI shell — serves dashboard HTML/static assets, polls state, handles WebSocket relay, notifications, screenshots, and OSS/Pro route dispatch. It delegates dashboard-triggered mutations to `lib/dashboard-actions/` and detail/settings/static helper work to focused modules.
+  `runDashboardServer`, `buildDashboardHtml`
+- `lib/dashboard-actions/` (~550 lines): dashboard action boundary for session launch, interactive CLI action execution, nudges, agent control, and mark-complete workflow signals.
+  `handleLaunchReview`, `handleLaunchSpecReview`, `handleLaunchEval`, `handleLaunchCloseResolve`, `handleLaunchImplementation`, `runDashboardInteractiveAction`
+- `lib/dashboard-detail.js`, `lib/dashboard-settings.js`, `lib/dashboard-pro-assets.js`, `lib/dashboard-action-command.js`: focused helpers for detail drawer payloads, settings schema resolution, Pro dashboard asset/stub resolution, and `/api/action` parsing/validation.
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
   - `analytics.js` — analytics, telemetry, signal-health, weekly autonomy trend endpoints
@@ -406,7 +409,7 @@ Feature writes go through the engine, but the read side is still mixed:
 - `lib/feature-set-workflow-rules.js` owns set-card action eligibility; dashboard frontend code must not infer when `set-autonomous-*` is allowed.
 - `templates/dashboard/js/autonomous-plan.js` renders the dashboard card's autonomous timeline from the server-provided `autonomousPlan` payload. It does not infer stage state; `workflow-read-model.js` owns that read-side derivation.
 - `templates/dashboard/js/set-cards.js` renders set-card body/graph markup from the server-provided `sets[]` payload. It does not derive status or action eligibility; `dashboard-status-collector.js` and `feature-set-workflow-rules.js` own those read-side derivations.
-- `lib/dashboard-server.js` owns HTTP transport, polling orchestration, notifications, static serving, and dispatches API requests through `lib/dashboard-routes.js`. It is read-only with respect to both mutations and engine-state/spec/log file access.
+- `lib/dashboard-server.js` owns HTTP transport, polling orchestration, notifications, static serving, and dispatches API requests through `lib/dashboard-routes.js`. Route files parse requests and serialize responses; dashboard-triggered side effects live behind `lib/dashboard-actions/`.
 
 So the architecture after F171 → F283 → F294 is:
 
@@ -457,7 +460,7 @@ So the architecture after F171 → F283 → F294 is:
 
 ## Setting scopes (F521)
 
-Every entry in `DASHBOARD_SETTINGS_SCHEMA` (`lib/dashboard-server.js`) carries a `scope` field with one of three values:
+Every entry in `DASHBOARD_SETTINGS_SCHEMA` (`lib/dashboard-settings.js`) carries a `scope` field with one of three values:
 
 - **`user`** — global only. The value belongs to the *user*, not the repo. Project-layer values are ignored at resolution time; PUT `/api/settings` with `scope: 'project'` returns HTTP 400 `scope_violation`. UI renders these under **Settings → Preferences** (or **Settings → Terminal** for the two terminal-related rows) with a single value, no per-repo override column.
 - **`shared`** — global default with optional per-repo override (legacy behaviour). The resolver honours `project > global > default` precedence. UI renders these under **Settings → Repository Settings** with the two-column "Shared | Repository" table.
