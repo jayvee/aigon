@@ -37,7 +37,7 @@ Current command families:
 | `lib/commands/research.js` | All `research-*` handlers. Parallel-with-feature handlers come from `./entity-commands` via factory spread |
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
-| `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `sync` |
+| `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `vault`, and the Pro-delegating `sync` / `backup` stubs |
 | `lib/commands/setup.js` | `init`, `install-agent`, `remove`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor` |
 | `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
 | `lib/commands/workflow.js` | `workflow` definition CRUD and reporting |
@@ -122,16 +122,16 @@ Current shared modules:
   `buildSetCardBodyHtml`, `buildSetDepGraphSvg`
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
-- `lib/validation.js` (~1,045 lines): Iterate (Autopilot) loop and smart validation helpers
+- `lib/validation.js` (~1,115 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
 - `lib/quota-probe.js` / `lib/quota-poller.js` (~340/~95 lines): agent quota availability layer. Wraps `scripts/probe-agent.js`, classifies probe output via per-agent JSON regex packs, caches `.aigon/state/quota.json`, gates `feature-start`, and exposes dashboard/server refreshes without touching workflow-core state.
   `classifyProbeResult`, `probePair`, `readQuotaState`, `startQuotaPoller`
 
 **Domain modules** (logic lives in the module itself):
 
-- `lib/proxy.js` (~660 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
+- `lib/proxy.js` (~865 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~2,590 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
+- `lib/dashboard-server.js` (~2,800 lines): AIGON server HTTP/UI module — serves the dashboard UI, polls state, handles WebSocket relay, notifications, static assets, and OSS/Pro route dispatch. It should not parse engine-state/spec/log files directly.
   `runDashboardServer`, `collectDashboardStatusData`, `buildDashboardHtml`, `runDashboardInteractiveAction`
 - `lib/dashboard-routes.js` (~60 lines): thin aggregator — composes the per-domain route modules in `lib/dashboard-routes/` and exposes the dispatcher
   `createDashboardRouteDispatcher`
@@ -142,8 +142,14 @@ Current shared modules:
   - `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
   - `sessions.js` — tmux/session endpoints, PTY token issuance
   - `system.js` — health, version, repo metadata
+  - `transcripts.js` — agent transcript records + per-session transcript download endpoints (reads via `lib/transcript-read.js`)
+  - `version-status.js` — `GET /api/version-status` repo/multi-repo upgrade-drift snapshot for the dashboard chrome upgrade pill (F499)
   - `util.js` — shared response helpers + the route-table builder consumed by the aggregator
-- `lib/worktree.js` (~1,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
+- `lib/doctor/` — `aigon doctor` implementation, extracted from `lib/commands/setup.js` into its own module dir:
+  - `report.js` (F550) — `DoctorReport`, the structured issue collector + triage digest; the severity table is the single source of truth and sections call `report.issue({ section, check, message, fix })`
+  - `fix-dispatch.js` (F552) — consent-driven fix dispatch for `aigon doctor --fix` (per-issue prompts, fix summary, manual-issue printing)
+  - `scopes.js` (F552) — scoped doctor views: parses scope/detail flags from argv (`parseDoctorScopes`, `sectionInScope`)
+- `lib/worktree.js` (~2,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/set-conductor.js` (~500 lines): detached set-level autonomous sequencer (`set-autonomous-start|stop|resume|reset`) that resolves set members in topo order, delegates each member to `feature-autonomous-start`, and persists `.aigon/state/set-<slug>-auto.json`
   `run`, `resolveSetExecutionPlan`, `buildSetAutoSessionName`
@@ -153,7 +159,7 @@ Current shared modules:
   `buildTokenExhaustionSignal`, `chooseNextAgent`, `buildFailoverPrompt`, `clearTokenExhaustedFlag`
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal. **Registry API** (F350): each macOS adapter carries `id`, `displayName`, `pickerLabel`, `platforms`, `aliases`, `hiddenFromPicker` — all consumer surfaces (dashboard enum, onboarding picker, display-name map, canonicaliser, help text) derive from this single source. Adding a new terminal requires only a new adapter object here. **Background launch (F520)**: `launch(cmd, { background })` threads through every macOS adapter — `background: true` (the default, controlled by `terminal.focusOnLaunch`) drops `activate` lines and wraps the AppleScript with a `wrapBackgroundAppleScript` capture/restore-frontmost frame so the user's focus is preserved. Warp uses `open -g` instead. Linux is unaffected — newly-spawned windows obey the WM's focus-stealing-prevention policy, which aigon does not try to override.
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`, `getTerminalIds`, `getPickerOptions`, `getDashboardOptions`, `getDisplayName`, `canonicalize`, `isValidId`, `registerAdapter`, `wrapBackgroundAppleScript`
-- `lib/config.js` (~1,240 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
+- `lib/config.js` (~1,395 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
 - `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
   `registerGlobalConfigMigration`, `runPendingGlobalConfigMigrations`, `migrateLegacyTerminalSettings`
@@ -163,7 +169,7 @@ Current shared modules:
   `safeWrite`, `safeWriteWithStatus`, `setTerminalTitle`, `resolveDevServerUrl`, `FEEDBACK_STATUS_TO_FOLDER`
 - `lib/hooks.js` (~146 lines): hook lifecycle — parses `.aigon/hooks.json`, executes pre/post hooks
   `parseHooksFile`, `getDefinedHooks`, `executeHook`, `runPreHook`, `runPostHook`
-- `lib/analytics.js` (~889 lines): usage analytics — log parsing, completion series, autonomy trend
+- `lib/analytics.js` (~960 lines): usage analytics — log parsing, completion series, autonomy trend
   `collectAnalyticsData`, `parseLogFrontmatterFull`, `buildCompletionSeries`, `buildWeeklyAutonomyTrend`
 - `lib/version.js` (~154 lines): version management — reads/writes installed version, semver compare, changelog excerpts, origin-behind hint for CLI checkout
   `getAigonVersion`, `getInstalledVersion`, `compareVersions`, `getChangelogEntriesSince`, `checkAigonCliOrigin`
@@ -173,10 +179,10 @@ Current shared modules:
   `parseCliOptions`, `getOptionValue`, `parseFrontMatter`, `serializeYamlScalar`, `slugify`, `escapeRegex`
 - `lib/deploy.js` (~65 lines): deploy command resolution — reads config/package.json, runs deploy/preview
   `resolveDeployCommand`, `runDeployCommand`
-- `lib/sync.js` (~800 lines): solo multi-laptop sync orchestration for portable `.aigon` state via private git sync repo
-  `handleSyncCommand`, `sync init/register/export/bootstrap-merge/push/pull/status`, preflight/version safety checks
-- `lib/sync-merge.js` (~300 lines): bootstrap merge engine for data-type-specific merge behavior
-  `mergeBundleIntoRepos` (workflow event dedupe, telemetry union, state manifest merge, derived cache invalidation)
+- `lib/repo-identity.js` (~40 lines): identifies when a command is running inside the Aigon source repo itself (vs a consumer project) so install/scaffold behavior is skipped here
+  `isAigonSourceRepo`
+
+> **Moved to Pro:** the solo multi-laptop sync engine (`sync.js`, `sync-merge.js`) moved to `@aigon/pro` with feature 236 (2026-04-27), alongside backup and scheduling. `aigon sync` / `aigon backup` are now Pro-delegating stubs in `lib/commands/infra.js`. See "Scheduling and recurring work" below.
 
 **Additional modules:**
 
@@ -244,6 +250,7 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | `actions.js` | Action derivation via `snapshot.can()` — machine is single source of truth |
 | `effects.js` | Pluggable effect runner + default feature effect implementations |
 | `engine.js` | Full orchestration: command dispatch, event persistence, effect execution for feature + research |
+| `entity-lifecycle.js` | Shared `isEntityDone(repoPath, entityType, id, folderFallback)` engine-first done-state helper (F397). Snapshot is authoritative; folder is consulted only when no engine dir exists. Also exports `engineDirExists`, `readSnapshotSync` |
 | `migration.js` | Explicit pre-cutover migration helpers (idempotent lifecycle backfill to workflow-core) |
 | `index.js` | Barrel export for all public API |
 
