@@ -19,6 +19,7 @@
         // Selected agent within the Agent Log tab (Fleet picker state)
         logSelectedAgent: null,
         codeChangesPayload: null,
+        commitExpanded: new Set(),
         diffExpanded: new Set(),
         diffCache: new Map()
       };
@@ -53,6 +54,7 @@
         state.loadedTabs = {};
         state.logSelectedAgent = null;
         state.codeChangesPayload = null;
+        state.commitExpanded = new Set();
         state.diffExpanded = new Set();
         state.diffCache = new Map();
         detailEl.innerHTML = '';
@@ -434,12 +436,14 @@
           : 'Worktree (in-progress)';
         const rows = commits.map((c, idx) => {
           const files = Array.isArray(c.files) ? c.files : [];
+          const commitKey = c.fullHash || c.hash || String(idx);
+          const commitOpen = state.commitExpanded.has(commitKey) ? ' open' : '';
           const filesHtml = files.length
             ? '<ul class="commit-files">' + files.map((f, fileIdx) =>
                 renderCommitFileRow(payload, c, f, idx, fileIdx)
               ).join('') + '</ul>'
             : '<div class="commit-files-empty">No file diff available.</div>';
-          return '<details class="commit-row" data-commit-idx="' + idx + '">' +
+          return '<details class="commit-row" data-commit-idx="' + idx + '" data-commit-key="' + escHtml(commitKey) + '"' + commitOpen + '>' +
             '<summary class="commit-summary">' +
               (payload.repoUrl && c.fullHash
                 ? '<a class="commit-hash mono" href="' + escHtml(payload.repoUrl + '/commit/' + c.fullHash) + '" target="_blank" rel="noopener noreferrer" title="View on GitHub">' + escHtml(c.hash) + '</a>'
@@ -876,6 +880,7 @@
           const filePath = file.path || '';
           const key = diffCacheKey(fullHash, filePath);
           const retry = diffBtn.hasAttribute('data-diff-retry');
+          state.commitExpanded.add(fullHash || String(row && row.dataset.commitIdx));
           if (!retry && state.diffExpanded.has(key)) {
             state.diffExpanded.delete(key);
             renderCodeChanges(payload);
@@ -896,6 +901,17 @@
           }
           renderCodeChanges(payload);
           return;
+        }
+        const summaryEl = e.target.closest('.commit-summary');
+        if (summaryEl) {
+          const detailsEl = summaryEl.closest('.commit-row');
+          const key = detailsEl && detailsEl.dataset.commitKey;
+          if (key) {
+            setTimeout(() => {
+              if (detailsEl.open) state.commitExpanded.add(key);
+              else state.commitExpanded.delete(key);
+            }, 0);
+          }
         }
         const hashEl = e.target.closest('[data-copy-hash]');
         if (hashEl) {
@@ -922,6 +938,7 @@
           state.payload = null;
           state.loadedTabs = {};
           state.codeChangesPayload = null;
+          state.commitExpanded = new Set();
           state.diffExpanded = new Set();
           state.diffCache = new Map();
         },
