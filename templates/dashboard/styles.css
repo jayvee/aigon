@@ -812,13 +812,16 @@
     .commit-meta{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
     .commit-files{list-style:none;margin:0;padding:8px 12px 10px 12px;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:4px}
     .commit-files li{display:grid;grid-template-columns:24px minmax(0,1fr) 60px 60px;gap:8px;font-size:11px;align-items:center}
+    .commit-file-item{cursor:pointer;border-radius:6px;padding:2px 4px;margin:0 -4px}
+    .commit-file-item:hover{background:rgba(96,165,250,.08)}
+    .commit-file-item.expanded{background:rgba(96,165,250,.05)}
     .commit-file-toggle{width:20px;height:20px;border:1px solid var(--border-subtle);border-radius:4px;background:rgba(255,255,255,.03);color:var(--text-secondary);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;line-height:1}
     .commit-file-toggle:hover{border-color:var(--accent);color:var(--accent);background:rgba(96,165,250,.12)}
     .commit-file-path{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)}
     .commit-file-stat{text-align:right;font-variant-numeric:tabular-nums}
     .commit-file-add{color:#22c55e}
     .commit-file-del{color:#ef4444}
-    .commit-file-diff{grid-column:1 / -1;margin:4px 0 8px;border:1px solid var(--border-subtle);border-radius:6px;overflow:auto;background:#0b0f14}
+    .commit-file-diff{grid-column:1 / -1;margin:4px 0 8px;border:1px solid var(--border-subtle);border-radius:6px;overflow:auto;background:#0b0f14;cursor:default}
     .diff-view{min-width:640px;font-size:11px;line-height:1.45}
     .diff-line{display:grid;grid-template-columns:44px 44px minmax(0,1fr);min-height:18px}
     .diff-gutter{padding:1px 8px;text-align:right;color:var(--text-tertiary);background:rgba(15,23,42,.65);border-right:1px solid rgba(148,163,184,.16);font-variant-numeric:tabular-nums;user-select:none}

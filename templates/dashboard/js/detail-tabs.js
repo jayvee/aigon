@@ -472,9 +472,9 @@
         const key = diffCacheKey(fullHash, filePath);
         const expanded = state.diffExpanded.has(key);
         const cacheEntry = state.diffCache.get(key);
-        const buttonLabel = expanded ? 'Collapse diff' : 'Expand diff';
+        const buttonLabel = expanded ? 'Hide diff' : 'View diff';
         const diffHtml = expanded ? renderDiffPanel(payload, fullHash, filePath, cacheEntry) : '';
-        return '<li class="commit-file-item' + (expanded ? ' expanded' : '') + '" data-commit-idx="' + String(commitIdx) + '" data-file-idx="' + String(fileIdx) + '">' +
+        return '<li class="commit-file-item' + (expanded ? ' expanded' : '') + '" data-commit-idx="' + String(commitIdx) + '" data-file-idx="' + String(fileIdx) + '" title="' + escHtml(buttonLabel) + '">' +
           '<button type="button" class="commit-file-toggle" data-diff-toggle="1" aria-label="' + escHtml(buttonLabel) + '" title="' + escHtml(buttonLabel) + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button>' +
           '<span class="commit-file-path mono" title="' + escHtml(filePath) + '">' + escHtml(filePath) + '</span>' +
           '<span class="commit-file-stat commit-file-add">+' + (file.added || 0) + '</span>' +
@@ -865,44 +865,49 @@
         switchTab(btn.dataset.tab || 'spec');
       });
 
+      async function toggleCommitFileDiff(row, retry) {
+        const payload = state.codeChangesPayload || {};
+        const commits = Array.isArray(payload.commits) ? payload.commits : [];
+        const commit = commits[Number(row && row.dataset.commitIdx)] || null;
+        const file = commit && Array.isArray(commit.files) ? commit.files[Number(row.dataset.fileIdx)] : null;
+        if (!commit || !file) return;
+        const fullHash = commit.fullHash || commit.hash || '';
+        const filePath = file.path || '';
+        const key = diffCacheKey(fullHash, filePath);
+        state.commitExpanded.add(fullHash || String(row && row.dataset.commitIdx));
+        if (!retry && state.diffExpanded.has(key)) {
+          state.diffExpanded.delete(key);
+          renderCodeChanges(payload);
+          return;
+        }
+        state.diffExpanded.add(key);
+        if (!retry && state.diffCache.has(key) && state.diffCache.get(key).status === 'loaded') {
+          renderCodeChanges(payload);
+          return;
+        }
+        state.diffCache.set(key, { status: 'loading' });
+        renderCodeChanges(payload);
+        try {
+          const data = await fetchCommitFileDiff(fullHash, filePath);
+          state.diffCache.set(key, { status: 'loaded', data });
+        } catch (error) {
+          state.diffCache.set(key, { status: 'error', message: error && error.message ? error.message : 'Failed to load diff' });
+        }
+        // Skip stale re-render while a tab refresh/reload is in flight (onDrawerRefresh).
+        if (!state.loading) {
+          renderCodeChanges(state.codeChangesPayload || payload);
+        }
+      }
+
       detailEl.addEventListener('click', async (e) => {
         const diffBtn = e.target.closest('[data-diff-toggle], [data-diff-retry]');
-        if (diffBtn) {
+        const fileRow = e.target.closest('.commit-file-item');
+        if (diffBtn || (fileRow && !e.target.closest('.commit-file-diff'))) {
           e.preventDefault();
           e.stopPropagation();
-          const row = diffBtn.closest('.commit-file-item');
-          const payload = state.codeChangesPayload || {};
-          const commits = Array.isArray(payload.commits) ? payload.commits : [];
-          const commit = commits[Number(row && row.dataset.commitIdx)] || null;
-          const file = commit && Array.isArray(commit.files) ? commit.files[Number(row.dataset.fileIdx)] : null;
-          if (!commit || !file) return;
-          const fullHash = commit.fullHash || commit.hash || '';
-          const filePath = file.path || '';
-          const key = diffCacheKey(fullHash, filePath);
-          const retry = diffBtn.hasAttribute('data-diff-retry');
-          state.commitExpanded.add(fullHash || String(row && row.dataset.commitIdx));
-          if (!retry && state.diffExpanded.has(key)) {
-            state.diffExpanded.delete(key);
-            renderCodeChanges(payload);
-            return;
-          }
-          state.diffExpanded.add(key);
-          if (!retry && state.diffCache.has(key) && state.diffCache.get(key).status === 'loaded') {
-            renderCodeChanges(payload);
-            return;
-          }
-          state.diffCache.set(key, { status: 'loading' });
-          renderCodeChanges(payload);
-          try {
-            const data = await fetchCommitFileDiff(fullHash, filePath);
-            state.diffCache.set(key, { status: 'loaded', data });
-          } catch (error) {
-            state.diffCache.set(key, { status: 'error', message: error && error.message ? error.message : 'Failed to load diff' });
-          }
-          // Skip stale re-render while a tab refresh/reload is in flight (onDrawerRefresh).
-          if (!state.loading) {
-            renderCodeChanges(state.codeChangesPayload || payload);
-          }
+          const row = diffBtn ? diffBtn.closest('.commit-file-item') : fileRow;
+          const retry = !!(diffBtn && diffBtn.hasAttribute('data-diff-retry'));
+          await toggleCommitFileDiff(row, retry);
           return;
         }
         const summaryEl = e.target.closest('.commit-summary');
