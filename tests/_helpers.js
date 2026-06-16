@@ -167,9 +167,41 @@ function runAigonCli(repo, args, { expectFail = false, extraEnv = {} } = {}) {
     return { stdout: r.stdout || '', stderr: r.stderr || '', code: r.status ?? 1, output };
 }
 
+// Engine/entity test scaffolding — shared by the engine + lifecycle integration tests.
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
+const normalizePath = (filePath) => (fs.realpathSync.native ? fs.realpathSync.native(filePath) : fs.realpathSync(filePath));
+
+function freshEntityModules() {
+    delete require.cache[require.resolve('../lib/templates')];
+    delete require.cache[require.resolve('../lib/utils')];
+    delete require.cache[require.resolve('../lib/entity')];
+    return { utils: require('../lib/utils'), entity: require('../lib/entity') };
+}
+
+function buildEntityCtx(utils) {
+    return { utils, git: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => null, runGit: () => {} }, board: { loadBoardMapping: () => null } };
+}
+
+function runEntityChild(repo, body) {
+    const entityModulePath = path.join(__dirname, '../lib/entity');
+    const utilsModulePath = path.join(__dirname, '../lib/utils');
+    const templatesModulePath = path.join(__dirname, '../lib/templates');
+    const script = `
+        delete require.cache[require.resolve(${JSON.stringify(templatesModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(utilsModulePath)})];
+        delete require.cache[require.resolve(${JSON.stringify(entityModulePath)})];
+        const entity = require(${JSON.stringify(entityModulePath)});
+        const utils = require(${JSON.stringify(utilsModulePath)});
+        const ctx = { utils, git: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => null, runGit: () => {} }, board: { loadBoardMapping: () => null } };
+        (async () => { ${body} })().catch((error) => { console.error(error.stack || error.message); process.exit(1); });
+    `;
+    return execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
+}
+
 module.exports = {
     test, testAsync, withTempDir, withTempDirAsync, report,
     GIT_SAFE_ENV, ENTITY_STAGE_DIRS, seedEntityDirs, writeSpec, writeSnap, withRepoCwd,
     initGitRepo, runAigonCli, CLI_PATH,
     createIsolatedTmuxEnv, killIsolatedTmuxServer, withIsolatedTmux, withIsolatedTmuxAsync,
+    readJson, normalizePath, freshEntityModules, buildEntityCtx, runEntityChild,
 };

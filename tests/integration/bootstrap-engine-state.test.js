@@ -3,49 +3,19 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
-const { test, withTempDir, report, seedEntityDirs, withRepoCwd } = require('../_helpers');
+const { test, withTempDir, report, seedEntityDirs, withRepoCwd, readJson, normalizePath, freshEntityModules, buildEntityCtx, runEntityChild } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
-function freshEntityModules() {
-    delete require.cache[require.resolve('../../lib/templates')];
-    delete require.cache[require.resolve('../../lib/utils')];
-    delete require.cache[require.resolve('../../lib/entity')];
-    return {
-        utils: require('../../lib/utils'),
-        entity: require('../../lib/entity'),
-    };
-}
-function buildCtx(utils) {
-    return { utils, git: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => null, runGit: () => {} }, board: { loadBoardMapping: () => null } };
-}
-const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'));
-const normalizePath = (filePath) => (fs.realpathSync.native ? fs.realpathSync.native(filePath) : fs.realpathSync(filePath));
 const wrm = require('../../lib/workflow-read-model');
 function freshRequire(modPath) {
     delete require.cache[require.resolve(modPath)];
     return require(modPath);
-}
-function runEntityChild(repo, body) {
-    const entityModulePath = path.join(__dirname, '../../lib/entity');
-    const utilsModulePath = path.join(__dirname, '../../lib/utils');
-    const templatesModulePath = path.join(__dirname, '../../lib/templates');
-    const script = `
-        delete require.cache[require.resolve(${JSON.stringify(templatesModulePath)})];
-        delete require.cache[require.resolve(${JSON.stringify(utilsModulePath)})];
-        delete require.cache[require.resolve(${JSON.stringify(entityModulePath)})];
-        const entity = require(${JSON.stringify(entityModulePath)});
-        const utils = require(${JSON.stringify(utilsModulePath)});
-        const ctx = { utils, git: { getCurrentBranch: () => 'main', getDefaultBranch: () => 'main', getCommonDir: () => null, runGit: () => {} }, board: { loadBoardMapping: () => null } };
-        (async () => { ${body} })().catch((error) => { console.error(error.stack || error.message); process.exit(1); });
-    `;
-    return execFileSync(process.execPath, ['-e', script], { cwd: repo, stdio: 'pipe' });
 }
 // REGRESSION: F296 must not leave a snapshotless inbox spec behind when create bootstrapping fails.
 test('entityCreate bootstraps inbox workflow state and rolls back the spec on bootstrap failure', () => withTempDir('aigon-f296-create-', (repo) => {
     seedEntityDirs(repo, 'features');
     withRepoCwd(repo, () => {
         const { utils, entity } = freshEntityModules();
-        const created = entity.entityCreate(entity.FEATURE_DEF, 'foo', buildCtx(utils));
+        const created = entity.entityCreate(entity.FEATURE_DEF, 'foo', buildEntityCtx(utils));
         assert.ok(created);
         assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/01-inbox/feature-foo.md')));
         const snapshot = readJson(path.join(repo, '.aigon/workflows/features/foo/snapshot.json'));
@@ -58,7 +28,7 @@ test('entityCreate bootstraps inbox workflow state and rolls back the spec on bo
         console.error = (...args) => { errors.push(args.join(' ')); };
         engine.ensureEntityBootstrappedSync = () => { throw new Error('bootstrap exploded'); };
         try {
-            const failed = entity.entityCreate(entity.FEATURE_DEF, 'bar', buildCtx(utils));
+            const failed = entity.entityCreate(entity.FEATURE_DEF, 'bar', buildEntityCtx(utils));
             assert.strictEqual(failed, null);
         } finally {
             engine.ensureEntityBootstrappedSync = original;
@@ -77,7 +47,7 @@ test('entityCreate stores authorAgentId on the inbox workflow snapshot when crea
     try {
         withRepoCwd(repo, () => {
             const { utils, entity } = freshEntityModules();
-            const created = entity.entityCreate(entity.FEATURE_DEF, 'authored-by-cx', buildCtx(utils));
+            const created = entity.entityCreate(entity.FEATURE_DEF, 'authored-by-cx', buildEntityCtx(utils));
             assert.ok(created);
         });
     } finally {
@@ -97,7 +67,7 @@ test('entityPrioritise migrates slug-keyed workflow state to the numeric id', ()
     engine.ensureEntityBootstrappedSync(repo, 'feature', 'foo', 'inbox', specPath);
     withRepoCwd(repo, () => {
         const { utils, entity } = freshEntityModules();
-        entity.entityPrioritise(entity.FEATURE_DEF, 'foo', buildCtx(utils));
+        entity.entityPrioritise(entity.FEATURE_DEF, 'foo', buildEntityCtx(utils));
     });
     assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/foo')));
     assert.ok(fs.existsSync(path.join(repo, '.aigon/workflows/features/01/snapshot.json')));

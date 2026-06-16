@@ -46,7 +46,14 @@ set -euo pipefail
 # tmux-inject: +80 LOC for lib/tmux-inject.js regression tests (copy-mode guard, timeout,
 # input validation). Deleted check-version-non-mutating.test.js (-77 LOC; static grep
 # covered by static-guards, hook exit codes are advisory-only). Net +3 LOC, ceiling +100.
-CEILING="${CEILING:-10100}"
+# 2026-06-16 ratchet-down: deleted non-critical tests review-badges.spec.js (removed-code +
+# symbol-presence guard), set-agent-picker-reviewer.spec.js (screenshot smoke; reviewer row
+# covered by dashboard-detail-reviewer-participants.test.js), terminal-focus-on-launch.test.js
+# (UX preference; adapters covered by terminal-adapter-registry.test.js), version-status-dev-mode.test.js
+# (dev-mode convenience + version-badge staleness). Hoisted reusable engine-test helpers
+# (readJson/normalizePath/freshEntityModules/buildEntityCtx/runEntityChild) into _helpers.js. Net -422 LOC,
+# suite 9986. Ceiling 10100→10000.
+CEILING="${CEILING:-10000}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
