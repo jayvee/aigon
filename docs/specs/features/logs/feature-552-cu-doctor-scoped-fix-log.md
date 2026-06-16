@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented scoped flags (`--auth`, `--ports`, `--verbose`/`--full`) and interactive `--fix` via `lib/doctor/scopes.js` + `fix-dispatch.js`; batch `--fix --yes` unchanged.
 ## New API Surface
 
 ## Key Decisions
