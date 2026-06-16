@@ -21,6 +21,7 @@ Stage-folder names (`'01-inbox'`, `'02-backlog'`, `'03-in-progress'`, `'04-in-ev
 
 - [ ] All literal occurrences of `'01-inbox'`, `'02-backlog'`, `'03-in-progress'`, `'04-in-evaluation'`, `'05-done'` in `lib/**/*.js` are replaced by named references from `lib/workflow-core/paths.js`. Exceptions: test fixtures, migration code (frozen historical paths), and `paths.js` itself.
 - [ ] A new `lib/io/json.js` exposes `readJsonSafe(filePath, default)`, `writeJsonAtomic(filePath, value)`, and `ensureDir(dir)`. Migrate the ≥75% highest-traffic call sites (manifest reads on poll paths, sidecar writes, snapshot reads) to use it. The remaining sites can be opportunistically migrated.
+- [ ] `lib/io/json.js` is infrastructure-only: no imports from workflow-core, dashboard, commands, config, or agent modules. Domain modules depend on it; it depends only on Node stdlib.
 - [ ] The duplicate `safeWrite` in `lib/templates.js` is removed; callers import from `lib/utils.js`.
 - [ ] A grep-style lint check (e.g. a simple `npm run lint:paths` script) fails CI if a new `'01-inbox'` literal lands in `lib/`. Implementation: shell or eslint rule, whichever is cheaper.
 - [ ] `npm run test:core` passes. `npm run test:browser:smoke` passes if dashboard-touching files change.
@@ -53,7 +54,7 @@ rg "^function safeWrite\(" lib/ | wc -l   # expect: 1
 
 ## Open Questions
 
-- Should `lib/io/json.js` live under `lib/` or `lib/workflow-core/` (alongside `paths.js`)? Lean toward `lib/io/` to avoid implying workflow-only scope.
+- Resolved direction: `lib/io/json.js` should live under `lib/io/`, not under `lib/workflow-core/`, because the helper is shared infrastructure for snapshots, sidecars, manifests, config, and dashboard caches.
 
 ## Related
 

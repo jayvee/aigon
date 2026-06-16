@@ -23,6 +23,7 @@ transitions:
 - [ ] `lib/commands/setup.js` becomes a ≤200-line dispatcher that requires each handler module and assembles the command map.
 - [ ] No handler accesses helpers via the shared closure — each requires explicitly what it needs.
 - [ ] Each handler file is ≤600 LOC. Larger handlers (`install-agent`, `doctor`, `apply`) may be further split into sibling helpers under `lib/commands/setup/<name>/`.
+- [ ] Split setup handlers do not import `lib/dashboard-server.js` for repo-registry or settings helpers. If a helper is genuinely shared (for example `writeRepoRegistry` or `DASHBOARD_SETTINGS_SCHEMA`), move it to an owner module such as `lib/config.js`, `lib/dashboard-settings-schema.js`, or `lib/server-runtime.js` before importing it from a handler.
 - [ ] `npm run test:core` passes. Existing `_test` export surface continues to work.
 - [ ] `createSetupCommands(overrides)` (backward-compat wrapper at `setup.js:4464`) still works for the tests that use it.
 
@@ -41,6 +42,7 @@ find lib/commands/setup -name "*.js" -exec wc -l {} \; | sort -rn | head
 - For each handler, identify the subset of `ctx.utils` it actually uses (most use 5–10 names, not 60) and convert to explicit `require()` at the top of the file.
 - `install-agent` (~800 LOC) and `doctor` (~1,800 LOC) may need further internal splitting — defer that to follow-up if the file is still >600 LOC after extraction.
 - Preserve the `ctx`-injection pattern at the dispatcher level so command tests can still inject mocks via `createSetupCommands(overrides)`.
+- While moving handlers, break any accidental dependency on dashboard transport modules. Setup/config commands may use config/server-runtime helpers; they should not load the HTTP server module as a side effect.
 
 ## Dependencies
 
