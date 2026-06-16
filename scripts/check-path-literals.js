@@ -42,7 +42,7 @@ for (const filePath of walk(LIB_ROOT)) {
     for (const token of acorn.tokenizer(content, { ecmaVersion: 'latest', allowHashBang: true })) {
         if (token.type.label !== 'string' && token.type.label !== 'template') continue;
         const raw = content.slice(token.start, token.end);
-        const body = token.type.label === 'string' ? String(token.value) : raw;
+        const body = String(token.value);
         if (!isStagePathLiteralBody(body)) continue;
         const line = content.slice(0, token.start).split('\n').length;
         violations.push(`${path.relative(ROOT, filePath)}:${line}: ${raw}`);
