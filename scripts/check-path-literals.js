@@ -8,7 +8,15 @@ const LIB_ROOT = path.join(ROOT, 'lib');
 const EXEMPT_PATH_PARTS = [
     path.join('workflow-core', 'paths.js'),
 ];
-const STAGE_LITERAL_RE = /(['"`])0[1-5]-(inbox|backlog|in-progress|in-evaluation|done)\1/g;
+const STAGE_NAME_RE = /0[1-6]-(inbox|backlog|in-progress|in-evaluation|done|paused)/;
+const STRING_LITERAL_RE = /(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g;
+
+function isStagePathLiteral(rawLiteral) {
+    const body = rawLiteral.slice(1, -1);
+    if (!STAGE_NAME_RE.test(body)) return false;
+    return /^0[1-6]-(inbox|backlog|in-progress|in-evaluation|done|paused)$/.test(body)
+        || /(^|[/.])0[1-6]-(inbox|backlog|in-progress|in-evaluation|done|paused)([/.]|$)/.test(body);
+}
 
 function walk(dir, files = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -33,7 +41,8 @@ for (const filePath of walk(LIB_ROOT)) {
     if (isExempt(filePath)) continue;
     const content = fs.readFileSync(filePath, 'utf8');
     let match;
-    while ((match = STAGE_LITERAL_RE.exec(content)) !== null) {
+    while ((match = STRING_LITERAL_RE.exec(content)) !== null) {
+        if (!isStagePathLiteral(match[0])) continue;
         const line = content.slice(0, match.index).split('\n').length;
         violations.push(`${path.relative(ROOT, filePath)}:${line}: ${match[0]}`);
     }
