@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 287
+lines_removed: 133
+lines_changed: 420
+files_touched: 3
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 94
+output_tokens: 55683
+cache_creation_input_tokens: 240142
+cache_read_input_tokens: 9352159
+thinking_tokens: 0
+total_tokens: 9648078
+billable_tokens: 55777
+cost_usd: 22.7085
+sessions: 1
+model: "claude-opus-4-7"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 551 - doctor-collapse-sections
 Agent: cc
 
