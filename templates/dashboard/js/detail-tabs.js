@@ -17,7 +17,11 @@
         payload: null,
         loadedTabs: {},
         // Selected agent within the Agent Log tab (Fleet picker state)
-        logSelectedAgent: null
+        logSelectedAgent: null,
+        codeChangesPayload: null,
+        commitExpanded: new Set(),
+        diffExpanded: new Set(),
+        diffCache: new Map()
       };
 
       function setWideMode(enabled) {
@@ -49,6 +53,10 @@
         state.payload = null;
         state.loadedTabs = {};
         state.logSelectedAgent = null;
+        state.codeChangesPayload = null;
+        state.commitExpanded = new Set();
+        state.diffExpanded = new Set();
+        state.diffCache = new Map();
         detailEl.innerHTML = '';
         setWideMode(false);
         // If drawer was opened with an initial tab (e.g. from peek button), use it
@@ -387,6 +395,19 @@
         return data;
       }
 
+      async function fetchCommitFileDiff(commitHash, filePath) {
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        if (!parsed.id) throw new Error('This item has no numeric ID yet.');
+        const q = new URLSearchParams();
+        q.set('path', filePath);
+        if (drawer.repoPath) q.set('repoPath', drawer.repoPath);
+        const res = await fetch(`/api/feature/${encodeURIComponent(parsed.id)}/commits/${encodeURIComponent(commitHash)}/diff?${q.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+      }
+
       function formatRelativeTimestamp(iso) {
         const d = new Date(iso);
         if (isNaN(d)) return 'unknown';
@@ -404,6 +425,7 @@
       }
 
       function renderCodeChanges(payload) {
+        state.codeChangesPayload = payload || {};
         const commits = Array.isArray(payload && payload.commits) ? payload.commits : [];
         if (commits.length === 0) {
           detailEl.innerHTML = '<div class="drawer-empty">No commits yet.</div>';
@@ -414,14 +436,14 @@
           : 'Worktree (in-progress)';
         const rows = commits.map((c, idx) => {
           const files = Array.isArray(c.files) ? c.files : [];
+          const commitKey = c.fullHash || c.hash || String(idx);
+          const commitOpen = state.commitExpanded.has(commitKey) ? ' open' : '';
           const filesHtml = files.length
-            ? '<ul class="commit-files">' + files.map(f =>
-                '<li><span class="commit-file-path mono">' + escHtml(f.path) + '</span>' +
-                '<span class="commit-file-stat commit-file-add">+' + (f.added || 0) + '</span>' +
-                '<span class="commit-file-stat commit-file-del">-' + (f.removed || 0) + '</span></li>'
+            ? '<ul class="commit-files">' + files.map((f, fileIdx) =>
+                renderCommitFileRow(payload, c, f, idx, fileIdx)
               ).join('') + '</ul>'
             : '<div class="commit-files-empty">No file diff available.</div>';
-          return '<details class="commit-row" data-commit-idx="' + idx + '">' +
+          return '<details class="commit-row" data-commit-idx="' + idx + '" data-commit-key="' + escHtml(commitKey) + '"' + commitOpen + '>' +
             '<summary class="commit-summary">' +
               (payload.repoUrl && c.fullHash
                 ? '<a class="commit-hash mono" href="' + escHtml(payload.repoUrl + '/commit/' + c.fullHash) + '" target="_blank" rel="noopener noreferrer" title="View on GitHub">' + escHtml(c.hash) + '</a>'
@@ -438,6 +460,94 @@
             '<span class="commits-count">' + String(commits.length) + ' commit' + (commits.length === 1 ? '' : 's') + '</span>' +
           '</div>' +
           '<div class="commits-list">' + rows + '</div>';
+      }
+
+      function diffCacheKey(commitHash, filePath) {
+        return String(commitHash || '') + '\u0000' + String(filePath || '');
+      }
+
+      function renderCommitFileRow(payload, commit, file, commitIdx, fileIdx) {
+        const fullHash = commit.fullHash || commit.hash || '';
+        const filePath = file.path || '';
+        const key = diffCacheKey(fullHash, filePath);
+        const expanded = state.diffExpanded.has(key);
+        const cacheEntry = state.diffCache.get(key);
+        const buttonLabel = expanded ? 'Collapse diff' : 'Expand diff';
+        const diffHtml = expanded ? renderDiffPanel(payload, fullHash, filePath, cacheEntry) : '';
+        return '<li class="commit-file-item' + (expanded ? ' expanded' : '') + '" data-commit-idx="' + String(commitIdx) + '" data-file-idx="' + String(fileIdx) + '">' +
+          '<button type="button" class="commit-file-toggle" data-diff-toggle="1" aria-label="' + escHtml(buttonLabel) + '" title="' + escHtml(buttonLabel) + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button>' +
+          '<span class="commit-file-path mono" title="' + escHtml(filePath) + '">' + escHtml(filePath) + '</span>' +
+          '<span class="commit-file-stat commit-file-add">+' + (file.added || 0) + '</span>' +
+          '<span class="commit-file-stat commit-file-del">-' + (file.removed || 0) + '</span>' +
+          diffHtml +
+        '</li>';
+      }
+
+      function renderDiffPanel(payload, fullHash, filePath, cacheEntry) {
+        if (!cacheEntry || cacheEntry.status === 'loading') {
+          return '<div class="commit-file-diff"><div class="diff-placeholder">Loading diff…</div></div>';
+        }
+        if (cacheEntry.status === 'error') {
+          return '<div class="commit-file-diff"><div class="diff-placeholder diff-error">' +
+            escHtml(cacheEntry.message || 'Failed to load diff') +
+            ' <button type="button" class="diff-retry" data-diff-retry="1">Retry</button>' +
+            '</div></div>';
+        }
+        const data = cacheEntry.data || {};
+        const repoUrl = data.repoUrl || (payload && payload.repoUrl);
+        if (data.binary) {
+          return '<div class="commit-file-diff"><div class="diff-placeholder">Binary file</div></div>';
+        }
+        if (!data.diff) {
+          return '<div class="commit-file-diff"><div class="diff-placeholder">No textual diff available</div></div>';
+        }
+        const truncatedHtml = data.truncated && repoUrl && fullHash
+          ? '<div class="diff-truncated">Diff truncated. <a href="' + escHtml(repoUrl + '/commit/' + fullHash) + '" target="_blank" rel="noopener noreferrer">View full diff on GitHub</a></div>'
+          : (data.truncated ? '<div class="diff-truncated">Diff truncated.</div>' : '');
+        return '<div class="commit-file-diff">' + renderUnifiedDiff(data.diff) + truncatedHtml + '</div>';
+      }
+
+      function renderUnifiedDiff(diffText) {
+        const lines = String(diffText || '').split('\n');
+        let oldLine = null;
+        let newLine = null;
+        const rows = lines.map(line => {
+          const hunk = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+          if (hunk) {
+            oldLine = parseInt(hunk[1], 10);
+            newLine = parseInt(hunk[2], 10);
+            return renderDiffLine('diff-hunk', '', '', line);
+          }
+          if (oldLine === null || /^diff --git |^index |^--- |^\+\+\+ /.test(line)) {
+            return renderDiffLine('diff-line-meta', '', '', line);
+          }
+          if (line[0] === '+') {
+            const row = renderDiffLine('diff-line-add', '', String(newLine), line);
+            newLine += 1;
+            return row;
+          }
+          if (line[0] === '-') {
+            const row = renderDiffLine('diff-line-del', String(oldLine), '', line);
+            oldLine += 1;
+            return row;
+          }
+          if (line[0] === '\\') {
+            return renderDiffLine('diff-line-meta', '', '', line);
+          }
+          const row = renderDiffLine('diff-line-ctx', String(oldLine), String(newLine), line);
+          oldLine += 1;
+          newLine += 1;
+          return row;
+        }).join('');
+        return '<div class="diff-view" role="table">' + rows + '</div>';
+      }
+
+      function renderDiffLine(cls, oldNo, newNo, text) {
+        return '<div class="diff-line ' + cls + '" role="row">' +
+          '<span class="diff-gutter diff-old" role="cell">' + escHtml(oldNo) + '</span>' +
+          '<span class="diff-gutter diff-new" role="cell">' + escHtml(newNo) + '</span>' +
+          '<span class="diff-code mono" role="cell">' + escHtml(text) + '</span>' +
+        '</div>';
       }
 
       async function fetchDeepStatus() {
@@ -756,6 +866,56 @@
       });
 
       detailEl.addEventListener('click', async (e) => {
+        const diffBtn = e.target.closest('[data-diff-toggle], [data-diff-retry]');
+        if (diffBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const row = diffBtn.closest('.commit-file-item');
+          const payload = state.codeChangesPayload || {};
+          const commits = Array.isArray(payload.commits) ? payload.commits : [];
+          const commit = commits[Number(row && row.dataset.commitIdx)] || null;
+          const file = commit && Array.isArray(commit.files) ? commit.files[Number(row.dataset.fileIdx)] : null;
+          if (!commit || !file) return;
+          const fullHash = commit.fullHash || commit.hash || '';
+          const filePath = file.path || '';
+          const key = diffCacheKey(fullHash, filePath);
+          const retry = diffBtn.hasAttribute('data-diff-retry');
+          state.commitExpanded.add(fullHash || String(row && row.dataset.commitIdx));
+          if (!retry && state.diffExpanded.has(key)) {
+            state.diffExpanded.delete(key);
+            renderCodeChanges(payload);
+            return;
+          }
+          state.diffExpanded.add(key);
+          if (!retry && state.diffCache.has(key) && state.diffCache.get(key).status === 'loaded') {
+            renderCodeChanges(payload);
+            return;
+          }
+          state.diffCache.set(key, { status: 'loading' });
+          renderCodeChanges(payload);
+          try {
+            const data = await fetchCommitFileDiff(fullHash, filePath);
+            state.diffCache.set(key, { status: 'loaded', data });
+          } catch (error) {
+            state.diffCache.set(key, { status: 'error', message: error && error.message ? error.message : 'Failed to load diff' });
+          }
+          // Skip stale re-render while a tab refresh/reload is in flight (onDrawerRefresh).
+          if (!state.loading) {
+            renderCodeChanges(state.codeChangesPayload || payload);
+          }
+          return;
+        }
+        const summaryEl = e.target.closest('.commit-summary');
+        if (summaryEl) {
+          const detailsEl = summaryEl.closest('.commit-row');
+          const key = detailsEl && detailsEl.dataset.commitKey;
+          if (key) {
+            setTimeout(() => {
+              if (detailsEl.open) state.commitExpanded.add(key);
+              else state.commitExpanded.delete(key);
+            }, 0);
+          }
+        }
         const hashEl = e.target.closest('[data-copy-hash]');
         if (hashEl) {
           e.preventDefault();
@@ -777,7 +937,14 @@
       return {
         switchTab,
         reset,
-        clearData() { state.payload = null; state.loadedTabs = {}; },
+        clearData() {
+          state.payload = null;
+          state.loadedTabs = {};
+          state.codeChangesPayload = null;
+          state.commitExpanded = new Set();
+          state.diffExpanded = new Set();
+          state.diffCache = new Map();
+        },
         getActiveTab() { return state.active; },
         onDrawerRefresh() {
           state.payload = null;
