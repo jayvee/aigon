@@ -107,6 +107,103 @@ testAsync('worktree path: returns commits ahead of main', () =>
     })
 );
 
+testAsync('diff endpoint: returns a textual per-file patch from worktree commits', () =>
+    withTempDirAsync(async (repo) => {
+        initRepo(repo);
+
+        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
+        const repoName = path.basename(repo);
+        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
+        fs.mkdirSync(worktreeBase, { recursive: true });
+        const worktreePath = path.join(worktreeBase, 'feature-78-cx-show-diff');
+        gitRun(repo, ['worktree', 'add', '-q', '-b', 'feature-78-cx-show-diff', worktreePath]);
+
+        fs.writeFileSync(path.join(worktreePath, 'diff.txt'), 'old\n');
+        gitRun(worktreePath, ['add', '.']);
+        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: add diff file']);
+        fs.writeFileSync(path.join(worktreePath, 'diff.txt'), 'old\nnew\n');
+        gitRun(worktreePath, ['add', '.']);
+        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: update diff file']);
+        const hash = gitRun(worktreePath, ['rev-parse', 'HEAD']);
+
+        const prevHome = process.env.HOME;
+        process.env.HOME = fakeHome;
+        try {
+            const ctx = buildStubServerCtx(repo);
+            const dispatcher = createDashboardRouteDispatcher(ctx);
+            const reqUrl = `/api/feature/78/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('diff.txt')}`;
+            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
+            const matched = dispatcher.dispatchOssRoute('GET', `/api/feature/78/commits/${hash}/diff`, req, res);
+            assert.strictEqual(matched, true);
+            await done;
+            assert.strictEqual(getStatusCode(), 200);
+            const body = getBody();
+            assert.strictEqual(body.source, 'worktree');
+            assert.strictEqual(body.path, 'diff.txt');
+            assert.strictEqual(body.binary, false);
+            assert.strictEqual(body.truncated, false);
+            assert.match(body.diff, /^@@ /m);
+            assert.match(body.diff, /^\+new$/m);
+        } finally {
+            process.env.HOME = prevHome;
+            fs.rmSync(fakeHome, { recursive: true, force: true });
+        }
+    })
+);
+
+testAsync('diff endpoint: reports binary files without a textual diff body', () =>
+    withTempDirAsync(async (repo) => {
+        initRepo(repo);
+
+        gitRun(repo, ['checkout', '-q', '-b', 'feature-909080-cx-binary']);
+        fs.writeFileSync(path.join(repo, 'image.bin'), Buffer.from([0, 1, 2, 3, 0]));
+        gitRun(repo, ['add', '.']);
+        gitRun(repo, ['commit', '-q', '-m', 'feat: binary']);
+        const hash = gitRun(repo, ['rev-parse', 'HEAD']);
+        gitRun(repo, ['checkout', '-q', 'main']);
+        gitRun(repo, ['merge', '--no-ff', 'feature-909080-cx-binary', '-m', 'Merge feature 909080 from agent cx']);
+
+        const ctx = buildStubServerCtx(repo);
+        const dispatcher = createDashboardRouteDispatcher(ctx);
+        const reqUrl = `/api/features/909080/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('image.bin')}`;
+        const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
+        dispatcher.dispatchOssRoute('GET', `/api/features/909080/commits/${hash}/diff`, req, res);
+        await done;
+        assert.strictEqual(getStatusCode(), 200);
+        const body = getBody();
+        assert.strictEqual(body.source, 'merged');
+        assert.strictEqual(body.binary, true);
+        assert.strictEqual(body.diff, '');
+    })
+);
+
+testAsync('diff endpoint: caps large per-file diffs and marks them truncated', () =>
+    withTempDirAsync(async (repo) => {
+        initRepo(repo);
+
+        gitRun(repo, ['checkout', '-q', '-b', 'feature-909081-cx-large']);
+        const lines = Array.from({ length: 26000 }, (_, i) => `line-${i}`).join('\n') + '\n';
+        fs.writeFileSync(path.join(repo, 'large.txt'), lines);
+        gitRun(repo, ['add', '.']);
+        gitRun(repo, ['commit', '-q', '-m', 'feat: large diff']);
+        const hash = gitRun(repo, ['rev-parse', 'HEAD']);
+        gitRun(repo, ['checkout', '-q', 'main']);
+        gitRun(repo, ['merge', '--no-ff', 'feature-909081-cx-large', '-m', 'Merge feature 909081 from agent cx']);
+
+        const ctx = buildStubServerCtx(repo);
+        const dispatcher = createDashboardRouteDispatcher(ctx);
+        const reqUrl = `/api/feature/909081/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('large.txt')}`;
+        const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
+        dispatcher.dispatchOssRoute('GET', `/api/feature/909081/commits/${hash}/diff`, req, res);
+        await done;
+        assert.strictEqual(getStatusCode(), 200);
+        const body = getBody();
+        assert.strictEqual(body.truncated, true);
+        assert.ok(Buffer.byteLength(body.diff, 'utf8') <= require('../../lib/dashboard-routes/commits')._internals.MAX_FILE_DIFF_BYTES);
+        assert.match(body.diff, /^@@ /m);
+    })
+);
+
 testAsync('merged path: finds commits via merge-grep when worktree is gone', () =>
     withTempDirAsync(async (repo) => {
         initRepo(repo);
