@@ -310,6 +310,16 @@ Feature specs may include an optional `## Pre-authorised` section after `## Vali
 - If an agent proceeds under a matching line, the commit must carry a `Pre-authorised-by:` footer citing that approval.
 - Blank or absent means current behavior: stop and ask.
 
+### Agent Sessions
+
+`lib/agent-sessions/` defines Aigon's runtime domain for long-lived interactive agent work. An `AgentSession` is the Aigon-owned record for one agent slot working in one context: an entity session for a feature or research role, or a repo-level session when no entity applies.
+
+The domain owns runtime identity and metadata: the stable `sessionId`, category, entity reference, role, provider agent id, optional specialist profile, runtime state, host binding, paths, transcript binding, timestamps, and future-compatible metadata. It deliberately does not own feature or research lifecycle state. Workflow-core remains the authority for lifecycle transitions, while Agent Sessions describe the external interactive process that may help produce those transitions.
+
+The current store is backwards-compatible with `.aigon/sessions/{sessionName}.json` sidecars. Legacy tmux fields such as `tmuxId` and `shellPid` are normalized into `host: { kind: 'tmux', handle }`, while remaining available on the sidecar shape for existing readers. Provider transcript fields (`agentSessionId`, `agentSessionPath`) normalize into `transcriptBinding`. Tmux is therefore one `SessionHost`, not the domain model itself.
+
+Production launch paths still live in `lib/worktree.js` during the initial introduction. New consumers should use `createAgentSessionService()` and the model/store facade instead of parsing tmux names or reading workflow-core internals for session metadata.
+
 ### Workflow Authority Split
 
 The post-cutover system is easier to reason about if you separate lifecycle truth from runtime/session metadata:
