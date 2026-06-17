@@ -1,6 +1,9 @@
 ---
 complexity: high
 set: architecture-simplify-2026-05
+depends_on:
+  - 517
+  - 555
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-05-12T00:34:53.274Z", actor: "cli/feature-prioritise" }
 ---
@@ -9,7 +12,11 @@ transitions:
 
 ## Summary
 
-`templates/dashboard/js/actions.js` is **3,482 lines in a single file with 91 functions** — by far the largest single frontend file (the next-largest, `pipeline.js`, is 1,861). It mixes the per-card action button renderer (`renderActionButtons`), per-action click handler (`handleFeatureAction`), inline modal definitions for nearly every action (start / review / eval / close-with-cherry-pick / spec-review / etc.), the shared triplet-picker UI, and `fetch()` wrappers. Across the dashboard JS there are **144 `innerHTML` writes** and **83 `fetch()` calls**, most concentrated here. This is the highest-risk item in the architecture-simplify set because it touches the most user-visible code — schedule it last and lean hard on Playwright coverage.
+`templates/dashboard/js/actions.js` is **3,482 lines in a single file with 91 functions**. It remains the largest dashboard action surface; the next-largest dashboard files are now `settings.js` and `pipeline.js` at roughly 1.9k LOC each. `actions.js` mixes the per-card action button renderer (`renderActionButtons`), per-action click handler (`handleFeatureAction`), set action handler (`handleSetAction`), inline modal definitions for nearly every action (start / review / eval / close-with-cherry-pick / spec-review / autonomous / schedule / nudge / etc.), the shared triplet-picker integration, and `fetch()` wrappers. Across the dashboard JS there are many `innerHTML` writes and `fetch()` calls, most concentrated here. This is the highest-risk item in the architecture-simplify set because it touches the most user-visible code. Schedule it last and lean hard on Playwright coverage.
+
+Important current-state correction: the dashboard is loaded from `templates/dashboard/index.html` as ordered classic scripts, not as a full ESM graph. `pipeline.js` and `monitor.js` call `renderActionButtons(...)`, `handleFeatureAction(...)`, `handleSetAction(...)`, and `showNudgeModal(...)` as globals. This feature must preserve those global entry points through a thin compatibility shell in `actions.js` while lazy-loading the action implementations behind it. Dynamic-imported action modules are ESM-scoped, so they must receive an explicit context object and/or import ESM helpers; they must not assume classic-script lexical helpers are available by unqualified name.
+
+This feature should run after F517 and F555. F517 stabilises the dashboard entity read model that action buttons consume. F555 stabilises the AgentSession -> Workflow signal surface that action flows such as start, nudge, close, and autonomous orchestration depend on.
 
 ## User Stories
 
@@ -19,45 +26,52 @@ transitions:
 
 ## Acceptance Criteria
 
-- [ ] `templates/dashboard/js/actions.js` shrinks to ≤500 LOC. Remaining content: `renderActionButtons` (the card-level button renderer), the `handleFeatureAction` dispatcher, and shared utilities like `tripletsToCliArgs` / `setPickerRecommendation`.
-- [ ] Each modal-bearing action lives in `templates/dashboard/js/actions/<action>.js`: at minimum `start.js`, `review.js`, `eval.js`, `close.js`, `spec-review.js`, `pause.js`, `nudge.js`, `delete.js`, `reset.js`. Each file is ≤400 LOC.
-- [ ] The dispatcher in `actions.js` lazy-loads action modules on first click using dynamic `import()` — initial dashboard JS payload for the actions surface drops by ≥50%.
-- [ ] All 144 `innerHTML` writes across `templates/dashboard/js/` are reviewed during the migration. Any write that interpolates user-controlled content uses the existing `escHtml` helper. Document the pass in the implementation log.
-- [ ] `npm run test:browser` passes. The dashboard-e2e suite is extended with at least one new test that exercises lazy-load (e.g. assert the close modal's JS is fetched only after the button is clicked).
-- [ ] Bundle-size budget: measured initial JS payload for `/` (excluding xterm vendor) drops by ≥30%. If not, the lazy-loading isn't working.
+- [ ] `templates/dashboard/js/actions.js` shrinks to <=700 LOC. Remaining content is limited to the global compatibility API, card-level button rendering, dispatcher functions, dynamic-import cache, module error handling, and the context builder used to call action modules.
+- [ ] Existing global call sites continue to work: `renderActionButtons`, `handleFeatureAction`, `handleSetAction`, and `showNudgeModal` remain callable by `pipeline.js` and `monitor.js` until those files are deliberately migrated in a later feature.
+- [ ] Each modal-bearing or high-complexity action lives in `templates/dashboard/js/actions/<action>.js`: at minimum `start.js`, `review.js`, `eval.js`, `close.js`, `spec-review.js`, `autonomous.js`, `set-autonomous.js`, `schedule-kickoff.js`, `nudge.js`, `pause.js`, `delete.js`, and `reset.js`.
+- [ ] Action modules export a stable contract: `open(ctx)` and optional `close(ctx)`. `ctx` includes `{ va, feature, setCard, repoPath, btn, pipelineType, entityType, helpers, api }` as applicable. Modules must use `ctx.helpers` or explicit ESM imports for shared helpers; they must not reach into hidden classic-script globals.
+- [ ] `actions.js` lazy-loads action modules on first click using dynamic `import()` and caches successful imports. Failed imports show a user-visible error, restore the initiating button state, and do not leave modal backdrops or disabled controls behind.
+- [ ] Server-owned `validActions` remains the source of truth for action eligibility, labels, button classes, and CTA visibility. This feature only changes frontend decomposition; it must not move workflow eligibility logic into action modules.
+- [ ] All `innerHTML` writes across `templates/dashboard/js/` are reviewed during the migration. Any write that interpolates user-controlled content uses `escHtml` or a DOM construction helper. Document the pass in the implementation log.
+- [ ] `npm run test:browser` passes. The dashboard-e2e suite is extended with at least one new test that exercises lazy-load, for example asserting the close modal module is fetched only after a Close action is clicked.
+- [ ] Bundle-size budget: measured initial JS payload for `/` (excluding xterm vendor) drops by >=30%, or the implementation log explains why the threshold cannot be reached after the modal code has been lazy-loaded.
+- [ ] If this introduces a new `templates/dashboard/js/actions/` module layout or dashboard action contract, update `AGENTS.md` and `docs/architecture.md` in the same change.
 
 ## Validation
 
 ```bash
 npm run test:browser
 # Size checks
-wc -l templates/dashboard/js/actions.js                # expect: < 600
+wc -l templates/dashboard/js/actions.js                # expect: <= 700
 wc -l templates/dashboard/js/actions/*.js | tail -1    # report total
-# Lazy-load verification (Network tab)
-# Load /, observe initial JS; click "Close" on a feature; assert close.js fetched on click
+node --check templates/dashboard/js/actions.js
+rg -n "innerHTML\\s*=" templates/dashboard/js          # review and document unsafe-looking writes
+# Lazy-load verification:
+# Load /, observe initial JS; click "Close" on a feature; assert actions/close.js is fetched on click
 ```
 
 ## Technical Approach
 
-- **Per-action split first, lazy-load second.** Land the static split (everything still imported eagerly) and prove no regression via Playwright. Then convert to dynamic imports in a follow-up commit.
-- **Modal contract.** Each `actions/<action>.js` exports `{ open(feature, repoPath, options), close() }`. The dispatcher in `actions.js` calls `open` and never reaches inside.
-- **Shared helpers stay in `actions.js`.** `tripletsToCliArgs`, `setPickerRecommendation`, `fetchSpecRecommendation`, `escHtml` — all stay shared.
-- **Risk control.** Take a Playwright screenshot of every modal before and after via the existing e2e setup. Diff in CI.
+- **Preserve the public surface first.** Treat `actions.js` as a compatibility adapter for existing classic-script consumers. Do not require a broad `pipeline.js` / `monitor.js` rewrite to complete this feature.
+- **Create the action module contract.** Add `templates/dashboard/js/actions/` modules with `open(ctx)` and optional `close(ctx)`. `actions.js` builds `ctx` and invokes the module. Shared code that only action modules need can live in `actions/shared.js`; shared code needed by both the classic adapter and modules should be passed through `ctx.helpers`.
+- **Split by action before changing behavior.** Move one action at a time, preserve request payloads and DOM output, and keep Playwright green after each tranche. Start with lower-risk modals (`nudge`, `pause`, `delete`, `reset`) before moving high-traffic launch/close/autonomous flows.
+- **Lazy-load after the split is stable.** Once modules are isolated, switch the dispatcher to `import()` with a small import cache and deterministic error handling.
+- **No backend or workflow rule changes.** Keep command endpoints, API payloads, and `validActions` semantics intact. This feature is a frontend decomposition only.
+- **Risk control.** Capture Playwright screenshots or traces for every migrated modal before and after. Pay particular attention to start/autonomous triplet selection, close-with-agent, set autonomous actions, and nudge.
 
 ## Dependencies
 
-- None on the other architecture-simplify features (frontend split is independent of lib refactors). However, schedule **after** the lib-side simplifications because frontend changes are higher-risk to ship and need a quiet baseline.
+- F517 (`simplify-unified-entity-view`) should land first so the frontend action surface consumes a stable entity read payload.
+- F555 (`agent-session-workflow-signal-bridge`) should land first so action modules do not split around a signal path that is still being redesigned.
+- Schedule this last in `architecture-simplify-2026-05` because frontend action behavior is user-visible and needs the quietest possible baseline.
 
 ## Out of Scope
 
 - Replacing `innerHTML` with DOM construction wholesale — too risky for one feature. Limited to auditing existing writes during the per-action split.
 - Adopting a frontend framework (React, Lit, etc.). The split keeps vanilla JS.
 - Changing modal visual design. Use `Skill(frontend-design)` if any visual change is unavoidable.
-
-## Open Questions
-
-- Where do shared modal primitives (`showConfirm`, `showDangerConfirm`) live? Suggest `templates/dashboard/js/modals/primitives.js`.
-- Do we ship the lazy-load conversion in the same feature or split it? Lean toward same feature so the bundle-size win is measurable in one commit range.
+- Converting the entire dashboard to ESM. This feature may use ESM for dynamically imported action modules, but the existing classic-script dashboard shell remains in place.
+- Migrating `pipeline.js` or `monitor.js` to import action APIs directly. They continue using the global compatibility functions.
 
 ## Related
 
