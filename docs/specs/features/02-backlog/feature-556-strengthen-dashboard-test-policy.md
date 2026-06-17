@@ -1,5 +1,5 @@
 ---
-complexity: high
+complexity: medium
 # agent: cc    # optional — id of the agent that owns this spec. Used as the
 #              #   default reviewer for spec-revise cycles when the operator
 #              #   does not pick one explicitly. Precedence at revision time:
@@ -29,7 +29,7 @@ Change Aigon's test policy so critical dashboard action regressions are caught b
 - [ ] As a reviewer, I want CI and local test commands to make omitted browser coverage visible instead of silently passing with only core tests.
 
 ## Acceptance Criteria
-- [ ] `test:browser:smoke` contains a named critical-action smoke suite that opens every critical dashboard action surface currently available in the e2e fixture.
+- [ ] `test:browser:smoke` contains a named critical-action smoke suite that opens every critical dashboard action surface currently available in the e2e fixture. Because `test:browser:smoke` runs `--grep @smoke`, every test in this suite must be tagged `@smoke` (in the `test()`/`describe()` title) or it will not run in the smoke command.
 - [ ] At minimum, the critical-action smoke suite covers:
   - `feature-start` opens the agent picker.
   - `feature-autonomous-start` opens the Start Autonomously modal.
@@ -38,17 +38,17 @@ Change Aigon's test policy so critical dashboard action regressions are caught b
   - Any visible "resolve and close" recovery action remains covered by the existing close-failure browser test or is moved into the critical-action suite.
 - [ ] The critical-action smoke suite fails on any browser console error or page error produced while opening one of these action surfaces, unless that error is explicitly allowlisted with a comment explaining why it is unrelated.
 - [ ] The critical-action smoke suite fails if the generic dashboard toast text `Action failed to load. Try refreshing the page.` appears after opening a critical action.
-- [ ] Dashboard JS under `templates/dashboard/js/**/*.js` is included in a static parse/lint check. The check must catch undeclared globals in classic browser scripts where practical. If ESLint is used, configure browser globals intentionally instead of disabling the useful checks.
-- [ ] `npm run test:quick` runs the critical-action browser smoke suite whenever any of these paths change:
-  - `templates/dashboard/**`
-  - `lib/dashboard*.js`
-  - `lib/dashboard-routes/**`
-  - `lib/dashboard-status-*.js`
-  - `lib/state-render-meta.js`
-  - `lib/workflow-snapshot-adapter.js`
-  - `lib/feature-workflow-rules.js`
-  - `lib/research-workflow-rules.js`
-  - `lib/workflow-core/**` when dashboard actions or state projection could change
+- [ ] Dashboard JS under `templates/dashboard/js/**/*.js` is included in a static parse/lint check. The check must catch undeclared globals in classic browser scripts where practical (this incident was an undeclared `AUTONOMOUS_AGENT_IDS` global). If ESLint is used, add a dedicated flat-config block for `templates/dashboard/js/**/*.js` with `sourceType: 'script'`, browser globals declared (`window`, `document`, `fetch`, etc.), and `no-undef: error`. **The `lint` npm script glob must also be broadened** — it is currently `eslint "lib/**/*.js" tests/unit tests/integration tests/workflow-core`, so a new config block alone will not lint dashboard JS until the script targets it. Verify with `npm run lint` actually reporting on a deliberately-undeclared global.
+- [ ] `npm run test:quick` runs the critical-action browser smoke suite whenever any of these paths change. (`test:quick` → `test:iterate` → `lib/test-loop/scoped.js` already triggers `test:browser:smoke` when `DASHBOARD_PATH_RE` matches; `DASHBOARD_PATH_RE = /^(templates\/dashboard\/|lib\/(dashboard|server))/` already covers the first four entries below via the `templates/dashboard/` and `lib/dashboard` prefixes — the change is to broaden it to the remaining entries.)
+  - `templates/dashboard/**` *(already covered)*
+  - `lib/dashboard*.js` *(already covered)*
+  - `lib/dashboard-routes/**` *(already covered by `lib/dashboard` prefix)*
+  - `lib/dashboard-status-*.js` *(already covered by `lib/dashboard` prefix)*
+  - `lib/state-render-meta.js` *(not covered — add)*
+  - `lib/workflow-snapshot-adapter.js` *(not covered — add)*
+  - `lib/feature-workflow-rules.js` *(not covered — add)*
+  - `lib/research-workflow-rules.js` *(not covered — add)*
+  - `lib/workflow-core/**` when dashboard actions or state projection could change *(not covered — add)*
 - [ ] Pull request CI runs browser smoke, not only core tests. Full browser E2E may remain push/deploy-only if runtime is too high, but PR CI must include the critical-action smoke suite.
 - [ ] `npm test` either runs the dashboard static JS check or clearly delegates it through `test:core`; it must not silently exclude checks that would catch broken dashboard scripts.
 - [ ] `npm run test:deploy` still runs the full browser suite.
@@ -71,7 +71,7 @@ Recommended implementation path:
 
 1. Create or rename a browser spec around critical dashboard actions, for example `tests/dashboard-e2e/critical-actions.spec.js`. Keep action-specific rendering tests in separate files if they are not part of the smoke contract.
 
-2. Introduce a helper in `tests/dashboard-e2e/_helpers.js` for collecting browser runtime errors during an action:
+2. Add a helper to the existing `tests/dashboard-e2e/_helpers.js` for collecting browser runtime errors during an action:
    - subscribe to `page.on('console')` and keep only `error` messages;
    - subscribe to `page.on('pageerror')`;
    - expose an assertion helper that fails after the action if unexpected errors occurred;
@@ -82,14 +82,14 @@ Recommended implementation path:
    - if an action lives behind an overflow menu in headless layout, open the menu first;
    - use direct DOM `.click()` only when documenting that the test is intentionally verifying action module/runtime loading rather than pointer layout.
 
-4. Add a dashboard JS static check. Possible approaches:
-   - Extend ESLint to include `templates/dashboard/js/**/*.js` with browser globals configured.
-   - Or add a focused script such as `scripts/check-dashboard-js.js` that parses the files and runs a lightweight undefined-global check.
-   - Prefer ESLint if it can be configured without weakening the existing rules.
+4. Add a dashboard JS static check. Preferred approach (ESLint already enforces `no-undef: error` for `lib/**` in `eslint.config.js`):
+   - Add a new flat-config block in `eslint.config.js` for `templates/dashboard/js/**/*.js`: `sourceType: 'script'`, an explicit browser `globals` map (e.g. `window`, `document`, `fetch`, `console`, `setTimeout`, `CustomEvent`, plus any intentional cross-file globals the dashboard defines), and `no-undef: error`. Do not relax `lib/**` rules.
+   - Broaden the `lint` npm script glob to include `templates/dashboard/js/` (the current glob does not, so the new block would never execute otherwise).
+   - Alternative only if ESLint cannot model the dashboard's classic-script global graph: a focused `scripts/check-dashboard-js.js` that parses each file and runs a lightweight undefined-global check. Prefer ESLint.
 
-5. Update `lib/test-loop/scoped.js` so dashboard-sensitive changes trigger the critical-action browser smoke suite. The existing `DASHBOARD_PATH_RE` is too narrow because architectural refactors can break dashboard action availability through read-model or state-action modules.
+5. Update `lib/test-loop/scoped.js`. The smoke-trigger wiring already exists — when `DASHBOARD_PATH_RE.test(p)` matches, the runner sets `flags.dashboard` (line ~124) and runs `npm run test:browser:smoke` (lines ~261–268). The only change needed is to **broaden `DASHBOARD_PATH_RE`** (line 24) to also match the state/read-model/rules modules listed in the Acceptance Criteria, because architectural refactors can break dashboard action availability through read-model or state-action modules that the current regex misses. Do not duplicate the smoke-run logic.
 
-6. Update `.github/workflows/test.yml` so PR CI includes browser smoke. Keep full `test:browser` on push to `main` if runtime matters, but PRs must exercise the critical action contract.
+6. Update `.github/workflows/test.yml` so PR CI includes browser smoke. Today the `browser` job is gated `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`, so PRs run no browser tier at all. Add a PR-eligible smoke job (or relax the gate for a smoke-only step) that runs `npm run test:browser:smoke`; it must include the Playwright install step (`npx playwright install --with-deps chromium`) like the existing `browser` job. Keep full `test:browser` on push to `main` if runtime matters, but PRs must exercise the critical action contract. Pin the smoke job to a single Node version (20.x) per the Open Questions recommendation.
 
 7. Update package scripts only if needed to make the policy explicit. Avoid making `npm test` unexpectedly very slow unless that is an intentional decision; it is acceptable for `npm test` to remain core-only if CI and docs are explicit and dashboard static JS checks run in core.
 
@@ -102,7 +102,9 @@ Recommended implementation path:
 
 ## Dependencies
 - Existing dashboard e2e fixture under `tests/dashboard-e2e/setup.js`.
-- Existing scoped validation runner in `lib/test-loop/scoped.js`.
+- Existing browser-error helper file `tests/dashboard-e2e/_helpers.js` (extend, do not recreate).
+- Existing scoped validation runner in `lib/test-loop/scoped.js` (`DASHBOARD_PATH_RE` at line 24; smoke trigger at lines ~261–268).
+- Existing flat ESLint config `eslint.config.js` and the `lint` npm script glob in `package.json`.
 - Existing GitHub Actions workflow in `.github/workflows/test.yml`.
 - Existing autonomous-start regression commit `17c7fd8c`.
 
