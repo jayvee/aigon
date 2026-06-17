@@ -10,6 +10,14 @@ test('static guards: home.html stays GA4-free and lib/pro.js ignores project con
     assert.ok(!html.includes('G-XXXXXXXXXX') && !html.includes('googletagmanager.com'));
     assert.ok(!/loadProjectConfig|require\(['"]\.\/config['"]\)/.test(pro));
 });
+// REGRESSION: dashboard e2e servers use the fixed `aigon` app id and an
+// ephemeral port. They must never rewrite the real aigon.localhost Caddy route.
+test('server start/restart gates Caddy proxy writes for e2e dashboard servers', () => {
+    const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
+    assert.ok(infra.includes("const isE2eServer = process.env.AIGON_E2E_SERVER === '1';"));
+    const guarded = (infra.match(/proxyAvailable:\s*!isE2eServer && isProxyAvailable\(\)/g) || []).length;
+    assert.strictEqual(guarded, 2, 'server start and restart launch paths must both be e2e-gated');
+});
 // REGRESSION: F286 mode-conditional implementation logs (fleet-only + skip copy).
 test('implementation logging policy', () => {
     const pp = require('../../lib/profile-placeholders');
