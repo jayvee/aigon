@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-17T23:32:18.088Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: fix lifecycle spec-move staging for untracked specs
