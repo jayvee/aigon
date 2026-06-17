@@ -23,8 +23,9 @@ aigon install-agent cx      # OpenAI Codex
 aigon install-agent am      # Amp
 
 # Run the test suite
-npm test                    # unit tests (fast)
-MOCK_DELAY=fast npm run test:ui   # dashboard e2e (~1 min)
+npm test                       # core validation: lint (incl. dashboard JS) + diagrams + unit/integration/workflow
+npm run test:browser:smoke     # critical-action dashboard smoke (required for any dashboard change)
+npm run test:deploy            # release gate: core + full browser E2E + test-budget
 ```
 
 You'll need **Node.js 18+**, **Git 2.20+**, and **tmux** (for Fleet/worktree mode tests).
@@ -87,6 +88,18 @@ Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10�
    ```
    This runs `test:core` + `test:browser` + the test-budget check. Do not push past a red gate.
 5. Open a PR using the template — explain the *why*, link the issue, list what you tested
+
+## Test tiers — which command, when
+
+Aigon has three test tiers. Know which one your change requires:
+
+| Command | What it runs | When |
+| --- | --- | --- |
+| `npm test` | **Core validation** — ESLint (now including `templates/dashboard/js/**`, which catches undeclared dashboard globals), workflow diagrams, unit/integration/workflow suites. No browser. | Every change. The fast inner-loop gate. |
+| `npm run test:browser:smoke` | **Critical-action browser smoke** — Playwright `@smoke` subset: opens the load-bearing dashboard action surfaces (start, autonomous-start, eval, close, resolve-and-close) and fails on any console/page error or the generic "Action failed to load" toast. | **Required for any dashboard action/UI change.** Also runs automatically in the iterate gate (`npm run test:quick`) when dashboard, state-projection, or workflow-rules files change, and on every PR in CI. |
+| `npm run test:deploy` | **Release gate** — `test:core` + full `test:browser` E2E + test-budget. | Before `git push` / `feature-close`. Do not push past a red gate. |
+
+> Why the smoke tier exists: the autonomous-start path once shipped broken (`AUTONOMOUS_AGENT_IDS` was referenced but never declared) because core tests do not load the dashboard in a browser and nothing watched the console while opening an action. `tests/dashboard-e2e/critical-actions.spec.js` is the regression guard — keep its actions covered.
 
 ## Test discipline
 
