@@ -1,3 +1,26 @@
+---
+commit_count: 10
+lines_added: 582
+lines_removed: 67
+lines_changed: 649
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.1
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 44774
+output_tokens: 152124
+cache_creation_input_tokens: 409118
+cache_read_input_tokens: 19948393
+thinking_tokens: 0
+total_tokens: 20554409
+billable_tokens: 196898
+cost_usd: 16.5582
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 517 - simplify-unified-entity-view
 Agent: cc
 
