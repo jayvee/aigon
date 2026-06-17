@@ -120,6 +120,7 @@ Current shared modules:
   `buildAutonomousPlanHtml`
 - `templates/dashboard/js/set-cards.js` (~100 lines): shared dashboard renderer for set cards and the dep-graph mini-view so SVG/layout markup is testable outside the full browser bundle.
   `buildSetCardBodyHtml`, `buildSetDepGraphSvg`
+- **F519 dashboard action split** (`templates/dashboard/js/actions.js` + `actions/`): `actions.js` is the classic-script compatibility shell (`renderActionButtons`, `handleFeatureAction`, `handleSetAction`, `showNudgeModal`) with lazy `import()` of ESM modules under `templates/dashboard/js/actions/<action>.js` (`open(ctx)` / optional `close(ctx)`). Shared triplet/picker DOM helpers live in `actions-picker.js`; budget/quota widget in `budget-widget.js`. Action modules receive `ctx.helpers` / `./shared.js` — they must not rely on unqualified classic-script globals.
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,115 lines): Iterate (Autopilot) loop and smart validation helpers
