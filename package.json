@@ -1,6 +1,6 @@
 {
   "name": "@senlabsai/aigon",
-  "version": "2.66.0-beta.4",
+  "version": "2.67.0-beta.1",
   "description": "CLI for the Aigon Spec-Driven AI Dev Flow",
   "packageManager": "npm@11.14.1",
   "license": "Apache-2.0",
