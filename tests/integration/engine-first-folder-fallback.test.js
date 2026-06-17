@@ -81,7 +81,10 @@ test('checkUnmetDependencies: dependency unmet when engine says implementing eve
     const unmet = checkUnmetDependencies(dependentPath, paths);
     assert.strictEqual(unmet.length, 1);
     assert.strictEqual(unmet[0].id, '20');
-    assert.strictEqual(unmet[0].stage, 'implementing');
+    // F517: stage label is now the canonical coarse stage from buildEntityView
+    // (snapshotToStage maps lifecycle 'implementing' → 'in-progress') rather
+    // than the fine-grained currentSpecState the old re-derivation reported.
+    assert.strictEqual(unmet[0].stage, 'in-progress');
 }));
 
 // ---------------------------------------------------------------------------
