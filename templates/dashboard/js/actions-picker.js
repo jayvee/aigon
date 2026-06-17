@@ -19,6 +19,7 @@ const AGENT_SHORT_NAMES = AIGON_AGENTS.reduce((map, agent) => {
 function getAutonomousAgentIds() {
   return AIGON_AGENTS.filter(agent => agent.autonomousEligible !== false).map(agent => agent.id);
 }
+const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
 function createEl(tag, options) {
   const el = document.createElement(tag);
