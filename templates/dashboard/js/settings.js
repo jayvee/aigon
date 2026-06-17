@@ -88,7 +88,6 @@
     // Pro sync UI (`renderBackupSync` from @aigon/pro) targets `#backup-sync-view`, now
     // embedded in Settings → Aigon Sync (feature 236 batch).
 
-    /* eslint-disable no-unused-vars */
     function _renderSyncPanel_REMOVED(scope, host) {
       // scope: { id, label, includes, excludes, statusUrl, configureCmd, backupCmd, restoreCmd, statusCmd }
       host.innerHTML = '';
