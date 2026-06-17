@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 4148
+lines_removed: 3280
+lines_changed: 7428
+files_touched: 22
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 519 - simplify-actions-js-split
 Agent: cu
 
