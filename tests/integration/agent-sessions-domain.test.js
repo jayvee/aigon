@@ -152,7 +152,7 @@ test('store reads and writes sidecar-compatible records', () => withTempDir('aig
     assert.strictEqual(raw.agentSessionId, 'codex-session-1');
 }));
 
-test('store list skips non-domain live sidecars without weakening strict reads', () => withTempDir('aigon-agent-sessions-', (repo) => {
+test('store models agent-less auto + set-autonomous sidecars (F554)', () => withTempDir('aigon-agent-sessions-', (repo) => {
     writeSidecar(repo, 'aigon-f553-do-cx', {
         category: 'entity',
         sessionName: 'aigon-f553-do-cx',
@@ -161,6 +161,9 @@ test('store list skips non-domain live sidecars without weakening strict reads',
         entityId: '553',
         role: 'do',
     });
+    // F554 resolves the F553 escalation: set-autonomous ('S') and per-entity
+    // 'auto' conductor sessions are agent-less but now first-class domain records
+    // (not skipped). Open Question default: normalize them, no new repo behavior.
     writeSidecar(repo, 'aigon-slaunch-auto', {
         category: 'entity',
         sessionName: 'aigon-slaunch-auto',
@@ -172,9 +175,12 @@ test('store list skips non-domain live sidecars without weakening strict reads',
 
     const store = createAgentSessionStore({ repoPath: repo });
     const records = store.listSessions();
-    assert.strictEqual(records.length, 1);
-    assert.strictEqual(records[0].sessionId, 'aigon-f553-do-cx');
-    assert.throws(() => store.readSession('aigon-slaunch-auto'), /Invalid entity type/);
+    assert.strictEqual(records.length, 2);
+    const setRecord = store.readSession('aigon-slaunch-auto');
+    assert.strictEqual(setRecord.entity.type, 'set');
+    assert.strictEqual(setRecord.entity.id, 'launch');
+    assert.strictEqual(setRecord.agent, null);
+    assert.strictEqual(setRecord.role, 'auto');
 }));
 
 test('service starts sessions with a fake host and mutates records', () => withTempDir('aigon-agent-sessions-', (repo) => {
@@ -231,8 +237,10 @@ test('service starts sessions with a fake host and mutates records', () => withT
     assert.ok(events.length >= 4);
 }));
 
-test('service rejects startSession without a host', () => withTempDir('aigon-agent-sessions-', (repo) => {
-    const service = createAgentSessionService({ repoPath: repo });
+test('service rejects startSession when host is explicitly disabled', () => withTempDir('aigon-agent-sessions-', (repo) => {
+    // F554: the service now defaults to the tmux host. Passing host: null
+    // explicitly opts out and must still surface HOST_UNAVAILABLE.
+    const service = createAgentSessionService({ repoPath: repo, host: null });
     assert.throws(() => service.startSession({
         sessionId: 'aigon-f553-do-cx',
         category: SESSION_CATEGORIES.ENTITY,
@@ -249,6 +257,19 @@ test('agent-sessions boundary stays acyclic', () => {
         assert.ok(!body.includes("require('../worktree") && !body.includes("require('../dashboard-server"));
         assert.ok(!body.includes("require('../dashboard-routes") && !body.includes("require('../workflow-core"));
         assert.ok(!body.includes("require('../commands"));
+    }
+});
+
+test('tmux host does not import workflow-core, dashboard, or commands (F554)', () => {
+    const hostsDir = path.join(__dirname, '../../lib/agent-sessions/hosts');
+    for (const file of fs.readdirSync(hostsDir).filter((name) => name.endsWith('.js'))) {
+        const body = fs.readFileSync(path.join(hostsDir, file), 'utf8');
+        // The host may borrow low-level tmux exec from the worktree facade (lazy),
+        // but must not reach into workflow-core, dashboard routes, or commands.
+        assert.ok(!body.includes("require('../../workflow-core"), `${file} imports workflow-core`);
+        assert.ok(!body.includes("require('../../dashboard-routes"), `${file} imports dashboard-routes`);
+        assert.ok(!body.includes("require('../../dashboard-server"), `${file} imports dashboard-server`);
+        assert.ok(!body.includes("require('../../commands"), `${file} imports commands`);
     }
 });
 
