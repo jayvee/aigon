@@ -15,3 +15,22 @@ Done. ESLint now lints `templates/dashboard/js/**` (`no-undef` catches the undec
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-06-17
+
+### Fixes Applied
+- None — implementation was clean
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- `critical-actions.spec.js` covers the F556 incident path (autonomous-start modal + console/toast guard) and folds in the former lazy-load regression under the `@smoke` describe. Eval/close use deterministic `/api/status` mocks with settings/recommendation stubbed; action-module routes are deliberately left live.
+- `close-failure-event.spec.js` keeps resolve-and-close as a rendering regression (button + failure info visible) without opening the surface — matches the spec's technical approach.
+- `DASHBOARD_PATH_RE`, ESLint dashboard blocks, CI `browser-smoke` job, and three-tier docs all align with acceptance criteria.
