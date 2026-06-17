@@ -1,13 +1,13 @@
 ---
 recurring_slug: review-and-refine-tests
 complexity: medium
-recurring_week: 2026-W21
+recurring_week: 2026-W25
 recurring_template: review-and-refine-tests.md
 transitions:
-  - { from: "inbox", to: "backlog", at: "2026-05-17T23:14:11.271Z", actor: "recurring/feature-prioritise" }
+  - { from: "inbox", to: "backlog", at: "2026-06-17T22:48:05.949Z", actor: "recurring/feature-prioritise" }
 ---
 
-# review-and-refine-tests-2026-W21
+# review-and-refine-tests-2026-W25
 
 ## Summary
 
@@ -64,7 +64,7 @@ If a grouping scheme is already in place from a prior run, validate it still map
 
 <!-- Append a new entry here at the top of this section before closing the feature. -->
 <!-- Format:
-### 2026-W21 — <ISO date>
+### 2026-W25 — <ISO date>
 - Baseline: <N tests, Ts duration> (coverage: <X%> if available)
 - After:    <N tests, Ts duration> (coverage: <X%> if available)
 - Deltas:   <±tests, ±duration, ±coverage>
