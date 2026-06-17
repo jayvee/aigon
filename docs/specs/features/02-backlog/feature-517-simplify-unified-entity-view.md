@@ -1,6 +1,9 @@
 ---
 complexity: high
 set: architecture-simplify-2026-05
+depends_on:
+  - 515
+  - 554
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-05-12T00:34:46.440Z", actor: "cli/feature-prioritise" }
 ---
@@ -11,7 +14,9 @@ transitions:
 
 Read-side logic for "what's the state of feature N?" is currently spread across **five modules totalling ~4,000 lines**: `dashboard-status-collector.js` (1,891), `workflow-read-model.js` (847), `workflow-snapshot-adapter.js` (552), `feature-status.js` (~500), and `dashboard-status-helpers.js`. Each re-derives overlapping facets — *closed?*, *blocked?*, *agent rows*, *stage label*, *engine-vs-folder precedence*. The "Write-Path Contract" section in `CLAUDE.md` exists *because* of this fragmentation — F294 (compat-state removal) and F397 (`entity-lifecycle.js#isEntityDone`) are both incidents where producers and consumers fell out of sync. F397 already started the consolidation by introducing one shared `isEntityDone(repoPath, entityType, id, folderFallback)` helper. **This feature finishes the job**: introduce one canonical `buildEntityView(repoPath, entityType, id)` that returns the full state object, and migrate `collectDashboardStatusData` plus CLI `feature-status` plus `set-conductor` plus `feature-dependencies` to project from it.
 
-Important boundary correction: `buildEntityView` is a read-model/application view, **not workflow-core**. It joins workflow snapshots with spec metadata, sidecars, agent status, and optional tmux/session observations. Putting that module under `lib/workflow-core/` would make the lifecycle engine depend on runtime/read-side concerns. The module should live outside workflow-core and consume workflow-core only through its public read APIs.
+Important boundary correction: `buildEntityView` is a read-model/application view, **not workflow-core**. It joins workflow snapshots with spec metadata, agent status, dependency state, set metadata, and AgentSession observations. Putting that module under `lib/workflow-core/` would make the lifecycle engine depend on runtime/read-side concerns. The module should live outside workflow-core and consume workflow-core only through its public read APIs.
+
+F554 introduced `lib/agent-sessions/` as the session/runtime boundary. This feature must use that boundary. `buildEntityView` must not parse tmux session names, run tmux commands, or read `.aigon/sessions/*.json` directly. Session/runtime observations come from `createAgentSessionService({ repoPath })` through `listSessions()` / `listLiveSessions()` or an injected equivalent in tests.
 
 This is the highest-impact item in the architecture-simplify set for bug reduction. It is also the riskiest — the read path is load-bearing for every dashboard poll. Do it as a strangler-pattern migration: introduce `buildEntityView` alongside existing code, migrate one consumer at a time, delete the redundant projections only after all consumers have moved.
 
@@ -23,12 +28,15 @@ This is the highest-impact item in the architecture-simplify set for bug reducti
 
 ## Acceptance Criteria
 
-- [ ] A new `lib/read-model/entity-view.js` exports `buildEntityView(repoPath, entityType, id, options)` that returns the canonical shape: `{ id, type, lifecycle, stage, closed, blocked, blockedBy, agentRows, specPath, snapshotPath, complexity, set, source: 'engine'|'folder' }`. The shape is documented in a top-of-file JSDoc.
-- [ ] `entity-view.js` does **one** snapshot read, **one** spec read, and **one** sidecar enumeration per call. Hot paths (manifest reads on poll) memoize within the call.
+- [ ] A new `lib/read-model/entity-view.js` exports `buildEntityView(repoPath, entityType, id, options)` that returns the canonical shape: `{ id, type, lifecycle, stage, closed, blocked, blockedBy, agentRows, sessions, specPath, snapshotPath, complexity, set, source: 'engine'|'folder' }`. The shape is documented in a top-of-file JSDoc.
+- [ ] `sessions` is a reusable read-model facet sourced from `AgentSessionService`, not a dashboard DTO. Minimum shape: `{ live: [], byRole: {}, primaryByRole: {} }`, where entries are normalized `AgentSession` records or stable projections of them. Dashboard-specific attach commands, button labels, and transport details stay outside `entity-view.js`.
+- [ ] `entity-view.js` does **one** snapshot read, **one** spec read, and **one** session enumeration per call. Hot paths (manifest reads on poll) memoize within the call.
 - [ ] At least three consumers are migrated: `collectDashboardStatusData` (dashboard poll), `lib/commands/feature.js#feature-status` (CLI), and `lib/feature-dependencies.js#checkUnmetDependencies`. Each migration removes the consumer's local re-derivation logic.
 - [ ] Once all listed consumers are migrated, any read functions whose only caller is now `buildEntityView` are deleted from `dashboard-status-collector.js` / `workflow-read-model.js`. Net `lib/` LOC delta should be negative.
 - [ ] `lib/read-model/entity-view.js` imports workflow data through the public workflow read facade (`require('../workflow-core')` or a new `lib/workflow-service.js` facade), not through `workflow-core/engine`, `workflow-core/paths`, or `workflow-core/entity-lifecycle` internals.
+- [ ] `lib/read-model/entity-view.js` imports session data through `lib/agent-sessions` only. It must not import `lib/worktree.js`, `child_process`, `tmux-inject`, `dashboard-routes/*`, or `agent-sessions/names.js` directly.
 - [ ] Dashboard-specific DTO shaping stays outside `entity-view.js` in `dashboard-status-collector.js` or a small `lib/read-model/dashboard-entity-dto.js`; `EntityView` is reusable by CLI, set-conductor, board, and dashboard.
+- [ ] `docs/architecture.md` and `AGENTS.md` are updated if this feature adds `lib/read-model/`, introduces a workflow read facade, or changes which modules own dashboard/entity read state.
 - [ ] `npm run test:browser` passes (board, kanban, set cards all render correctly). Add an integration test in `tests/integration/` that exercises `buildEntityView` for every entity type × every lifecycle stage.
 - [ ] Dashboard poll cost (wall-clock, measured via the dashboard's existing `pollStatus` timing log) drops by ≥10% on a repo with ≥20 features. If not, the consolidation is incomplete or there's a regression.
 
@@ -46,19 +54,22 @@ npm run test:browser
 - **One consumer at a time.** Order: `feature-status` (CLI, lowest blast radius) → `feature-dependencies` (medium) → `collectDashboardStatusData` (highest, last).
 - **Shape lock-in.** Before migrating any consumer, write the JSDoc for the return shape and review it. Every facet a consumer needs must be in the shape; resist adding optional fields per-consumer. Keep transport/UI fields out of the canonical view unless they are genuinely reusable.
 - **Engine-first.** Reuse `entity-lifecycle.js#isEntityDone` and the F397 precedence rule — `buildEntityView` never duplicates that logic, it composes.
+- **Session boundary.** Reuse `AgentSessionService` for session/session-sidecar observations. Do not reintroduce raw tmux parsing into the new read model; F554 already created that boundary.
 - **Caching.** `entity-view.js` may export an `EntityViewCache` for the dashboard poll, but only if measurement shows the redundant reads are real. Don't add caching speculatively.
 
 ## Dependencies
 
-- depends_on: simplify-centralise-paths-and-json-io
+- depends_on: 515 simplify-centralise-paths-and-json-io
+- depends_on: 554 agent-session-tmux-host-and-legacy-facade
 
-Touching every read path in `lib/` is much safer once stage-folder strings and JSON IO are centralised — the migration is mostly mechanical instead of partly mechanical.
+Touching every read path in `lib/` is much safer once stage-folder strings and JSON IO are centralised — the migration is mostly mechanical instead of partly mechanical. It is also safer after F554 because `buildEntityView` can consume one `AgentSessionService` boundary instead of preserving older tmux/sidecar coupling.
 
 ## Out of Scope
 
 - Changing the dashboard `/api/status` response shape. The HTTP API stays stable; only the internal projection changes.
 - Migrating the dashboard frontend. JS files in `templates/dashboard/js/` are not touched by this feature.
 - Replacing `workflow-snapshot-adapter.js` entirely — it stays as the low-level snapshot reader; `entity-view.js` calls into it or into a public workflow read facade.
+- Redesigning AgentSession persistence or tmux hosting. F517 consumes `AgentSessionService`; it does not change the session domain.
 
 ## Open Questions
 
