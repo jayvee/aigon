@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 732
+lines_removed: 161
+lines_changed: 893
+files_touched: 12
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 3280000
+output_tokens: 22802
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 3036160
+thinking_tokens: 5686
+total_tokens: 3302802
+billable_tokens: 3308488
+cost_usd: 7.3496
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 555 - agent-session-workflow-signal-bridge
 Agent: cx
 
