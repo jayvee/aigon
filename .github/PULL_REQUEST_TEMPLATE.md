@@ -12,9 +12,9 @@ Closes #
 
 <!-- List manual test steps and which automated tests cover this. -->
 
-- [ ] `npm test` passes
-- [ ] `MOCK_DELAY=fast npm run test:ui` passes
-- [ ] `bash scripts/check-test-budget.sh` passes
+- [ ] `npm test` passes (core validation — lint incl. dashboard JS, diagrams, unit/integration/workflow)
+- [ ] `npm run test:browser:smoke` passes (**required for any dashboard action/UI change** — critical-action surfaces)
+- [ ] `npm run test:deploy` passes before push/release (release gate: core + full browser + test-budget)
 
 ## Checklist
 

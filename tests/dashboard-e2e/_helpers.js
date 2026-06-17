@@ -193,6 +193,55 @@ async function _pollPane(sessionName, regex, timeoutMs, tailOnly, label) {
 const expectTmuxPaneContains = (s, r, t = 8000) => _pollPane(s, r, t, false, 'expectTmuxPaneContains');
 const expectTmuxPaneIdleAfter = (s, r, t = 8000) => _pollPane(s, r, t, true, 'expectTmuxPaneIdleAfter');
 
+/**
+ * F556 critical-action guard. The autonomous-start incident surfaced as a
+ * browser ReferenceError inside an action module's open() that the action
+ * dispatcher swallowed into a generic toast ("Action failed to load. Try
+ * refreshing the page."). No test caught it because nothing watched the console
+ * while opening an action surface. This helper subscribes to console `error`
+ * and `pageerror` so a critical-action smoke test can assert the surface opened
+ * cleanly.
+ *
+ * Usage:
+ *   const watch = watchBrowserErrors(page);            // attach BEFORE the action
+ *   await openSomeActionSurface();
+ *   await assertActionSurfaceClean(page, watch, 'feature-eval');
+ *
+ * `allow` entries (strings → substring match, RegExp → test) suppress errors
+ * known to be unrelated to the action under test; always comment why.
+ */
+function watchBrowserErrors(page, { allow = [] } = {}) {
+    const errors = [];
+    page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
+    page.on('pageerror', (err) => errors.push(err && err.message ? err.message : String(err)));
+    return {
+        errors,
+        unexpected() {
+            return errors.filter(e => !allow.some(a => (a instanceof RegExp ? a.test(e) : String(e).includes(a))));
+        },
+    };
+}
+
+/**
+ * Assert a critical action surface opened without the F556 failure signatures:
+ *   1. the generic "Action failed to load" toast is absent, and
+ *   2. no unexpected console/page errors fired while opening it.
+ * Call after the surface is visible (so async errors have had time to land).
+ */
+async function assertActionSurfaceClean(page, watch, label) {
+    await expect(
+        page.getByText('Action failed to load. Try refreshing the page.'),
+        `${label}: generic action-load failure toast must not appear`
+    ).toHaveCount(0);
+    // Let any async module errors settle before reading the buffer.
+    await page.waitForTimeout(150);
+    const unexpected = watch.unexpected();
+    expect(
+        unexpected,
+        `${label}: unexpected browser console/page error(s) while opening the action surface:\n${unexpected.join('\n')}`
+    ).toEqual([]);
+}
+
 module.exports = {
     CTX_FILE, SOLO_DELAYS, FLEET_CC_DELAYS, FLEET_GG_DELAYS, GIT_SAFE_ENV,
     readCtx, waitForPath, forceRefresh,
@@ -201,4 +250,5 @@ module.exports = {
     createInboxFeatureViaUI, prioritiseFromInboxViaUI,
     readSnapshot, expectSnapshotState, expectSpecAt,
     tmuxSessionFor, expectTmuxPaneContains, expectTmuxPaneIdleAfter,
+    watchBrowserErrors, assertActionSurfaceClean,
 };

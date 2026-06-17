@@ -40,10 +40,36 @@ jobs:
       - name: Test budget under ceiling
         run: bash scripts/check-test-budget.sh
 
+  browser-smoke:
+    name: Browser smoke (PR gate)
+    runs-on: ubuntu-latest
+    # F556: critical-action browser smoke runs on every PR (and on push) so a
+    # basic dashboard action like Start Autonomously cannot be broken by an
+    # internal refactor without CI catching it. Pinned to a single Node version
+    # to control runtime; the full E2E tier stays push-only below.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Critical-action browser smoke
+        run: npm run test:browser:smoke
+
   browser:
     name: Browser E2E (deploy gate)
     runs-on: ubuntu-latest
-    # Only run the slow browser tier on push to main, not on every PR.
+    # Only run the slow full browser tier on push to main, not on every PR.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:

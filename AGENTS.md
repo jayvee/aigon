@@ -349,13 +349,13 @@ Equivalent to `npm run test:core && npm run test:browser && bash scripts/check-t
 ```bash
 npm run test:iterate
 ```
-Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** When dashboard files are in the diff, the gate automatically runs `test:browser:smoke` (Playwright @smoke subset) instead of the full 2-minute browser suite. Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
+Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** When dashboard files are in the diff, the gate automatically runs `test:browser:smoke` (Playwright @smoke subset) instead of the full 2-minute browser suite. The `DASHBOARD_PATH_RE` trigger (in `lib/test-loop/scoped.js`) matches not just `templates/dashboard/` and `lib/dashboard*`/`lib/server*` but also the state-projection and workflow-rules modules (`lib/state-render-meta.js`, `lib/workflow-snapshot-adapter.js`, `lib/{feature,research}-workflow-rules.js`, `lib/workflow-core/**`) — a refactor there can silently change which dashboard actions are available, which only a browser test catches (F556). Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
 
 **Agents must NOT manually run `test:browser`, `test:deploy`, `test:ui`, or the full Playwright suite mid-iteration.** The scoped runner invokes the smoke browser subset automatically when dashboard paths are in the diff. The `## Pre-authorised` template default authorises skipping the full browser suite mid-iteration.
 
 **Test stage reference:**
 - `npm run test:quick` / `test:iterate` — iterate gate (alias)
-- `npm run test:core` — lint + diagrams + integration + workflow (no browser)
+- `npm run test:core` — lint + diagrams + integration + workflow (no browser); lint now covers `templates/dashboard/js/**` (ESLint `no-undef` catches undeclared dashboard globals — the F556 `AUTONOMOUS_AGENT_IDS` class). Cross-file dashboard globals are allowlisted in `eslint.config.js`; do not add a name there without confirming it is genuinely defined somewhere.
 - `npm run test:browser` — full Playwright E2E suite (MOCK_DELAY=fast)
 - `npm run test:browser:smoke` — Playwright @smoke subset (fast, auto-run in iterate gate)
 - `npm run test:deploy` — core + browser + budget (the deploy gate)

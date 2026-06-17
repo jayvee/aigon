@@ -49,7 +49,7 @@
     "ship:share": "node scripts/ship.js share",
     "ship:cut": "node scripts/ship.js cut",
     "ship:publish": "node scripts/ship.js publish",
-    "lint": "eslint \"lib/**/*.js\" tests/unit tests/integration tests/workflow-core",
+    "lint": "eslint \"lib/**/*.js\" \"templates/dashboard/js/**/*.js\" tests/unit tests/integration tests/workflow-core",
     "lint:paths": "node scripts/check-path-literals.js",
     "test": "npm run lint && node scripts/check-template-leaks.js && node scripts/generate-workflow-diagrams.js --check && npm run test:unit && npm run test:integration && npm run test:workflow",
     "test:unit": "node scripts/run-tests-parallel.js \"tests/unit/*.test.js\"",
