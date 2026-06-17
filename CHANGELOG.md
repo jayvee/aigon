@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.67.0-beta.1] — 2026-06-17
+
+Architecture simplification, AgentSession runtime boundary, dashboard action hardening, and doctor/test-policy improvements.
+
+### Added
+
+- AgentSession runtime domain (`lib/agent-sessions/`) with an explicit model/service, tmux as a `SessionHost`, normalized console DTOs, live-session lookup, operator-message delivery, and a workflow signal bridge for session facts.
+- Doctor triage improvements: enhanced health checks, structured issue digest, collapsed healthy sections, scoped views, and consent-driven scoped `doctor --fix`.
+- Dashboard Code Changes inline diffs, post-close detail fallbacks, and reviewer surfacing in the feature detail view.
+- Dashboard critical-action browser smoke coverage, dashboard JS lint for undeclared globals, broader iterate-loop dashboard triggers, and PR CI browser-smoke gating.
+
+### Changed
+
+- Centralised stage path and JSON IO helpers, reducing duplicated filesystem/state handling across feature, dashboard, and workflow read paths.
+- Split setup commands into focused handlers while preserving legacy compatibility.
+- Added a canonical entity read model (`buildEntityView`) and migrated key dashboard/status/dependency consumers to it.
+- Extracted dashboard server action handlers and Pro stub assets out of the HTTP shell.
+- Split dashboard card actions into lazy-loaded action modules behind the existing classic-script compatibility API.
+
+### Fixed
+
+- Start Autonomously no longer fails with `Action failed to load. Try refreshing the page.` due to a missing dashboard action global.
+- Dashboard e2e servers no longer rewrite the real `aigon.localhost` Caddy route during browser test runs.
+- AgentSession workflow signals route spec-review/code-review completion through the correct bridge metadata.
+- Dashboard diff rows are clickable, stale diff reloads no longer collapse open rows, and post-close detail tabs keep useful fallbacks.
+- Close telemetry prefers real close records over fallback records when final cost stats are frozen.
+
 ## [2.66.0-beta.4] — 2026-05-28
 
 User-configurable model options — add local or custom models to any agent's dashboard picker.
