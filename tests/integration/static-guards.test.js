@@ -35,16 +35,16 @@ test('autonomous close gate: feedback-addressed and per-agent file bridge snapsh
 // REGRESSION: F313 banner used querySelector('#agent-picker .modal-card') but the modal is .modal-box — banner never rendered.
 test('agent picker recommendation banner mounts in index.html (no phantom .modal-card)', () => {
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
-    const actions = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions.js'), 'utf8');
+    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
     assert.ok(idx.includes('id="agent-picker-recommendation"'));
     assert.ok(idx.includes('id="autonomous-picker-recommendation"'));
-    assert.ok(!actions.includes("querySelector('#agent-picker .modal-card')"));
-    assert.ok(actions.includes("getElementById(mountId || 'agent-picker-recommendation')"));
+    assert.ok(!picker.includes("querySelector('#agent-picker .modal-card')"));
+    assert.ok(picker.includes("getElementById(mountId || 'agent-picker-recommendation')"));
 });
 // REGRESSION: Start Autonomously reviewer row must reuse the same triplet wiring as implement rows (spec recommendations + localStorage), not dead selects.
 test('autonomous reviewer triplet uses recommendation and tripletStorage like implement rows', () => {
-    const actions = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions.js'), 'utf8');
-    const block = actions.match(/function updateReviewerTripletSelects\([\s\S]*?\n}\n\n\/\/ Convert picker triplets/);
+    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
+    const block = picker.match(/function updateReviewerTripletSelects\([\s\S]*?\n}\n\n\/\/ Convert picker triplets/);
     assert.ok(block, 'updateReviewerTripletSelects block present');
     const body = block[0];
     assert.ok(body.includes('getRecommendedValue(agent.id, \'model\')'), 'reviewer model select applies spec recommendation');
