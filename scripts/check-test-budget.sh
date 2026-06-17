@@ -53,7 +53,12 @@ set -euo pipefail
 # (dev-mode convenience + version-badge staleness). Hoisted reusable engine-test helpers
 # (readJson/normalizePath/freshEntityModules/buildEntityCtx/runEntityChild) into _helpers.js. Net -422 LOC,
 # suite 9986. Ceiling 10100→10000.
-CEILING="${CEILING:-10000}"
+# 2026-06-17 2.67.0-beta.1: AgentSession/domain simplification + dashboard critical-action
+# coverage added high-value regression tests after a release-blocking autonomous-start modal
+# failure. Deleted trivial repo-identity predicate unit test (-16 LOC) in the same commit;
+# ceiling raised to match the new architecture/test-policy baseline rather than deleting
+# critical browser/session coverage.
+CEILING="${CEILING:-11200}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
