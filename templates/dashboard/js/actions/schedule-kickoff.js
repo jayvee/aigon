@@ -355,7 +355,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     const modelsCsv = (triArgs.find((a) => a.startsWith('--models=')) || '').slice('--models='.length) || '';
     const effortsCsv = (triArgs.find((a) => a.startsWith('--efforts=')) || '').slice('--efforts='.length) || '';
     try {
-      if (typeof fetchBudget === 'function') {
+      if (typeof H.fetchBudget === 'function') {
         await H.fetchBudget();
         const warning = H.budgetWarningForAgents([...selectedAgents, evalAgent, reviewAgent].filter(Boolean));
         if (warning && !window.confirm(warning)) return;
@@ -423,5 +423,4 @@ export async function open(ctx) {
   const entityType = ctx.entityType || (ctx.va && String(ctx.va.action || '').startsWith('research') ? 'research' : 'feature');
   await openScheduleKickoffModal(entityType, ctx.feature, ctx.repoPath, ctx.btn);
 }
-
 

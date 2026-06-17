@@ -294,7 +294,7 @@ function populateSetAgentPickerReviewerSection(repoPath, implementerIds) {
     H.updateReviewerTripletSelects('', 'picker-set');
     autonomousModalModels = prev;
   };
-  if (typeof fetchAgentModels === 'function') {
+  if (typeof H.fetchAgentModels === 'function') {
     return H.fetchAgentModels(repoPath).then(setup).catch(function() { setup({}); });
   }
   setup({});
@@ -415,7 +415,7 @@ async function submitAutonomousModal() {
 
   // F322: warn if a selected agent is below 20% on any budget limit.
   try {
-    if (typeof fetchBudget === 'function') {
+    if (typeof H.fetchBudget === 'function') {
       await H.fetchBudget();
       const warning = H.budgetWarningForAgents([...selectedAgents, evalAgent, reviewAgent].filter(Boolean));
       if (warning && !window.confirm(warning)) {
@@ -487,5 +487,4 @@ export async function open(ctx) {
 export function close() {
   hideAutonomousModal();
 }
-
 
