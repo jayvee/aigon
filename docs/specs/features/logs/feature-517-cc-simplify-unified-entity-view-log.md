@@ -27,3 +27,24 @@ F519 (actions.js split) and future read-path work: project from `buildEntityView
 
 ## Test Coverage
 `tests/integration/entity-view.test.js` (11 tests): feature × every lifecycle stage, research, folder fallback, session facet (injected service), dependency blocked/unblocked. `engine-first-folder-fallback.test.js` + `lifecycle.test.js` pass. iterate gate (lint + scoped + browser smoke) green.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-06-17
+
+### Fixes Applied
+- d3de8700 fix(review): skip session enumeration on dependency and CLI status paths
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:architectural — Strangler pass 1 intentionally defers deep `collectFeatures` consolidation, negative net `lib/` LOC, and the ≥10% dashboard poll benchmark. These match the spec's staged migration order (CLI → deps → dashboard blockedBy first; full collector migration last).
+- ESCALATE:architectural — `set-conductor` not migrated in this pass; acceptance criteria require ≥3 consumers (met: feature-status, checkUnmetDependencies, dashboard blockedBy).
+
+### Notes
+- Review found `checkUnmetDependencies` and `feature-status` calling `buildEntityView` without `includeSessions:false`, causing unnecessary `.aigon/sessions/` scans on every dependency resolution during backlog blockedBy polls. Fixed in review commit.
+- Added `|| 'unknown'` stage fallback when `snapshotToStage` returns null for an unmapped lifecycle.
+- Circular lazy-require between `entity-view.js` and `feature-dependencies.js` is sound (`computeBlocked:false` breaks recursion).
+- Implementation log's own guidance to pass `includeSessions:false` on hot paths was correct; two migrated call sites had missed it.
