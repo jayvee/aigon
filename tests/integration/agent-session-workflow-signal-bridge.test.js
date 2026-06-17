@@ -4,7 +4,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, testAsync, withTempDir, withTempDirAsync, report } = require('../_helpers');
+const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const wf = require('../../lib/workflow-core');
 const { handleDashboardMarkComplete } = require('../../lib/dashboard-actions/mark-complete');
 const {
@@ -53,7 +53,6 @@ function makeDeps(repo, calls) {
 }
 
 test('bridge maps legacy agent-status statuses to workflow actions', () => {
-    const base = { entityType: 'feature', entityId: '01', agentId: 'cx', sessionId: 's1' };
     const cases = [
         ['implementing', []],
         ['reviewing', ['workflow.recordCodeReviewStarted']],
