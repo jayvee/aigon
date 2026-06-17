@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 245
+lines_removed: 37
+lines_changed: 282
+files_touched: 7
+fix_commit_count: 2
+fix_commit_ratio: 0.5
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 559 - fix-lifecycle-spec-move-staging-for-untracked-specs
 Agent: cu
 
