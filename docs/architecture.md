@@ -152,7 +152,7 @@ Current shared modules:
   - `report.js` (F550) — `DoctorReport`, the structured issue collector + triage digest; the severity table is the single source of truth and sections call `report.issue({ section, check, message, fix })`
   - `fix-dispatch.js` (F552) — consent-driven fix dispatch for `aigon doctor --fix` (per-issue prompts, fix summary, manual-issue printing)
   - `scopes.js` (F552) — scoped doctor views: parses scope/detail flags from argv (`parseDoctorScopes`, `sectionInScope`)
-- `lib/worktree.js` (~2,300 lines): worktree creation, permissions, git attribution metadata bootstrap, tmux sessions
+- `lib/worktree.js` (~2,300 lines): worktree creation, permissions, git attribution metadata bootstrap; **tmux compatibility facade** (F554) — re-exports `lib/agent-sessions/names.js`, `createDetachedTmuxSession` delegates to `TmuxSessionHost`
   `setupWorktreeEnvironment`, `ensureAgentSessions`, `buildTmuxSessionName`, `openSingleWorktree`
 - `lib/set-conductor.js` (~500 lines): detached set-level autonomous sequencer (`set-autonomous-start|stop|resume|reset`) that resolves set members in topo order, delegates each member to `feature-autonomous-start`, and persists `.aigon/state/set-<slug>-auto.json`
   `run`, `resolveSetExecutionPlan`, `buildSetAutoSessionName`
@@ -321,7 +321,9 @@ The domain owns runtime identity and metadata: the stable `sessionId`, category,
 
 The current store is backwards-compatible with `.aigon/sessions/{sessionName}.json` sidecars. Legacy tmux fields such as `tmuxId` and `shellPid` are normalized into `host: { kind: 'tmux', handle }`, while remaining available on the sidecar shape for existing readers. Provider transcript fields (`agentSessionId`, `agentSessionPath`) normalize into `transcriptBinding`. Tmux is therefore one `SessionHost`, not the domain model itself.
 
-Production launch paths still live in `lib/worktree.js` during the initial introduction. New consumers should use `createAgentSessionService()` and the model/store facade instead of parsing tmux names or reading workflow-core internals for session metadata.
+Tmux session mechanics live in `lib/agent-sessions/hosts/tmux.js` (`TmuxSessionHost` implementing the `SessionHost` contract). Supporting modules: `names.js` (session naming/parsing), `console.js` (snapshot DTOs), `hosts/index.js` (host registry). `lib/worktree.js` keeps backwards-compatible exports and still owns worktree creation plus `buildAgentCommand` launch composition; `createDetachedTmuxSession` is a thin wrapper over the host.
+
+New consumers should use `createAgentSessionService()` for session lookup, live session listing (`listLiveSessions`), console snapshots, and operator-message delivery — not raw tmux calls or workflow-core internals for session metadata.
 
 ### Workflow Authority Split
 
