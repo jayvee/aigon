@@ -14,6 +14,8 @@ complexity: high
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-17T08:59:38.909Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: strengthen dashboard test policy
