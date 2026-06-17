@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Fixed `stageAndCommitSpecMove` to skip untracked `fromPath`; reset uses shared helper; `feature-start` pauses on worktree failure.
 ## New API Surface
 
 ## Key Decisions
