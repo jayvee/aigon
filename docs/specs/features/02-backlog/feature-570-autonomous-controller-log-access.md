@@ -1,8 +1,7 @@
 ---
 complexity: medium
 set: autonomous-controller-ux
-depends_on:
-  [569]
+depends_on: [569]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:03:41.603Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:01:11.909Z", actor: "cli/feature-prioritise" }
@@ -27,10 +26,11 @@ Make AutoConductor logs accessible from the dashboard recovery UI. When the cont
 
 ## Validation
 ```bash
-npm test
+npm run test:core
 ```
 
 ## Technical Approach
+- **Gated pre-audit (do before committing implementation):** determine whether `role: auto` tmux sessions are captured durably enough to resolve their last output after the session exits. If they are not, this feature's scope changes — it splits into (a) extending capture/retention for `role: auto` and (b) the dashboard log-view surface. Resolve this before writing the UI.
 - First audit existing tmux capture/session-sidecar behavior for `role: auto` sessions.
 - Prefer storing or resolving a durable pointer from the existing `.aigon/sessions` sidecar or capture path rather than inventing a new log location.
 - Wire the dashboard detail/recovery view to fetch and display the controller log through an existing safe route if possible.
@@ -45,7 +45,7 @@ npm test
 - Adding persistent cloud log storage
 
 ## Open Questions
-- Are auto tmux sessions currently captured with enough durability after exit, or does capture need to be extended for `role: auto`?
+- (Tracked as the gated pre-audit in Technical Approach above — must be answered before implementation, not carried through it.)
 
 ## Related
 - Set: autonomous-controller-ux

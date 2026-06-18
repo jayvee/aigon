@@ -1,8 +1,7 @@
 ---
 complexity: medium
 set: autonomous-controller-ux
-depends_on:
-  [566]
+depends_on: [566]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:03:40.601Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:01:10.290Z", actor: "cli/feature-prioritise" }
@@ -23,12 +22,14 @@ Render AutoConductor controller status directly on feature cards so operators ca
 - [ ] Running controller state remains compact and does not crowd normal workflow stage display.
 - [ ] Stopped-by-user state reads as manual mode/taken over, not as an error.
 - [ ] Completed controller state does not add noise to done features.
+- [ ] When the controller DTO reports `status: failed`, it reconciles with the `autonomousPlan.stages`-derived headline produced by `lib/card-headline.js` so the card does not render two contradictory failure strings (e.g. `Review failed` from the stage plan alongside `Autonomous failed` from the controller). Controller terminal status is authoritative.
 - [ ] The card still fits current board dimensions without pushing core action buttons off the visible card.
 
 ## Validation
 ```bash
-npm test
+npm run test:iterate
 ```
+Run `npm run test:browser:smoke` when dashboard files change (the iterate gate triggers it automatically on dashboard edits).
 
 ## Technical Approach
 - Render from the server-owned controller DTO introduced by `autonomous-controller-read-model`.

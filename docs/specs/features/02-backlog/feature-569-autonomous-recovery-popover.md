@@ -1,8 +1,7 @@
 ---
 complexity: medium
 set: autonomous-controller-ux
-depends_on:
-  [568]
+depends_on: [568]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:03:41.198Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:01:11.341Z", actor: "cli/feature-prioritise" }
@@ -27,8 +26,9 @@ Build the dashboard recovery popover or drawer section behind the single `Recove
 
 ## Validation
 ```bash
-npm test
+npm run test:iterate
 ```
+Run `npm run test:browser:smoke` when dashboard files change (the iterate gate triggers it automatically on dashboard edits).
 
 ## Technical Approach
 - Consume the action payload produced by `autonomous-recovery-action-model`.
@@ -45,7 +45,7 @@ npm test
 - Automatic recovery execution without operator confirmation
 
 ## Open Questions
-- Should recovery be a popover anchored to the card, a modal, or a section inside the existing detail drawer?
+- Popover-anchored-to-card vs modal? (A pure detail-drawer section is ruled out by the acceptance criterion that recovery must be reachable from both card actions and the detail drawer — the surface needs a card-side entry point. Choose between an anchored popover and a modal during implementation.)
 
 ## Related
 - Set: autonomous-controller-ux

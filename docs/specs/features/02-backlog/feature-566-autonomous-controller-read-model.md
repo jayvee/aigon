@@ -17,7 +17,7 @@ Expose a stable dashboard read-model DTO for feature AutoConductor state so the 
 
 ## Acceptance Criteria
 - [ ] Feature dashboard payloads include a normalized `autonomousController` object for features with feature-auto sidecar state.
-- [ ] The DTO includes at least `status`, `running`, `reason`, `reasonLabel`, `sessionName`, `sessionRunning`, `startedAt`, `updatedAt`, `endedAt`, `workflowState`, `mode`, `agents`, `reviewAgent`, and `evalAgent`.
+- [ ] The DTO includes at least `status`, `running`, `reason`, `reasonLabel`, `error` (the raw `error.message` written for `uncaught-error` and similar), `sessionName`, `sessionRunning`, `startedAt`, `updatedAt`, `endedAt`, `workflowState`, `mode`, `agents`, `reviewAgent`, and `evalAgent`.
 - [ ] The DTO distinguishes `running`, `stopped`, `failed`, `completed`, and quota-paused controller states without relying on workflow lifecycle alone.
 - [ ] Failure reasons are mapped to user-facing categories such as setup failure, reviewer exited, timeout, quota, eval failure, and close failure.
 - [ ] The DTO includes a `recommendedRecoveryKind` or equivalent stable enum that later UI features can use without parsing labels.
@@ -25,7 +25,7 @@ Expose a stable dashboard read-model DTO for feature AutoConductor state so the 
 
 ## Validation
 ```bash
-npm test
+npm run test:core
 ```
 
 ## Technical Approach
@@ -43,8 +43,8 @@ npm test
 - Changing action menu behavior
 - Adding controller log access
 
-## Open Questions
-- Should the DTO live directly on each feature row as `autonomousController`, or under `autonomousPlan.controller` for tighter grouping?
+## Resolved Decisions
+- The DTO lives directly on each feature row as `autonomousController`. Nesting it under `autonomousPlan.controller` would couple it to the legacy plan object and threaten the backward-compatibility requirement above; downstream features 567/568 also depend on a stable top-level shape.
 
 ## Related
 - Set: autonomous-controller-ux
