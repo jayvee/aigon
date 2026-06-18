@@ -32,14 +32,17 @@ test('projector: code_review.cancelled → ready, clears active reviewer, preser
     assert.strictEqual(ctx.codeReview.reviewerId, 'gg');
 });
 
-test('projector: first-cycle cancel clears in-progress review state', () => {
+test('projector: first-cycle cancel preserves cancelled review marker for rerun UX', () => {
     const ctx = projectContext([
         ...BASE,
         { type: 'feature.code_review.started', reviewerId: 'gg', at: '2026-04-01T01:00:00Z' },
         { type: 'feature.code_review.cancelled', at: '2026-04-01T01:30:00Z' },
     ]);
     assert.strictEqual(ctx.currentSpecState, 'ready');
-    assert.strictEqual(ctx.codeReview, null);
+    assert.ok(ctx.codeReview);
+    assert.strictEqual(ctx.codeReview.activeReviewerId, null);
+    assert.strictEqual(ctx.codeReview.reviewerId, 'gg');
+    assert.strictEqual(ctx.codeReview.cancelledAt, '2026-04-01T01:30:00Z');
 });
 
 test('machine: code_review.cancelled only valid from code_review_in_progress', () => {

@@ -67,9 +67,28 @@ Use `feature-code-review` in the **solo Drive mode** workflow — after the impl
 
 For the automated equivalent (AutoConductor runs review for you), see `feature-autonomous-start --review-agent=<agent>`.
 
+## Recovery
+
+If the current review is bad, stuck, or using the wrong reviewer/model, cancel it and start a new one:
+
+```bash
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
+If the feature is still under autonomous orchestration, stop that first:
+
+```bash
+aigon feature-autonomous-stop 42
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
 ## Related
 
 - [`feature-eval`](./feature-eval) — compare Fleet implementations (use instead of code-review in Fleet mode)
+- [`feature-cancel-code-review`](./feature-cancel-code-review) — cancel a bad in-progress review and return to ready
+- [`feature-autonomous-stop`](./feature-autonomous-stop) — stop AutoConductor before manual recovery
 - [`feature-close`](./feature-close) — merge after review is complete
 - [`feature-autonomous-start`](./feature-autonomous-start) — run implement + review + close automatically
 - [Drive Mode guide](/docs/guides/drive-mode)

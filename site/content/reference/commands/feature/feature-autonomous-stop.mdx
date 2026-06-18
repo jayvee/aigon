@@ -1,0 +1,58 @@
+---
+title: "feature-autonomous-stop"
+description: "Stop the AutoConductor for a feature and take over manually from the current workflow state"
+---
+
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  **Aigon Pro command.** `feature-autonomous-stop` stops a Pro AutoConductor run. Without Pro installed, it prints the standard gate message.
+</Callout>
+
+## Synopsis
+
+```bash
+aigon feature-autonomous-stop <feature-id>
+```
+
+## Description
+
+Stops the detached AutoConductor tmux session for a feature and persists that the autonomous run is no longer active.
+
+This command does **not** reset the feature and does **not** change workflow lifecycle state. If the feature was in `implementing`, `code_review_in_progress`, or `code_revision_in_progress` before the stop, it stays there. The point is to hand control back to the operator cleanly.
+
+Use this when an autonomous run is still attached to the feature but you want to take over manually, especially during review recovery.
+
+## What it does
+
+1. Finds the feature's `auto` tmux session, if present
+2. Kills that AutoConductor session
+3. Persists feature-auto state as stopped
+4. Leaves implementation, review, and revision sessions alone
+
+## Examples
+
+```bash
+# Stop the AutoConductor for feature 42
+aigon feature-autonomous-stop 42
+```
+
+### From the dashboard
+
+When autonomous state is active, the feature card and detail drawer expose a **Take Over Manually** action. That action calls `feature-autonomous-stop` under the hood.
+
+## Typical recovery flow
+
+```bash
+aigon feature-autonomous-stop 42
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
+Use a different reviewer or model on the re-run when possible.
+
+## Related
+
+- [`feature-autonomous-start`](./feature-autonomous-start) — start autonomous orchestration
+- [`feature-cancel-code-review`](./feature-cancel-code-review) — cancel a bad in-progress review
+- [`feature-code-review`](./feature-code-review) — launch a replacement review manually

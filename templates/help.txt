@@ -75,6 +75,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-validate <ID>             Evaluate acceptance criteria (smart validation)
   feature-eval <ID> [--force]       Create evaluation (code review or comparison)
   feature-code-review <ID>          Code review with fixes by a different agent
+  feature-cancel-code-review <ID>   Cancel in-progress code review; return feature to ready
   feature-code-revise [ID]          Implementer-side review follow-up (infers ID from worktree branch)
   feature-push [ID] [agent]         Push feature branch to origin for PR review
   feature-close <ID> [agent]        Merge and complete feature
@@ -152,6 +153,7 @@ Examples:
                                                    # Fleet autonomous flow (implement -> eval)
   aigon feature-autonomous-start status 42         # Check conductor status
   aigon feature-autonomous-stop 42                 # Stop AutoConductor; keep workflow state
+  aigon feature-cancel-code-review 42              # Kill review session and return to ready
   aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side

@@ -1,0 +1,60 @@
+---
+title: "feature-cancel-code-review"
+description: "Cancel an in-progress code review, stop the reviewer session, and return the feature to ready"
+---
+
+## Synopsis
+
+```bash
+aigon feature-cancel-code-review <feature-id>
+```
+
+## Description
+
+Cancels a feature that is currently in `code_review_in_progress`.
+
+This command is for recovery, not for ordinary workflow progression. It stops the active reviewer session, records `feature.code_review.cancelled`, and returns the feature to `ready` so you can launch a fresh review with a different reviewer or model.
+
+It does **not** reset the feature, discard implementation work, or start revision. It simply abandons the current review attempt.
+
+## Preconditions
+
+- The feature must exist
+- Its current workflow lifecycle must be `code_review_in_progress`
+
+If the feature is not currently under code review, the command exits with an error instead of guessing.
+
+## What it does
+
+1. Stops the active review tmux session/process for that feature
+2. Records a `code_review.cancelled` workflow event
+3. Returns the feature to `ready`
+4. Makes `feature-code-review` available again for a re-run
+
+## Examples
+
+```bash
+# Cancel a stuck or bad review, then launch another one
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
+### From the dashboard
+
+When a feature is in `code_review_in_progress`, the dashboard exposes **Cancel code review**. After cancellation, the next review action is relabeled **Re-run code review**.
+
+## Typical recovery flow
+
+If the feature is still under autonomous orchestration, stop that first:
+
+```bash
+aigon feature-autonomous-stop 42
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
+## Related
+
+- [`feature-code-review`](./feature-code-review) — launch the replacement review
+- [`feature-code-revise`](./feature-code-revise) — implementer-side follow-up after a completed review
+- [`feature-autonomous-stop`](./feature-autonomous-stop) — stop autonomy before manual recovery

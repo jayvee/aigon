@@ -172,9 +172,25 @@ aigon feature-close 42                # merge (solo)
 aigon feature-close 42 cc             # merge the winner (fleet)
 ```
 
+If you intentionally want to stop autonomous orchestration and take over yourself, use:
+
+```bash
+aigon feature-autonomous-stop 42
+```
+
+For a bad in-progress solo review, the manual recovery flow is:
+
+```bash
+aigon feature-autonomous-stop 42
+aigon feature-cancel-code-review 42
+aigon feature-code-review 42
+```
+
 ## Related
 
 - [`feature-start`](/docs/reference/commands/feature/feature-start) — manual Fleet/Drive setup
+- [`feature-autonomous-stop`](/docs/reference/commands/feature/feature-autonomous-stop) — stop the AutoConductor and take over manually
+- [`feature-cancel-code-review`](/docs/reference/commands/feature/feature-cancel-code-review) — cancel a bad in-progress review
 - [`feature-code-review`](/docs/reference/commands/feature/feature-code-review) — manual code review
 - [`feature-eval`](/docs/reference/commands/feature/feature-eval) — manual evaluation
 - [`feature-close`](/docs/reference/commands/feature/feature-close) — manual close

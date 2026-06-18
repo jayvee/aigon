@@ -54,7 +54,9 @@ docs/specs/
 | `aigon feature-status <ID>` | Deep status: session, progress, cost, spec criteria |
 | `aigon feature-eval <ID>` | Create evaluation (code review for solo, comparison for arena) |
 | `aigon feature-code-review <ID>` | Post-implementation code review with fixes by a different agent |
+| `aigon feature-cancel-code-review <ID>` | Cancel an in-progress code review, stop the reviewer session, and return the feature to `ready` |
 | `aigon feature-code-revise [ID]` | Implementer-side follow-up after a code review |
+| `aigon feature-autonomous-stop <ID>` | Stop the AutoConductor and take over manually from the current workflow state |
 | `aigon feature-push [ID] [agent]` | Push the feature branch to `origin` for PR review |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
@@ -75,6 +77,19 @@ For features, there are two relevant layers:
 - The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by Aigon's workflow engine.
 - The visible stage is still the spec folder under `docs/specs/features/`, but that folder is a projection of workflow state, not the authority.
 - Active feature discovery should use `{{CMD_PREFIX}}feature-list --active` or workflow snapshot reads, not folder probes.
+
+## Review Recovery
+
+When a solo feature is under code review and the current run has gone bad, there are now two explicit recovery tools:
+
+- `aigon feature-autonomous-stop <ID>` stops the AutoConductor and leaves the feature in its current workflow state so you can drive it manually.
+- `aigon feature-cancel-code-review <ID>` cancels an in-progress code review, kills the reviewer session, and returns the feature to `ready`.
+
+Typical recovery flow:
+
+1. Stop autonomy if the feature is still under autonomous orchestration.
+2. Cancel the bad review.
+3. Re-run `aigon feature-code-review <ID>` with a different reviewer or model.
 
 ## Solo Mode Workflow
 
