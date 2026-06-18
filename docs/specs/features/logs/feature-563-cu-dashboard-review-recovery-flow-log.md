@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Wired review recovery validActions (takeover + cancel code review + re-run review) on cards and drawer status tab via `recovery.js` action module.
 ## New API Surface
 
 ## Key Decisions
