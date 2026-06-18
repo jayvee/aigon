@@ -9,7 +9,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
+const { test, testAsync, withTempDir, withTempDirAsync, seedEntityDirs, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const wrm = require('../../lib/workflow-read-model');
 const ast = require('../../lib/agent-status');
@@ -56,6 +56,48 @@ testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_r
     assert.strictEqual(getStateRenderMeta(snap.currentSpecState).cls, 'status-reviewing');
     const state = wrm.getFeatureDashboardState(repo, '77', 'in-progress', []);
     assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].statusCls, 'status-reviewing');
+}));
+
+test('collectRepoStatus decorates feature-set cards with pending schedule metadata', () => withTempDir('aigon-set-schedule-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-11-nightly.md');
+    fs.writeFileSync(specPath, '---\nset: nightly\n---\n\n# Feature: nightly\n');
+
+    const proModule = require('../../lib/pro');
+    const originalGetPro = proModule.getPro;
+    proModule.getPro = () => ({
+        scheduledKickoff: {
+            buildPendingScheduleIndex: () => ({
+                lookupFeature: () => null,
+                lookupResearch: () => null,
+                lookupSet: (slug) => slug === 'nightly'
+                    ? {
+                        runAt: '2026-06-19T09:00:00.000Z',
+                        kind: 'set_autonomous',
+                        jobId: 'job-set-1',
+                        state: 'pending',
+                        agents: ['cx', 'gg'],
+                        reviewAgent: 'cc',
+                    }
+                    : null,
+            }),
+        },
+    });
+    try {
+        clearTierCache(repo);
+        const st = collectRepoStatus(repo, { summary: { total: 0 } });
+        const set = st.sets.find(s => s.slug === 'nightly');
+        assert.ok(set, 'expected nightly set card');
+        assert.strictEqual(set.scheduledRunAt, '2026-06-19T09:00:00.000Z');
+        assert.strictEqual(set.scheduledKind, 'set_autonomous');
+        assert.strictEqual(set.scheduledJobId, 'job-set-1');
+        assert.strictEqual(set.scheduledState, 'pending');
+        assert.deepStrictEqual(set.scheduledAgents, ['cx', 'gg']);
+        assert.strictEqual(set.scheduledReviewAgent, 'cc');
+    } finally {
+        proModule.getPro = originalGetPro;
+        clearTierCache(repo);
+    }
 }));
 
 // --- spec-review + dashboard status lifecycle ---
