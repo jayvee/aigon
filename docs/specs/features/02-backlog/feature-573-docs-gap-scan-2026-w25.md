@@ -1,13 +1,13 @@
 ---
 recurring_slug: weekly-docs-gap-scan
 complexity: medium
-recurring_week: 2026-W21
+recurring_week: 2026-W25
 recurring_template: weekly-docs-gap-scan.md
 transitions:
-  - { from: "inbox", to: "backlog", at: "2026-05-17T23:14:11.596Z", actor: "recurring/feature-prioritise" }
+  - { from: "inbox", to: "backlog", at: "2026-06-18T12:08:23.472Z", actor: "recurring/feature-prioritise" }
 ---
 
-# docs-gap-scan-2026-W21
+# docs-gap-scan-2026-W25
 
 ## Summary
 
@@ -32,7 +32,7 @@ Scan for documentation gaps across two surfaces and fix them directly: (1) **int
 - [ ] For each internal doc gap: edit the affected file (`AGENTS.md`, `docs/architecture.md`, or `docs/development_workflow.md`) to add or update the missing content
 - [ ] For each public doc gap: edit or create the affected `site/content/` page with accurate, up-to-date content; create new `.mdx` files for missing reference pages and add them to the relevant `_meta.tsx`
 - [ ] Remove or correct stale references (commands, flags, file paths) in any `site/content/` page
-- [ ] Commit all doc changes: `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes 2026-W21"`
+- [ ] Commit all doc changes: `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes 2026-W25"`
 - [ ] Close the feature (no eval step needed)
 
 ## Technical Approach
@@ -52,7 +52,7 @@ Scan for documentation gaps across two surfaces and fix them directly: (1) **int
 
 ### Fix and close
 10. For each identified gap, make the edit directly — update the relevant doc file or create the missing page
-11. `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes 2026-W21"`
+11. `git add AGENTS.md docs/architecture.md docs/development_workflow.md site/content/ && git commit -m "docs: automated gap fixes 2026-W25"`
 12. `aigon agent-status submitted`
 13. `aigon feature-close <ID>`
 
