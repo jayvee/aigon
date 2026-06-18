@@ -17,8 +17,10 @@ test('recovery context is true for autonomous running or code review in progress
     const autoState = { status: 'running', running: true };
     const snapReview = { currentSpecState: 'code_review_in_progress', lifecycle: 'code_review_in_progress' };
     const snapReady = { currentSpecState: 'ready', lifecycle: 'ready' };
+    const snapCancelled = { currentSpecState: 'ready', lifecycle: 'ready', codeReview: { cancelledAt: '2026-06-18T00:00:00Z' } };
     assert.strictEqual(isFeatureReviewRecoveryContext(snapReview, null, repo, '563'), true);
     assert.strictEqual(isFeatureReviewRecoveryContext(snapReady, autoState, repo, '563'), true);
+    assert.strictEqual(isFeatureReviewRecoveryContext(snapCancelled, null, repo, '563'), true);
     assert.strictEqual(isFeatureReviewRecoveryContext(snapReady, { status: 'stopped', running: false }, repo, '563'), false);
 }));
 
@@ -33,6 +35,19 @@ test('recovery actions promote cancel code review and tag metadata', () => withT
     assert.strictEqual(cancel.label, 'Cancel code review');
     assert.strictEqual(cancel.priority, 'high');
     assert.strictEqual(cancel.metadata.recovery, true);
+}));
+
+test('ready-after-cancel re-tags code review as re-run review', () => withTempDir('aigon-f563-recovery-', (repo) => {
+    const snapshot = {
+        currentSpecState: 'ready',
+        lifecycle: 'ready',
+        codeReview: { cancelledAt: '2026-06-18T00:00:00Z' },
+    };
+    const merged = appendFeatureReviewRecoveryDashboardActions(repo, '563', null, snapshot, [
+        { action: 'feature-code-review', label: 'Code Review', mode: 'agent' },
+    ]);
+    assert.strictEqual(merged[0].label, 'Re-run code review');
+    assert.strictEqual(merged[0].metadata.recovery, true);
 }));
 
 test('read-model exposes recovery actions for autonomous review trouble', () => withTempDir('aigon-f563-recovery-', (repo) => {

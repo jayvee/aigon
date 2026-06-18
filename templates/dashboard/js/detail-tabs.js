@@ -16,14 +16,7 @@
     function renderDrawerRecoveryActions(entityType, entityId, repoPath) {
       const located = findEntityInDashboardState(entityType, entityId, repoPath);
       if (!located || typeof renderActionButtons !== 'function' || typeof handleFeatureAction !== 'function') return '';
-      const recoveryActions = (located.feature.validActions || []).filter((va) => {
-        if (va.metadata && va.metadata.recovery) return true;
-        return va.action === 'feature-autonomous-stop'
-          || va.action === 'feature-cancel-code-review'
-          || va.action === 'research-cancel-code-review'
-          || va.action === 'feature-code-review'
-          || va.action === 'research-review';
-      });
+      const recoveryActions = (located.feature.validActions || []).filter((va) => va.metadata && va.metadata.recovery);
       if (recoveryActions.length === 0) return '';
       const feature = Object.assign({}, located.feature, { validActions: recoveryActions });
       const buttonsHtml = renderActionButtons(feature, located.repoPath, located.pipelineType);
