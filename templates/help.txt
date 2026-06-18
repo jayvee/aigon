@@ -44,6 +44,8 @@ Modes:
 Conductor:
   feature-autonomous-start <ID> <agents...>                [Pro]
                                     Start AutoConductor (tmux auto session) and return immediately
+  feature-autonomous-stop <ID>                           [Pro]
+                                    Stop AutoConductor; keep current workflow state for manual takeover
   feature-autonomous-start status <ID>                     [Pro]
                                     Show AutoConductor tmux liveness + workflow state
   server start [--persistent]       Start the AIGON server (dashboard UI + supervisor)
@@ -149,6 +151,7 @@ Examples:
   aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
                                                    # Fleet autonomous flow (implement -> eval)
   aigon feature-autonomous-start status 42         # Check conductor status
+  aigon feature-autonomous-stop 42                 # Stop AutoConductor; keep workflow state
   aigon server start                   # Start AIGON server (dashboard UI + API)
   aigon feature-open 55 cc             # Open feature worktree and start Claude
   aigon feature-open 55 --all          # Open all Fleet agents side-by-side
