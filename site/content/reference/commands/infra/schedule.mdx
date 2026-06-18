@@ -1,6 +1,6 @@
 ---
 title: "schedule"
-description: "Schedule a feature autonomous run or research start for a specific time. Polled by the aigon server."
+description: "Schedule a feature autonomous run, feature-set autonomous run, or research start for a specific time. Polled by the aigon server."
 ---
 
 import { Callout } from "nextra/components";
@@ -15,6 +15,7 @@ Defer a kickoff to a specific clock time. The aigon server (`aigon server start`
 
 ```bash
 aigon schedule add feature_autonomous <id> --run-at=<iso8601> <agents...> [options]
+aigon schedule add set_autonomous <slug> --run-at=<iso8601> <agents...> [options]
 aigon schedule add research_start <id> --run-at=<iso8601> [agents...] [options]
 aigon schedule list   [--all] [--repo=<path>]
 aigon schedule cancel <jobId> [--repo=<path>]
@@ -42,6 +43,25 @@ aigon schedule add feature_autonomous 142 \
 | `--models=<csv>` | Per-agent model overrides (e.g. `cc=claude-opus-4-7,gg=gemini-2.5-pro`). |
 | `--efforts=<csv>` | Per-agent effort overrides. |
 | `--review-model=<id>` / `--review-effort=<id>` | Review-phase overrides. |
+| `--repo=<path>` | Target repo (defaults to current). |
+
+## `add set_autonomous`
+
+Queue a [`set-autonomous-start`](/docs/guides/feature-sets-autonomous) for a future time. At run time the scheduler dispatches the existing set conductor — ordering, failure pauses, resume, and reset semantics stay in SetConductor.
+
+```bash
+aigon schedule add set_autonomous nightly \
+  --run-at=2026-06-19T09:00:00Z cx gg \
+  --review-agent=cc --stop-after=close
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--run-at=<iso8601>` | Required. Must include an explicit timezone (`Z` or `±hh:mm`). |
+| `--review-agent=<id>` | Agent for per-member code review (forwarded to `set-autonomous-start`). |
+| `--models=<csv>` | Per-agent model overrides. |
+| `--efforts=<csv>` | Per-agent effort overrides. |
+| `--stop-after=close` | Only `close` is supported for set autonomous runs. |
 | `--repo=<path>` | Target repo (defaults to current). |
 
 ## `add research_start`
@@ -74,5 +94,6 @@ Scheduled jobs live in `.aigon/state/scheduled-kickoffs.json` (lock-protected, s
 ## See also
 
 - [`feature-autonomous-start`](/docs/reference/commands/feature/feature-autonomous-start) — what a `feature_autonomous` job actually runs.
+- [`set-autonomous-start`](/docs/guides/feature-sets-autonomous) — what a `set_autonomous` job actually runs.
 - [`research-start`](/docs/reference/commands/research/research-start) — what a `research_start` job runs.
 - [`server`](/docs/reference/commands/infra/server) — required to fire scheduled jobs.
