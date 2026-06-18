@@ -8,7 +8,7 @@ Run a full security scan against the repository — the same scan that the weekl
 ## Usage
 
 ```bash
-aigon security-scan [--since <sha>] [--no-feedback]
+aigon security-scan [--since <sha>] [--no-feature] [--no-feedback]
 ```
 
 ## Options
@@ -16,15 +16,16 @@ aigon security-scan [--since <sha>] [--no-feedback]
 | Option | Description |
 |--------|-------------|
 | `--since <sha>` | Scan only commits after this SHA. Defaults to the SHA from the last recorded scan, or HEAD~50 on first run. |
-| `--no-feedback` | Print findings without creating feedback items |
+| `--no-feature` | Print findings without auto-filing follow-up feature specs |
+| `--no-feedback` | Backward-compatible alias for `--no-feature` |
 
 ## What it does
 
 1. Runs **gitleaks** (secrets detection), **osv-scanner** (dependency CVEs), **semgrep** (SAST), and **npm audit** against changed files since `--since`
 2. Invokes the `/security-review` skill via `claude --print` for an LLM-layer analysis of the same diff
 3. Deduplicates findings using fingerprints stored in `.aigon/security-scan-state.json` — repeat findings from previous scans are skipped
-4. For each **HIGH**-severity finding that hasn't been seen before, creates an `aigon feedback-create` item automatically
-5. Prints a summary of findings, skipped duplicates, and feedback items created
+4. For each **HIGH**-severity finding that hasn't been seen before, creates and prioritises an Aigon feature automatically
+5. Prints a summary of findings, skipped duplicates, and feature specs created
 
 ## Difference from merge-gate scanning
 
@@ -32,7 +33,7 @@ The merge-gate (`feature-close`, `agent-status implementation-complete` / `revis
 
 ## Suppression
 
-Findings can be suppressed by adding their fingerprint to `.aigon/security-suppressions.json`. Suppressed findings are skipped in future scans without creating feedback items. The weekly recurring scan (`security-scan-weekly`) respects the same suppression file.
+Findings can be suppressed by adding their fingerprint to `.aigon/security-suppressions.json`. Suppressed findings are skipped in future scans without creating follow-up features. The weekly recurring scan (`security-scan-weekly`) respects the same suppression file.
 
 ## Example
 
@@ -40,8 +41,8 @@ Findings can be suppressed by adding their fingerprint to `.aigon/security-suppr
 # Full scan since last recorded SHA
 aigon security-scan
 
-# Scan a specific range without filing feedback items
-aigon security-scan --since abc1234 --no-feedback
+# Scan a specific range without filing follow-up features
+aigon security-scan --since abc1234 --no-feature
 ```
 
 ## Required tools

@@ -12,13 +12,13 @@ cron: 0 6 * * 1
 
 Run the weekly security scan against the aigon repo.
 Orchestrates gitleaks, osv-scanner, semgrep, npm audit, and the Claude /security-review skill.
-HIGH survivors auto-create feedback items. When the scan or digest recommends a concrete security remediation, create and prioritise a follow-up feature so the fix enters the normal backlog.
+HIGH survivors auto-create follow-up feature specs. When the scan or digest recommends a concrete security remediation, create and prioritise a follow-up feature so the fix enters the normal backlog.
 
 ## Acceptance Criteria
 
 - [ ] Run `aigon security-scan` and confirm exit 0
 - [ ] Review digest at `.scan/reports/<date>.md`
-- [ ] Triage any new HIGH-severity feedback items created
+- [ ] Review any new HIGH-severity follow-up feature specs created
 - [ ] If the scan reveals recommended security updates or other actionable remediation work, create and prioritise one or more follow-up features and record their IDs in the digest or implementation log
 - [ ] If the scan reveals no actionable remediation work, state that clearly in the digest or implementation log
 - [ ] Commit updated `.scan/state.json`
@@ -41,7 +41,7 @@ Do not create follow-up features for false positives, accepted risk, or pure noi
    - HIGH/CRITICAL survivors
    - dependency or package-security remediation recommendations
    - code/config hardening recommendations
-3. Triage any newly created HIGH-severity feedback items
+3. Review any newly created HIGH-severity follow-up feature specs
 4. If follow-up work is required:
    - create the feature spec(s)
    - prioritise them immediately so they enter the normal backlog flow
