@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// REGRESSION F563: review recovery validActions surface cancel + takeover during autonomous review trouble.
+// REGRESSION F563: review recovery validActions surface cancel + stop automation during autonomous review trouble.
 'use strict';
 
 const assert = require('assert');
@@ -67,8 +67,9 @@ test('read-model exposes recovery actions for autonomous review trouble', () => 
     const actions = dashboard.validActions || [];
     const stop = actions.find((a) => a.action === 'feature-autonomous-stop');
     const cancel = actions.find((a) => a.action === 'feature-cancel-code-review');
-    assert.ok(stop, 'take over manually exposed');
-    assert.strictEqual(stop.label, 'Take Over Manually');
+    assert.ok(stop, 'stop automation exposed');
+    assert.strictEqual(stop.label, 'Stop automation');
+    assert.strictEqual(stop.priority, 'high');
     assert.ok(cancel, 'cancel code review exposed');
     assert.strictEqual(cancel.label, 'Cancel code review');
     assert.ok(cancel.metadata && cancel.metadata.recovery);

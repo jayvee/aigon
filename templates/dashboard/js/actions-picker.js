@@ -453,7 +453,6 @@ function validActionBtnClass(action, priority) {
   if (priority === 'high') return 'btn btn-primary';
   if (action === 'feature-stop' || action === 'research-stop' || action === 'feature-reset' || action === 'research-reset'
     || action === 'set-autonomous-stop' || action === 'set-autonomous-reset'
-    || action === 'feature-autonomous-stop'
     || action === 'feature-cancel-code-review' || action === 'research-cancel-code-review') return 'btn btn-danger';
   return 'btn btn-secondary';
 }

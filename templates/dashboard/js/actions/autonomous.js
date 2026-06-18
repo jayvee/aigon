@@ -488,11 +488,11 @@ export async function open(ctx) {
     const showConfirm = H.showConfirm || (() => Promise.resolve(false));
     const requestAction = H.requestAction || ctx.api.requestAction;
     const ok = await showConfirm({
-      title: 'Take over manually?',
-      message: 'Stop AutoConductor for feature #' + feature.id + '? Implementation and review sessions keep running; you drive the feature from here.',
-      confirmLabel: 'Take Over Manually',
-      cancelLabel: 'Cancel',
-      danger: true,
+      title: 'Stop automation?',
+      message: 'This stops AutoConductor only. Current agent sessions keep running and workflow state is unchanged.',
+      confirmLabel: 'Stop automation',
+      cancelLabel: 'Keep running',
+      danger: false,
     });
     if (!ok) return;
     await requestAction('feature-autonomous-stop', [String(feature.id)], repoPath, btn);
@@ -505,4 +505,3 @@ export async function open(ctx) {
 export function close() {
   hideAutonomousModal();
 }
-

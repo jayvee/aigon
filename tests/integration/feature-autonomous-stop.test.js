@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // REGRESSION F561: feature-autonomous-stop must persist stopped sidecar state
-// without mutating workflow lifecycle, and expose Take Over Manually in read-model.
+// without mutating workflow lifecycle, and expose Stop automation in read-model.
 'use strict';
 
 const assert = require('assert');
@@ -59,7 +59,7 @@ testAsync('feature-autonomous-stop writes stopped sidecar without changing workf
     assert.strictEqual(auto.sessionName, 'aigon-f561-auto', 'prior session metadata preserved');
 }));
 
-test('read-model exposes Take Over Manually while autonomous state is active', () => withTempDir('aigon-f561-stop-', (repo) => {
+test('read-model exposes Stop automation while autonomous state is active', () => withTempDir('aigon-f561-stop-', (repo) => {
     seedEntityDirs(repo, 'features');
     writeSpec(repo, 'features', '03-in-progress', 'feature-561-autonomous-review-takeover.md');
     writeSnap(repo, 'features', '561', 'implementing');
@@ -77,13 +77,14 @@ test('read-model exposes Take Over Manually while autonomous state is active', (
     const actions = appendFeatureAutonomousDashboardActions(repo, '561', autoState, []);
     const stopAction = actions.find((a) => a.action === 'feature-autonomous-stop');
     assert.ok(stopAction, 'stop action present');
-    assert.strictEqual(stopAction.label, 'Take Over Manually');
+    assert.strictEqual(stopAction.label, 'Stop automation');
+    assert.strictEqual(stopAction.priority, undefined);
 
     const state = wrm.getFeatureDashboardState(repo, '561', 'in-progress', []);
     assert.ok(state.validActions.some((a) => a.action === 'feature-autonomous-stop'));
 }));
 
-test('stopped autonomous state no longer offers Take Over Manually', () => withTempDir('aigon-f561-stop-', (repo) => {
+test('stopped autonomous state no longer offers Stop automation', () => withTempDir('aigon-f561-stop-', (repo) => {
     const autoState = {
         featureId: '561',
         status: 'stopped',

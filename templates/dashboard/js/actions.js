@@ -183,7 +183,6 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review') {
       return 'btn btn-danger';
     }
-    if (va.action === 'feature-autonomous-stop') return 'btn btn-danger';
     return baseCls;
   }
 
@@ -225,7 +224,6 @@ function renderActionButtons(feature, repoPath, pipelineType) {
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
       const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset'
         || va.action === 'set-autonomous-stop' || va.action === 'set-autonomous-reset'
-        || va.action === 'feature-autonomous-stop'
         || va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review';
       const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       const disabledReason = va.disabledReason || '';
