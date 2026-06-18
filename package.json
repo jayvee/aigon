@@ -62,7 +62,7 @@
     "test:core": "npm run lint:paths && npm run lint && node scripts/check-template-leaks.js && node scripts/generate-workflow-diagrams.js --check && npm run test:unit && npm run test:integration && npm run test:workflow",
     "test:browser": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:browser:smoke": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list --grep @smoke",
-    "test:deploy": "npm run test:core && npm run test:browser && bash scripts/check-test-budget.sh",
+    "test:deploy": "npm run test:core && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser && bash scripts/check-test-budget.sh",
     "test:ui": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
     "test:all": "npm run test:deploy",
     "fixture:seed": "node scripts/setup-fixture.js",

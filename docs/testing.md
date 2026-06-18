@@ -17,7 +17,7 @@ There are four named stages. The iterate gate and deploy gate are the two lifecy
 | `npm run test:core` | lint + workflow diagram check + full integration + full workflow | when you need the full non-browser suite |
 | `npm run test:browser` | full Playwright E2E suite (`MOCK_DELAY=fast`) | deploy gate, CI on push-to-main |
 | `npm run test:browser:smoke` | Playwright @smoke subset only | auto-run by iterate gate on dashboard-file changes |
-| `npm run test:deploy` | `test:core` + `test:browser` + budget check | **deploy gate** — run before `git push` / `feature-close` |
+| `npm run test:deploy` | `test:core` + `security:package-config` + `security:suspicious-deps` + `npm audit --omit=dev --audit-level=high` + `test:browser` + budget check | **deploy gate** — run before `git push` / `feature-close` |
 | `npm run test:all` | alias for `test:deploy` | |
 | `npm test` | same as `test:core` | backwards compat; kept for existing tooling |
 | `npm run test:ui` | same as `test:browser` | backwards compat; kept for existing tooling |
@@ -41,9 +41,9 @@ npm run test:iterate
 npm run test:deploy
 ```
 
-- **What it runs**: `test:core` (lint + diagrams + integration + workflow, ~12s) + `test:browser` (full Playwright suite, ~90s) + `scripts/check-test-budget.sh`.
+- **What it runs**: `test:core` (lint + diagrams + integration + workflow, ~12s) + `security:package-config` + `security:suspicious-deps` + `npm audit --omit=dev --audit-level=high` + `test:browser` (full Playwright suite, ~90s) + `scripts/check-test-budget.sh`.
 - **When it fires**: before `git push`, before `aigon agent-status implementation-complete`, before `feature-close` merges to main. Catches everything the iterate gate skipped.
-- **Failures here block the push.** Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
+- **Failures here block the push.** `security:suspicious-deps` is the one exception: it is a required release-triage report, so review its output even though the command itself may exit zero. Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
 
 The deploy gate is the safety net that lets the iterate gate be aggressive. Trust it.
 
@@ -126,7 +126,7 @@ tests/
     └── state-consistency.spec.js
 ```
 
-`npm test` / `npm run test:core` runs `lint → workflow-diagrams check → tests/integration → tests/workflow-core`, all parallelised. `npm run test:browser` / `npm run test:ui` runs `tests/dashboard-e2e/` via Playwright (all tests). `npm run test:browser:smoke` runs only the `@smoke`-tagged browser tests. `npm run test:deploy` chains core + browser + budget.
+`npm test` / `npm run test:core` runs `lint → workflow-diagrams check → tests/integration → tests/workflow-core`, all parallelised. `npm run test:browser` / `npm run test:ui` runs `tests/dashboard-e2e/` via Playwright (all tests). `npm run test:browser:smoke` runs only the `@smoke`-tagged browser tests. `npm run test:deploy` chains core + dependency/security release checks + browser + budget.
 
 ---
 

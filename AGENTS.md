@@ -343,7 +343,7 @@ The test suite runs at two tiers; do not collapse them into one.
 ```bash
 npm run test:deploy
 ```
-Equivalent to `npm run test:core && npm run test:browser && bash scripts/check-test-budget.sh`. All stages must pass. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
+Equivalent to `npm run test:core && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser && bash scripts/check-test-budget.sh`. Blocking checks must pass. `security:suspicious-deps` is a required release-triage report and its findings must be consciously assessed, even when the command itself exits zero. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
 
 **Iterate-loop gate** (per autopilot iteration; `aigon feature-do <ID> --iterate`):
 ```bash
@@ -358,7 +358,7 @@ Scoped: lint on changed `lib/` files, integration/workflow tests whose filename 
 - `npm run test:core` — lint + diagrams + integration + workflow (no browser); lint now covers `templates/dashboard/js/**` (ESLint `no-undef` catches undeclared dashboard globals — the F556 `AUTONOMOUS_AGENT_IDS` class). Cross-file dashboard globals are allowlisted in `eslint.config.js`; do not add a name there without confirming it is genuinely defined somewhere.
 - `npm run test:browser` — full Playwright E2E suite (MOCK_DELAY=fast)
 - `npm run test:browser:smoke` — Playwright @smoke subset (fast, auto-run in iterate gate)
-- `npm run test:deploy` — core + browser + budget (the deploy gate)
+- `npm run test:deploy` — core + dependency/security release checks + browser + budget (the deploy gate)
 - `npm run test:all` — alias for `test:deploy`
 
 ### T2 — new code ships with a test

@@ -143,7 +143,7 @@ function runDeployGate(skip) {
         info('skipping test:deploy (--skip-tests)');
         return;
     }
-    info('running test:deploy (test:core + test:browser + budget)…');
+    info('running test:deploy (core + dependency/security release checks + browser + budget)…');
     shStream('npm run test:deploy');
 }
 
