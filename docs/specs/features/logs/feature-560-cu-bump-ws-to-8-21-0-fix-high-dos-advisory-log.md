@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Bumped `ws` from ^8.20.0 to ^8.21.0 (lockfile resolves 8.21.0); `npm audit --omit=dev` clean.
 ## New API Surface
 
 ## Key Decisions
