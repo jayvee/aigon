@@ -1529,6 +1529,9 @@
             title.className = 'kanban-set-title';
             const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
             title.textContent = titlePrefix + setSlug;
+            if (roll && roll.scheduledRunAt) {
+              title.insertAdjacentHTML('beforeend', buildScheduledGlyphHtml(roll));
+            }
             if (isPausedOnFailure) {
               const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
               const failLabel = failedId ? `feature #${parseInt(failedId, 10) || failedId} failed` : 'review failed';
