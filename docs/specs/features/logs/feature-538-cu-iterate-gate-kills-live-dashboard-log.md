@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Scoped dashboard registry to `AIGON_HOME` via `getDashboardRuntimePath()` — iterate/smoke no longer kills port-4100 via lsof.
 ## New API Surface
 
 ## Key Decisions

@@ -91,7 +91,7 @@ module.exports = async function globalSetup() {
     const worktreeBase = path.join(tempHome, '.aigon', 'worktrees', path.basename(tmpDir));
     fs.writeFileSync(path.join(aigonDir, 'config.json'), JSON.stringify({ repos: [tmpDir] }, null, 2));
     const dashEnv = {
-        ...process.env, HOME: tempHome, PORT: String(PORT),
+        ...process.env, HOME: tempHome, AIGON_HOME: tempHome, PORT: String(PORT),
         // Keep dashboard e2e tmux sessions off the developer's/default server.
         // TMUX must be removed because inherited pane sockets override TMUX_TMPDIR.
         TMUX_TMPDIR: tmuxTmpDir,

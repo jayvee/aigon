@@ -7,6 +7,8 @@ const PORT = 4119;
 
 // Compress supervisor sweep interval for failure-modes idle-state tests.
 process.env.AIGON_SUPERVISOR_SWEEP_MS = process.env.AIGON_SUPERVISOR_SWEEP_MS || '2000';
+// Fixture dashboard uses an isolated AIGON_HOME (set in setup.js globalSetup).
+// Never rewrite or kill the operator's ~/.aigon/dashboard-runtime.json.
 
 module.exports = defineConfig({
     testDir: path.join(__dirname),

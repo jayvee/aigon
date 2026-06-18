@@ -3,7 +3,14 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
 const { implAgentReadyForAutonomousClose } = require('../../lib/feature-autonomous');
 const { test, withTempDir, withRepoCwd, report } = require('../_helpers');
-// REGRESSION: keep the GA4 placeholder leak and Pro env/config drift covered even under the hard LOC budget.
+// REGRESSION F538: dashboard registry must read dashboard-runtime.json via AIGON_HOME, not lsof on 4100.
+test('getServerRegistryEntry uses dashboard-runtime.json scoped to AIGON_HOME', () => {
+    const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
+    const block = infra.match(/function getServerRegistryEntry\(\) \{[\s\S]*?\n    \}/);
+    assert.ok(block, 'getServerRegistryEntry must exist');
+    assert.ok(block[0].includes('getDashboardRuntimeEntry'));
+    assert.ok(!block[0].includes('lsof'));
+});
 test('static guards: home.html stays GA4-free and lib/pro.js ignores project config', () => {
     const html = fs.readFileSync(path.join(__dirname, '../../site/public/home.html'), 'utf8');
     const pro = fs.readFileSync(require.resolve('../../lib/pro.js'), 'utf8');
