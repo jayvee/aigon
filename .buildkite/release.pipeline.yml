@@ -1,0 +1,20 @@
+steps:
+  - block: ":rocket: Confirm release"
+    prompt: "Publish the current version from main to npm"
+
+  - label: ":package: release"
+    agents:
+      queue: "self-hosted"
+    env:
+      NPM_PROVENANCE: "off"
+    command:
+      - 'eval "$(/opt/homebrew/bin/fnm env --shell bash)"'
+      - "/opt/homebrew/bin/fnm use --install-if-missing 22"
+      - 'export NPM_TOKEN="$(/opt/homebrew/bin/op read "op://Aigon/Dev-Secrets/Secrets/NPM_TOKEN")"'
+      - 'echo "package version: $(node -p "require('''./package.json''').version")"'
+      - 'test -n "${NPM_TOKEN:-}" || { echo "NPM_TOKEN is not set" >&2; exit 1; }'
+      - 'trap ''rm -f "$HOME/.npmrc"'' EXIT'
+      - 'printf "//registry.npmjs.org/:_authToken=%s\n" "$NPM_TOKEN" > "$HOME/.npmrc"'
+      - "npm ci"
+      - "npm run test:deploy"
+      - "npm run release"

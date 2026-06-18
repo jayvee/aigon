@@ -1,0 +1,11 @@
+steps:
+  - label: ":node: main ci"
+    branches: "main"
+    agents:
+      queue: "self-hosted"
+    command:
+      - 'eval "$(/opt/homebrew/bin/fnm env --shell bash)"'
+      - "/opt/homebrew/bin/fnm use --install-if-missing 22"
+      - "npm ci"
+      - "node -c aigon-cli.js"
+      - "npm run test:core"
