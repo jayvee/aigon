@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
+const { PORT_FILE } = require('./fixture-port');
 
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
 
@@ -44,4 +45,5 @@ module.exports = async function globalTeardown() {
     try { fs.rmSync(ctx.worktreeBase, { recursive: true, force: true }); } catch (_) {}
     try { fs.rmSync(ctx.tempHome, { recursive: true, force: true }); } catch (_) {}
     try { fs.unlinkSync(CTX_FILE); } catch (_) {}
+    try { fs.unlinkSync(PORT_FILE); } catch (_) {}
 };

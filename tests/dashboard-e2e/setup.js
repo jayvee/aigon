@@ -6,11 +6,11 @@ const os = require('os');
 const http = require('http');
 const { spawnSync, spawn } = require('child_process');
 const { GIT_SAFE_ENV } = require('../_helpers');
+const { PORT } = require('./fixture-port');
 const ROOT = path.join(__dirname, '..', '..');
 const CLI_PATH = path.join(ROOT, 'aigon-cli.js');
 const FIXTURES_DIR = path.join(os.homedir(), 'src');
 const CTX_FILE = path.join(os.tmpdir(), 'aigon-dashboard-e2e-ctx.json');
-const PORT = 4119;
 exports.CTX_FILE = CTX_FILE;
 exports.PORT = PORT;
 function copyDir(src, dest) {
@@ -91,7 +91,7 @@ module.exports = async function globalSetup() {
     const worktreeBase = path.join(tempHome, '.aigon', 'worktrees', path.basename(tmpDir));
     fs.writeFileSync(path.join(aigonDir, 'config.json'), JSON.stringify({ repos: [tmpDir] }, null, 2));
     const dashEnv = {
-        ...process.env, HOME: tempHome, PORT: String(PORT),
+        ...process.env, HOME: tempHome, AIGON_HOME: tempHome, PORT: String(PORT),
         // Keep dashboard e2e tmux sessions off the developer's/default server.
         // TMUX must be removed because inherited pane sockets override TMUX_TMPDIR.
         TMUX_TMPDIR: tmuxTmpDir,
