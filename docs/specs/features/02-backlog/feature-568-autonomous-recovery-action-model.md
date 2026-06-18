@@ -10,17 +10,18 @@ transitions:
 # Feature: autonomous-recovery-action-model
 
 ## Summary
-Replace scattered top-level autonomous recovery actions with a single server-owned `Recover` action when controller state needs operator intervention. This prevents the card action picker from growing with every new autonomous failure mode while preserving access to the underlying commands.
+Introduce a server-owned recovery action model for autonomous controller failures without creating a dead-end UI before the recovery surface exists. This feature adds the stable `Recover` action payload and recommended-operation model while keeping the existing primitive recovery actions visible; feature 569 then uses the payload to render the recovery surface and collapse the now-redundant peers.
 
 ## User Stories
-- [ ] As an operator, I see one recovery entry point instead of a growing list of controller-specific actions in the overflow menu.
+- [ ] As an operator, I get a reliable recovery recommendation model before the final grouped recovery UI replaces the scattered actions.
 - [ ] As a dashboard developer, I can route recovery UI from one action payload that includes recommended and secondary actions.
 
 ## Acceptance Criteria
-- [ ] This feature evolves the existing recovery layer in `lib/feature-review-recovery-dashboard-actions.js` (already wired into `lib/workflow-read-model.js`) rather than adding a parallel one. The current module tags primitives with `metadata.recovery: true` and relabels them; this feature collapses those tagged primitives into a single `Recover` action plus payload. The spec must state whether it extends `appendFeatureReviewRecoveryDashboardActions` in place or supersedes it, and must not leave both producing peer recovery actions.
-- [ ] Dashboard validActions include a single `autonomous-recover` or equivalent action when `autonomousController.status` indicates failed/stopped recovery is relevant.
+- [ ] This feature evolves the existing recovery layer in `lib/feature-review-recovery-dashboard-actions.js` (already wired into `lib/workflow-read-model.js`) rather than adding a parallel one. The current module tags primitives with `metadata.recovery: true` and relabels them; this feature extends that module in place to also produce a stable recovery payload for the future grouped UI.
+- [ ] Dashboard validActions include an `autonomous-recover` or equivalent action when `autonomousController.status` indicates failed/stopped recovery is relevant.
 - [ ] The action payload includes the recommended recovery kind and a list of available recovery operations, such as cancel review, re-run review, take over manually, retry close, or reset.
-- [ ] Existing primitive commands remain callable and testable, but the card does not add every primitive as a peer top-level action when a recovery action is present.
+- [ ] Existing primitive commands remain callable, testable, and visible as peer actions during this transitional feature so the dashboard has no dead-end state before feature 569 ships.
+- [ ] The payload marks which primitive actions are recovery operations so feature 569 can hide or group those peers behind the recovery surface without re-deriving recovery semantics.
 - [ ] For a feature like 560, the recommended action is cancel review, with re-run review as the next step after cancellation.
 - [ ] Destructive actions remain marked destructive and are not promoted as the primary recovery recommendation.
 - [ ] Existing non-autonomous feature action behavior remains unchanged.
@@ -31,10 +32,10 @@ npm run test:core
 ```
 
 ## Technical Approach
-- Evolve `lib/feature-review-recovery-dashboard-actions.js` rather than adding a sibling module. It already detects recovery context (`isFeatureReviewRecoveryContext`, `isFeatureAutonomousActive`) and tags/relabels primitives; this feature reshapes that output into one `Recover` action with a payload instead of multiple tagged peer actions.
+- Evolve `lib/feature-review-recovery-dashboard-actions.js` rather than adding a sibling module. It already detects recovery context (`isFeatureReviewRecoveryContext`, `isFeatureAutonomousActive`) and tags/relabels primitives; this feature adds the grouped recovery payload there while preserving the primitive peer actions until feature 569 renders the grouped recovery UI.
 - Drive the recommended recovery kind from `autonomousController` (introduced in 566) plus the current workflow snapshot, replacing the ad-hoc relabel logic currently keyed off `snapshot.currentSpecState`/`codeReview.cancelledAt`.
 - Keep the frontend thin: it should render `Recover` and pass the payload into the recovery UI rather than infer failure semantics itself.
-- Preserve action-command mapping for existing primitive commands; change presentation, not core command availability.
+- Preserve action-command mapping for existing primitive commands; change the server-owned action model now, and defer final presentation collapse to feature 569.
 - Add tests for failed review, stopped-by-user, running controller, and non-autonomous feature cases.
 
 ## Dependencies
@@ -46,7 +47,7 @@ npm run test:core
 - Adding resume/restart autonomy semantics
 
 ## Resolved Decisions
-- The primitive recovery actions (e.g. `Cancel review`) remain visible/callable until the recovery popover ships in feature 569. Collapsing them behind `Recover` before there is a surface to expose them would create a dead-end state. This feature may introduce the `Recover` action and payload alongside the existing primitives; 569 removes the now-redundant peers.
+- This is a transitional model feature, not the final menu-collapse feature. The primitive recovery actions (e.g. `Cancel review`) remain visible/callable until the recovery popover ships in feature 569. Collapsing them behind `Recover` before there is a surface to expose them would create a dead-end state. Feature 569 owns hiding/grouping the redundant primitive peers once the recovery surface can execute the payload operations.
 
 ## Related
 - Set: autonomous-controller-ux
