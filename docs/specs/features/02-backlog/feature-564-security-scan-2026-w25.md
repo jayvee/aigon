@@ -1,12 +1,14 @@
 ---
-schedule: weekly
-name_pattern: security-scan-{{YYYY-WW}}
 recurring_slug: security-scan-weekly
 complexity: low
 cron: 0 6 * * 1
+recurring_week: 2026-W25
+recurring_template: security-scan-weekly.md
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-18T02:08:06.693Z", actor: "recurring/feature-prioritise" }
 ---
 
-# security-scan-{{YYYY-WW}}
+# security-scan-2026-W25
 
 ## Summary
 

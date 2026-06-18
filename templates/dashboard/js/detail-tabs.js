@@ -1,5 +1,51 @@
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
+    function findEntityInDashboardState(entityType, entityId, repoPath) {
+      const pollState = (typeof state !== 'undefined' && state && state.data) ? state : null;
+      if (!pollState || !pollState.data) return null;
+      const repos = pollState.data.repos || [];
+      for (const repo of repos) {
+        if (repoPath && repo.path !== repoPath) continue;
+        const list = entityType === 'research' ? (repo.research || []) : (repo.features || []);
+        const hit = list.find((item) => String(item.id) === String(entityId));
+        if (hit) return { feature: hit, repoPath: repo.path, pipelineType: entityType === 'research' ? 'research' : 'features' };
+      }
+      return null;
+    }
+
+    function renderDrawerRecoveryActions(entityType, entityId, repoPath) {
+      const located = findEntityInDashboardState(entityType, entityId, repoPath);
+      if (!located || typeof renderActionButtons !== 'function' || typeof handleFeatureAction !== 'function') return '';
+      const recoveryActions = (located.feature.validActions || []).filter((va) => va.metadata && va.metadata.recovery);
+      if (recoveryActions.length === 0) return '';
+      const feature = Object.assign({}, located.feature, { validActions: recoveryActions });
+      const buttonsHtml = renderActionButtons(feature, located.repoPath, located.pipelineType);
+      if (!buttonsHtml) return '';
+      return '<div class="deep-status-section drawer-recovery-section">' +
+        '<h4 class="deep-status-heading">Review recovery</h4>' +
+        '<p class="drawer-recovery-copy">Stop AutoConductor or cancel a stuck review, then re-run code review with a new reviewer.</p>' +
+        '<div class="drawer-recovery-actions">' + buttonsHtml + '</div>' +
+      '</div>';
+    }
+
+    function wireDrawerRecoveryActions(root, entityType, entityId, repoPath) {
+      if (!root || typeof handleFeatureAction !== 'function') return;
+      const located = findEntityInDashboardState(entityType, entityId, repoPath);
+      if (!located) return;
+      root.querySelectorAll('.kcard-va-btn').forEach((btn) => {
+        const vaAction = btn.getAttribute('data-va-action');
+        const vaAgentId = btn.getAttribute('data-agent') || null;
+        const va = (located.feature.validActions || []).find((a) => a.action === vaAction && (a.agentId || null) === vaAgentId);
+        if (!va) return;
+        btn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof window.closeAllKcardOverflowMenus === 'function') window.closeAllKcardOverflowMenus();
+          await handleFeatureAction(va, located.feature, located.repoPath, btn, located.pipelineType);
+        };
+      });
+    }
+
     function createDrawerDetailTabs(options) {
       const opts = options || {};
       const drawerEl = opts.drawerEl;
@@ -719,10 +765,12 @@
         ]);
 
         detailEl.innerHTML =
+          (parsed.id ? renderDrawerRecoveryActions(parsed.type, parsed.id, getDrawerState().repoPath) : '') +
           '<div class="deep-status-grid">' +
             sessionHtml + progressHtml + costHtml + specHtml + agentSessionsHtml + metaHtml +
           '</div>' +
           '<div class="deep-status-footer">Collected ' + escHtml(formatIso(data.collectedAt)) + '</div>';
+        wireDrawerRecoveryActions(detailEl, parsed.type, parsed.id, getDrawerState().repoPath);
       }
 
       function buildControlBlock(id, label, raw) {

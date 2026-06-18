@@ -8,7 +8,7 @@ The `aigon security-scan` command runs a weekly security digest against the aigo
 # On-demand scan (defaults to commits since the last scan)
 aigon security-scan
 
-# Preview only — no files written, no feedback items created
+# Preview only — no files written, no follow-up features created
 aigon security-scan --dry-run
 
 # Scope to a specific commit or ref
@@ -17,11 +17,11 @@ aigon security-scan --since <sha|ref>
 # Skip the LLM layer (faster, saves cost)
 aigon security-scan --no-llm
 
-# Skip auto-creating feedback items
-aigon security-scan --no-feedback
+# Skip auto-creating follow-up features
+aigon security-scan --no-feature
 
-# Install the Monday 06:00 recurring schedule
-aigon security-scan --install-recurring
+# Backward-compatible alias
+aigon security-scan --no-feedback
 ```
 
 ## Tools that run
@@ -124,4 +124,4 @@ Reports and raw output are gitignored (ephemeral). `state.json` and `suppression
 
 ## Recurring schedule
 
-Run `aigon security-scan --install-recurring` once to register the Monday 06:00 cron (`0 6 * * 1`) in `docs/specs/recurring/security-scan-weekly.md`. After that, `aigon recurring list` will show it.
+The recurring template lives at `docs/specs/recurring/security-scan-weekly.md`. Automated schedule execution is handled by Aigon Pro's recurring engine; in OSS, run `aigon security-scan` on demand.

@@ -792,6 +792,10 @@
     .deep-status-section{padding:12px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated)}
     .deep-status-heading{margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
     .deep-status-footer{font-size:11px;color:var(--text-tertiary);text-align:right;padding:8px 0 0}
+    .drawer-recovery-section{margin-bottom:12px}
+    .drawer-recovery-copy{margin:0 0 10px;font-size:12px;line-height:1.45;color:var(--text-secondary)}
+    .drawer-recovery-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .drawer-recovery-actions .kcard-overflow{position:relative}
     .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px}
     .status-dot.status-alive{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
     .status-dot.status-dead{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.4)}
