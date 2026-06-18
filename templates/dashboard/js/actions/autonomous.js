@@ -480,6 +480,24 @@ function initAutonomousModal() {
 }
 
 export async function open(ctx) {
+  if (ctx.va && ctx.va.action === 'feature-autonomous-stop') {
+    const feature = ctx.feature;
+    const repoPath = ctx.repoPath;
+    const btn = ctx.btn;
+    const H = ctx.helpers || {};
+    const showConfirm = H.showConfirm || (() => Promise.resolve(false));
+    const requestAction = H.requestAction || ctx.api.requestAction;
+    const ok = await showConfirm({
+      title: 'Take over manually?',
+      message: 'Stop AutoConductor for feature #' + feature.id + '? Implementation and review sessions keep running; you drive the feature from here.',
+      confirmLabel: 'Take Over Manually',
+      cancelLabel: 'Cancel',
+      danger: true,
+    });
+    if (!ok) return;
+    await requestAction('feature-autonomous-stop', [String(feature.id)], repoPath, btn);
+    return;
+  }
   initAutonomousModal();
   await showAutonomousModal(ctx.feature, ctx.repoPath, ctx.btn);
 }

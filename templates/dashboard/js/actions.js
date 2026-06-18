@@ -17,6 +17,7 @@ const ACTION_MODULE_BY_ACTION = {
   'research-spec-review': 'spec-review',
   'research-spec-revise': 'spec-review',
   'feature-autonomous-start': 'autonomous',
+  'feature-autonomous-stop': 'autonomous',
   'feature-schedule': 'schedule-kickoff',
   'research-schedule': 'schedule-kickoff',
   'feature-nudge': 'nudge',
@@ -212,7 +213,8 @@ function renderActionButtons(feature, repoPath, pipelineType) {
       }
       const agentAttr = va.agentId ? ' data-agent="' + escHtml(va.agentId) + '"' : '';
       const isDanger = va.action === 'feature-stop' || va.action === 'research-stop' || va.action === 'feature-reset'
-        || va.action === 'set-autonomous-stop' || va.action === 'set-autonomous-reset';
+        || va.action === 'set-autonomous-stop' || va.action === 'set-autonomous-reset'
+        || va.action === 'feature-autonomous-stop';
       const cls = isDanger ? 'kcard-overflow-item kcard-va-btn btn-danger' : 'kcard-overflow-item kcard-va-btn';
       const disabledReason = va.disabledReason || '';
       return '<button class="' + cls + '" data-va-action="' + escHtml(va.action) + '"' + agentAttr

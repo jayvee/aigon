@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Added `feature-autonomous-stop` CLI, dashboard **Take Over Manually** action, and integration tests; workflow lifecycle untouched on stop.
 ## New API Surface
 
 ## Key Decisions
