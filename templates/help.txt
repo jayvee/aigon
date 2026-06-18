@@ -135,6 +135,7 @@ Token Window:
 
 Scheduled kickoffs (server poller; requires aigon server):
   schedule add feature_autonomous <id> --run-at=<iso8601> <agents...> [--stop-after=] [--repo=]
+  schedule add set_autonomous <slug> --run-at=<iso8601> <agents...> [--review-agent=] [--models=] [--efforts=] [--stop-after=close] [--repo=]
   schedule add research_start <id> --run-at=<iso8601> [agents...] [--repo=]
   schedule list [--all] [--repo=]   schedule cancel <jobId> [--repo=]
 

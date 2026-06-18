@@ -528,6 +528,7 @@ Scheduled and recurring work is no longer implemented in the OSS package. The fo
 - `lib/commands/schedule.js` keeps the `aigon schedule` verb as a thin delegating stub.
 - `lib/commands/recurring.js` keeps `aigon recurring-run` and `aigon recurring-list` as thin delegating stubs.
 - `lib/commands/agent-launch.js` keeps the internal `aigon agent-launch` primitive as a thin delegating stub.
+- `lib/dashboard-status-collector.js` may decorate feature, research, and feature-set read models with pending schedule metadata when Pro exposes a schedule index.
 
 Each stub tries to load the matching `@aigon/pro/commands/*` implementation when Pro is installed. Without Pro, it prints the standard "Pro feature — coming later" notice and exits non-zero. Do not add scheduler engine behavior back to OSS unless the free/pro boundary changes.
 
