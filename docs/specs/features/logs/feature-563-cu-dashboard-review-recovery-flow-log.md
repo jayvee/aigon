@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 349
+lines_removed: 17
+lines_changed: 366
+files_touched: 13
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 563 - dashboard-review-recovery-flow
 Agent: cu
 
