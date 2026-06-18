@@ -2,6 +2,7 @@
 complexity: medium
 set: autonomous-controller-ux
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-18T04:03:40.282Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:01:09.692Z", actor: "cli/feature-prioritise" }
 ---
 
