@@ -4,6 +4,7 @@ set: autonomous-controller-ux
 depends_on:
   [567]
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-18T04:03:40.892Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-06-18T04:01:10.815Z", actor: "cli/feature-prioritise" }
 ---
 
