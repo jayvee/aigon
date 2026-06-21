@@ -1572,6 +1572,15 @@ pre code {
   .dashboard-tabs {
     gap: 0;
   }
+
+  .step-tabs,
+  .step-mode-selector,
+  .mode-tabs,
+  .exec-mode-tabs {
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
