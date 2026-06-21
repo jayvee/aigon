@@ -20,6 +20,7 @@ const {
 } = require('../../lib/dashboard-status-helpers');
 const { STATE_RENDER_META, getStateRenderMeta } = require('../../lib/state-render-meta');
 const { LifecycleState } = require('../../lib/workflow-core/types');
+const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
 
 // --- STATE_RENDER_META coverage (merged from dashboard-state-render-meta) ---
 test('STATE_RENDER_META: complete coverage, required fields, cls + badge invariants', () => {
@@ -99,6 +100,36 @@ test('collectRepoStatus decorates feature-set cards with pending schedule metada
         clearTierCache(repo);
     }
 }));
+
+test('buildSetValidActions exposes set schedule action for idle incomplete sets', () => {
+    const actions = buildSetValidActions({
+        slug: 'nightly',
+        status: 'idle',
+        isComplete: false,
+        inboxMemberCount: 0,
+    }, {
+        requiresPro: true,
+        proAvailable: true,
+    });
+    assert.ok(actions.some(a => a.action === 'set-autonomous-start'), 'expected immediate set start action');
+    const schedule = actions.find(a => a.action === 'set-autonomous-schedule');
+    assert.ok(schedule, 'expected set schedule action');
+    assert.strictEqual(schedule.label, 'Schedule set');
+    assert.strictEqual(schedule.disabled, undefined);
+
+    const gated = buildSetValidActions({
+        slug: 'nightly',
+        status: 'idle',
+        isComplete: false,
+        inboxMemberCount: 0,
+    }, {
+        requiresPro: true,
+        proAvailable: false,
+        proDisabledReason: 'Pro required',
+    });
+    const gatedSchedule = gated.find(a => a.action === 'set-autonomous-schedule');
+    assert.ok(gatedSchedule && gatedSchedule.disabled, 'expected set schedule action to be Pro-gated');
+});
 
 // --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read

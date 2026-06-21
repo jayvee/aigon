@@ -1607,6 +1607,10 @@
             if (startSetVa && !isPausedOnFailure) {
               appendSetHeaderAction(startSetVa);
             }
+            const scheduleSetVa = setValid.find(a => a.action === 'set-autonomous-schedule');
+            if (scheduleSetVa && !isPausedOnFailure) {
+              appendSetHeaderAction(scheduleSetVa);
+            }
             header.appendChild(row);
 
             if (totalN > 0) {
