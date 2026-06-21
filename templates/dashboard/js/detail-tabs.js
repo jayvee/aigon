@@ -18,7 +18,7 @@
       if (!located || typeof renderActionButtons !== 'function' || typeof handleFeatureAction !== 'function') return '';
       const recoveryActions = (located.feature.validActions || []).filter((va) => va.metadata && va.metadata.recovery);
       if (recoveryActions.length === 0) return '';
-      const feature = Object.assign({}, located.feature, { validActions: recoveryActions });
+      const feature = Object.assign({}, located.feature, { validActions: recoveryActions, __showRecoveryActions: true });
       const buttonsHtml = renderActionButtons(feature, located.repoPath, located.pipelineType);
       if (!buttonsHtml) return '';
       return '<div class="deep-status-section drawer-recovery-section">' +

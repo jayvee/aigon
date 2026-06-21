@@ -119,6 +119,7 @@ async function dispatchActionModule(moduleName, ctx) {
 function renderActionButtons(feature, repoPath, pipelineType) {
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
+  const showRecoveryActions = Boolean(feature && feature.__showRecoveryActions);
 
   const evalRunning = feature.evalSession && feature.evalSession.running;
   const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
@@ -126,6 +127,9 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.action === 'select-winner') return false;
     if (va.agentId) return false;
     if (va.category === 'infra' || va.category === 'view') return false;
+    if (!showRecoveryActions && va.metadata && va.metadata.recovery) return false;
+    if (!showRecoveryActions && (va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review')) return false;
+    if (!showRecoveryActions && va.action === 'feature-autonomous-stop') return false;
     if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-code-review')) return false;
     return true;
   });
