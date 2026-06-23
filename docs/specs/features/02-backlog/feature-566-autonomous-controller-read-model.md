@@ -16,12 +16,13 @@ Expose a stable dashboard read-model DTO for feature AutoConductor state so the 
 - [ ] As a dashboard developer, I can consume one normalized controller object instead of reading raw auto sidecar fields in multiple frontend places.
 
 ## Acceptance Criteria
-- [ ] Feature dashboard payloads include a normalized `autonomousController` object for features with feature-auto sidecar state.
-- [ ] The DTO includes at least `status`, `running`, `reason`, `reasonLabel`, `error` (the raw `error.message` written for `uncaught-error` and similar), `sessionName`, `sessionRunning`, `startedAt`, `updatedAt`, `endedAt`, `workflowState`, `mode`, `agents`, `reviewAgent`, and `evalAgent`.
-- [ ] The DTO distinguishes `running`, `stopped`, `failed`, `completed`, and quota-paused controller states without relying on workflow lifecycle alone.
-- [ ] Failure reasons are mapped to user-facing categories such as setup failure, reviewer exited, timeout, quota, eval failure, and close failure.
-- [ ] The DTO includes a `recommendedRecoveryKind` or equivalent stable enum that later UI features can use without parsing labels.
-- [ ] Existing `autonomousPlan` data remains backward compatible while the new controller DTO is introduced.
+- [ ] Feature dashboard payloads include a normalized `autonomousController` object for features with feature-auto sidecar state. The DTO is present whenever the `.aigon/state/feature-<id>-auto.json` sidecar exists, **including features whose workflow stage is `done`** — a `completed` controller must still surface (see Technical Approach: the current `readFeatureAutoState` call at `lib/workflow-read-model.js:615` is gated on `stage !== 'done'` and must be widened or the controller read must bypass that gate).
+- [ ] The DTO includes at least `status` (from the sidecar `status` field), `running` (sidecar `running`), `reason`, `reasonLabel`, `error` (the raw `error.message` written for `uncaught-error` and similar), `sessionName`, `sessionRunning` (live tmux liveness, distinct from sidecar `running`), `startedAt`, `updatedAt`, `endedAt`, `workflowState`, `mode`, `agents`, `reviewAgent`, and `evalAgent`.
+- [ ] The DTO distinguishes `running`, `stopped`, `failed`, `completed`, and `quota-paused` controller states using the sidecar `status` field, without relying on workflow lifecycle alone. Note that `stopped` covers both intentional stop-after checkpoints (`stop-after-implement`/`-review`/`-eval`) and `stopped-by-user`; the `reason` field disambiguates these — categorisation must not treat every `stopped` as a failure.
+- [ ] Failure reasons are mapped to user-facing categories such as setup failure, reviewer exited, timeout, quota, eval failure, and close failure. The full reason → category mapping covers every `reason` string emitted by `finishAuto` in `lib/feature-autonomous.js` (e.g. `review-exited-without-signal`, `review-session-timeout`, `feature-close-failed`, `eval-exited-without-winner`, `quota-cap`, `uncaught-error`); an unmapped reason falls back to a stable `unknown` category rather than throwing.
+- [ ] The DTO includes a `recommendedRecoveryKind` stable enum that later UI features (567/568) can switch on without parsing labels. The enum values are enumerated and defined in the server-owned helper (e.g. `retry-setup`, `rerun-review`, `rerun-eval`, `retry-close`, `wait-quota`, `manual`), each derived from the reason category.
+- [ ] Existing `autonomousPlan` / `autonomousPlanSummary` data remains byte-for-byte backward compatible while the new controller DTO is introduced — no fields removed or renamed.
+- [ ] The read-model helper has unit coverage asserting the DTO shape against representative sidecar fixtures (see Technical Approach), runnable under `npm run test:core`.
 
 ## Validation
 ```bash
@@ -29,10 +30,10 @@ npm run test:core
 ```
 
 ## Technical Approach
-- Add a focused read-model helper near the existing auto-state/dashboard read path rather than deriving controller state in frontend code.
-- Use `.aigon/state/feature-<id>-auto.json` as the source of truth for controller status, with live tmux lookup only for session liveness.
-- Keep raw reason strings available for diagnostics, but expose human labels and categories from server-owned mapping.
-- Cover representative sidecar fixtures for `running`, `failed: review-exited-without-signal`, `stopped-by-user`, `completed`, and missing state.
+- Add a focused read-model helper (owned by `lib/workflow-read-model.js`, consumed by `lib/dashboard-status-collector.js`) near the existing auto-state/dashboard read path rather than deriving controller state in frontend code. The helper takes the parsed sidecar object (plus a session-liveness lookup) and returns the `autonomousController` DTO; it must not read tmux itself beyond the single liveness probe.
+- Use `.aigon/state/feature-<id>-auto.json` (read via `readFeatureAutoState` in `lib/auto-session-state.js`) as the source of truth for controller status, with live tmux lookup only for `sessionRunning`. The existing read site at `lib/workflow-read-model.js:615` short-circuits when `stage === 'done'`; widen it so a `completed`/`failed` controller on a done feature still produces the DTO.
+- Keep raw reason strings available for diagnostics, but expose human labels (`reasonLabel`) and categories from a single server-owned mapping table; do not duplicate the mapping in the collector.
+- Cover representative sidecar fixtures for `running`, `failed: review-exited-without-signal`, `stopped: stop-after-review` (intentional), `stopped-by-user`, `quota-paused: quota-cap`, `completed: feature-closed`, and missing/absent state (DTO should be `null`).
 
 ## Dependencies
 - Existing feature-auto sidecar state written by `lib/feature-autonomous.js`
