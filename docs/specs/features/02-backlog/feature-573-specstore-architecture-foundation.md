@@ -1,5 +1,5 @@
 ---
-complexity: very-high
+complexity: high
 set: specstore-git-backed-storage
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-06-21T13:13:40.321Z", actor: "cli/feature-prioritise" }
@@ -16,12 +16,18 @@ Define Aigon's next storage architecture around a `SpecStore` boundary. Aigon is
 - [ ] As a future backend implementer, I can add a storage backend without changing command modules, dashboard collectors, and workflow transition logic directly.
 
 ## Acceptance Criteria
-- [ ] A design note is added under `docs/` describing the target model: `Spec`, spec kinds (`feature`, `research`), spec keys (`F42`, `R43`), events, snapshots, leases, indexes, and projections.
+- [ ] A design note is added at `docs/specstore-architecture.md` (linked from `docs/architecture.md`) describing the target model: `Spec`, spec kinds (`feature`, `research`), spec keys (`F42`, `R43`), events, snapshots, leases, indexes, and projections. It must state the intended layering (SpecStore = durable storage protocol; workflow-core = lifecycle semantics; spec files = projections; folders = derived from lifecycle).
 - [ ] The design explicitly states that feedback is not a top-level spec kind; customer feedback is represented as research origin/source metadata.
 - [ ] A `lib/spec-store/` module exists with a documented interface and a local backend placeholder/wrapper, but no Git-ref backend behavior yet.
-- [ ] The interface is spec-shaped, not generic CRUD: read/list specs, read/append events, read/write snapshots, lock specs, sync, health.
-- [ ] Existing workflow-core callers are not migrated in this feature unless needed for the skeleton; behavior remains unchanged.
-- [ ] Tests or syntax checks cover the new module export and ensure it can be required without side effects.
+- [ ] The interface is spec-shaped, not generic CRUD. Name the methods explicitly and the existing `lib/workflow-core/` helper each thin-wraps or stubs:
+  - `listSpecs` / `readSpec` — delegate to existing path/read helpers (`lib/workflow-core/paths.js`).
+  - `readEvents` / `appendEvent` — delegate to `lib/workflow-core/event-store.js`.
+  - `readSnapshot` / `writeSnapshot` — delegate to `lib/workflow-core/snapshot-store.js`.
+  - `lock` — delegate to `lib/workflow-core/lock.js`.
+  - `sync` / `health` — no-op stubs in this feature (document return shape, e.g. `{ ok: true, backend: 'local' }`); they exist to pin the interface, not to do work yet.
+- [ ] Existing workflow-core callers are not migrated in this feature unless needed for the skeleton; behavior remains unchanged. Existing event/snapshot/lock files under `lib/workflow-core/` keep their current callers and are not renamed.
+- [ ] A test (`test/` or co-located) requires `lib/spec-store/index.js`, asserts the documented method names are all present as functions, and asserts that requiring the module performs no filesystem writes or other side effects.
+- [ ] Spec key parsing/formatting round-trips: a test asserts `format(parse('F42'))` and `format(parse('R43'))` are stable, and that a malformed key (e.g. `X1`, `F`, empty) throws or returns a documented error rather than silently coercing.
 - [ ] Existing `npm test` and `node -c aigon-cli.js` still pass.
 
 ## Validation
@@ -32,7 +38,8 @@ npm test
 
 ## Technical Approach
 - Add `lib/spec-store/index.js` plus focused files for interface validation, spec key parsing/formatting, and local backend construction.
-- Keep the first implementation deliberately thin: it may delegate to current workflow path/event/snapshot helpers.
+- Keep the first implementation deliberately thin: it delegates to the current `lib/workflow-core/` helpers (`paths.js`, `event-store.js`, `snapshot-store.js`, `lock.js`). Do not duplicate or reimplement their logic — the SpecStore is a façade over them, not a fork.
+- The local backend is the only backend wired in this feature; `index.js` should expose a constructor/selector that returns it (so a future Git-ref backend slots in without changing callers), but ship only the local one.
 - Document the intended layering:
   - `SpecStore` owns durable storage protocol.
   - workflow-core owns lifecycle semantics.
