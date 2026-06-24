@@ -161,6 +161,30 @@ async function handleSetActionModule(ctx) {
       await H.requestAction('feature-set-spec-review', args, repoPath, btn);
       break;
     }
+    case 'feature-set-spec-revise': {
+      const pick = await H.showAgentPicker(slug, 'set ' + slug, {
+        single: true,
+        collectTriplet: true,
+        title: 'Choose set spec revision agent',
+        submitLabel: 'Revise Set Specs',
+        repoPath,
+        taskType: 'review',
+        action: va.action,
+      });
+      if (!pick || pick.length === 0) return;
+      const t = pick[0];
+      const triArgs = H.tripletsToCliArgs([t]);
+      const args = [slug, t.id, ...triArgs];
+      try {
+        if (typeof H.fetchBudget === 'function') {
+          await H.fetchBudget();
+          const warning = H.budgetWarningForAgents([t.id]);
+          if (warning && !window.confirm(warning)) return;
+        }
+      } catch (_) { /* best-effort */ }
+      await H.requestAction('feature-set-spec-revise', args, repoPath, btn);
+      break;
+    }
     case 'set-autonomous-stop':
     case 'set-autonomous-resume':
       await H.requestAction(va.action, [slug], repoPath, btn);

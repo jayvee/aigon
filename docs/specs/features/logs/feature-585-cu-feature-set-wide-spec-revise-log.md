@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Set-wide spec revision: CLI `feature-set-spec-revise`, prompt template, dashboard action + tests.
 ## New API Surface
 
 ## Key Decisions
