@@ -118,7 +118,13 @@ testAsync('resolveSetSpecRevisePlan topo-orders eligible members and flags incon
         summary: 'root review',
         commitSha: rootSha,
     });
-    // leaf has git commit but no workflow signal — inconsistent
+    await engine.recordSpecReviewSubmitted(root, 'feature', '02', {
+        reviewId: 'unrelated-review',
+        reviewerId: 'cc',
+        summary: 'stale unrelated review',
+        commitSha: 'unrelated-review',
+    });
+    // leaf has a git review commit, but not a matching workflow signal — inconsistent
 
     const plan = resolveSetSpecRevisePlan(root, 'auth', p);
     assert.ifError(plan.error);
@@ -167,6 +173,10 @@ testAsync('feature-set-spec-revise degrades when selected agent authored all pen
     const out = runCli(root, ['feature-set-spec-revise', 'solo', '--no-launch', '--agent=cx']);
     assert.match(out, /none are eligible/i);
     assert.match(out, /same-agent/i);
+
+    const plan = resolveSetSpecRevisePlan(root, 'solo', p, { revisionAgentId: 'cx' });
+    assert.strictEqual(plan.contextRows[0].assessment.revisionStatus, 'skipped');
+    assert.strictEqual(plan.contextRows[0].assessment.skipReason, 'same-agent review');
 }));
 
 testAsync('feature-set-spec-revise --no-launch prints ordered eligible context', () => withTempDirAsync('aigon-set-spec-revise-nolaunch-', async (root) => {
