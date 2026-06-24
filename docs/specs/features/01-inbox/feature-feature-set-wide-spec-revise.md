@@ -35,21 +35,24 @@ Add a set-level spec revision flow so an author can process all pending `spec-re
 - [ ] As a revision agent, I receive the ordered set membership, dependency context, pending review commits per member, and current spec contents in one prompt.
 - [ ] As an author, I can make coordinated accept/revert/modify decisions across sibling specs when a review comment spans multiple features.
 - [ ] As an operator, I still get one `spec-revise:` acknowledgement commit per affected feature so each member's audit trail and workflow state remain correct.
-- [ ] As a dashboard user, I can start set-wide spec revision from the set card when any member has pending spec reviews.
+- [ ] As a dashboard user, I can start "Revise Set Specs" from the set card when any eligible member has pending spec reviews.
 
 ## Acceptance Criteria
 - [ ] A new CLI command exists for set-level spec revision: `aigon feature-set-spec-revise <slug>`, and validates the set slug with `lib/feature-sets.js:isValidSetSlug`.
 - [ ] The command resolves members using `getSetMembersSorted(slug)` so the revision prompt follows dependency/topological order, not arbitrary filesystem order.
-- [ ] Done/closed members are skipped from the active revision set using the same `stage === 'done'` predicate chosen by F583. Members without pending review commits may appear in context but are not marked as requiring acknowledgement.
-- [ ] The command refuses to run when the set has no non-done members with pending `spec-review:` commits newer than that member's latest `spec-revise:` or legacy `spec-review-check:` acknowledgement.
-- [ ] Pending review detection reuses the existing per-feature semantics from `templates/generic/commands/feature-spec-revise.md`: inspect git history for each member spec path with `--follow`, find the latest acknowledgement, and collect newer `spec-review:` commits.
+- [ ] Active revision candidates are members that have a pending `spec-review:` commit and matching logged workflow state indicating review completion/submission. If the git commit exists but the workflow signal is missing, flag that member as inconsistent instead of silently treating it as ready.
+- [ ] Done/closed members and members already in implementation or later are skipped from the active revision set. Do not hard-fail the whole set because some members are in progress or done; include skipped members in the prompt's context table with a skip reason.
+- [ ] Pending reviews authored by the same agent selected to run set-wide revision are skipped. If a member's only pending reviews were authored by the selected revision agent, skip that member with an explicit "same-agent review" reason rather than letting an agent revise its own review.
+- [ ] The command refuses to run only when the set has no eligible members with pending `spec-review:` commits newer than that member's latest `spec-revise:` or legacy `spec-review-check:` acknowledgement.
+- [ ] Pending review detection reuses the existing per-feature semantics from `templates/generic/commands/feature-spec-revise.md`: inspect git history for each member spec path with `--follow`, find the latest acknowledgement, and collect newer `spec-review:` commits, then cross-check that review completion is represented in the workflow/read-model state.
 - [ ] The revision launch prompt includes: set slug, ordered member table, dependency edges from `getSetDependencyEdges(slug)`, each member's lifecycle/stage, pending review commit summaries per member, and the full markdown body of each member spec.
 - [ ] The revision prompt is explicit that this is author-side spec revision, not implementation or new review: do not start features, do not run target-repo build/test commands unless directly needed for read-only spec validation, and do not modify non-spec files.
-- [ ] The revision agent may accept, revert, or modify reviewed spec changes across multiple members, but must create exactly one `spec-revise:` acknowledgement commit per member that had pending reviews, even if the final decision for that member is accept-as-is.
+- [ ] The revision agent may accept, revert, or modify reviewed spec changes across multiple members, but must create exactly one `spec-revise:` acknowledgement commit per eligible member that had pending reviews, even if the final decision for that member is accept-as-is. The acknowledgement commit is how future runs know those `spec-review:` commits were processed.
 - [ ] Each acknowledged member's workflow state records spec-revision completion through the existing `feature-spec-revise-record` path or an equivalent shared helper; no set-level workflow event replaces the per-feature signal.
 - [ ] The command does not eagerly move every set member into `spec_revision_in_progress`. It should record start/completion only for members with pending reviews, or use a narrowly scoped shared helper that preserves existing per-member action eligibility.
-- [ ] The dashboard set card exposes a server-owned valid action for set-wide spec revision when the set contains at least one member with pending spec reviews. Add this to `buildSetValidActions` in `lib/feature-set-workflow-rules.js` by threading a pending-revision count into the `setState` object at the dashboard status producer; do not branch on member state in frontend code.
-- [ ] The dashboard start flow selects one revision agent/model/effort triplet for the whole set revision, matching F583's single reviewer picker pattern.
+- [ ] The revision pass processes eligible members in dependency order using `getSetMembersSorted(slug)`. Commit and record acknowledgements in that same order so upstream spec decisions are settled before downstream specs.
+- [ ] The dashboard set card exposes a server-owned valid action labeled "Revise Set Specs" when the set contains at least one eligible member with pending spec reviews. Add this to `buildSetValidActions` in `lib/feature-set-workflow-rules.js` by threading a pending-revision count into the `setState` object at the dashboard status producer; do not branch on member state in frontend code.
+- [ ] The dashboard start flow selects one revision agent/model/effort triplet for the whole set revision, matching F583's single reviewer picker pattern. Defaults should be guided by the feature-set creator; use the first feature's creator/author as the set creator proxy unless F583 establishes a more explicit set creator field.
 - [ ] Starting the action from the dashboard launches one revision session and surfaces it in session tracking with a name parseable by `lib/agent-sessions/names.js`. Use the existing session-name grammar unchanged: anchor the session to the first member with pending reviews, use the existing `spec-revise` role, and store the set slug/member list in session metadata.
 - [ ] Tests cover command validation, member ordering, pending-review detection, prompt payload shape, per-member acknowledgement/record behavior, and dashboard valid-action exposure.
 
@@ -63,9 +66,10 @@ npm test
 - Build this as the author-side sibling of F583's `feature-set-spec-review` flow. The set is orchestration context; individual feature specs remain the workflow owners.
 - Add the public command through the existing set command surface, keeping `lib/commands/set.js` thin. Put shared discovery/prompt/record helpers in a focused module if the implementation would otherwise make the dispatcher large.
 - Reuse `lib/feature-sets.js` for slug validation, sorted members, and dependency edges. Do not rescan set members by filename or duplicate dependency sorting logic.
-- Reuse the existing `feature-spec-revise` git-history contract for each member spec. This is load-bearing because current author-side revision relies on per-file `git log --follow` discovery.
+- Reuse the existing `feature-spec-revise` git-history contract for each member spec, then cross-check review completion through the workflow/read-model state so revision targets are both committed and logged. This is load-bearing because current author-side revision relies on per-file `git log --follow` discovery, while the set-level command should avoid acting on orphaned review commits that were never recorded.
+- Filter pending reviews by selected revision agent before building the active set. The author-side revision pass should process reviews from other agents only; same-agent reviews stay pending for a different revision agent or the existing single-feature path.
 - Prefer a set-level prompt template under `templates/generic/commands/` only if it remains target-repo neutral. The template must not mention package managers, frameworks, or language-specific validation commands.
-- Keep commit granularity per member spec. A single multi-file acknowledgement commit would break the current "latest ack for this spec path" model and make future per-feature review/revise cycles ambiguous.
+- Keep commit granularity per member spec and process commits in dependency order. A single multi-file acknowledgement commit would break the current "latest ack for this spec path" model and make future per-feature review/revise cycles ambiguous.
 - For dashboard support, extend the server-owned set action registry and API/action dispatch path. The frontend should render the action from `validActions` and pass the selected agent triplet; eligibility must be computed server-side.
 - For session tracking, reuse the existing `spec-revise` role and anchor the session to the first pending member id. Store set metadata in the session sidecar so attach/peek/nudge and later observability can distinguish set-wide revision from normal single-feature revision.
 - If F583 introduces shared set-review helpers, this feature should reuse or generalize them rather than creating parallel review and revise code paths.
@@ -84,12 +88,8 @@ npm test
 - A rich set-review summary/report beyond what the revision prompt and per-feature commits record.
 
 ## Open Questions
-- Should the dashboard expose set-wide spec revision only after F583's set-wide review session completes, or whenever any member has pending `spec-review:` commits from any source?
-- If some set members have pending reviews and others are already in implementation, should the command hard-fail, skip the later-stage members, or include them read-only for context?
-- Should the revision agent be required to create acknowledgement commits for every pending member even when no file content changes, or only for members whose final spec differs from the pre-revision state?
-- When two member specs require a coordinated edit, should the command enforce a deterministic commit order matching `getSetMembersSorted(slug)`?
-- Should set-wide revision default to the original reviewer from F583, the member spec's `agent:` owner, or the operator-selected agent only?
-- What label should the dashboard action use: "Revise set specs", "Process set spec reviews", or another phrase?
+- If a member has a pending `spec-review:` commit but no corresponding workflow/read-model review completion signal, should the command offer a `--repair` mode that records the missing review state, or should repair stay manual via existing doctor/workflow tools?
+- If F583 later introduces an explicit set creator field, should this feature migrate from "first feature creator" defaulting to that field automatically?
 
 ## Related
 - F583: `feature-set-wide-spec-review`
