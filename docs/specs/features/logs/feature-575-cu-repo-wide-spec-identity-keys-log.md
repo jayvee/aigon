@@ -14,3 +14,20 @@ Added `lib/spec-identity.js` (F/R display keys + unified resolver), wired dashbo
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-06-25
+
+### Fixes Applied
+- 1ba57fac4 fix(review): reject unknown spec identity kinds
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- Review focused on identity parsing/formatting, spec-store compatibility imports, dashboard display-key propagation, and legacy numeric lookup paths.
