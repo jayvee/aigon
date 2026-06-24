@@ -27,14 +27,14 @@ Add a set-level spec review flow so one reviewer can evaluate every feature spec
 ## Acceptance Criteria
 - [ ] A new CLI command exists for set-level spec review: `aigon feature-set-spec-review <slug>`, and validates the set slug with `lib/feature-sets.js:isValidSetSlug`.
 - [ ] The command resolves members using `getSetMembersSorted(slug)` so the reviewer sees dependency/topological order, not arbitrary filesystem order.
-- [ ] Done/closed members are skipped from the active review set. The command refuses to run when the set has no non-done members or when any reviewable member cannot be resolved to a feature spec path.
-- [ ] The review launch prompt includes: set slug, ordered member table, dependency edges, each member's current lifecycle/stage, and the full markdown body of each member spec.
+- [ ] Done/closed members are skipped from the active review set, detected via the member's existing `stage` field (`stage === 'done'`) — do not introduce a new done predicate. "Reviewable" means a non-done member that has not yet started implementation (inbox/backlog stage; i.e. still in or before `spec_review_*`); a member already in a later lifecycle stage is excluded from the active edit set. The command refuses to run when the set has no reviewable members or when any reviewable member cannot be resolved to a feature spec path.
+- [ ] The review launch prompt includes: set slug, ordered member table, dependency edges (sourced from `getSetDependencyEdges(slug)`, not recomputed), each member's current lifecycle/stage, and the full markdown body of each member spec.
 - [ ] The reviewer prompt is explicit that this is still spec review, not implementation: do not start features, do not run target-repo build/test commands unless the spec itself requires read-only verification, and do not modify non-spec files.
 - [ ] The reviewer may edit one or more member specs in place and must create one `spec-review:` commit per affected feature spec using existing commit semantics, so downstream `feature-spec-revise <id>` can discover and process changes per feature.
 - [ ] Each affected feature's workflow state records spec-review completion through the existing `feature-spec-review-record` path or an equivalent shared helper; no parallel sidecar-only review status is introduced.
-- [ ] The dashboard set card exposes a server-owned valid action for set-wide spec review when the set contains at least one non-done member in a reviewable state.
-- [ ] The dashboard start flow selects one reviewer agent/model/effort triplet for the whole set review; it does not choose different reviewers per member spec.
-- [ ] Starting the action from the dashboard launches one reviewer session and surfaces it in session tracking with a role that is parseable by `lib/agent-sessions/names.js`.
+- [ ] The dashboard set card exposes a server-owned valid action (added to `buildSetValidActions` in `lib/feature-set-workflow-rules.js`) for set-wide spec review when the set contains at least one reviewable member. This requires threading a new reviewable-member count into the `setState` argument: `buildSetValidActions` currently only receives `slug/status/isComplete/autonomous/inboxMemberCount` (built at `lib/dashboard-status-collector.js:298`). Add a field (e.g. `reviewableMemberCount`) populated from `summary.counts`/`getSetMembersSorted` in that same producer — do not branch on member state in the frontend.
+- [ ] The dashboard start flow selects one reviewer agent/model/effort triplet for the whole set review (the action uses `requiresInput: 'agentPicker'` like `set-autonomous-start`); it does not choose different reviewers per member spec.
+- [ ] Starting the action from the dashboard launches one reviewer session and surfaces it in session tracking with a name that is parseable by `lib/agent-sessions/names.js`. NOTE: the current name grammar (`names.js:111`, `^(.+)-(f|r)(\d+)-<role>-<agent>`) encodes a single numeric entity id, which a slug-keyed set does not have. The spec must resolve this explicitly — either (a) anchor the session to a representative member's numeric id (e.g. the first reviewable member) so the existing grammar parses unchanged, or (b) extend the grammar/`VALID_TMUX_ROLES` to accept a set-scoped token. Pick one and state which; do not leave the session name unparseable.
 - [ ] Tests cover command validation, member ordering, prompt payload shape, multi-spec commit/record behavior, and dashboard valid-action exposure.
 
 ## Validation
@@ -53,9 +53,9 @@ npm test
 - Treat done/closed members as out of scope for active review. They may appear in dependency metadata only if needed to explain why a non-done member depends on closed work, but their spec bodies should not be included for editing.
 - Require one review commit per edited spec rather than one combined multi-file commit. This preserves the current `git log --follow -- "$SPEC_PATH"` discovery model used by `feature-spec-revise`.
 - Add a set-level prompt template under `templates/generic/commands/` only if it can stay target-repo neutral. The template must not mention language-specific validation commands or package managers.
-- For dashboard support, extend the server-owned set action registry (`lib/feature-set-workflow-rules.js`) and action dispatch path instead of adding frontend-only branching.
+- For dashboard support, extend the server-owned set action registry (`buildSetValidActions` in `lib/feature-set-workflow-rules.js`) and action dispatch path instead of adding frontend-only branching. Thread the reviewable-member count into the `setState` object at its producer (`lib/dashboard-status-collector.js:298`) so the action's enablement is decided server-side — this is the write-path side of the AC above.
 - The dashboard should present a single reviewer picker for agent/model/effort and pass that one launch triplet to the set-wide review session.
-- For session tracking, either extend `VALID_TMUX_ROLES` with a precise role such as `set-spec-review` or model the launch as one session with role `spec-review` plus set metadata. Pick the option that preserves attach/peek/nudge behavior with the least special casing.
+- For session tracking, `spec-review` is already a valid `VALID_TMUX_ROLES` entry, so the role itself is not the blocker — the entity-id segment of the name grammar is (see session-naming AC). Prefer option (a): anchor the launch to a representative reviewable member's numeric id so `parseSessionName` keeps working with zero grammar changes, and carry the set slug as session metadata. Only extend the grammar (option b) if attach/peek/nudge cannot otherwise resolve the session. Pick the option with the least special casing.
 - Keep the MVP focused on review context and workflow correctness. A later feature can add richer "set review summary" reporting if needed.
 
 ## Dependencies
@@ -71,7 +71,7 @@ npm test
 - Research-topic set review.
 
 ## Open Questions
-- Workflow marking decision: when the one reviewer session starts, should every non-done member show as `spec_review_in_progress` in the dashboard, or should a member only change state after the reviewer actually edits/records that specific spec? The first option gives accurate "a set review is underway" visibility; the second avoids marking untouched specs as reviewed work.
+- Workflow marking decision: when the one reviewer session starts, should every reviewable member show as `spec_review_in_progress` in the dashboard, or should a member only change state after the reviewer actually edits/records that specific spec? The first option gives accurate "a set review is underway" visibility; the second avoids marking untouched specs as reviewed work. Recommended default: the second (per-edit) — eagerly flipping every member to `spec_review_in_progress` writes engine state for specs the reviewer may never touch, which is the "parallel/sidecar review status" the Acceptance Criteria already forbid. Surface "a set review is underway" via set-level session presence, not per-member state.
 - What should happen if one member is already in `spec_review_in_progress` by another reviewer?
 
 ## Related
