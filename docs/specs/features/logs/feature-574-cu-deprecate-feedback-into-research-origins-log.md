@@ -14,3 +14,20 @@ Deprecated feedback CLI/dashboard surfaces; added `feedback-migrate`, research o
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-06-25
+
+### Fixes Applied
+- efe2bb151 fix(review): bootstrap migrated research workflow state
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Migrated research specs now use repo-scoped research ID allocation and receive workflow-core bootstrap state as part of migration, so they are immediately reachable by normal research commands.
