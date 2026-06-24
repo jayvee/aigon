@@ -3,18 +3,37 @@ Agent: cx
 
 ## Status
 
+Implemented and revised after code review.
+
 ## New API Surface
+
+- `GET /api/features/:id/controller-log` returns controller-log availability, metadata, and a bounded captured-output tail.
+- `autonomous-recover` dashboard action payloads include `controllerLog` availability metadata.
 
 ## Key Decisions
 
+- AutoConductor sessions are recorded with `agent: auto` so existing session sidecars can locate the controller session after tmux exits.
+- Controller logs reuse the existing tmux pipe-pane capture and transcript read surface instead of introducing a separate log system.
+- Post-review decision: `role: auto` controller output is always captured through the tmux pipe-pane path, independent of the global `transcripts.tmux` opt-in. The opt-in remains in force for normal non-native agent transcript capture.
+
 ## Gotchas / Known Issues
+
+- Controller-log reads are bounded to the latest captured output and report `truncated` when the capture exceeds the server tail limit.
+- Older autonomous sessions without `agent: auto` or `tmuxLogPath` sidecar data show the explicit unavailable state.
 
 ## Explicitly Deferred
 
+- Live streaming controller logs while the run is still active.
+- Cloud or remote log retention.
+
 ## For the Next Feature in This Set
+
+- The recovery modal now has a controller-log section that can be extended with richer diagnostics if future controller state adds them.
 
 ## Test Coverage
 
+- `tests/integration/feature-review-recovery-dashboard.test.js` covers available and missing controller-log recovery payload cases.
+- `tests/integration/transcript-tmux-pipe-pane.test.js` covers always-capture gating for auto controller sessions and preserves opt-in behavior for normal non-native agent sessions.
 ## Code Review
 
 **Reviewed by**: cc (Opus)
