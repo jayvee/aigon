@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-24T12:33:01.439Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: spec-author-provenance-recommendations
