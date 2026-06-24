@@ -131,6 +131,55 @@ function buildDiagnosticsHtml(controller, va) {
   '</section>';
 }
 
+function buildControllerLogHtml(controllerLog) {
+  const log = controllerLog || {};
+  if (!log.available) {
+    return '<section class="recovery-modal-section">' +
+      '<h4>Controller log</h4>' +
+      '<div class="recovery-empty">' + esc(log.reason || 'Controller log is not available for this autonomous run.') + '</div>' +
+    '</section>';
+  }
+  return '<section class="recovery-modal-section">' +
+    '<h4>Controller log</h4>' +
+    '<button type="button" class="btn btn-secondary" id="autonomous-controller-log-view">View controller log</button>' +
+    '<div class="controller-log-view" id="autonomous-controller-log-viewer" hidden></div>' +
+  '</section>';
+}
+
+function renderControllerLogView(target, data, controller, feature) {
+  if (!data || !data.available) {
+    target.innerHTML = '<div class="recovery-empty">' + esc((data && data.reason) || 'Controller log is not available for this autonomous run.') + '</div>';
+    return;
+  }
+  const sessionName = data.sessionName || controller.sessionName || 'n/a';
+  const content = data.content || '';
+  target.innerHTML =
+    '<dl class="recovery-diagnostics controller-log-meta">' +
+      '<div><dt>Controller status</dt><dd>' + esc(controller.status || 'unknown') + '</dd></div>' +
+      '<div><dt>Feature ID</dt><dd>' + esc(feature.id) + '</dd></div>' +
+      '<div><dt>Session name</dt><dd>' + esc(sessionName) + '</dd></div>' +
+    '</dl>' +
+    (data.truncated ? '<div class="controller-log-truncated">Showing the latest captured output.</div>' : '') +
+    '<pre class="controller-log-output">' + esc(content || '(captured output is empty)') + '</pre>';
+}
+
+async function viewControllerLog(ctx, controller, viewer, btn) {
+  viewer.hidden = false;
+  viewer.innerHTML = '<div class="recovery-empty">Loading controller log...</div>';
+  btn.disabled = true;
+  try {
+    const url = '/api/features/' + encodeURIComponent(String(ctx.feature.id)) +
+      '/controller-log?repoPath=' + encodeURIComponent(ctx.repoPath || '');
+    const res = await fetch(url, { cache: 'no-store' });
+    const data = await res.json();
+    renderControllerLogView(viewer, data, controller, ctx.feature);
+  } catch (e) {
+    viewer.innerHTML = '<div class="recovery-empty">Controller log could not be loaded: ' + esc(e.message || e) + '</div>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function executeRecoveryOperation(ctx, operation, modal) {
   const copy = operationCopy(operation);
   if (copy.confirm) {
@@ -160,6 +209,7 @@ function openAutonomousRecovery(ctx) {
     && !destructive.includes(op)
   );
   const controller = normalizeController(ctx);
+  const controllerLog = (va.payload && va.payload.controllerLog) || controller.controllerLog || null;
 
   const existing = document.getElementById('autonomous-recovery-modal');
   if (existing) existing.remove();
@@ -184,6 +234,7 @@ function openAutonomousRecovery(ctx) {
     nextHtml +
     renderOperationSection('Secondary actions', secondary, 'secondary') +
     buildDiagnosticsHtml(controller, va) +
+    buildControllerLogHtml(controllerLog) +
     renderOperationSection('Destructive actions', destructive, 'destructive') +
     '<div class="modal-actions recovery-modal-actions">' +
       '<button type="button" class="btn" id="autonomous-recovery-close">Close</button>' +
@@ -202,6 +253,11 @@ function openAutonomousRecovery(ctx) {
       await executeRecoveryOperation(ctx, operation, modal);
     };
   });
+  const logBtn = box.querySelector('#autonomous-controller-log-view');
+  const logViewer = box.querySelector('#autonomous-controller-log-viewer');
+  if (logBtn && logViewer) {
+    logBtn.onclick = () => viewControllerLog(ctx, controller, logViewer, logBtn);
+  }
 }
 
 export async function open(ctx) {
