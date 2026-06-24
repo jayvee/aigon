@@ -2,15 +2,4 @@
 Agent: cu
 
 ## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Routed workflow-core engine persistence and dashboard sync reads through SpecStore local backend; added persistence-compat barrel for legacy callers.
