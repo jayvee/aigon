@@ -897,6 +897,18 @@
         '</div>';
     }
 
+    function buildSpecAuthorHtml(feature) {
+      const sa = feature && feature.specAuthor;
+      if (!sa || !sa.agentId) return '';
+      const name = (window.AGENT_DISPLAY_NAMES && window.AGENT_DISPLAY_NAMES[sa.agentId]) || sa.agentId;
+      let text = 'Spec by ' + name;
+      if (sa.model) {
+        text += ' · ' + sa.model;
+        if (sa.effort) text += '/' + sa.effort;
+      }
+      return '<div class="kcard-spec-author" title="Original spec author">' + escHtml(text) + '</div>';
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -948,6 +960,7 @@
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</div>' +
+        buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
         blockedByHtml +
         autonomousPlanHtml +
