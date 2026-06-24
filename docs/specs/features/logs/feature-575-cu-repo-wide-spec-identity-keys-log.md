@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 391
+lines_removed: 71
+lines_changed: 462
+files_touched: 12
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 575 - repo-wide-spec-identity-keys
 Agent: cu
 
