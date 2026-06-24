@@ -108,7 +108,7 @@ testAsync('resolveSetSpecRevisePlan topo-orders eligible members and flags incon
     const rootPath = path.join(p.root, '02-backlog', 'feature-01-root.md');
     const leafPath = path.join(p.root, '02-backlog', 'feature-02-leaf.md');
     const rootSha = commitSpecReview(root, rootPath, '01', 'gg');
-    const leafSha = commitSpecReview(root, leafPath, '02', 'cc');
+    const _leafSha = commitSpecReview(root, leafPath, '02', 'cc');
 
     engine.ensureEntityBootstrappedSync(root, 'feature', '01', 'backlog', rootPath);
     engine.ensureEntityBootstrappedSync(root, 'feature', '02', 'backlog', leafPath);

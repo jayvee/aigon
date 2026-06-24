@@ -207,6 +207,17 @@ Current shared modules:
 
 - `lib/constants.js`: re-exports command metadata and path constants (used by `aigon-cli.js`)
 
+## SpecStore (`lib/spec-store/`)
+
+Durable spec storage boundary introduced in feature 573. Specs are the top-level work objects; `feature` and `research` are spec kinds addressed by keys (`F42`, `R43`). See **[`docs/specstore-architecture.md`](specstore-architecture.md)** for the target model (events, snapshots, leases, indexes, projections) and layering:
+
+- **SpecStore** — durable storage protocol (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`)
+- **workflow-core** — lifecycle semantics (XState machine, projector, effects)
+- **Spec markdown files** — human/agent-facing projections
+- **Stage folders** — derived from lifecycle for UX, not authoritative state
+
+Feature 573 ships the local backend only (thin wrappers over `lib/workflow-core/paths.js`, `event-store.js`, `snapshot-store.js`, `lock.js`). Existing callers are not migrated until feature 576. Feedback is not a top-level spec kind — it becomes research origin metadata (feature 574).
+
 ## Workflow State
 
 The Aigon workflow now has two layers:
