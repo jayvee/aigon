@@ -9,7 +9,7 @@ You are already inside the set-wide spec review task for set `{{SET_SLUG}}`.
 - Do not run `aigon feature-spec-revise` on any member until authors are ready — that is a later per-feature step.
 - Edit member specs **in place** only.
 - Create **one `spec-review:` commit per affected feature spec** (never one combined multi-spec commit).
-- After each edited spec, run `aigon feature-spec-review-record <id|slug>` for that member only.
+- After each edited spec, start and record that member's spec-review cycle with `aigon feature-spec-review <id|slug> --no-launch`, then `aigon feature-spec-review-record <id|slug>`.
 
 ## Set context
 
@@ -63,6 +63,7 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
+aigon feature-spec-review <ID|slug> --no-launch
 aigon feature-spec-review-record <ID|slug>
 ```
 

@@ -219,7 +219,7 @@ async function handleSetActionModule(ctx) {
         single: true,
         collectTriplet: true,
         title: 'Choose set spec reviewer',
-        submitLabel: 'Review set specs',
+        submitLabel: 'Review Set Specs',
         repoPath,
         taskType: 'review',
         action: va.action,
@@ -250,5 +250,4 @@ async function handleSetActionModule(ctx) {
 export async function open(ctx) {
   await handleSetActionModule(ctx);
 }
-
 
