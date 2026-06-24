@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Deprecated feedback CLI/dashboard surfaces; added `feedback-migrate`, research origin metadata, and idempotent migration (doctor + migration 2.68.0).
 ## New API Surface
 
 ## Key Decisions

@@ -43,6 +43,16 @@ docs/specs/
 └── README.md
 ```
 
+### Customer feedback → research
+
+Customer and user feedback is captured as **research**, not a separate lifecycle. Use `aigon research-create` and set optional frontmatter when the input came from a user or customer:
+
+- `origin: customer-feedback` — distinguishes user voice from agent-initiated investigation
+- `reporter` / `source` — who reported it and where it came from (channel, reference, optional url)
+- `feedback_refs` — stable refs when migrating legacy `docs/specs/feedback/**` files
+
+Research may recommend zero or more features via its `## Output` section. The old `docs/specs/feedback/` tree and `aigon feedback-*` commands are **legacy**; run `aigon feedback-migrate` (or `aigon doctor --fix`) to convert existing feedback files without duplicating research specs.
+
 ### Feature Commands (Unified for Solo and Arena modes)
 | Command | Description |
 |---------|-------------|

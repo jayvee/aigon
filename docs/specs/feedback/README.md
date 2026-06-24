@@ -1,8 +1,19 @@
-# Feedback Specs
+# Feedback Specs (legacy)
 
-Feedback captures raw user/customer input before it becomes research or a feature.
+> **Deprecated.** Customer feedback is now captured as research with `origin: customer-feedback`. See `.aigon/docs/development_workflow.md` § "Customer feedback → research".
 
-## Lifecycle
+## Migration
+
+Convert existing feedback files to research specs (idempotent):
+
+```bash
+aigon feedback-migrate
+# or: aigon doctor --fix
+```
+
+Each migrated research spec carries `feedback_refs` with the source feedback id and path so re-running migration does not create duplicates.
+
+## Legacy lifecycle
 
 - `01-inbox`: New feedback awaiting triage
 - `02-triaged`: Categorized and validated feedback
