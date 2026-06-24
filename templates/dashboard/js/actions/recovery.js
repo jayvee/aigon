@@ -1,4 +1,4 @@
-/** F563 action module: review recovery primitives (cancel code review) */
+/** F563/F569 action module: review recovery primitives and grouped autonomous recovery. */
 import * as H from './shared.js';
 
 const CANCEL_ACTIONS = new Set([
@@ -19,9 +19,198 @@ const CANCEL_COPY = {
   },
 };
 
+const RECOVERY_COPY = {
+  'cancel-review': {
+    title: 'Cancel review',
+    detail: 'Stop the current code review and return the feature to ready so review can be run again.',
+    confirm: true,
+  },
+  'rerun-review': {
+    title: 'Re-run code review',
+    detail: 'Start a fresh code review using the existing review command.',
+  },
+  'rerun-eval': {
+    title: 'Re-run evaluation',
+    detail: 'Run the current evaluation command again if it is available.',
+  },
+  'retry-close': {
+    title: 'Retry close',
+    detail: 'Retry the existing close operation when the feature is ready.',
+  },
+  'take-over-manually': {
+    title: 'Take over manually',
+    detail: 'Stop the autonomous controller and continue as the operator.',
+  },
+  'reset': {
+    title: 'Reset feature',
+    detail: 'Reset workflow state for this feature. Use this only when safer recovery paths are not appropriate.',
+    destructive: true,
+    confirm: true,
+  },
+};
+
+function esc(value) {
+  return H.escHtml(String(value == null ? '' : value));
+}
+
+function formatDate(value) {
+  if (!value) return 'n/a';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString();
+}
+
+function normalizeController(ctx) {
+  const payloadController = ctx.va && ctx.va.payload && ctx.va.payload.controller ? ctx.va.payload.controller : {};
+  const featureController = ctx.feature && ctx.feature.autonomousController ? ctx.feature.autonomousController : {};
+  return { ...featureController, ...payloadController };
+}
+
+function operationCopy(operation) {
+  const meta = RECOVERY_COPY[operation.kind] || {};
+  return {
+    title: meta.title || operation.label || operation.kind,
+    detail: meta.detail || operation.command || operation.action || '',
+    destructive: Boolean(operation.destructive || meta.destructive),
+    confirm: Boolean(meta.confirm),
+  };
+}
+
+function getOperations(ctx) {
+  const ops = ctx.va && ctx.va.payload && Array.isArray(ctx.va.payload.operations)
+    ? ctx.va.payload.operations
+    : [];
+  return ops.filter(op => op && op.kind && op.action);
+}
+
+function renderOperationButton(operation, role) {
+  const copy = operationCopy(operation);
+  const cls = copy.destructive
+    ? 'btn btn-danger recovery-op-btn'
+    : (role === 'recommended' ? 'btn btn-primary recovery-op-btn' : 'btn btn-secondary recovery-op-btn');
+  return '<button type="button" class="' + cls + '" data-recovery-kind="' + esc(operation.kind) + '">' +
+    '<span class="recovery-op-title">' + esc(copy.title) + '</span>' +
+    (copy.detail ? '<span class="recovery-op-detail">' + esc(copy.detail) + '</span>' : '') +
+  '</button>';
+}
+
+function renderOperationSection(title, operations, role) {
+  if (!operations.length) {
+    return '<section class="recovery-modal-section recovery-modal-section-empty">' +
+      '<h4>' + esc(title) + '</h4>' +
+      '<div class="recovery-empty">No current command available.</div>' +
+    '</section>';
+  }
+  return '<section class="recovery-modal-section">' +
+    '<h4>' + esc(title) + '</h4>' +
+    '<div class="recovery-op-list">' + operations.map(op => renderOperationButton(op, role)).join('') + '</div>' +
+  '</section>';
+}
+
+function buildDiagnosticsHtml(controller, va) {
+  const rawReason = controller.reason || '';
+  const humanReason = controller.reasonLabel || controller.error || va.reason || '';
+  const updatedAt = controller.updatedAt || controller.endedAt || controller.startedAt || null;
+  const sessionName = controller.sessionName || '';
+  const sessionState = sessionName
+    ? (controller.sessionRunning ? 'live' : 'exited')
+    : 'n/a';
+  const rows = [
+    ['Controller status', controller.status || 'unknown'],
+    ['Raw reason', rawReason || 'n/a'],
+    ['Human reason', humanReason || 'n/a'],
+    ['Last update', formatDate(updatedAt)],
+    ['Session liveness', sessionName ? sessionName + ' (' + sessionState + ')' : sessionState],
+    ['Workflow state', controller.workflowState || 'n/a'],
+  ];
+  return '<section class="recovery-modal-section">' +
+    '<h4>Diagnostics</h4>' +
+    '<dl class="recovery-diagnostics">' +
+      rows.map(([label, value]) => '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>').join('') +
+    '</dl>' +
+  '</section>';
+}
+
+async function executeRecoveryOperation(ctx, operation, modal) {
+  const copy = operationCopy(operation);
+  if (copy.confirm) {
+    const ok = await H.showConfirm({
+      title: copy.title + '?',
+      message: copy.detail || ('Run ' + operation.action + '?'),
+      confirmLabel: copy.title,
+      cancelLabel: 'Cancel',
+      danger: copy.destructive || operation.kind === 'cancel-review',
+    });
+    if (!ok) return;
+  }
+  const btn = modal.querySelector('[data-recovery-kind="' + CSS.escape(operation.kind) + '"]') || ctx.btn;
+  await H.requestAction(operation.action, [String(ctx.feature.id)], ctx.repoPath, btn);
+  modal.remove();
+}
+
+function openAutonomousRecovery(ctx) {
+  const { va, feature } = ctx;
+  const operations = getOperations(ctx);
+  const recommendedKind = va.payload && va.payload.recommendedRecoveryKind;
+  const nextKind = va.payload && va.payload.nextRecoveryKind;
+  const recommended = operations.filter(op => op.kind === recommendedKind);
+  const destructive = operations.filter(op => op.destructive || operationCopy(op).destructive);
+  const secondary = operations.filter(op =>
+    op.kind !== recommendedKind
+    && !destructive.includes(op)
+  );
+  const controller = normalizeController(ctx);
+
+  const existing = document.getElementById('autonomous-recovery-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'autonomous-recovery-modal';
+  modal.className = 'modal-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'autonomous-recovery-title');
+
+  const box = document.createElement('div');
+  box.className = 'modal-box recovery-modal-box';
+  const subtitle = 'Feature #' + feature.id + (feature.name ? ' ' + String(feature.name).replace(/-/g, ' ') : '');
+  const nextHtml = nextKind
+    ? '<div class="recovery-next-path">After this, use <strong>' + esc((RECOVERY_COPY[nextKind] && RECOVERY_COPY[nextKind].title) || nextKind) + '</strong>.</div>'
+    : '';
+  box.innerHTML =
+    '<h3 id="autonomous-recovery-title">Recover autonomous run</h3>' +
+    '<p class="modal-desc">' + esc(subtitle) + '</p>' +
+    renderOperationSection('Recommended action', recommended, 'recommended') +
+    nextHtml +
+    renderOperationSection('Secondary actions', secondary, 'secondary') +
+    buildDiagnosticsHtml(controller, va) +
+    renderOperationSection('Destructive actions', destructive, 'destructive') +
+    '<div class="modal-actions recovery-modal-actions">' +
+      '<button type="button" class="btn" id="autonomous-recovery-close">Close</button>' +
+    '</div>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  function close() { modal.remove(); }
+  box.querySelector('#autonomous-recovery-close').onclick = close;
+  modal.onclick = (e) => { if (e.target === modal) close(); };
+  box.querySelectorAll('[data-recovery-kind]').forEach((btn) => {
+    btn.onclick = async () => {
+      const kind = btn.getAttribute('data-recovery-kind');
+      const operation = operations.find(op => op.kind === kind);
+      if (!operation) return;
+      await executeRecoveryOperation(ctx, operation, modal);
+    };
+  });
+}
+
 export async function open(ctx) {
   const { va, feature, repoPath, btn } = ctx;
   const action = va.action;
+  if (action === 'autonomous-recover') {
+    openAutonomousRecovery(ctx);
+    return;
+  }
   if (!CANCEL_ACTIONS.has(action)) return;
 
   const copy = CANCEL_COPY[action];

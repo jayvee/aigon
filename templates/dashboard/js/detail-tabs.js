@@ -16,14 +16,16 @@
     function renderDrawerRecoveryActions(entityType, entityId, repoPath) {
       const located = findEntityInDashboardState(entityType, entityId, repoPath);
       if (!located || typeof renderActionButtons !== 'function' || typeof handleFeatureAction !== 'function') return '';
-      const recoveryActions = (located.feature.validActions || []).filter((va) => va.metadata && va.metadata.recovery);
+      const allRecoveryActions = (located.feature.validActions || []).filter((va) => va.metadata && va.metadata.recovery);
+      const surfaceActions = allRecoveryActions.filter((va) => va.metadata && va.metadata.recoverySurface);
+      const recoveryActions = surfaceActions.length ? surfaceActions : allRecoveryActions;
       if (recoveryActions.length === 0) return '';
       const feature = Object.assign({}, located.feature, { validActions: recoveryActions, __showRecoveryActions: true });
       const buttonsHtml = renderActionButtons(feature, located.repoPath, located.pipelineType);
       if (!buttonsHtml) return '';
       return '<div class="deep-status-section drawer-recovery-section">' +
-        '<h4 class="deep-status-heading">Review recovery</h4>' +
-        '<p class="drawer-recovery-copy">Stop AutoConductor or cancel a stuck review, then re-run code review with a new reviewer.</p>' +
+        '<h4 class="deep-status-heading">Recovery</h4>' +
+        '<p class="drawer-recovery-copy">Review controller status and choose the next available operation.</p>' +
         '<div class="drawer-recovery-actions">' + buttonsHtml + '</div>' +
       '</div>';
     }

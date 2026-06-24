@@ -95,6 +95,9 @@ test('failed autonomous review exposes Recover payload and keeps primitive peers
         running: false,
         reason: 'review-exited-without-signal',
         error: { message: 'review died' },
+        sessionName: 'aigon-f560-auto',
+        updatedAt: '2026-06-18T02:00:00Z',
+        workflowState: 'code_review_in_progress',
         reviewAgent: 'cx',
         agents: ['cu'],
     });
@@ -107,6 +110,13 @@ test('failed autonomous review exposes Recover payload and keeps primitive peers
     assert.strictEqual(recover.payload.recommendedRecoveryKind, 'cancel-review');
     assert.strictEqual(recover.payload.controllerRecommendedRecoveryKind, 'rerun-review');
     assert.strictEqual(recover.payload.nextRecoveryKind, 'rerun-review');
+    assert.strictEqual(recover.payload.controller.status, 'failed');
+    assert.strictEqual(recover.payload.controller.reason, 'review-exited-without-signal');
+    assert.strictEqual(recover.payload.controller.reasonLabel, 'Reviewer exited without signaling');
+    assert.strictEqual(recover.payload.controller.sessionName, 'aigon-f560-auto');
+    assert.strictEqual(recover.payload.controller.sessionRunning, false);
+    assert.strictEqual(recover.payload.controller.updatedAt, '2026-06-18T02:00:00Z');
+    assert.strictEqual(recover.payload.controller.workflowState, 'code_review_in_progress');
     assert.ok(recover.payload.operations.some((op) => op.kind === 'cancel-review' && op.action === 'feature-cancel-code-review'));
 
     const cancel = actions.find((a) => a.action === 'feature-cancel-code-review');
