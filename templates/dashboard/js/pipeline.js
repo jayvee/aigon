@@ -1834,8 +1834,7 @@
       return {
         pipelineTypeOpts: [
           { key: 'features', label: 'Features' },
-          { key: 'research', label: 'Research' },
-          { key: 'feedback', label: 'Feedback' }
+          { key: 'research', label: 'Research' }
         ],
         get currentStages() {
           const pType = Alpine.store('dashboard').pipelineType || 'features';

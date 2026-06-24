@@ -141,8 +141,7 @@
         monitorTypeOpts: [
           { key: 'all', label: 'All' },
           { key: 'features', label: 'Features' },
-          { key: 'research', label: 'Research' },
-          { key: 'feedback', label: 'Feedback' }
+          { key: 'research', label: 'Research' }
         ],
         get visibleRepos() { return getVisibleRepos(Alpine.store('dashboard').data || { repos: [] }); },
         get computedSummary() {
@@ -151,7 +150,7 @@
           if (s.selectedRepo === 'all') return data.summary || { implementing: 0, waiting: 0, complete: 0, error: 0 };
           const summary = { implementing: 0, waiting: 0, complete: 0, error: 0 };
           const monitorType = s.monitorType || 'all';
-          const itemTypes = monitorType === 'all' ? ['features', 'research', 'feedback'] : [monitorType];
+          const itemTypes = monitorType === 'all' ? ['features', 'research'] : [monitorType];
           this.visibleRepos.forEach(repo => {
             itemTypes.forEach(t => { (repo[t] || []).forEach(item => { (item.agents || []).forEach(a => { if (isCompleteStatus(a.status)) summary.complete++; else if (summary[a.status] !== undefined) summary[a.status]++; }); }); });
           });
@@ -160,7 +159,7 @@
         get emptyMessage() {
           const s = Alpine.store('dashboard');
           if (this.visibleRepos.length === 0) return s.selectedRepo === 'all' ? 'No repos registered. Run: aigon server add' : 'No data for selected repo.';
-          const hasItems = this.visibleRepos.some(r => this.getFeatures(r).length > 0 || this.getResearch(r).length > 0 || this.getFeedback(r).length > 0);
+          const hasItems = this.visibleRepos.some(r => this.getFeatures(r).length > 0 || this.getResearch(r).length > 0);
           if (hasItems) return '';
           return s.filter === 'all' ? 'No items in progress.' : 'No items match filter: ' + s.filter;
         },
