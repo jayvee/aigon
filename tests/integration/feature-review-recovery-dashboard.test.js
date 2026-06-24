@@ -117,12 +117,54 @@ test('failed autonomous review exposes Recover payload and keeps primitive peers
     assert.strictEqual(recover.payload.controller.sessionRunning, false);
     assert.strictEqual(recover.payload.controller.updatedAt, '2026-06-18T02:00:00Z');
     assert.strictEqual(recover.payload.controller.workflowState, 'code_review_in_progress');
+    assert.strictEqual(recover.payload.controllerLog.available, false);
+    assert.match(recover.payload.controllerLog.reason, /Controller log is not available/);
     assert.ok(recover.payload.operations.some((op) => op.kind === 'cancel-review' && op.action === 'feature-cancel-code-review'));
 
     const cancel = actions.find((a) => a.action === 'feature-cancel-code-review');
     assert.ok(cancel, 'cancel primitive remains visible');
     assert.strictEqual(cancel.metadata.recovery, true);
     assert.strictEqual(cancel.metadata.recoveryOperationKind, 'cancel-review');
+}));
+
+test('failed autonomous review exposes available controller log metadata', () => withTempDir('aigon-f570-recovery-log-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    writeSpec(repo, 'features', '03-in-progress', 'feature-570-controller-log.md');
+    writeSnap(repo, 'features', '570', 'code_review_in_progress');
+    writeAutoState(repo, '570', {
+        status: 'failed',
+        running: false,
+        reason: 'review-exited-without-signal',
+        sessionName: 'aigon-f570-auto',
+        updatedAt: '2026-06-18T02:00:00Z',
+        workflowState: 'code_review_in_progress',
+    });
+    const logPath = path.join(repo, '.aigon', 'transcripts', 'features', '570', 'auto', 'auto-log.tmux.log');
+    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    fs.writeFileSync(logPath, 'controller failed\nreviewer exited\n');
+    const sessionsDir = path.join(repo, '.aigon', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, 'aigon-f570-auto.json'), JSON.stringify({
+        category: 'entity',
+        sessionName: 'aigon-f570-auto',
+        repoPath: repo,
+        worktreePath: repo,
+        entityType: 'f',
+        entityId: '570',
+        role: 'auto',
+        agent: 'auto',
+        createdAt: '2026-06-18T01:59:00Z',
+        tmuxLogPath: logPath,
+    }, null, 2));
+
+    const dashboard = wrm.getFeatureDashboardState(repo, '570', 'in-progress', []);
+    const recover = (dashboard.validActions || []).find((a) => a.action === 'autonomous-recover');
+    assert.ok(recover, 'recover action present');
+    assert.deepStrictEqual(recover.payload.controllerLog, {
+        available: true,
+        sessionName: 'aigon-f570-auto',
+        createdAt: '2026-06-18T01:59:00Z',
+    });
 }));
 
 test('stopped autonomous controller exposes manual recovery operations', () => withTempDir('aigon-f568-recovery-', (repo) => {

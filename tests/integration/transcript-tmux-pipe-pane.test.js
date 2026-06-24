@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 const { collectTranscriptRecords } = require('../../lib/transcript-read');
+const { _shouldAttachTmuxPipePane } = require('../../lib/worktree');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,30 @@ test('flag-off: cu session returns not-captured record without tmuxLogPath', () 
     assert.strictEqual(r.captured, false, 'should not be captured without tmux log');
     assert.ok(!r.tmuxLogPath, 'tmuxLogPath should be absent');
 }));
+
+test('flag-off: auto controller session still attaches tmux log capture', () => {
+    assert.strictEqual(_shouldAttachTmuxPipePane({
+        entityType: 'f',
+        entityId: '570',
+        agent: 'auto',
+        role: 'auto',
+    }, {
+        tmuxCaptureEnabled: false,
+        capturableAgents: new Set(['cc', 'cx']),
+    }), true);
+});
+
+test('flag-off: normal non-native agent session does not attach tmux log capture', () => {
+    assert.strictEqual(_shouldAttachTmuxPipePane({
+        entityType: 'f',
+        entityId: '430',
+        agent: 'cu',
+        role: 'do',
+    }, {
+        tmuxCaptureEnabled: false,
+        capturableAgents: new Set(['cc', 'cx']),
+    }), false);
+});
 
 // REGRESSION: flag-on + cu → captured:true record with tmuxLogPath
 test('flag-on: cu session with existing tmux log returns captured:true with tmuxLogPath', () => withTempDir('aigon-tpp-', (tmp) => {

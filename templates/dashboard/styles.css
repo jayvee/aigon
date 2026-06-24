@@ -506,6 +506,11 @@
     .recovery-diagnostics div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;align-items:start}
     .recovery-diagnostics dt{font-size:11px;color:var(--text-tertiary)}
     .recovery-diagnostics dd{margin:0;font-family:var(--mono);font-size:11px;color:var(--text-primary);word-break:break-word}
+    .controller-log-view{display:grid;gap:8px;margin-top:8px}
+    .controller-log-view[hidden]{display:none}
+    .controller-log-meta{padding:8px;border:1px solid var(--border-subtle);border-radius:6px;background:rgba(0,0,0,.12)}
+    .controller-log-truncated{font-size:11px;color:var(--text-tertiary)}
+    .controller-log-output{max-height:280px;overflow:auto;margin:0;padding:10px;border:1px solid var(--border-subtle);border-radius:6px;background:rgba(0,0,0,.22);font-family:var(--mono);font-size:11px;line-height:1.45;white-space:pre-wrap;color:var(--text-primary)}
     .recovery-modal-actions{margin-top:0}
     .modal-desc{color:var(--text-secondary);font-size:12px;margin:0 0 14px}
     .agent-checks{display:grid;gap:4px;margin-bottom:14px}
