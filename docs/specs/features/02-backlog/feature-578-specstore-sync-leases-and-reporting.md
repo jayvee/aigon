@@ -23,7 +23,7 @@ Complete the distributed SpecStore story by adding Git-backed sync ergonomics, a
 - [ ] Mutating/start commands (`feature-start`, `feature-do`, `research-*`, close paths) on a Git-ref repo check for an active unexpired lease owned by another holder for the same key/role and **block with an actionable message**, or proceed under an explicit `--takeover` flag that appends a `lease.taken_over` event recording the prior holder. Stale/expired leases never block.
 - [ ] `aigon storage doctor` validates ref reachability, duplicate/idempotent-violating events, stale or missing local projections, and lease health (expired-but-unreleased, orphaned, conflicting holders); it is **read-only/diagnostic by default** and only mutates state under an explicit `--fix`, consistent with `aigon doctor --fix`.
 - [ ] A local, read-only reporting command (`aigon storage report`, also surfaced via the existing portfolio/`board` view where applicable) enumerates configured repos or bare mirrors, fetches `refs/aigon/*`, derives projections per repo, and produces a merged cross-repo report. It never mutates remote state and never requires an Aigon-hosted database.
-- [ ] High-churn runtime data (heartbeats/lease renewals) is checkpointed/summarized into durable Git-backed state: renewals collapse into the lease's current event/expiry rather than appending one canonical event per tick, so the event log does not grow per-heartbeat. The chosen checkpoint cadence is documented.
+- [ ] High-churn runtime data (heartbeats/lease renewals) is checkpointed/summarized into durable Git-backed state: heartbeats stay local/display-only, while lease renewals append only rate-limited `lease.renewed` checkpoints when the advertised expiry window changes. The event log must not grow per-heartbeat, and the chosen checkpoint cadence is documented.
 - [ ] Documentation explains Git remote permission requirements (push access to `refs/aigon/*`), and that hosting UIs (GitHub/GitLab/Bitbucket) may not display custom refs.
 
 ## Validation
@@ -49,7 +49,7 @@ This is non-browser engine work; `test:core` is the gate (matching 577). Tests m
 - Replacing Git provider auth or permissions
 
 ## Open Questions
-- Default lease TTL and renew interval for interactive agent sessions. Proposed default: **TTL 30 min, renew on command boundaries (not a background timer)** so a crashed/dead machine's lease self-expires within one TTL and renewals piggyback on existing syncs rather than generating standalone Git traffic. Confirm or revise during implementation.
+- Default lease TTL and renew interval for interactive agent sessions. Proposed default: **TTL 30 min, renew at most every 10 min while the owning session is alive** so active work stays visible to other machines, a crashed/dead machine self-expires within one TTL, and renewals remain bounded instead of tracking heartbeat cadence. Confirm or revise during implementation.
 
 ## Related
 - Set: specstore-git-backed-storage
