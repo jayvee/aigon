@@ -80,6 +80,14 @@ aigon set-autonomous-reset <slug>      # discard durable conductor state
 
 Each member is delegated to `feature-autonomous-start`, polled, and recorded in `.aigon/state/set-<slug>-auto.json`. A member failure pauses the whole set; resume restarts at the failed member.
 
+Scheduled set kickoffs are available through Pro's scheduler:
+
+```bash
+aigon schedule add set_autonomous <slug> --run-at=<iso8601> <agents...> [--review-agent=<id>] [--models=<csv>] [--efforts=<csv>] [--stop-after=close]
+```
+
+The scheduler only records the future kickoff. At run time it dispatches the existing `set-autonomous-start` command, so set ordering, failure pauses, resume, and reset behavior still come from the set conductor.
+
 ## Common patterns
 
 - **Install contract bundle**: a set of 5 features that together change install behaviour. Tag all five with the same slug, declare deps on each side of the contract change, and `set-prioritise` to keep IDs in build order.
