@@ -10,6 +10,7 @@ const featureSets = require('../../lib/feature-sets');
 const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
 const {
     countReviewableSetMembers,
+    countLaunchableSetSpecReviewMembers,
     resolveSetSpecReviewPlan,
     buildSetSpecReviewPromptBody,
     isSetMemberReviewable,
@@ -61,12 +62,13 @@ test('isSetMemberReviewable accepts inbox/backlog and rejects done/in-progress',
 
 test('countReviewableSetMembers ignores done and in-progress members', () => {
     const members = [
-        { stage: 'backlog' },
+        { stage: 'backlog', paddedId: '01' },
         { stage: 'inbox' },
         { stage: 'done' },
         { stage: 'in-progress' },
     ];
     assert.strictEqual(countReviewableSetMembers(members), 2);
+    assert.strictEqual(countLaunchableSetSpecReviewMembers(members), 1);
 });
 
 test('resolveSetSpecReviewPlan topo-orders reviewable members and builds prompt payload', () => withTempDir('aigon-set-spec-review-plan-', (root) => {
@@ -130,6 +132,7 @@ test('buildSetValidActions exposes feature-set-spec-review when reviewableMember
         isComplete: false,
         inboxMemberCount: 0,
         reviewableMemberCount: 2,
+        launchableSpecReviewMemberCount: 2,
     });
     const review = actions.find(a => a.action === 'feature-set-spec-review');
     assert.ok(review);
@@ -139,8 +142,17 @@ test('buildSetValidActions exposes feature-set-spec-review when reviewableMember
         status: 'idle',
         isComplete: false,
         reviewableMemberCount: 0,
+        launchableSpecReviewMemberCount: 0,
     });
     assert.ok(!hidden.some(a => a.action === 'feature-set-spec-review'));
+    const inboxOnly = buildSetValidActions({
+        slug: 'auth',
+        status: 'idle',
+        isComplete: false,
+        reviewableMemberCount: 2,
+        launchableSpecReviewMemberCount: 0,
+    });
+    assert.ok(!inboxOnly.some(a => a.action === 'feature-set-spec-review'));
 });
 
 test('getSetMembersSorted remains the ordering source for set spec review', () => withTempDir('aigon-set-spec-review-order-', (root) => {
