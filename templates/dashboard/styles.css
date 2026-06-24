@@ -292,6 +292,7 @@
     .kcard.dragging{opacity:.3;cursor:grabbing}
     .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
     .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .kcard-spec-author{font-size:10px;color:var(--text-muted,#94a3b8);margin:-2px 0 6px;line-height:1.3}
     .kcard-scheduled-glyph{display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:var(--text-tertiary)}
     .kcard-scheduled-glyph-svg{width:14px;height:14px;flex-shrink:0;opacity:0.92}
     /* Backlog dependency hint — neutral (not “blocked” / error styling) */
@@ -511,6 +512,7 @@
     .agent-check-label{font-family:var(--mono);font-size:13px;flex:1}
     .agent-check-hint{font-size:11px;color:var(--text-tertiary)}
     .agent-check-badge{font-size:9px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;letter-spacing:.02em;opacity:.8}
+    .agent-check-badge-author{color:#a5b4fc;border-color:#6366f1;background:rgba(99,102,241,.08)}
     .agent-check-model{font-size:10px;color:var(--text-tertiary);opacity:.45;font-family:var(--mono);margin-left:6px}
     /* Triplet picker: agent (cb+meta) | config label | model | effort — explicit cells so columns line up */
     .agent-check-row.agent-check-row-triplet{display:grid;grid-template-columns:var(--agent-triplet-cols);column-gap:12px;align-items:center;padding:4px 12px;box-sizing:border-box}

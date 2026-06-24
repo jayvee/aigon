@@ -177,8 +177,17 @@
           cb.type = pickerSingleMode ? 'radio' : 'checkbox';
           cb.name = pickerSingleMode ? 'agent-pick' : '';
           if (opts.preselect && cb.value === opts.preselect) cb.checked = true;
-          // Remove any existing badges (implemented + rank)
           row.querySelectorAll('.agent-check-badge, .rank-badge').forEach(b => b.remove());
+          if (opts.highlightAuthorId && cb.value === opts.highlightAuthorId) {
+            const badge = document.createElement('span');
+            badge.className = 'agent-check-badge agent-check-badge-author';
+            badge.textContent = 'created this spec';
+            const hint = row.querySelector('.agent-check-hint');
+            const label = row.querySelector('.agent-check-label');
+            if (hint) hint.before(badge);
+            else if (label) label.after(badge);
+            else row.querySelector('.agent-check-meta') && row.querySelector('.agent-check-meta').appendChild(badge);
+          }
           // Add implementing badge if applicable
           if (implAgents.includes(cb.value)) {
             const badge = document.createElement('span');
