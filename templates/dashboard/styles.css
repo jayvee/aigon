@@ -458,6 +458,18 @@
     .kcard-headline.tone-done .kcard-headline-verb,.kcard-headline.tone-done .kcard-headline-glyph{color:var(--text-tertiary)}
     .kcard-headline.tone-idle{border-left-color:var(--border-subtle);background:transparent}
     .kcard-headline.tone-idle .kcard-headline-verb,.kcard-headline.tone-idle .kcard-headline-glyph{color:var(--text-secondary)}
+    .kcard-controller-status{margin:4px 0 4px;padding:5px 8px;border:1px solid var(--border-subtle);border-left:3px solid var(--border-default);border-radius:4px;background:rgba(255,255,255,.02);font-family:var(--mono);line-height:1.25}
+    .kcard-controller-title{font-size:10px;font-weight:700;color:var(--text-primary);letter-spacing:.03em}
+    .kcard-controller-reason{margin-top:2px;font-size:10px;color:var(--text-secondary);word-break:break-word}
+    .kcard-controller-meta{margin-top:2px;font-size:9px;color:var(--text-tertiary);letter-spacing:.01em}
+    .kcard-controller-status.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.035)}
+    .kcard-controller-status.tone-running .kcard-controller-title{color:#4ADE80}
+    .kcard-controller-status.tone-warn{border-left-color:#f87171;background:rgba(248,113,113,.075)}
+    .kcard-controller-status.tone-warn .kcard-controller-title{color:#fca5a5}
+    .kcard-controller-status.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.035)}
+    .kcard-controller-status.tone-waiting .kcard-controller-title{color:#fcd34d}
+    .kcard-controller-status.tone-ready{border-left-color:#6ee7b7;background:rgba(110,231,183,.035)}
+    .kcard-controller-status.tone-ready .kcard-controller-title{color:#6ee7b7}
     .kcard-cycle-history{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;padding:3px 7px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text-secondary)}
     .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
     .kcard-cycle-entry{color:var(--text-secondary)}

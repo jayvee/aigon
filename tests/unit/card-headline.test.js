@@ -35,6 +35,11 @@ const CASES = [
         { tone: 'done', verb: 'Closed', age: 3600 }],
     ['2', "feedback wont-fix → Won't fix",
         {}, null, [], null, 'wont-fix', 'feedback', { verb: "Won't fix" }],
+    ['2', 'failed autonomous controller overrides failed stage headline',
+        { autonomousController: { status: 'failed', reasonLabel: 'Reviewer exited without signaling', updatedAt: isoMinusSec(300) } },
+        { currentSpecState: 'code_review_in_progress' }, [],
+        { stages: [{ type: 'review', status: 'failed', agents: [{ id: 'gg' }] }] }, 'in-progress', null,
+        { tone: 'warn', verb: 'Autonomous failed', detail: 'Reviewer exited without signaling', age: 300 }],
 
     // --- Rule 3: awaiting input supersedes implementing ---
     ['3', 'awaitingInput beats a running drive agent',

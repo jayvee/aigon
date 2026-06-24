@@ -838,6 +838,44 @@
       });
     }
 
+    function buildAutonomousControllerStatusHtml(feature) {
+      const controller = feature && feature.autonomousController;
+      if (!controller || !controller.status) return '';
+      if (feature.stage === 'done' && controller.status === 'completed') return '';
+
+      const status = String(controller.status);
+      const isStoppedByUser = controller.reasonCategory === 'stopped-by-user' || controller.reason === 'stopped-by-user';
+      const statusMeta = {
+        failed: { tone: 'warn', label: 'Autonomous failed' },
+        running: { tone: 'running', label: 'Autonomy running' },
+        stopped: { tone: 'waiting', label: 'Manual mode' },
+        completed: { tone: 'ready', label: 'Autonomy complete' },
+        'quota-paused': { tone: 'waiting', label: 'Quota paused' },
+      }[status] || { tone: 'idle', label: status.replace(/-/g, ' ') };
+
+      const reason = isStoppedByUser
+        ? 'Taken over by operator'
+        : (controller.reasonLabel || controller.error || '');
+      const updatedAt = controller.updatedAt || controller.endedAt || controller.startedAt || null;
+      const meta = [];
+      if (updatedAt) meta.push('Last update ' + logsDateFmt(updatedAt));
+      if (controller.sessionName) {
+        meta.push(controller.sessionRunning ? 'session live' : 'session exited');
+      }
+      const reasonHtml = reason
+        ? '<div class="kcard-controller-reason">' + escHtml(reason) + '</div>'
+        : '';
+      const metaHtml = meta.length
+        ? '<div class="kcard-controller-meta">' + escHtml(meta.join(' · ')) + '</div>'
+        : '';
+
+      return '<div class="kcard-controller-status tone-' + escHtml(statusMeta.tone) + '" data-controller-status="' + escHtml(status) + '">' +
+        '<div class="kcard-controller-title">' + escHtml(statusMeta.label) + '</div>' +
+        reasonHtml +
+        metaHtml +
+      '</div>';
+    }
+
     function buildReviewerSectionHtml(title, reviewer, options) {
       const mode = options && options.mode ? options.mode : 'implementation';
       const reviewerName = AGENT_DISPLAY_NAMES[reviewer.agent] || reviewer.agent;
@@ -923,6 +961,7 @@
       const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
+      const autonomousControllerHtml = buildAutonomousControllerStatusHtml(feature);
       const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
       // Done cards are clean — just ID and name, no agent sections, no actions
       const isDone = feature.stage === 'done';
@@ -963,6 +1002,7 @@
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
         blockedByHtml +
+        autonomousControllerHtml +
         autonomousPlanHtml +
         buildWorkflowIdleBadgeHtml(feature) +
         buildStartupPhaseHtml(feature) +
