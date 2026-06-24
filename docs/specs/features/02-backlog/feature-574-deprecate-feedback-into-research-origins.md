@@ -17,26 +17,42 @@ Remove feedback as a first-class Aigon lifecycle concept and represent customer 
 - [ ] As an agent, I can reason that all investigatory work is research, regardless of whether the input came from a maintainer or a customer.
 
 ## Acceptance Criteria
-- [ ] Research spec template/docs support optional `origin: customer-feedback`, `source`, `reporter`, and `feedback_refs` metadata.
-- [ ] Feedback is removed from default dashboard prominence and user-facing command help, or clearly marked legacy/deprecated where removal is unsafe in one release.
-- [ ] `feedback-create`, `feedback-list`, and `feedback-triage` emit deprecation guidance pointing users to research specs.
-- [ ] A migration command or doctor repair path converts existing `docs/specs/feedback/**/feedback-*.md` files into research specs while preserving title, summary, source, reporter, tags, severity, duplicate links, and status notes.
-- [ ] Dashboard/read-side code no longer treats feedback as a peer of feature/research in the default repo-wide board after migration.
+- [ ] Research spec template (`templates/specs/research-template.md`) and `.aigon/docs` support optional `origin: customer-feedback`, `source`, `reporter`, and `feedback_refs` metadata, parsed via the single frontmatter source of truth (`lib/cli-parse.js parseFrontMatter`) — no second parser. Fields are optional; absence does not change current research behaviour.
+- [ ] `feedback-create`, `feedback-list`, and `feedback-triage` print a deprecation notice (first line of output) pointing users to `research-create` / research origins; commands still function so existing repos do not break.
+- [ ] Feedback is removed from the default dashboard board (no feedback column/cards in the repo-wide view) and from the primary `aigon help` output; any remaining surface is explicitly labelled `legacy`.
+- [ ] A migration path — name the entrypoint explicitly (e.g. `aigon feedback-migrate` and/or a `doctor --fix` scan of `docs/specs/feedback/**/feedback-*.md`) — converts each feedback file into a research spec in `docs/specs/research-topics/01-inbox/`, allocating fresh research IDs from the research counter (this is creation, not renumbering — see Out of Scope).
+- [ ] Migration preserves every feedback field, mapped explicitly: `title`, summary/body sections, `type`, `severity`, `tags`, `votes`, `source`, `reporter`, `duplicate_of`, `linked_features`, `linked_research`, and triage notes. Fields with no research equivalent are carried into `origin`/`source`/`feedback_refs` frontmatter or the body, never dropped.
+- [ ] Migration defines an explicit status mapping from feedback lifecycle (`inbox`/`triaged`/`actionable`/`done`/`wont-fix`/`duplicate`) to research folders (`01-inbox`/`02-backlog`/`03-in-progress`/`04-in-evaluation`/`05-done`/`06-paused`). `wont-fix` and `duplicate` have no research equivalent — specify their target folder and how the original disposition is preserved (e.g. a status note + `feedback_refs`).
+- [ ] Migration is idempotent: a stable idempotency key (e.g. `feedback_refs` containing the source feedback id/path) prevents re-running from creating duplicate research specs. Acceptance is verified by running the migration twice and asserting the research count is unchanged on the second run.
 - [ ] Documentation explains the new model: feedback is an input to research; research may recommend zero or more features.
 - [ ] Existing repos with feedback files receive a clear legacy/migration message rather than silent data loss.
 
 ## Validation
 ```bash
 node -c aigon-cli.js
-npm test
+npm run test:core
+# Migration idempotency: count research specs, run migrate twice, assert no growth on 2nd run
+aigon feedback-migrate            # or: aigon doctor --fix
+BEFORE=$(find docs/specs/research-topics -name 'research-*.md' | wc -l)
+aigon feedback-migrate            # second run must be a no-op
+AFTER=$(find docs/specs/research-topics -name 'research-*.md' | wc -l)
+test "$BEFORE" = "$AFTER"
+# Deprecation notice present
+aigon feedback-create "x" 2>&1 | grep -i 'deprecat'
 ```
 
 ## Technical Approach
 - Prefer staged deprecation over immediate hard deletion.
-- Keep migration idempotent: repeated runs should not duplicate migrated research specs.
-- Add origin/source metadata support to research templates and parser surfaces without making it required.
+- Keep migration idempotent: repeated runs should not duplicate migrated research specs (idempotency key = source feedback ref in `feedback_refs`).
+- Add origin/source metadata support to research templates and the shared parser (`lib/cli-parse.js parseFrontMatter`) without making it required; do not introduce a second frontmatter parser.
 - Reduce, but do not prematurely delete, compatibility shims until tests and docs are updated.
 - Treat this as domain cleanup required before broad storage abstraction work.
+
+### Ownership / layering
+This is **read-side + CLI + template + migration** work; it must not add new workflow-core engine state. Feedback's bespoke 6-folder lifecycle (`lib/feedback.js`, `lib/commands/feedback.js`) is what diverges from workflow-core — migration retires that divergence by re-homing feedback into the existing research lifecycle, not by porting feedback states into the engine. Touch points already referencing feedback (e.g. `lib/dashboard-status-collector.js`, `lib/dashboard-action-command.js`, `lib/action-scope.js`, `lib/templates.js`, `lib/commands/help`/`misc.js`) should be audited so feedback drops out of the default board and help without leaving half-states (cf. F294 write-path contract).
+
+### Existing `afbc`/`afc` distinction
+The repo currently reserves feedback (`afbc`) for genuine user voice vs agent-discovered work (`afc`). The new model folds that distinction into research `origin`: customer-sourced research carries `origin: customer-feedback` + `reporter`/`source`; agent-initiated research omits it. Confirm docs reflect this so the captured signal (who reported it) is not lost.
 
 ## Dependencies
 - depends_on: specstore-architecture-foundation
@@ -47,7 +63,8 @@ npm test
 - Renumbering existing feature/research specs
 
 ## Open Questions
-- Should deprecated feedback commands be retained for one release or removed immediately after migration support lands?
+- Should deprecated feedback commands be retained for one release or removed immediately after migration support lands? **Default resolution per Technical Approach: retain for one release with a deprecation notice, then remove in a follow-up; do not hard-delete `lib/feedback.js` paths in this feature.**
+- `wont-fix` / `duplicate` feedback have no research-lifecycle equivalent — confirm the target folder (proposed: `05-done` with a status note recording the original disposition) before implementing the status map.
 
 ## Related
 - Set: specstore-git-backed-storage
