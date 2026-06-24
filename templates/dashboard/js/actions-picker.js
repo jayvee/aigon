@@ -389,7 +389,7 @@ function complexityBadgeHtml(complexity) {
 function renderPickerRecommendationBanner(recommendation, mountId) {
   const banner = document.getElementById(mountId || 'agent-picker-recommendation');
   if (!banner) return;
-  if (!recommendation || (!recommendation.complexity && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
+  if (!recommendation || (!recommendation.complexity && !recommendation.specAuthorPreselect && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
     banner.style.display = 'none';
     banner.innerHTML = '';
     return;
@@ -403,6 +403,9 @@ function renderPickerRecommendationBanner(recommendation, mountId) {
     agentBits.push('<span class="recommendation-agent"><b>' + id + '</b> ' + modelLabel + effortLabel + '</span>');
   });
   let html = '';
+  if (recommendation.specAuthorPreselect) {
+    html += '<p class="recommendation-explainer">Pre-selected from <strong>original spec authorship</strong>.</p>';
+  }
   if (recommendation.complexity) {
     html += '<div class="recommendation-head"><span class="recommendation-label">Spec complexity</span> '
       + complexityBadgeHtml(recommendation.complexity) + '</div>';

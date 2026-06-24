@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented immutable `specAuthor` / `lastSpecRevision` provenance, create-path stamping, dashboard cards, and spec-review/revise picker behavior.
 ## New API Surface
 
 ## Key Decisions
