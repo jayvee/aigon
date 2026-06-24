@@ -18,6 +18,7 @@ const ACTION_MODULE_BY_ACTION = {
   'research-spec-revise': 'spec-review',
   'feature-autonomous-start': 'autonomous',
   'feature-autonomous-stop': 'autonomous',
+  'autonomous-recover': 'recovery',
   'feature-cancel-code-review': 'recovery',
   'research-cancel-code-review': 'recovery',
   'feature-schedule': 'schedule-kickoff',
@@ -127,6 +128,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.action === 'select-winner') return false;
     if (va.agentId) return false;
     if (va.category === 'infra' || va.category === 'view') return false;
+    if (!showRecoveryActions && va.metadata && va.metadata.recoverySurface) return true;
     if (!showRecoveryActions && va.metadata && va.metadata.recovery) return false;
     if (!showRecoveryActions && (va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review')) return false;
     if (!showRecoveryActions && va.action === 'feature-autonomous-stop') return false;
