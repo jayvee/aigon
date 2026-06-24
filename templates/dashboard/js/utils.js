@@ -22,8 +22,9 @@
     }
 
     function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    /** Numeric feature id for UI (matches kcard-id: #02 not #2). */
-    function formatFeatureIdForDisplay(id) {
+    /** Numeric feature id for UI; prefers server displayKey (F575/R43). */
+    function formatFeatureIdForDisplay(id, displayKey) {
+      if (displayKey) return String(displayKey);
       const raw = String(id == null ? '' : id).trim();
       if (!/^\d+$/.test(raw)) return raw;
       return raw.padStart(2, '0');

@@ -12,7 +12,7 @@ Aigon is a spec-driven development (SDD) tool. The durable work object is a **sp
 |---------|-------------|
 | **Spec** | The durable work object — human/agent-facing markdown plus engine-backed events and snapshots. |
 | **Spec kind** | `feature` or `research`. These are the only top-level spec kinds in the target architecture. |
-| **Spec key** | Stable identity string: `F42` (feature #42), `R43` (research #43). Parsed and formatted by `lib/spec-store/spec-key.js`. |
+| **Spec key** | Stable identity string: `F42` (feature #42), `R43` (research #43). Parsed and formatted by `lib/spec-identity.js` (re-exported from `lib/spec-store/spec-key.js` for store callers). |
 | **Events** | Append-only lifecycle log (`events.jsonl`). Source of truth for workflow semantics. |
 | **Snapshot** | Derived point-in-time projection (`snapshot.json`). Disposable cache of projector output. |
 | **Leases** | Future cross-machine coordination primitive (not implemented in 573). |

@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Added `lib/spec-identity.js` (F/R display keys + unified resolver), wired dashboard `displayKey`, and delegated spec-store/spec-key + findFile/resolver lookups.
 ## New API Surface
 
 ## Key Decisions

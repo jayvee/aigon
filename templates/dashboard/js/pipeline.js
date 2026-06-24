@@ -997,7 +997,7 @@
         })()
         : '';
       let innerHtml =
-        (hasNumericId ? '<div class="kcard-id">#' + escHtml(feature.id) + '</div>' : '') +
+        (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</div>' +
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
