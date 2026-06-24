@@ -63,7 +63,7 @@ test('spec key format/parse round-trips for F42 and R43', () => {
 test('malformed spec keys throw SpecKeyError', () => {
   // REGRESSION: malformed keys must not silently coerce (feature 573 AC).
   const { parseSpecKey, SpecKeyError } = require(SPEC_STORE_PATH);
-  for (const bad of ['X1', 'F', '', '   ']) {
+  for (const bad of ['X1', 'F', 'F0', 'R0', '', '   ']) {
     assert.throws(() => parseSpecKey(bad), SpecKeyError);
   }
 });
