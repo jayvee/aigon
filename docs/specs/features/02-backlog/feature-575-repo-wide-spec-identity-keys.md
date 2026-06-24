@@ -1,5 +1,5 @@
 ---
-complexity: very-high
+complexity: high
 set: specstore-git-backed-storage
 depends_on: [574]
 transitions:
@@ -17,20 +17,21 @@ Introduce repo-wide spec identity keys such as `F42` and `R43` so Aigon can refe
 - [ ] As a storage backend implementer, I can store specs under one namespace rather than separate feature/research databases.
 
 ## Acceptance Criteria
-- [ ] A spec identity model is implemented with at least `{ key, number, kind, slug }` for new specs.
-- [ ] New specs receive display keys (`F<number>`, `R<number>`) from a repo-wide sequence or from a compatibility strategy explicitly documented in this feature.
-- [ ] Existing `feature-<id>-...` and `research-<id>-...` references continue to resolve.
-- [ ] CLI input accepts existing numeric IDs and new prefixed keys where practical.
-- [ ] Dashboard/status output prefers display keys while preserving existing IDs for compatibility during migration.
-- [ ] Cross-links in specs can use prefixed keys without ambiguity.
+- [ ] A spec identity model is implemented with at least `{ key, number, kind, slug }` for new specs, exposed by a single centralized module (e.g. `lib/spec-identity.js`) that does **not** depend on specstore internals (573/576 are not dependencies of this feature).
+- [ ] New specs receive display keys (`F<number>`, `R<number>`). **Decision (resolves the Open Question below):** numbering stays per-kind — `F<n>` reuses the existing feature sequence and `R<n>` the research sequence; no repo-wide renumber and no historical renumber. The display key is a presentation layer over the current numeric ID, so `F575` and feature `575` denote the same spec.
+- [ ] Existing `feature-<id>-...` and `research-<id>-...` filename references and references continue to resolve unchanged.
+- [ ] A single resolver accepts all of: bare numeric `575` (kind inferred from context where required), `F575`, `feature-575`, `R43`, `research-43`. Ambiguous bare-numeric input at a kind-agnostic call site is rejected with a clear error rather than silently guessing a kind.
+- [ ] Dashboard/status output renders display keys (`F575`/`R43`) while the underlying engine/workflow IDs remain numeric and unchanged; no engine state is rewritten by this feature.
+- [ ] `depends_on` frontmatter and the dependency-graph renderer accept prefixed keys (`F574`) in addition to numeric IDs, OR prefixed keys in `depends_on` are explicitly declared out of scope here — pick one and state it. (Today `parseNumericArray` in `lib/cli-parse.js` and the dep-graph generator assume numeric; do not silently break them.)
 - [ ] The identity layer is centralized; commands do not hand-roll `feature`/`research` ID parsing in new code.
-- [ ] Tests cover parsing and resolving `F42`, `R43`, legacy feature IDs, and legacy research IDs.
+- [ ] Tests cover parsing and resolving `F42`, `R43`, legacy `feature-42`/numeric `42`, legacy `research-43`, and the ambiguous bare-numeric rejection path.
 
 ## Validation
 ```bash
 node -c aigon-cli.js
-npm test
+npm run test:core
 ```
+The test suite must include the identity parse/resolve cases listed in the Acceptance Criteria.
 
 ## Technical Approach
 - Add identity helpers under `lib/spec-store/` or a closely related module.
@@ -47,7 +48,8 @@ npm test
 - Removing legacy numeric ID support
 
 ## Open Questions
-- Should old specs be renumbered into one global sequence, or should global sequencing apply only to newly created specs?
+- ~~Should old specs be renumbered into one global sequence, or should global sequencing apply only to newly created specs?~~ **Resolved:** no renumber. Display keys are a per-kind presentation layer (`F<n>`/`R<n>`) over the existing numeric IDs; `F575` ≡ feature `575`. See Acceptance Criteria.
+- Should prefixed keys be permitted inside `depends_on` frontmatter, or is that deferred? Decide in the dependency-graph acceptance criterion above.
 
 ## Related
 - Set: specstore-git-backed-storage
