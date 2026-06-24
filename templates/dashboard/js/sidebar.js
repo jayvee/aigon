@@ -154,6 +154,39 @@
       return [...document.querySelectorAll('#agent-picker-checks input[type="checkbox"]:checked')].map(c => c.value);
     }
 
+    function formatPickerTimezoneOffset() {
+      const off = new Date().getTimezoneOffset();
+      const sign = off <= 0 ? '+' : '-';
+      const abs = Math.abs(off);
+      const pad = n => String(n).padStart(2, '0');
+      return sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
+    }
+
+    function setupPickerRunAt(enabled) {
+      const wrap = document.getElementById('agent-picker-run-at-wrap');
+      const input = document.getElementById('agent-picker-run-at');
+      const hint = document.getElementById('agent-picker-run-at-hint');
+      if (!wrap || !input) return;
+      wrap.style.display = enabled ? 'block' : 'none';
+      if (!enabled) {
+        input.value = '';
+        if (hint) hint.textContent = '';
+        return;
+      }
+      const d = new Date(Date.now() + 3600000);
+      const pad = n => String(n).padStart(2, '0');
+      input.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (hint) hint.textContent = 'Times in ' + tzName + ' (' + formatPickerTimezoneOffset() + ')';
+    }
+
+    function getPickerRunAt() {
+      const input = document.getElementById('agent-picker-run-at');
+      const val = String((input && input.value) || '').trim();
+      if (!val) return '';
+      return val + ':00' + formatPickerTimezoneOffset();
+    }
+
     function showAgentPicker(featureId, featureName, options) {
       const opts = options || {};
       pickerSingleMode = !!opts.single;
@@ -170,6 +203,7 @@
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';
         document.getElementById('agent-picker-desc').textContent = '#' + featureId + ' ' + featureName;
+        setupPickerRunAt(!!opts.collectRunAt);
         const rows = document.querySelectorAll('#agent-picker .agent-checks .agent-check-row');
         rows.forEach(row => {
           const cb = row.querySelector('input');
@@ -253,6 +287,7 @@
     function hideAgentPicker(result) {
       const revWrap = document.getElementById('agent-picker-reviewer-wrap');
       if (revWrap) revWrap.style.display = 'none';
+      setupPickerRunAt(false);
       const checksEl = document.getElementById('agent-picker-checks');
       if (checksEl && checksEl._aigonSetReviewerRefresh) {
         checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
@@ -269,6 +304,10 @@
       const inputType = pickerSingleMode ? 'radio' : 'checkbox';
       const checkedInputs = [...document.querySelectorAll('#agent-picker input[type=' + inputType + ']:checked')];
       if (checkedInputs.length === 0) { showToast('Select at least one agent'); return; }
+      const runAtWrap = document.getElementById('agent-picker-run-at-wrap');
+      const collectRunAt = runAtWrap && runAtWrap.style.display !== 'none';
+      const runAt = collectRunAt ? getPickerRunAt() : '';
+      if (collectRunAt && !runAt) { showToast('Select a date and time'); return; }
       if (pickerCollectTriplet) {
         const triplets = checkedInputs.map(cb => {
           const row = cb.closest('.agent-check-row');
@@ -292,12 +331,14 @@
             reviewAgent: ra || null,
             reviewModel: reviewModel || null,
             reviewEffort: reviewEffort || null,
+            runAt: runAt || null,
           });
         } else {
-          hideAgentPicker(triplets);
+          hideAgentPicker(collectRunAt ? { triplets, runAt } : triplets);
         }
       } else {
-        hideAgentPicker(checkedInputs.map(cb => cb.value));
+        const agents = checkedInputs.map(cb => cb.value);
+        hideAgentPicker(collectRunAt ? { agents, runAt } : agents);
       }
     };
 

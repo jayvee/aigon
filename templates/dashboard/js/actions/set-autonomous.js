@@ -1,84 +1,6 @@
 /** F519 action module: set-autonomous */
 import * as H from './shared.js';
 
-function buildRunAtHtml() {
-  return '<div style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Run at</label>' +
-    '<input type="datetime-local" id="set-schedule-run-at" class="create-input" style="width:100%;padding:8px 10px" />' +
-    '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px" id="set-schedule-tz-hint"></div>' +
-    '</div>';
-}
-
-function setupRunAt(box) {
-  const inp = box.querySelector('#set-schedule-run-at');
-  const hint = box.querySelector('#set-schedule-tz-hint');
-  const d = new Date(Date.now() + 3600000);
-  const pad = n => String(n).padStart(2, '0');
-  inp.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const off = new Date().getTimezoneOffset();
-  const sign = off <= 0 ? '+' : '-';
-  const abs = Math.abs(off);
-  const tz = sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
-  if (hint) hint.textContent = 'Times in ' + tzName + ' (' + tz + ')';
-}
-
-function getRunAt(box) {
-  const val = String((box.querySelector('#set-schedule-run-at') || {}).value || '').trim();
-  if (!val) return '';
-  const off = new Date().getTimezoneOffset();
-  const sign = off <= 0 ? '+' : '-';
-  const abs = Math.abs(off);
-  const pad = n => String(n).padStart(2, '0');
-  return val + ':00' + sign + pad(Math.floor(abs / 60)) + ':' + pad(abs % 60);
-}
-
-function showSetScheduleTimeModal(slug) {
-  return new Promise((resolve) => {
-    const existing = document.getElementById('set-schedule-modal');
-    if (existing) existing.remove();
-
-    const backdrop = document.createElement('div');
-    backdrop.id = 'set-schedule-modal';
-    backdrop.className = 'modal-backdrop';
-    backdrop.setAttribute('role', 'dialog');
-    backdrop.setAttribute('aria-modal', 'true');
-
-    const box = document.createElement('div');
-    box.className = 'modal-box agent-picker-modal-box';
-    box.innerHTML = '<h3>Schedule set autonomous run</h3>' +
-      '<p class="modal-desc">Set ' + H.escHtml(slug) + '</p>' +
-      buildRunAtHtml() +
-      '<p id="set-schedule-msg" class="settings-empty" style="display:none;margin:8px 0;color:var(--error)"></p>' +
-      '<div class="modal-actions" style="margin-top:16px">' +
-      '<button type="button" class="btn" id="set-schedule-cancel">Cancel</button>' +
-      '<button type="button" class="btn btn-primary" id="set-schedule-submit">Add schedule</button>' +
-      '</div>';
-
-    const close = (value) => {
-      backdrop.remove();
-      resolve(value);
-    };
-
-    backdrop.appendChild(box);
-    document.body.appendChild(backdrop);
-    setupRunAt(box);
-
-    box.querySelector('#set-schedule-cancel').onclick = () => close(null);
-    backdrop.onclick = (e) => { if (e.target === backdrop) close(null); };
-    box.querySelector('#set-schedule-submit').onclick = () => {
-      const msg = box.querySelector('#set-schedule-msg');
-      const runAt = getRunAt(box);
-      if (!runAt) {
-        msg.textContent = 'Select a date and time';
-        msg.style.display = 'block';
-        return;
-      }
-      close(runAt);
-    };
-  });
-}
-
 async function handleSetActionModule(ctx) {
   const va = ctx.va;
   const setCard = ctx.setCard;
@@ -126,15 +48,16 @@ async function handleSetActionModule(ctx) {
     case 'set-autonomous-schedule': {
       const pick = await H.showAgentPicker(slug, 'set ' + slug, {
         title: 'Choose set agents',
-        submitLabel: 'Continue',
+        submitLabel: 'Add schedule',
         repoPath,
         taskType: 'implement',
         action: va.action,
         collectTriplet: true,
+        collectRunAt: true,
         includeSetReviewer: true,
       });
       if (!pick || !Array.isArray(pick.triplets) || pick.triplets.length === 0) return;
-      const runAt = await showSetScheduleTimeModal(slug);
+      const runAt = String(pick.runAt || '').trim();
       if (!runAt) return;
       const triplets = pick.triplets;
       const agentIds = triplets.map(t => t.id);
@@ -250,4 +173,3 @@ async function handleSetActionModule(ctx) {
 export async function open(ctx) {
   await handleSetActionModule(ctx);
 }
-

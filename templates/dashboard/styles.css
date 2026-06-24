@@ -491,6 +491,10 @@
     .agent-picker-header-row h3{margin:0}
     .matrix-peek-btn{font-size:11px;font-weight:500;color:var(--text-secondary);background:none;border:1px solid var(--border-subtle);border-radius:4px;padding:3px 8px;cursor:pointer;letter-spacing:.02em;transition:color .15s,border-color .15s}
     .matrix-peek-btn:hover{color:var(--text-primary);border-color:var(--border-default)}
+    .agent-picker-run-at-wrap{margin:0 0 14px}
+    .agent-picker-run-at-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600}
+    .agent-picker-run-at-wrap .create-input{padding:8px 10px}
+    .agent-picker-run-at-hint{font-size:11px;color:var(--text-tertiary);margin-top:4px}
     #matrix-peek-backdrop{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:60px}
     #matrix-peek-panel{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);width:min(980px,calc(100vw - 32px));max-height:calc(100vh - 100px);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
     #matrix-peek-content{padding:20px 24px}
