@@ -139,6 +139,111 @@ for (const [desc, id, autoPayload, check] of [
         check(wrm.getFeatureDashboardState(repo, id, 'in-progress', [{ id: 'cc', status: 'implementing' }]));
     }));
 }
+
+test('autonomous controller: normalizes representative sidecar states', () => {
+    assert.strictEqual(wrm.buildAutonomousController(null), null);
+    const fixtures = [
+        [
+            {
+                status: 'running',
+                running: true,
+                sessionName: 'repo-f12-auto',
+                mode: 'solo_worktree',
+                agents: ['cc'],
+                reviewAgent: 'cx',
+                startedAt: '2026-04-01T10:00:00Z',
+                updatedAt: '2026-04-01T10:01:00Z',
+                workflowState: 'implementing',
+            },
+            {
+                status: 'running',
+                running: true,
+                reason: null,
+                reasonCategory: 'unknown',
+                recommendedRecoveryKind: 'manual',
+                sessionRunning: true,
+                agents: ['cc'],
+                reviewAgent: 'cx',
+                evalAgent: null,
+            },
+        ],
+        [
+            { status: 'failed', running: false, reason: 'review-exited-without-signal', error: { message: 'review died' } },
+            { status: 'failed', reasonCategory: 'reviewer-exited', reasonLabel: 'Reviewer exited without signaling', recommendedRecoveryKind: 'rerun-review', error: 'review died' },
+        ],
+        [
+            { status: 'stopped', running: false, reason: 'stop-after-review' },
+            { status: 'stopped', reasonCategory: 'stopped-checkpoint', recommendedRecoveryKind: 'manual' },
+        ],
+        [
+            { status: 'stopped', running: false, reason: 'stopped-by-user' },
+            { status: 'stopped', reasonCategory: 'stopped-by-user', recommendedRecoveryKind: 'manual' },
+        ],
+        [
+            { status: 'quota-paused', running: false, reason: 'quota-cap' },
+            { status: 'quota-paused', reasonCategory: 'quota', recommendedRecoveryKind: 'wait-quota' },
+        ],
+        [
+            { status: 'completed', running: false, reason: 'feature-closed', endedAt: '2026-04-01T10:30:00Z' },
+            { status: 'completed', reasonCategory: 'completed', recommendedRecoveryKind: 'manual', endedAt: '2026-04-01T10:30:00Z' },
+        ],
+        [
+            { status: 'failed', running: false, reason: 'new-future-reason' },
+            { status: 'failed', reasonCategory: 'unknown', reasonLabel: 'Unknown controller state', recommendedRecoveryKind: 'manual' },
+        ],
+    ];
+
+    for (const [input, expected] of fixtures) {
+        const dto = wrm.buildAutonomousController(input, (sessionName) => sessionName === 'repo-f12-auto');
+        for (const [key, value] of Object.entries(expected)) {
+            assert.deepStrictEqual(dto[key], value, `${input.status || 'missing'} ${input.reason || 'no-reason'} ${key}`);
+        }
+    }
+});
+
+test('autonomous controller: maps every finishAuto reason literal', () => {
+    const source = fs.readFileSync(path.join(__dirname, '../../lib/feature-autonomous.js'), 'utf8');
+    const reasons = [...source.matchAll(/finishAuto\([^)]*reason:\s*'([^']+)'/g)].map(match => match[1]);
+    assert.ok(reasons.length > 0, 'finishAuto reason literals found');
+    for (const reason of [...new Set(reasons)]) {
+        const dto = wrm.buildAutonomousController({ status: 'failed', running: false, reason });
+        assert.notStrictEqual(dto.reasonCategory, 'unknown', `${reason} should have a stable category`);
+        assert.ok(dto.reasonLabel, `${reason} should have a label`);
+        assert.ok(dto.recommendedRecoveryKind, `${reason} should have a recovery kind`);
+    }
+});
+
+test('autonomous controller: done feature still reads completed sidecar', () => withTempDir('aigon-rm-auto-done-', (repo) => {
+    seed(repo);
+    const id = '44';
+    writeSpec(repo, 'features', '05-done', `feature-${id}-done-auto.md`);
+    writeSnap(repo, 'features', id, 'done');
+    writeFeatureAuto(repo, id, {
+        featureId: id,
+        status: 'completed',
+        running: false,
+        reason: 'feature-closed',
+        sessionName: 'repo-f44-auto',
+        mode: 'solo_worktree',
+        agents: ['cx'],
+        reviewAgent: 'gg',
+        workflowState: 'done',
+        startedAt: '2026-04-01T10:00:00Z',
+        updatedAt: '2026-04-01T10:30:00Z',
+        endedAt: '2026-04-01T10:30:00Z',
+    });
+    const state = wrm.getFeatureDashboardState(repo, id, 'done', [{ id: 'cx', status: 'implementation-complete' }]);
+    assert.strictEqual(state.stage, 'done');
+    assert.ok(state.autonomousController, 'completed controller DTO is present for done features');
+    assert.strictEqual(state.autonomousController.status, 'completed');
+    assert.strictEqual(state.autonomousController.reason, 'feature-closed');
+    assert.strictEqual(state.autonomousController.reasonLabel, 'Feature closed');
+    assert.strictEqual(state.autonomousController.reasonCategory, 'completed');
+    assert.strictEqual(state.autonomousController.recommendedRecoveryKind, 'manual');
+    assert.deepStrictEqual(state.autonomousController.agents, ['cx']);
+    assert.strictEqual(state.autonomousController.reviewAgent, 'gg');
+}));
+
 // REGRESSION F524: approved review (requestRevision=false) marks the
 // autonomous revision stage as complete, so the card headline doesn't read
 // "Starting revision" in the gap between review-approve and close-trigger.

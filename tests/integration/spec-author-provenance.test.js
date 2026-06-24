@@ -10,11 +10,6 @@ const { projectContext } = require('../../lib/workflow-core/projector');
 const { resolveSpecAuthor, buildSpecAuthor } = require('../../lib/spec-author-provenance');
 const { buildEntityView } = require('../../lib/read-model/entity-view');
 
-function freshRequire(modPath) {
-    delete require.cache[require.resolve(modPath)];
-    return require(modPath);
-}
-
 // REGRESSION: F584 — --agent on create must stamp specAuthor even without AIGON_AGENT_ID.
 test('entityCreate with options.agent stamps specAuthor on inbox bootstrap', () => withTempDir('aigon-spec-author-create-', (repo) => {
     seedEntityDirs(repo, 'features');
