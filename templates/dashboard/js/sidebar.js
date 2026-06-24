@@ -181,7 +181,11 @@
           if (opts.highlightAuthorId && cb.value === opts.highlightAuthorId) {
             const badge = document.createElement('span');
             badge.className = 'agent-check-badge agent-check-badge-author';
-            badge.textContent = 'created this spec';
+            const author = opts.highlightAuthor || {};
+            const authorBits = [];
+            if (author.model) authorBits.push(String(author.model));
+            if (author.effort) authorBits.push(String(author.effort));
+            badge.textContent = authorBits.length ? ('created this spec - ' + authorBits.join('/')) : 'created this spec';
             const hint = row.querySelector('.agent-check-hint');
             const label = row.querySelector('.agent-check-label');
             if (hint) hint.before(badge);

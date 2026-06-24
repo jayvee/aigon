@@ -49,6 +49,7 @@ export async function open(ctx) {
     submitLabel,
     preselect: isRevise ? authorId : null,
     highlightAuthorId: !isRevise ? authorId : null,
+    highlightAuthor: !isRevise ? author : null,
     recommendation,
     repoPath,
     taskType: 'review',
@@ -62,4 +63,3 @@ export async function open(ctx) {
   await H.requestSpecReviewLaunch(endpoint, id, t.id, repoPath, btn, launchOpts);
   await H.requestRefresh();
 }
-
