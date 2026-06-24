@@ -19,11 +19,11 @@ Track original spec author provenance for feature and research specs, including 
 
 ## Acceptance Criteria
 
-- [ ] Feature and research workflow snapshots expose a stable `specAuthor` object, or equivalent backward-compatible shape, containing at least `agentId`, `model`, `effort`, and `authoredAt` where those values are known.
-- [ ] `authorAgentId` remains available as a compatibility alias or fallback for existing callers until all consumers have migrated.
-- [ ] `aigon feature-create --agent <id> ...` and `aigon research-create --agent <id> ...` stamp the selected agent as the original spec author even when `AIGON_AGENT_ID` is not set in the parent process.
+- [ ] Feature and research workflow snapshots expose a stable `specAuthor` object containing `agentId`, `model`, `effort`, and `authoredAt`; unknown sub-fields are explicit `null` (never omitted, never inferred from defaults).
+- [ ] `authorAgentId` remains available as a compatibility alias or fallback for existing callers until all consumers have migrated. Its current fallback chain (`snapshot.authorAgentId || Object.keys(agents)[0]` in `dashboard-status-collector.js`, plus `set-conductor`, `machine.js`, `projector.js`) continues to resolve identically for legacy snapshots.
+- [ ] `aigon feature-create --agent <id> ...` and `aigon research-create --agent <id> ...` stamp the selected agent as the original spec author even when `AIGON_AGENT_ID` is not set in the parent process. Note the two current producer gaps both paths must close: `entity.js` bootstrap (`afterWrite`) reads only `process.env.AIGON_AGENT_ID` and ignores `options.agent`; `research-create` (`lib/commands/research.js`) validates `--agent` but then calls `entityCreate(def, name, ctx, { description })` without forwarding it.
 - [ ] Dashboard-launched create/spec-authoring paths record the selected model and effort when the user picked them; if no model/effort was selected, the fields are null rather than inferred from mutable defaults.
-- [ ] Spec-revise completion records separate revision provenance such as `lastSpecRevision`, but does not replace the original `specAuthor`.
+- [ ] Spec-revise completion records separate revision provenance such as `lastSpecRevision`, but does not replace the original `specAuthor`. The projector must project `specAuthor` immutably from the bootstrap/start event and must NOT re-derive it from later events — today `projector.js` recomputes `authorAgentId` as `event.authorAgentId ?? context.authorAgentId` on every projection (lines ~138/166), so a `feature.spec_revision.completed` event that carries an agent must not be allowed to overwrite the original author.
 - [ ] The spec-review agent picker annotates or highlights the row that matches the original spec author, including the model/effort label when known.
 - [ ] The spec-revise agent picker preselects the original author agent and model/effort when known, with a label that explains the recommendation is based on original spec authorship.
 - [ ] Feature and research cards show concise spec author metadata, for example `Spec by Codex` or `Spec by Codex - gpt-...` when a model is known.
@@ -48,7 +48,7 @@ Likely implementation path:
    - legacy `snapshot.authorAgentId`
    - optional spec frontmatter `agent:`
    - null model/effort for legacy-only sources
-2. Extend workflow bootstrap/start events for feature and research specs to carry `specAuthor` metadata. Keep this additive so existing snapshots and event logs continue to project.
+2. Extend workflow bootstrap/start events for feature and research specs to carry `specAuthor` metadata. Keep this additive so existing snapshots and event logs continue to project. Capture `specAuthor` once at the bootstrap/start event and have the projector copy it forward verbatim; do not re-derive it per event the way `authorAgentId` is currently recomputed (see acceptance criterion on the immutability invariant).
 3. Update `entityCreate` and the feature/research `--agent` create handlers so the explicitly selected draft agent is passed into workflow bootstrap. Do not rely only on `process.env.AIGON_AGENT_ID`.
 4. Thread dashboard picker launch triplets into spec-authoring metadata only when they are explicit user selections. Do not infer model IDs from current defaults after the fact, because defaults drift over time.
 5. Extend spec-revise record events with revision provenance (`agentId`, `model`, `effort`, `revisedAt`, commit SHA where available). Project this separately from original authorship.
@@ -82,7 +82,7 @@ Important constraints:
 
 - Should spec author provenance be shown on inbox and backlog cards only, or also in active/done cards?
 - For manually created specs with no agent provenance, should the UI show nothing or a neutral `Human/manual` label?
-- If a user explicitly chooses a different agent/model for spec-revise, should that become the default for future revise cycles, or should the original author remain the recommendation?
+- If a user explicitly chooses a different agent/model for spec-revise, should that become the default for future revise cycles, or should the original author remain the recommendation? (The body's immutability constraint and User Story 2 currently lean toward "original author stays the recommendation"; confirm before implementing the preselect logic.)
 
 ## Related
 
