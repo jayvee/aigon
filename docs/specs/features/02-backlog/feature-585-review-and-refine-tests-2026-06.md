@@ -1,13 +1,13 @@
 ---
 recurring_slug: review-and-refine-tests
 complexity: medium
-recurring_week: 2026-W26
+recurring_month: 2026-06
 recurring_template: review-and-refine-tests.md
 transitions:
-  - { from: "inbox", to: "backlog", at: "2026-06-22T00:48:29.632Z", actor: "recurring/feature-prioritise" }
+  - { from: "inbox", to: "backlog", at: "2026-06-24T12:59:53.475Z", actor: "recurring/feature-prioritise" }
 ---
 
-# review-and-refine-tests-2026-W26
+# review-and-refine-tests-2026-06
 
 ## Summary
 
