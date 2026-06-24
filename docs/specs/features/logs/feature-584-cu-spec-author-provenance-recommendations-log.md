@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 558
+lines_removed: 19
+lines_changed: 577
+files_touched: 16
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 584 - spec-author-provenance-recommendations
 Agent: cu
 
