@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 268
+lines_removed: 4
+lines_changed: 272
+files_touched: 7
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 2286210
+output_tokens: 9394
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 2147712
+thinking_tokens: 1301
+total_tokens: 2295604
+billable_tokens: 2296905
+cost_usd: 5.0771
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 569 - autonomous-recovery-popover
 Agent: cx
 
