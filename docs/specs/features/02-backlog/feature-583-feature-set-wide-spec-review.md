@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-24T12:17:24.316Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: feature-set-wide-spec-review
