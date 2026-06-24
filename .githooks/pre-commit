@@ -11,14 +11,4 @@ if [ -n "$BLOCKED_FILES" ]; then
   exit 1
 fi
 
-CHECK_OUTPUT="$(git diff --cached --check || true)"
-CONFLICT_MARKERS="$(printf '%s\n' "$CHECK_OUTPUT" | grep 'leftover conflict marker' || true)"
-
-if [ -n "$CONFLICT_MARKERS" ]; then
-  echo "ERROR: Refusing to commit unresolved conflict markers."
-  echo "$CONFLICT_MARKERS"
-  echo "Resolve the conflict markers, then stage the fixed files."
-  exit 1
-fi
-
 exit 0

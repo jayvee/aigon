@@ -329,7 +329,7 @@ async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
 
 async function handleSetAction(va, setCard, repoPath, btn) {
   const ctx = buildActionContext(va, { id: setCard && setCard.slug, name: setCard && setCard.slug }, repoPath, btn, 'features', { setCard });
-  if (String(va.action || '').startsWith(SET_ACTION_PREFIX) || va.action === 'set-prioritise') {
+  if (String(va.action || '').startsWith(SET_ACTION_PREFIX) || va.action === 'set-prioritise' || va.action === 'feature-set-spec-review') {
     try {
       await dispatchActionModule('set-autonomous', ctx);
     } catch (_) { /* toast shown */ }

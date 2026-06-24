@@ -1603,6 +1603,10 @@
               };
               row.appendChild(setBtn);
             };
+            const setSpecReviewVa = setValid.find(a => a.action === 'feature-set-spec-review');
+            if (setSpecReviewVa) {
+              appendSetHeaderAction(setSpecReviewVa);
+            }
             const startSetVa = setValid.find(a => a.action === 'set-autonomous-start');
             if (startSetVa && !isPausedOnFailure) {
               appendSetHeaderAction(startSetVa);
