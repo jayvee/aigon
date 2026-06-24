@@ -1,6 +1,6 @@
 ---
-schedule: weekly
-name_pattern: docs-gap-scan-{{YYYY-WW}}
+schedule: monthly
+name_pattern: docs-gap-scan-{{YYYY-MM}}
 recurring_slug: weekly-docs-gap-scan
 complexity: medium
 ---

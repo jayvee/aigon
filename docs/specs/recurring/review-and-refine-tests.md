@@ -1,6 +1,6 @@
 ---
-schedule: weekly
-name_pattern: review-and-refine-tests-{{YYYY-WW}}
+schedule: monthly
+name_pattern: review-and-refine-tests-{{YYYY-MM}}
 recurring_slug: review-and-refine-tests
 complexity: medium
 ---

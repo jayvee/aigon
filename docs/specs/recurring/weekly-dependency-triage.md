@@ -1,6 +1,6 @@
 ---
-schedule: weekly
-name_pattern: dependency-triage-{{YYYY-WW}}
+schedule: monthly
+name_pattern: dependency-triage-{{YYYY-MM}}
 recurring_slug: weekly-dependency-triage
 complexity: low
 ---
