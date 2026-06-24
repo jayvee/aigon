@@ -1660,6 +1660,10 @@
             if (setSpecReviewVa) {
               appendSetHeaderAction(setSpecReviewVa);
             }
+            const setSpecReviseVa = setValid.find(a => a.action === 'feature-set-spec-revise');
+            if (setSpecReviseVa) {
+              appendSetHeaderAction(setSpecReviseVa);
+            }
             const startSetVa = setValid.find(a => a.action === 'set-autonomous-start');
             if (startSetVa && !isPausedOnFailure) {
               appendSetHeaderAction(startSetVa);
