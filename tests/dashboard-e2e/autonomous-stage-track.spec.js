@@ -24,7 +24,7 @@ const REPO_PATH = '/tmp/aigon-f492-mock-repo';
  * Build a /api/status payload with one feature carrying the supplied stages.
  * Mirrors the lightweight shape the dashboard collector now emits per F492.
  */
-function buildStatusPayload({ featureId, name, stage, autonomousPlan, headline, autonomousSession, agents }) {
+function buildStatusPayload({ featureId, name, stage, autonomousPlan, autonomousController, headline, autonomousSession, agents }) {
     return {
         generatedAt: new Date().toISOString(),
         summary: { implementing: 1, waiting: 0, complete: 0, error: 0, total: 1 },
@@ -46,6 +46,7 @@ function buildStatusPayload({ featureId, name, stage, autonomousPlan, headline, 
                 detailFingerprint: featureId + '::' + name + '::mock',
                 cardHeadline: headline || null,
                 autonomousPlan: autonomousPlan || null,
+                autonomousController: autonomousController || null,
                 autonomousSession: autonomousSession || null,
                 validActions: [],
                 nextAction: null,
@@ -161,5 +162,109 @@ test.describe('F492 autonomous stage track', () => {
         await expect(card.locator('.kcard-headline-verb')).toHaveText('Implementing');
         await expect(card.locator('.kcard-stage-track')).toHaveCount(0);
         await expect(card.locator('.kcard-autonomous-plan')).toHaveCount(0);
+    });
+
+    test('failed controller renders authoritative card status without stage failure headline', async ({ page }) => {
+        const payload = buildStatusPayload({
+            featureId: '903',
+            name: 'mock-controller-failed',
+            stage: 'in-progress',
+            headline: { tone: 'warn', glyph: '⚠', verb: 'Autonomous failed', subject: null, owner: null, age: 300, detail: 'Reviewer exited without signaling' },
+            autonomousPlan: {
+                mode: 'solo_worktree',
+                workflowSlug: null,
+                error: null,
+                stages: [
+                    { key: 'implement-0', type: 'implement', label: 'Implement', status: 'complete', agents: [{ id: 'cx', model: null, effort: null }] },
+                    { key: 'review-1',    type: 'review',    label: 'Review',    status: 'failed',   agents: [{ id: 'gg', model: null, effort: null }] },
+                ],
+            },
+            autonomousController: {
+                status: 'failed',
+                running: false,
+                reason: 'review-exited-without-signal',
+                reasonLabel: 'Reviewer exited without signaling',
+                reasonCategory: 'reviewer-exited',
+                recommendedRecoveryKind: 'rerun-review',
+                sessionName: 'mock-f903-auto-failed',
+                sessionRunning: false,
+                updatedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+            },
+            autonomousSession: { sessionName: 'mock-f903-auto-failed', running: false, status: 'failed' },
+            agents: [{ id: 'cx', status: 'ready', tmuxRunning: false, runtimeAgentId: 'cx' }],
+        });
+        await mountWithStatus(page, payload);
+
+        const card = page.locator('.kcard[data-feature-id="903"]');
+        await expect(card.locator('.kcard-headline-verb')).toHaveText('Autonomous failed');
+        await expect(card.locator('.kcard-headline-verb')).not.toHaveText('Review failed');
+        await expect(card.locator('.kcard-controller-status')).toHaveAttribute('data-controller-status', 'failed');
+        await expect(card.locator('.kcard-controller-title')).toHaveText('Autonomous failed');
+        await expect(card.locator('.kcard-controller-reason')).toHaveText('Reviewer exited without signaling');
+        await expect(card.locator('.kcard-controller-meta')).toContainText('Last update');
+        await expect(card.locator('.kcard-controller-meta')).toContainText('session exited');
+    });
+
+    test('stopped-by-user controller reads as manual mode', async ({ page }) => {
+        const payload = buildStatusPayload({
+            featureId: '904',
+            name: 'mock-controller-stopped',
+            stage: 'in-progress',
+            headline: { tone: 'ready', glyph: '✓', verb: 'Stopped at review', subject: null, owner: null, age: null, detail: null },
+            autonomousPlan: {
+                mode: 'solo_worktree',
+                workflowSlug: null,
+                error: null,
+                stages: [
+                    { key: 'implement-0', type: 'implement', label: 'Implement', status: 'complete', agents: [{ id: 'cx', model: null, effort: null }] },
+                    { key: 'review-1',    type: 'review',    label: 'Review',    status: 'waiting',  agents: [{ id: 'gg', model: null, effort: null }] },
+                ],
+            },
+            autonomousController: {
+                status: 'stopped',
+                running: false,
+                reason: 'stopped-by-user',
+                reasonLabel: 'Stopped by user',
+                reasonCategory: 'stopped-by-user',
+                sessionName: 'mock-f904-auto-stopped',
+                sessionRunning: false,
+                updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+            },
+            autonomousSession: { sessionName: 'mock-f904-auto-stopped', running: false, status: 'stopped' },
+            agents: [{ id: 'cx', status: 'ready', tmuxRunning: false, runtimeAgentId: 'cx' }],
+        });
+        await mountWithStatus(page, payload);
+
+        const card = page.locator('.kcard[data-feature-id="904"]');
+        await expect(card.locator('.kcard-controller-title')).toHaveText('Manual mode');
+        await expect(card.locator('.kcard-controller-reason')).toHaveText('Taken over by operator');
+        await expect(card.locator('.kcard-controller-status')).not.toHaveClass(/tone-warn/);
+    });
+
+    test('completed controller stays quiet on done cards', async ({ page }) => {
+        const payload = buildStatusPayload({
+            featureId: '905',
+            name: 'mock-controller-completed',
+            stage: 'done',
+            headline: { tone: 'done', glyph: '✓', verb: 'Closed', subject: null, owner: null, age: 60, detail: null },
+            autonomousPlan: null,
+            autonomousController: {
+                status: 'completed',
+                running: false,
+                reason: 'feature-closed',
+                reasonLabel: 'Feature closed',
+                reasonCategory: 'completed',
+                sessionName: 'mock-f905-auto-completed',
+                sessionRunning: false,
+                updatedAt: new Date(Date.now() - 60 * 1000).toISOString(),
+            },
+            autonomousSession: { sessionName: 'mock-f905-auto-completed', running: false, status: 'completed' },
+            agents: [],
+        });
+        await mountWithStatus(page, payload);
+
+        const card = page.locator('.kcard[data-feature-id="905"]');
+        await expect(card.locator('.kcard-headline-verb')).toHaveText('Closed');
+        await expect(card.locator('.kcard-controller-status')).toHaveCount(0);
     });
 });
