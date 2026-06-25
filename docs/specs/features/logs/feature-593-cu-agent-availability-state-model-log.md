@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 1095
+lines_removed: 21
+lines_changed: 1116
+files_touched: 23
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 593 - agent-availability-state-model
 Agent: cu
 
