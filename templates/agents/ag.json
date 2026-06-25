@@ -17,7 +17,7 @@
   "installCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "authCheck": {
     "method": "command",
-    "command": "agy -p \"Reply with exactly the word PONG and nothing else.\" --print-timeout 45s",
+    "command": "agy --dangerously-skip-permissions -i \"Reply with exactly the word PONG and nothing else.\"",
     "successIndicator": "PONG",
     "loginHint": "Launch agy and complete Google sign-in in the browser, or set ANTIGRAVITY_TOKEN for CI"
   },
