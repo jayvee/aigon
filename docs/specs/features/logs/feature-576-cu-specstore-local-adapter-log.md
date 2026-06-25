@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 398
+lines_removed: 177
+lines_changed: 575
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 576 - specstore-local-adapter
 Agent: cu
 
