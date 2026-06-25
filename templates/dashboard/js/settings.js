@@ -664,6 +664,95 @@
       card.appendChild(table);
       wrap.appendChild(card);
       section.appendChild(wrap);
+      renderAgentAvailabilitySection(section, globalSettingsData, refresh);
+    }
+
+    function renderAgentAvailabilitySection(section, globalSettingsData, refresh) {
+      section.querySelectorAll('.agent-availability-content').forEach(n => n.remove());
+      const groups = (globalSettingsData && globalSettingsData.agentAvailability) || {};
+      const wrap = document.createElement('div');
+      wrap.className = 'agent-availability-content preferences-content';
+      const card = document.createElement('div');
+      card.className = 'agent-model-card';
+      const header = document.createElement('div');
+      header.className = 'agent-model-header';
+      header.textContent = 'Agent availability';
+      card.appendChild(header);
+      const intro = document.createElement('p');
+      intro.className = 'settings-repo-context-note';
+      intro.textContent = 'Active agents appear in normal start, review, eval, and recommendation choices. Disabled agents stay supported but hidden until you turn them back on.';
+      card.appendChild(intro);
+      if (globalSettingsData && globalSettingsData.defaultAgentWarning) {
+        const warn = document.createElement('p');
+        warn.className = 'settings-repo-context-note';
+        warn.textContent = globalSettingsData.defaultAgentWarning;
+        card.appendChild(warn);
+      }
+
+      const allIds = new Set([
+        ...(groups.active || []).map(a => a.agentId),
+        ...(groups.disabled || []).map(a => a.agentId),
+        ...(groups.unconfigured || []).map(a => a.agentId),
+        ...(groups.deprecated || []).map(a => a.agentId),
+        ...(groups.retired || []).map(a => a.agentId),
+      ]);
+      if (allIds.size === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'settings-empty';
+        empty.textContent = 'No agents registered.';
+        card.appendChild(empty);
+      } else {
+        const list = document.createElement('div');
+        list.className = 'settings-repo-context-grid';
+        [...allIds].sort().forEach(agentId => {
+          const disabled = (groups.disabled || []).some(a => a.agentId === agentId);
+          const item = document.createElement('div');
+          item.className = 'settings-repo-context-card';
+          const label = document.createElement('div');
+          label.className = 'settings-repo-context-label';
+          label.textContent = agentId;
+          item.appendChild(label);
+          const ctrl = document.createElement('label');
+          ctrl.className = 'toggle-switch';
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = !disabled;
+          input.onchange = async () => {
+            const enable = input.checked;
+            input.disabled = true;
+            try {
+              const res = await fetch('/api/agents/availability', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  action: enable ? 'enable' : 'disable',
+                  agentId,
+                  scope: 'global',
+                  reason: 'manual',
+                }),
+              });
+              const payload = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(payload.error || res.statusText);
+              showToast((enable ? 'Enabled ' : 'Disabled ') + agentId);
+              if (typeof refresh === 'function') refresh();
+            } catch (e) {
+              showToast('Update failed: ' + e.message, null, null, { error: true });
+              input.checked = !enable;
+            } finally {
+              input.disabled = false;
+            }
+          };
+          const track = document.createElement('span');
+          track.className = 'toggle-track';
+          ctrl.appendChild(input);
+          ctrl.appendChild(track);
+          item.appendChild(ctrl);
+          list.appendChild(item);
+        });
+        card.appendChild(list);
+      }
+      wrap.appendChild(card);
+      section.appendChild(wrap);
     }
 
     function buildUserScopeControl(def, refresh) {
