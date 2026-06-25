@@ -15,7 +15,7 @@ Aigon is a spec-driven development (SDD) tool. The durable work object is a **sp
 | **Spec key** | Stable identity string: `F42` (feature #42), `R43` (research #43). Parsed and formatted by `lib/spec-identity.js` (re-exported from `lib/spec-store/spec-key.js` for store callers). |
 | **Events** | Append-only lifecycle log (`events.jsonl`). Source of truth for workflow semantics. |
 | **Snapshot** | Derived point-in-time projection (`snapshot.json`). Disposable cache of projector output. |
-| **Leases** | Future cross-machine coordination primitive (not implemented in 573). |
+| **Leases** | Advisory cross-machine coordination via append-only `lease.*` events in the canonical log (feature 578). Default TTL 30 min; renew checkpoints at most every 10 min. |
 | **Indexes** | Future read-optimised lookups (dashboard spec index today; SpecStore indexes later). |
 | **Projections** | Human-facing artefacts derived from durable state — spec markdown files and folder placement. |
 
@@ -92,7 +92,8 @@ Experimental opt-in backend: set in `.aigon/config.json`:
     "backend": "git-ref",
     "git": {
       "remote": "origin",
-      "refPrefix": "refs/aigon/specs"
+      "refPrefix": "refs/aigon/specs",
+      "offline": false
     }
   }
 }
@@ -103,11 +104,33 @@ Experimental opt-in backend: set in `.aigon/config.json`:
 | **Canonical store** | Append-only event payloads in Git refs at `<refPrefix>/<key>/events` (e.g. `refs/aigon/specs/F42/events`) |
 | **Local projection** | `.aigon/workflows/**` remains the read cache; `readEventsSync` / `readSnapshotSync` never hit the network |
 | **Sync** | `aigon storage sync` fetch+merge+push for `<refPrefix>/*`; `aigon storage status` reports health |
+| **Pre-write sync** | Mutating commands fetch+merge before append unless `storage.git.offline: true`, `--offline`, or `AIGON_STORAGE_OFFLINE=1` |
 | **Merge** | Union/dedupe by event `id`; merge commits keep push fast-forwardable |
 
 Module: `lib/spec-store/git-ref-backend.js` (+ `git-plumbing.js`, `event-merge.js`, `projection.js`, `storage-config.js`).
 
 Key-addressed refs (`refs/aigon/specs/<key>/events`) were chosen over UUID-addressed paths so CLI, dashboard, and Git artefacts stay aligned.
+
+## Leases, doctor, and reporting (feature 578)
+
+Advisory cross-machine coordination uses append-only lease events in the same canonical log as workflow events:
+
+| Event type | Purpose |
+|------------|---------|
+| `lease.acquired` | Session start — records holder, agent, role, TTL |
+| `lease.renewed` | Rate-limited checkpoint (default: at most every **10 min** while session alive) |
+| `lease.released` | Explicit release |
+| `lease.taken_over` | Auditable takeover when another machine uses `--takeover` |
+
+Defaults: **TTL 30 min**, renew checkpoint **10 min**. Expiry is derived from the latest unreleased event's `expiresAt` vs wall clock — no separate expiry event. Heartbeats stay local/display-only; only lease renewals append to Git when the advertised expiry window changes.
+
+| Command | Role |
+|---------|------|
+| `aigon storage doctor [--fix]` | Read-only diagnostics: ref reachability, duplicate event ids, projection drift, lease health |
+| `aigon storage report [--json]` | Cross-repo read-only report from configured repos / bare mirrors under `~/.aigon/remotes/` |
+| `aigon board --storage` | Portfolio view of active leases across repos |
+
+**Git remote permissions:** push access to `refs/aigon/*` is required for sync. Hosting UIs (GitHub/GitLab/Bitbucket) may not display custom refs — use `git ls-remote` or `aigon storage status`.
 
 ## Related features
 
