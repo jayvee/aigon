@@ -54,9 +54,16 @@ test('resolveAgentRecommendation: returns modelSource=none for null spec', () =>
 test('buildRecommendationPayload: all active agent IDs present and have complexityDefaults', () => {
     const pl = r.buildRecommendationPayload(FM('complexity: medium'));
     assert.strictEqual(pl.complexity, 'medium');
-    for (const id of ['cc', 'cx', 'gg', 'cu']) {
+    for (const id of ['cc', 'cx', 'ag', 'cu']) {
         assert.ok(id in pl.agents && reg.getAgent(id).cli.complexityDefaults?.low, `${id} needs complexityDefaults`);
     }
+});
+
+test('buildRecommendationPayload: deactivated gg is excluded', () => {
+    // REGRESSION: gg has no cli.complexityDefaults after deactivation (F592) —
+    // recommendations must not be built for agents that can't be launched.
+    const pl = r.buildRecommendationPayload(FM('complexity: medium'));
+    assert.ok(!('gg' in pl.agents), 'gg should not appear in the recommendation payload');
 });
 
 report();

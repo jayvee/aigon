@@ -139,7 +139,7 @@ function resetRepo(repoName) {
         profile: 'web',
         agents: {
             cc: { models: { research: 'haiku', implement: 'haiku', evaluate: 'haiku' } },
-            gg: { models: { research: 'gemini-2.5-flash', implement: 'gemini-2.5-flash', evaluate: 'gemini-2.5-flash' } },
+            ag: { models: { research: 'gemini-3.5-flash', implement: 'gemini-3.5-flash', evaluate: 'gemini-3.5-flash' } },
             cx: { models: { research: 'gpt-4.1-mini', implement: 'gpt-4.1-mini', evaluate: 'gpt-4.1-mini' } },
         },
         devProxy: { basePort: port },
@@ -151,8 +151,8 @@ function resetRepo(repoName) {
 
     // 8. Reinstall agent commands
     const aigonCli = path.join(__dirname, '..', 'aigon-cli.js');
-    run(`node "${aigonCli}" install-agent cc gg`, { cwd: repoPath, ignoreError: true });
-    console.log(`  🔧 Reinstalled agent commands (cc, gg)`);
+    run(`node "${aigonCli}" install-agent cc ag`, { cwd: repoPath, ignoreError: true });
+    console.log(`  🔧 Reinstalled agent commands (cc, ag)`);
 
     // 10. Remove log files (they'll be recreated by feature-start)
     const logsDir = path.join(specsRoot, 'logs');
