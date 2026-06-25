@@ -2,6 +2,7 @@
 Agent: cu
 
 ## Status
+Shipped advisory lease events (TTL 30m / renew 10m), pre-write git-ref sync, `aigon storage doctor|report`, and lease guards on feature/research mutating commands.
 
 ## New API Surface
 
