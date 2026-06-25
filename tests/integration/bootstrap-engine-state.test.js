@@ -3,7 +3,8 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report, seedEntityDirs, withRepoCwd, readJson, normalizePath, freshEntityModules, buildEntityCtx, runEntityChild } = require('../_helpers');
+const { execFileSync } = require('child_process');
+const { test, withTempDir, report, seedEntityDirs, withRepoCwd, readJson, normalizePath, freshEntityModules, buildEntityCtx, runEntityChild, initGitRepo, runAigonCli, GIT_SAFE_ENV } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const wrm = require('../../lib/workflow-read-model');
 function freshRequire(modPath) {
@@ -162,6 +163,28 @@ test('pausePrestartEntity and resumePrestartEntity preserve feature backlog stat
     const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
     assert.strictEqual(snapshot.currentSpecState, 'backlog');
     assert.strictEqual(snapshot.pauseReason, null);
+}));
+// REGRESSION: dashboard pause shells out to `aigon feature-pause`; the command
+// must commit the spec move so the dashboard does not leave a dirty tracked
+// delete/add pair behind.
+test('feature-pause commits pre-start spec move to paused', () => withTempDir('aigon-prestart-feature-pause-commit-', (repo) => {
+    initGitRepo(repo);
+    seedEntityDirs(repo, 'features');
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-01-foo.md');
+    fs.writeFileSync(specPath, '# Feature: foo\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '01', 'backlog', specPath);
+    execFileSync('git', ['add', 'docs/specs/features/02-backlog/feature-01-foo.md'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'chore: add backlog feature'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+
+    runAigonCli(repo, ['feature-pause', '01']);
+
+    const pausedPath = path.join(repo, 'docs/specs/features/06-paused/feature-01-foo.md');
+    assert.ok(fs.existsSync(pausedPath));
+    assert.ok(!fs.existsSync(specPath));
+    const subject = execFileSync('git', ['log', '-1', '--pretty=%s'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, encoding: 'utf8' }).trim();
+    assert.strictEqual(subject, 'chore: pause feature 01 - move spec to paused');
+    const status = execFileSync('git', ['status', '--short', '--', 'docs/specs/features'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, encoding: 'utf8' }).trim();
+    assert.strictEqual(status, '');
 }));
 // REGRESSION: pre-start delete must remove research specs and workflow state cleanly.
 test('entityDelete removes a backlog research topic and its workflow snapshot', () => withTempDir('aigon-research-delete-', (repo) => {
