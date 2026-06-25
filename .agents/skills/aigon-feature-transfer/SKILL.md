@@ -15,7 +15,7 @@ The worktree, commits, branch, and workflow history are all preserved. Only the 
 ## Usage
 
 ```bash
-aigon feature-transfer $1 --to=<agent> [--reason="..."] [--no-launch]
+aigon feature-transfer {{args}} --to=<agent> [--reason="..."] [--no-launch]
 ```
 
 Flags:

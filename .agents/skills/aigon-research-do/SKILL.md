@@ -8,7 +8,7 @@ description: Do research <ID> - agent writes findings
 Run this command followed by the Research ID.
 
 ```bash
-aigon research-do $ARGUMENTS
+aigon research-do {{args}}
 ```
 
 ## Argument Resolution
@@ -34,7 +34,7 @@ git branch --show-current
 **CRITICAL RULES for research:**
 - You MUST NOT modify any source code files (`.js`, `.ts`, `.py`, `.json`, etc.)
 - You MUST NOT modify other agents' findings files
-- You MUST ONLY write to YOUR findings file: `docs/specs/research-topics/logs/research-{ID}-am-findings.md`
+- You MUST ONLY write to YOUR findings file: `docs/specs/research-topics/logs/research-{ID}-ag-findings.md`
 - You MUST NOT run `git checkout`, `git branch`, or create new branches — stay where you are
 
 ## Required Lifecycle Step
@@ -52,7 +52,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 1. **Find the research topic** in `docs/specs/research-topics/03-in-progress/research-{ID}-*.md`
 
 2. **Check for worktree/Fleet mode**: Look for your findings file at:
-   `docs/specs/research-topics/logs/research-{ID}-am-findings.md`
+   `docs/specs/research-topics/logs/research-{ID}-ag-findings.md`
 
 3. **Conduct deep research** to answer each question in the research doc. Go broad before going deep:
 
@@ -65,6 +65,17 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    - **Cite your sources** — every claim should link back to where you found it.
 
    Spend the majority of your time here. Rushed research leads to shallow recommendations.
+
+### Antigravity-Specific Research Rules
+
+**You are Antigravity (agent ID: `ag`).** Follow these rules exactly:
+
+1. **Do NOT create branches or switch branches.** Research runs in the main repo on the current branch.
+2. **Do NOT modify source code.** You are writing a research document, not implementing anything.
+3. **Write ONLY to your findings file** (`research-{ID}-ag-findings.md`). Do not touch the main research spec or other agents' files.
+4. **Run `aigon agent-status implementing` first**, then `aigon agent-status research-complete` when done.
+5. **Commit ONLY your findings file.** Use `git add docs/specs/research-topics/logs/research-*-ag-findings.md` — never `git add .` or `git add -A`.
+6. **Do NOT run `aigon research-close`** — the user will do this.
 
 4. **Document your findings**:
    - **If findings file exists (worktree/Fleet mode)**: Write ONLY to your findings file. Do not modify the main research doc or other agents' files.
@@ -91,12 +102,12 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    git diff --name-only
    git diff --cached --name-only
    ```
-   The ONLY file that should appear is `docs/specs/research-topics/logs/research-{ID}-am-findings.md`. If you see any other files, run `git checkout -- <file>` to discard those changes before committing.
+   The ONLY file that should appear is `docs/specs/research-topics/logs/research-{ID}-ag-findings.md`. If you see any other files, run `git checkout -- <file>` to discard those changes before committing.
 
 2. **Commit your findings file (and ONLY your findings file):**
    ```bash
-   git add docs/specs/research-topics/logs/research-*-am-findings.md
-   git commit -m "docs: research findings for am"
+   git add docs/specs/research-topics/logs/research-*-ag-findings.md
+   git commit -m "docs: research findings for ag"
    ```
 
 3. **Signal completion immediately after the commit:**
@@ -105,7 +116,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
    ```
    If this exits non-zero because the session context wasn't detected (e.g. you're on `main`), run it with explicit args:
    ```bash
-   aigon agent-status research-complete $ARGUMENTS am
+   aigon agent-status research-complete {{args}} ag
    ```
 
    The command **must exit 0** before you can claim your research is complete.
@@ -120,7 +131,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 4. **Post-completion:** output exactly one line — `Findings complete — ready for evaluation.` — then STAY in the session in case the user has follow-up questions.
 
 **If Drive mode (no findings file):**
-- Run `aigon research-close $ARGUMENTS` when the research pass is complete and ready to close
+- Run `aigon research-close {{args}}` when the research pass is complete and ready to close
 
 ## Prompt Suggestion
 
@@ -128,4 +139,4 @@ If Drive mode, end your response with the suggested next command on its own line
 
 `aigon-research-close <ID>`
 
-ARGUMENTS: $ARGUMENTS
+ARGUMENTS: {{args}}

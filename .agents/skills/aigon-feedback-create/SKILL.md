@@ -10,7 +10,7 @@ Create a new feedback item in `docs/specs/feedback/01-inbox/`.
 ## Step 1: Run the CLI command
 
 ```bash
-aigon feedback-create $ARGUMENTS
+aigon feedback-create {{args}}
 ```
 
 ## Argument resolution
