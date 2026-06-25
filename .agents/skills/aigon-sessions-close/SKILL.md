@@ -54,7 +54,7 @@ Closing all agent sessions for #55...
 ## Step 1: Run the CLI command
 
 ```bash
-aigon sessions-close $ARGUMENTS
+aigon sessions-close {{args}}
 ```
 
 ## Step 2: Confirm to user
@@ -63,4 +63,4 @@ Tell the user:
 - Which sessions were closed
 - Whether the Warp tab was closed automatically
 
-ARGUMENTS: $ARGUMENTS
+ARGUMENTS: {{args}}
