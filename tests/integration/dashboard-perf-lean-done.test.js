@@ -11,8 +11,6 @@
 'use strict';
 
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
 const zlib = require('zlib');
 const {
     test, withTempDir, report, seedEntityDirs, writeSpec, writeSnap,
