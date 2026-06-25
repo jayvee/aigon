@@ -61,6 +61,7 @@
     "test:related": "node scripts/test-related.js",
     "test:core": "npm run lint:paths && npm run lint && node scripts/check-template-leaks.js && node scripts/generate-workflow-diagrams.js --check && npm run test:unit && npm run test:integration && npm run test:workflow",
     "test:browser": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",
+    "test:browser:live": "node -e \"if(process.env.AIGON_E2E_REAL!=='1'){console.error('Set AIGON_E2E_REAL=1 to run the opt-in live-agent smoke path');process.exit(1)}\" && MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.live.config.js --reporter=list",
     "test:browser:smoke": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list --grep @smoke",
     "test:deploy": "npm run test:core && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser && bash scripts/check-test-budget.sh",
     "test:ui": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",

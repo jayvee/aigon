@@ -97,7 +97,13 @@ Aigon has three test tiers. Know which one your change requires:
 | --- | --- | --- |
 | `npm test` | **Core validation** — ESLint (now including `templates/dashboard/js/**`, which catches undeclared dashboard globals), workflow diagrams, unit/integration/workflow suites. No browser. | Every change. The fast inner-loop gate. |
 | `npm run test:browser:smoke` | **Critical-action browser smoke** — Playwright `@smoke` subset: opens the load-bearing dashboard action surfaces (start, autonomous-start, eval, close, resolve-and-close) and fails on any console/page error or the generic "Action failed to load" toast. | **Required for any dashboard action/UI change.** Also runs automatically in the iterate gate (`npm run test:quick`) when dashboard, state-projection, or workflow-rules files change, and on every PR in CI. |
+| `AIGON_E2E_REAL=1 npm run test:browser:live` | **Opt-in live-agent smoke** — one Playwright spec that starts a real `cc` tmux session (pinned Haiku model). Skipped in CI; requires `claude` on PATH and `claude auth status` logged in. | Maintainer confidence check only — never part of `test:deploy` or PR gates. |
 | `npm run test:deploy` | **Release gate** — `test:core` + full `test:browser` E2E + test-budget. | Before `git push` / `feature-close`. Do not push past a red gate. |
+
+### Dashboard E2E paths (mock vs live)
+
+- **Default (`npm run test:browser`, `test:ui`, `test:deploy`)** — mock-only. `tests/dashboard-e2e/setup.js` strips inherited `AIGON_*_MODEL` / `AIGON_TEST_MODEL_*` overrides, sets `AIGON_TEST_MODE=1` and `MOCK_AGENT_BIN`, and refuses to run when `AIGON_E2E_REAL=1` is set.
+- **Opt-in live (`AIGON_E2E_REAL=1 npm run test:browser:live`)** — separate Playwright config (`playwright.live.config.js` + `setup-live.js`). Uses a pinned `claude-haiku-4-5-20251001` implement model and fails closed when `claude` or auth is missing. Do not export `AIGON_E2E_REAL=1` in shell profiles used for ordinary development — it is only for explicit maintainer smoke runs.
 
 > Why the smoke tier exists: the autonomous-start path once shipped broken (`AUTONOMOUS_AGENT_IDS` was referenced but never declared) because core tests do not load the dashboard in a browser and nothing watched the console while opening an action. `tests/dashboard-e2e/critical-actions.spec.js` is the regression guard — keep its actions covered.
 
