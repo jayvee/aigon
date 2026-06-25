@@ -3,6 +3,10 @@ const { defineConfig } = require('@playwright/test');
 const path = require('path');
 const { PORT } = require('./fixture-port');
 
+// Mock-only dashboard E2E (F594). Invoked by npm run test:browser / test:ui / test:deploy.
+// Live-agent smoke is opt-in only: AIGON_E2E_REAL=1 npm run test:browser:live
+// (playwright.live.config.js). Never set AIGON_E2E_REAL=1 for this config.
+
 // Compress supervisor sweep interval for failure-modes idle-state tests.
 process.env.AIGON_SUPERVISOR_SWEEP_MS = process.env.AIGON_SUPERVISOR_SWEEP_MS || '2000';
 // Fixture dashboard uses an isolated AIGON_HOME (set in setup.js globalSetup).
