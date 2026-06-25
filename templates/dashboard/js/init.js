@@ -489,13 +489,33 @@
       state.lastFingerprint = statusFingerprint(state.data);
     };
 
+    // F590: client-side poll instrumentation. Off by default; enable with
+    // `?debug=perf` in the URL or `localStorage.aigon-debug-perf = '1'`. Emits a
+    // one-line breakdown of fetch vs parse vs flatten/fingerprint vs render so a
+    // future slowdown self-reports without hand-added timing.
+    function isPerfDebugOn() {
+      try {
+        if (new URLSearchParams(location.search).get('debug') === 'perf') return true;
+        return localStorage.getItem('aigon-debug-perf') === '1';
+      } catch (_) { return false; }
+    }
+
     async function poll() {
+      const perfOn = isPerfDebugOn();
+      const perf = perfOn ? { t0: performance.now(), bytes: 0, fetchMs: 0, parseMs: 0, fpMs: 0, renderMs: 0, rendered: false } : null;
       const previous = flattenStatuses(state.data || {});
       const previousData = state.data || {};
       try {
+        const tFetch = perfOn ? performance.now() : 0;
         const res = await fetch('/api/status', { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (perfOn) {
+          perf.fetchMs = Math.round((performance.now() - tFetch) * 100) / 100;
+          perf.bytes = Number(res.headers.get('content-length')) || 0;
+        }
+        const tParse = perfOn ? performance.now() : 0;
         const next = await res.json();
+        if (perfOn) perf.parseMs = Math.round((performance.now() - tParse) * 100) / 100;
         state.failures = 0;
         const current = flattenStatuses(next);
         current.forEach((v, k) => {
@@ -514,14 +534,23 @@
         if (state.view === 'settings') {
           if (settingsNeedsRerender(previousData, state.data)) renderSettings();
         } else {
+          const tFp = perfOn ? performance.now() : 0;
           const nextFp = statusFingerprint(state.data);
+          if (perfOn) perf.fpMs = Math.round((performance.now() - tFp) * 100) / 100;
           if (nextFp !== state.lastFingerprint) {
             state.lastFingerprint = nextFp;
+            const tRender = perfOn ? performance.now() : 0;
             render();
+            if (perfOn) { perf.renderMs = Math.round((performance.now() - tRender) * 100) / 100; perf.rendered = true; }
           }
         }
         setHealth();
         renderUpdateBadge();
+        if (perfOn) {
+          const totalMs = Math.round((performance.now() - perf.t0) * 100) / 100;
+          const kb = perf.bytes ? ` wire=${Math.round(perf.bytes / 1024)}KB` : '';
+          console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms fingerprint=${perf.fpMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kb}`);
+        }
       } catch (e) {
         state.failures += 1;
         setHealth();

@@ -6,8 +6,37 @@
       repoFilter: 'all',
       typeFilter: 'all',
       page: 0,
-      pageSize: 50
+      pageSize: 50,
+      // F590: the full uncapped lean feature list is no longer shipped on the
+      // /api/status poll path. It is fetched per-repo on first All Items mount
+      // via GET /api/repos/all-features and cached here. `null` for a repo means
+      // its fetch failed — fall back to that repo's poll-path `features`.
+      allFeaturesByRepo: {},
+      allFeaturesLoaded: false,
+      allFeaturesLoading: false,
     };
+
+    // F590: lazy-load the full lean feature list for every repo, then re-render.
+    async function loadAllFeatures(repos) {
+      if (allItemsState.allFeaturesLoading || allItemsState.allFeaturesLoaded) return;
+      allItemsState.allFeaturesLoading = true;
+      try {
+        await Promise.all((repos || []).map(async repo => {
+          try {
+            const res = await fetch('/api/repos/all-features?repoPath=' + encodeURIComponent(repo.path), { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const payload = await res.json();
+            allItemsState.allFeaturesByRepo[repo.path] = Array.isArray(payload.features) ? payload.features : [];
+          } catch (_) {
+            allItemsState.allFeaturesByRepo[repo.path] = null; // fall back to poll-path features
+          }
+        }));
+        allItemsState.allFeaturesLoaded = true;
+      } finally {
+        allItemsState.allFeaturesLoading = false;
+        if (state.view === 'all-items') renderAllItemsView();
+      }
+    }
 
     function slugToTitle(slug) {
       return (slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -234,10 +263,17 @@
       const data = state.data;
       if (!data || !data.repos) { container.innerHTML = '<div class="stats-empty-msg">No data</div>'; return; }
 
+      // F590: on first mount, lazily fetch the full lean feature list per repo.
+      // While it loads (and on fetch failure) we render the poll-path `features`,
+      // so the view is never blocked — it just fills in the historical done rows
+      // once the fetch resolves.
+      if (!allItemsState.allFeaturesLoaded) loadAllFeatures(data.repos);
+
       // Collect all items across features, research, and feedback.
       const allRows = [];
       data.repos.forEach(repo => {
-        const featureRows = repo.allFeatures || repo.features || [];
+        const cached = allItemsState.allFeaturesByRepo[repo.path];
+        const featureRows = (cached != null) ? cached : (repo.features || []);
         const researchRows = repo.research || [];
         const feedbackRows = repo.feedback || [];
         featureRows.forEach(f => allRows.push({ ...f, type: f.type || 'feature', repoName: repo.name, repoPath: repo.path, repoDisplay: repo.displayPath }));
@@ -311,7 +347,8 @@
       html.push(`<option value="research"${allItemsState.typeFilter === 'research' ? ' selected' : ''}>Research</option>`);
       html.push(`<option value="feedback"${allItemsState.typeFilter === 'feedback' ? ' selected' : ''}>Feedback</option>`);
       html.push('</select>');
-      html.push(`<span style="margin-left:auto;font-size:11px;color:var(--text-tertiary)">${total} item${total !== 1 ? 's' : ''}</span>`);
+      const loadingHint = allItemsState.allFeaturesLoading ? '<span style="font-size:11px;color:var(--text-tertiary);font-style:italic">loading full history…</span>' : '';
+      html.push(`<span style="margin-left:auto;display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-tertiary)">${loadingHint}<span>${total} item${total !== 1 ? 's' : ''}</span></span>`);
       html.push('</div>');
 
       html.push('<div style="overflow-x:auto">');
