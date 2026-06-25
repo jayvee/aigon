@@ -4,10 +4,11 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, execSync, spawnSync } = require('child_process');
 const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV } = require('../_helpers');
 const { runPendingMigrations } = require('../../lib/migration');
 const installManifestLib = require('../../lib/install-manifest');
+const { getAigonVersion } = require('../../lib/version');
 
 const CLI = path.join(__dirname, '..', '..', 'aigon-cli.js');
 
@@ -25,6 +26,26 @@ function runRemove(repo, extraArgs = []) {
         env: { ...process.env, ...GIT_SAFE_ENV, HOME: repo, USERPROFILE: repo, AIGON_NONINTERACTIVE: '1' },
         stdio: 'pipe',
     }).toString();
+}
+
+function initGitRepo(repo) {
+    execSync('git init -b main', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execSync('git config user.email test@aigon.test', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execSync('git config user.name "Aigon Test"', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+}
+
+function runDoctor(repo, home, extraArgs = []) {
+    return spawnSync(process.execPath, [CLI, 'doctor', ...extraArgs], {
+        cwd: repo,
+        env: {
+            ...process.env,
+            ...GIT_SAFE_ENV,
+            HOME: home,
+            USERPROFILE: home,
+            AIGON_NONINTERACTIVE: '1',
+        },
+        encoding: 'utf8',
+    });
 }
 
 testAsync('install-agent writes manifest with valid entries; second run is idempotent (no duplicates)', () => withTempDirAsync('aigon-f422-fresh-', async (repo) => {
@@ -123,6 +144,61 @@ testAsync('migration 2.61.0 synthesizes manifest for legacy repo', () => withTem
     const paths = manifest.files.map(f => f.path);
     assert.ok(paths.some(p => p.includes('feature-create.md')), 'must include feature-create.md');
     assert.ok(paths.some(p => p.includes('development_workflow.md')), 'must include development_workflow.md');
+}));
+
+// REGRESSION F589: manifest git exclude, untrack migration, and sweep gate.
+testAsync('F589 install-manifest git exclude, migration untrack, and sweep gate', () => withTempDirAsync('aigon-f589-', async (home) => {
+    // 1. Fresh install excludes manifest from git status
+    const installRepo = path.join(home, 'install');
+    fs.mkdirSync(path.join(installRepo, 'docs', 'specs'), { recursive: true });
+    initGitRepo(installRepo);
+    runInstallAgent(installRepo);
+    const status = execSync('git status --porcelain -- .aigon/install-manifest.json', {
+        cwd: installRepo,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        encoding: 'utf8',
+    }).trim();
+    assert.strictEqual(status, '', 'manifest must not appear in git status');
+    assert.ok(fs.existsSync(path.join(installRepo, '.aigon', 'install-manifest.json')), 'manifest must exist on disk');
+
+    // 2. Migration untracks a previously committed manifest
+    const migRepo = path.join(home, 'mig');
+    fs.mkdirSync(path.join(migRepo, 'docs', 'specs'), { recursive: true });
+    initGitRepo(migRepo);
+    fs.mkdirSync(path.join(migRepo, '.aigon'), { recursive: true });
+    installManifestLib.writeManifest(migRepo, installManifestLib.createEmptyManifest('test'));
+    execSync('git add -f .aigon/install-manifest.json', { cwd: migRepo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execSync('git commit -m "track manifest"', { cwd: migRepo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    await runPendingMigrations(migRepo);
+    const stillTracked = execSync('git ls-files -- .aigon/install-manifest.json', {
+        cwd: migRepo,
+        env: { ...process.env, ...GIT_SAFE_ENV },
+        encoding: 'utf8',
+    }).trim();
+    assert.strictEqual(stillTracked, '', 'migration must untrack manifest');
+    assert.ok(fs.existsSync(path.join(migRepo, '.aigon', 'install-manifest.json')), 'working copy must remain');
+
+    // 3. doctor --fix --yes must not apply stale repos without --sweep-repos
+    const primary = path.join(home, 'primary');
+    const staleRepo = path.join(home, 'stale');
+    fs.mkdirSync(path.join(primary, 'docs', 'specs'), { recursive: true });
+    fs.mkdirSync(path.join(staleRepo, 'docs', 'specs'), { recursive: true });
+    initGitRepo(primary);
+    initGitRepo(staleRepo);
+    const currentVersion = getAigonVersion() || '9.9.9';
+    fs.mkdirSync(path.join(primary, '.aigon'), { recursive: true });
+    fs.mkdirSync(path.join(staleRepo, '.aigon'), { recursive: true });
+    fs.writeFileSync(path.join(primary, '.aigon', 'version'), `${currentVersion}\n`);
+    fs.writeFileSync(path.join(staleRepo, '.aigon', 'version'), '0.0.1\n');
+    fs.mkdirSync(path.join(home, '.aigon'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.aigon', 'ports.json'), JSON.stringify({
+        primary: { path: primary, basePort: 3000 },
+        stale: { path: staleRepo, basePort: 3010 },
+    }, null, 2));
+    const doctorResult = runDoctor(primary, home, ['--fix', '--yes']);
+    assert.ok(doctorResult.stdout || doctorResult.stderr, `doctor should produce output: ${doctorResult.error?.message || ''}`);
+    const staleVersion = fs.readFileSync(path.join(staleRepo, '.aigon', 'version'), 'utf8').trim();
+    assert.strictEqual(staleVersion, '0.0.1', 'stale repo must not be updated without --sweep-repos');
 }));
 
 report();

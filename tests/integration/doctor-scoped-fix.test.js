@@ -18,6 +18,11 @@ test('parseDoctorScopes: --ports forces full detail', () => {
     assert.equal(p.full, true);
 });
 
+test('parseDoctorScopes: --sweep-repos is a known flag', () => {
+    const p = parseDoctorScopes(['--fix', '--yes', '--sweep-repos']);
+    assert.deepEqual(p.unknownScopeFlags, []);
+});
+
 test('parseDoctorScopes: unknown scope flag is reported', () => {
     const p = parseDoctorScopes(['--authh']);
     assert.deepEqual(p.unknownScopeFlags, ['--authh']);

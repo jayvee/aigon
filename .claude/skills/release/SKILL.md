@@ -95,18 +95,18 @@ npm run ship -- <mode> --version=<version> --yes
 
 `ship.js` handles: re-running test:deploy, bumping `package.json`, the `vX.Y.Z` tag, push, and (for `publish`) `npm run release` which auto-routes the dist-tag.
 
-**Dirty-tree gotcha — dashboard server regenerates `.aigon/install-manifest.json` + `.aigon/version`.** If the local dashboard is running it self-installs on every CLI invocation, re-dirtying the tree between dry-run and real run. Before publish: `node aigon-cli.js server stop`, then `git stash push -m release-prep -- .aigon/install-manifest.json .aigon/version`. Restart later with `aigon server restart`.
+**Dirty-tree gotcha — dashboard server regenerates `.aigon/install-manifest.json` + `.aigon/version`.** If the local dashboard is running it self-installs on every CLI invocation, re-dirtying the tree between dry-run and real run. Before publish: `node aigon-cli.js server stop`, then `git stash push -m release-prep -- .aigon/version` (manifest is gitignored; stash only if you have local edits you care about). Restart later with `aigon server restart`.
 
 **npm 2FA — `EOTP` is expected and you cannot complete it.** npm publish on 2FA-enabled accounts prints a browser-approval URL that Claude Code redacts to `***` in tool output (the URL also can't be fished out of `~/.npm/_logs/*.log` — same redaction). If the user's `npm login` worked but `npm publish` returns `EOTP`, do **not** retry in-session and do **not** ask for an OTP code (browser-approval is not OTP-typed). Tell the user to run `npm publish --tag <next|latest>` in their own terminal so they can see and click the URL; surface the package version + dist-tag so they don't have to look it up. Resume from §6 once they confirm.
 
 ### 6. Post-publish housekeeping (publish only)
 
-Templates may have changed during the bump — regenerate the manifest:
+Templates may have changed during the bump — regenerate installed agent files:
 
 ```bash
 node aigon-cli.js install-agent --all
-git add .aigon/install-manifest.json .claude/ .gemini/ .opencode/ .agents/ .codex/ .cursor/
-git commit -m "chore: regenerate install-manifest post-publish"
+git add .claude/ .gemini/ .opencode/ .agents/ .codex/ .cursor/
+git commit -m "chore: refresh installed agent files post-publish"
 git push origin main
 ```
 
