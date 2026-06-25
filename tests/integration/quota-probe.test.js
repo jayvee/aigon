@@ -12,7 +12,7 @@ const probeAgent = require('../../scripts/probe-agent');
 const CASES = [
     ['cc', 'cc-anthropic-rate-limit.txt', 'anthropic-rate-limit'],
     ['cx', 'cx-openai-quota-exceeded.txt', 'openai-quota-exceeded'],
-    ['gg', 'gg-resource-exhausted.txt', 'google-resource-exhausted'],
+    ['ag', 'gg-resource-exhausted.txt', 'google-resource-exhausted'],
     ['op', 'op-openrouter-free-model-rate-limit.txt', 'openrouter-free-model-rate-limit'],
 ];
 

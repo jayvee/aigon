@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented deactivated-agent registry (`active: false`), retired `gg` (records-only), routed launchable vs all-known enumerators, removed Gemini budget polling and live capture hooks.
 ## New API Surface
 
 ## Key Decisions

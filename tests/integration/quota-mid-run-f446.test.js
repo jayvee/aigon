@@ -17,16 +17,16 @@ const { emittedDedupe, lastActivityByName } = quotaMidRun;
 const { appendQuotaPausedDashboardActions } = require('../../lib/quota-dashboard-actions');
 
 test('mergeMidRunDepletion skips duplicate quota.json churn', () => withTempDir((dir) => {
-    const gg = agentRegistry.getAgent('gg');
+    const ag = agentRegistry.getAgent('ag');
     const raw = fs.readFileSync(
         path.join(__dirname, '..', 'fixtures', 'quota', 'gg-resource-exhausted.txt'),
         'utf8'
     );
-    const classified = quotaProbe.classifyProbeResult(gg, { ok: false, stdout: raw });
+    const classified = quotaProbe.classifyProbeResult(ag, { ok: false, stdout: raw });
     assert.strictEqual(classified.verdict, 'depleted');
-    const first = quotaProbe.mergeMidRunDepletion(dir, 'gg', null, '(default)', raw, classified);
+    const first = quotaProbe.mergeMidRunDepletion(dir, 'ag', null, '(default)', raw, classified);
     assert.strictEqual(first.changed, true);
-    const second = quotaProbe.mergeMidRunDepletion(dir, 'gg', null, '(default)', raw, classified);
+    const second = quotaProbe.mergeMidRunDepletion(dir, 'ag', null, '(default)', raw, classified);
     assert.strictEqual(second.changed, false);
 }));
 
@@ -43,8 +43,8 @@ function seedResumeFixture(dir, padded, { withModelOverride = false } = {}) {
     const specPath = path.join(dir, 'docs', 'specs', 'features', '03-in-progress', `feature-${padded}-test.md`);
     fs.writeFileSync(path.join(wfDir, 'snapshot.json'), JSON.stringify({
         featureId: padded, currentSpecState: 'implementing',
-        agents: { gg: withModelOverride
-            ? { status: 'running', modelOverride: { model: 'gemini-2.5-pro' } }
+        agents: { ag: withModelOverride
+            ? { status: 'running', modelOverride: { model: 'gemini-2.5-flash' } }
             : { status: 'running' } },
         ...(withModelOverride ? { specPath } : {}),
     }));
@@ -53,8 +53,8 @@ function seedResumeFixture(dir, padded, { withModelOverride = false } = {}) {
         fs.writeFileSync(specPath, '# t\n');
     }
     fs.mkdirSync(path.join(dir, '.aigon', 'state'), { recursive: true });
-    fs.writeFileSync(path.join(dir, '.aigon', 'state', `feature-${padded}-gg.json`), JSON.stringify({
-        agent: 'gg', status: 'quota-paused', priorQuotaStatus: 'implementing',
+    fs.writeFileSync(path.join(dir, '.aigon', 'state', `feature-${padded}-ag.json`), JSON.stringify({
+        agent: 'ag', status: 'quota-paused', priorQuotaStatus: 'implementing',
         updatedAt: new Date().toISOString(),
     }));
 }
@@ -65,7 +65,7 @@ async function expectResumeRejection(dir, id, expectedCode) {
     try {
         const resume = require('../../lib/agent-resume');
         try {
-            await resume.runAgentResume([id, 'gg'], { cwd: dir });
+            await resume.runAgentResume([id, 'ag'], { cwd: dir });
             assert.fail(`expected ${expectedCode}`);
         } catch (e) {
             assert.strictEqual(e.code, expectedCode);
@@ -85,7 +85,7 @@ testAsync('agent-resume refuses when quota.json still depleted', async () => wit
     seedResumeFixture(dir, '42', { withModelOverride: true });
     quotaProbe.writeQuotaState({
         schemaVersion: 1,
-        agents: { gg: { models: { 'gemini-2.5-pro': {
+        agents: { ag: { models: { 'gemini-2.5-flash': {
             verdict: 'depleted',
             lastProbedAt: new Date().toISOString(),
             resetAt: new Date(Date.now() + 86400000).toISOString(),
@@ -135,9 +135,9 @@ testAsync('F454: scanActiveSessions skips capture-pane when activity epoch is un
 
 test('appendQuotaPausedDashboardActions emits quota Resume and Skip (F446 dashboard validActions)', () => withTempDir((dir) => {
     const merged = appendQuotaPausedDashboardActions(dir, 'feature', '9', {
-        agents: { gg: { modelOverride: { model: 'gemini-pro' }, status: 'running' } },
+        agents: { ag: { modelOverride: { model: 'gemini-2.5-flash' }, status: 'running' } },
     }, [{
-        id: 'gg',
+        id: 'ag',
         status: 'quota-paused',
         quotaPausedResetAt: new Date(Date.now() + 3600000).toISOString(),
         modelOverride: null,
