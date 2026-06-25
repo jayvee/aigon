@@ -41,6 +41,14 @@ const RECOVERY_COPY = {
     title: 'Take over manually',
     detail: 'Stop the autonomous controller and continue as the operator.',
   },
+  'resume-automation': {
+    title: 'Resume automation',
+    detail: 'Restart AutoConductor from the current workflow state using persisted agents.',
+  },
+  'start-code-revision': {
+    title: 'Start code revision',
+    detail: 'Inject the code revision prompt into the implementing agent session.',
+  },
   'reset': {
     title: 'Reset feature',
     detail: 'Reset workflow state for this feature. Use this only when safer recovery paths are not appropriate.',

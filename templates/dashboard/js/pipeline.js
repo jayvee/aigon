@@ -1680,13 +1680,18 @@
             if (setSpecReviseVa) {
               appendSetHeaderAction(setSpecReviseVa);
             }
-            const startSetVa = setValid.find(a => a.action === 'set-autonomous-start');
-            if (startSetVa && !isPausedOnFailure) {
-              appendSetHeaderAction(startSetVa);
-            }
-            const scheduleSetVa = setValid.find(a => a.action === 'set-autonomous-schedule');
-            if (scheduleSetVa && !isPausedOnFailure) {
-              appendSetHeaderAction(scheduleSetVa);
+            const SET_HEADER_ACTION_IDS = [
+              'set-autonomous-start',
+              'set-autonomous-schedule',
+              'set-autonomous-resume',
+              'set-autonomous-reset',
+              'set-autonomous-stop',
+            ];
+            for (const actionId of SET_HEADER_ACTION_IDS) {
+              const va = setValid.find(a => a.action === actionId);
+              if (!va) continue;
+              if (isPausedOnFailure && (actionId === 'set-autonomous-start' || actionId === 'set-autonomous-schedule')) continue;
+              appendSetHeaderAction(va);
             }
             header.appendChild(row);
 
