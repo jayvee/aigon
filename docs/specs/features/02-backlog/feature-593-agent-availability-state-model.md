@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-25T08:40:01.723Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-availability-state-model
