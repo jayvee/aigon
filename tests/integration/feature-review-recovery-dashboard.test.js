@@ -212,4 +212,36 @@ test('non-autonomous feature action behavior remains unchanged', () => withTempD
     assert.ok(!actions.some((a) => a.metadata && a.metadata.recovery));
 }));
 
+// REGRESSION F588/F576: stale review-timeout after review completed recommends resume not rerun-review
+test('stale review-timeout reconciles to resume-automation when review since completed', () => withTempDir('aigon-f588-stale-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    writeSpec(repo, 'features', '03-in-progress', 'feature-576-specstore-local-adapter.md');
+    const snapPath = path.join(repo, '.aigon', 'workflows', 'features', '576', 'snapshot.json');
+    fs.mkdirSync(path.dirname(snapPath), { recursive: true });
+    fs.writeFileSync(snapPath, JSON.stringify({
+        currentSpecState: 'ready',
+        lifecycle: 'ready',
+        codeReview: { reviewCompletedAt: '2026-06-20T12:00:00Z', requestRevision: false },
+        agents: { cu: { status: 'ready' } },
+    }, null, 2));
+    writeAutoState(repo, '576', {
+        status: 'failed',
+        running: false,
+        reason: 'review-timeout',
+        updatedAt: '2026-06-20T10:00:00Z',
+        agents: ['cu'],
+        reviewAgent: 'cx',
+        stopAfter: 'close',
+    });
+
+    const dashboard = wrm.getFeatureDashboardState(repo, '576', 'in-progress', []);
+    const recover = (dashboard.validActions || []).find((a) => a.action === 'autonomous-recover');
+    assert.ok(recover, 'recover action present');
+    assert.strictEqual(recover.payload.recommendedRecoveryKind, 'resume-automation');
+    assert.strictEqual(dashboard.autonomousController.recommendedRecoveryKind, 'resume-automation');
+    assert.strictEqual(dashboard.autonomousController.staleFailureRecovered, true);
+    const resume = (dashboard.validActions || []).find((a) => a.action === 'feature-autonomous-resume');
+    assert.ok(resume, 'resume automation action exposed');
+}));
+
 report();

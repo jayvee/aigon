@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented feature-autonomous-resume, phase hydration, stale failure reconciliation, set recovery fixes, and dashboard set header actions (F588).
 ## New API Surface
 
 ## Key Decisions

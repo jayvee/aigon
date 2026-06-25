@@ -11,6 +11,7 @@ const {
     computeRemainingOrder,
     buildPauseNotificationMessage,
     isFeatureDone,
+    isStaleFeatureAutoFailure,
 } = require('../../lib/set-conductor');
 const { readSetAutoState, writeSetAutoState } = require('../../lib/auto-session-state');
 const FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
@@ -121,5 +122,16 @@ test('pause notification message contains slug, feature ID and resume command', 
     assert.ok(msg.includes('feature-set') && msg.includes('feature #3'));
     assert.ok(msg.includes('aigon set-autonomous-resume feature-set') && msg.includes('review failed'));
     assert.ok(buildPauseNotificationMessage('s', 'x', []).includes('aigon set-autonomous-resume s'));
+});
+// REGRESSION F588: stale feature-auto review-timeout is not treated as set-blocking failure
+test('isStaleFeatureAutoFailure when workflow advanced past review-timeout', () => {
+    const featureAuto = { status: 'failed', reason: 'review-timeout', updatedAt: '2026-06-20T10:00:00Z' };
+    const snapshot = {
+        currentSpecState: 'ready',
+        lifecycle: 'ready',
+        codeReview: { reviewCompletedAt: '2026-06-20T12:00:00Z', requestRevision: false },
+    };
+    assert.strictEqual(isStaleFeatureAutoFailure(featureAuto, snapshot), true);
+    assert.strictEqual(isStaleFeatureAutoFailure({ status: 'failed', reason: 'review-timeout', updatedAt: '2026-06-20T13:00:00Z' }, snapshot), false);
 });
 report();
