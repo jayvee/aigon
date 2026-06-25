@@ -1,6 +1,8 @@
 ---
 complexity: high
 # agent: cc
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-25T08:12:05.662Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: add-antigravity-agent
