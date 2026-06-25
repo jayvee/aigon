@@ -29,51 +29,68 @@ transitions:
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-Two guardrails to close the failure mode behind F423-class incidents (install-manifest.json corrupted by an unresolved git stash-pop conflict, silently undetected until a user hit a hard error on the dashboard Sync button). (1) Stop tracking `.aigon/install-manifest.json` in git entirely — it's pure derived metadata, already self-healing from disk (`readManifestRecovering` backs up invalid JSON and `synthesizeManifestFromDisk` can rebuild it in `lib/install-manifest.js`), so it should never go through a three-way merge or stash-pop in the first place; removing it from version control eliminates the entire corruption class rather than only recovering after corruption. This is a general installed-repo issue, not just an Aigon-building-Aigon dogfooding issue: a fresh target repo currently gets an unignored `.aigon/install-manifest.json`, and `install-agent` suggests committing it. (2) Gate the "Multi-Repo Version Sweep" inside `doctor --fix --yes` (`lib/commands/setup-legacy.js` ~line 2660-2713) behind explicit confirmation or a dedicated opt-in flag — today it queues a real `aigon apply` against *every* stale registered repo from the local repo registry/ports data, which is a wide, non-obvious blast radius for a flag framed as "fix problems in this repo" (this exact behavior turned an isolated test mistake into real working-tree changes in three unrelated repos during the incident that prompted this spec).
+Two guardrails to close the failure mode behind F423-class incidents (`.aigon/install-manifest.json` corrupted by an unresolved git stash-pop conflict, silently undetected until a user hit a hard error on the dashboard Sync button).
+
+**Guardrail 1 — stop tracking the manifest in git.** The manifest is pure derived metadata, already self-healing from disk (`readManifestRecovering` backs up invalid JSON; `synthesizeManifestFromDisk` can rebuild it in `lib/install-manifest.js`). It must not go through three-way merge or stash-pop. Today, fresh target repos get an unignored manifest and both `install-agent` (~`lib/commands/setup-legacy.js:1023`) and `apply` (~`:1638-1647`) include it in git staging/commit hints. Precedent for keeping `.aigon/` runtime files out of git noise: `ensureLocalGitExclude` in `lib/commands/setup/gitignore-and-hooks.js` (also used from seed-reset at ~`:5100-5113` for `.aigon/state/`, etc.). **Note:** the aigon OSS dogfood repo currently commits the manifest for F502 release lockstep (`scripts/check-install-manifest-clean.js`); this feature must untrack it there too and migrate that guard to compare installed file trees without requiring a committed manifest blob.
+
+**Guardrail 2 — gate the multi-repo version sweep.** `printMultiRepoVersionSweep()` in `lib/commands/setup-legacy.js` (~`:2645-2713`) queues an `apply` fix for every stale repo in `~/.aigon/ports.json`. With `doctor --fix --yes`, `batchFix` runs the whole `fixQueue` via `runFixDispatch` (~`:4443-4447`) with no extra consent — a wide, non-obvious blast radius for a flag framed as "fix problems in this repo". This exact behavior turned an isolated test mistake into real working-tree changes in three unrelated repos during the incident that prompted this spec.
 
 ## User Stories
 - [ ] As a user, I never want a git stash-pop conflict to leave `.aigon/install-manifest.json` corrupted, because it's derived state that shouldn't be subject to merge conflicts at all.
 - [ ] As a user, I want `doctor --fix --yes` (or any single-repo command) to never silently mutate *other* registered repos without telling me which ones and letting me opt out.
 
 ## Acceptance Criteria
-- [ ] `.aigon/install-manifest.json` is gitignored going forward for newly-installed repos (via whatever Aigon's install path uses to manage its own `.aigon/`-internal ignore rules — prefer local exclude / Aigon-managed ignore plumbing over broad user-repo assumptions, per the target-repo-zero-opinion boundary in `AGENTS.md`).
-- [ ] Existing repos that already have `install-manifest.json` tracked/committed are migrated cleanly (e.g. a new migration that runs `git rm --cached` for the path, or equivalent) — without deleting the working-tree file, and without breaking `getModifiedFiles`/`getMissingFiles` callers that assume the file is present on disk.
-- [ ] After the change, a repeat of this session's reproduction (inject `<<<<<<< Updated upstream` markers into the manifest, as a stash-pop conflict would) can no longer happen via git, because git no longer tracks the file.
-- [ ] `doctor --fix --yes`'s multi-repo version sweep prints the full list of repos it intends to touch and requires explicit confirmation (or an explicit opt-in flag, e.g. `--sweep-repos`) before running `aigon apply` in any repo other than the current one.
-- [ ] Existing single-repo `doctor --fix --yes` behavior (fixing issues in the current repo only) is unchanged and still requires no extra flag.
-- [ ] `npm run test:core` passes; add/extend coverage for both guardrails (manifest-ignored-on-fresh-install, migration untracks an already-committed manifest, sweep refuses to run without confirmation/flag).
+- [ ] `.aigon/install-manifest.json` is excluded from git in newly-installed repos via `ensureLocalGitExclude` (or the same local-exclude path seed-reset uses) — not by editing the user's `.gitignore` unless no git repo exists and Aigon already creates one for other entries.
+- [ ] `install-agent` and `apply` no longer include `.aigon/install-manifest.json` in their git-add / commit-suggestion path lists (`installPaths` ~`:1023`, `aigonPaths` ~`:1638-1647`).
+- [ ] A new migration (next version after `2.68.0` in `lib/migration.js`) runs on `doctor --fix` / `apply`: for repos where the manifest is git-tracked, `git rm --cached .aigon/install-manifest.json` (working-tree file stays; add local exclude if missing). Idempotent when already untracked.
+- [ ] After migration + exclude, injecting `<<<<<<< Updated upstream` conflict markers into the on-disk manifest cannot reproduce a git merge conflict on that path (file is not tracked).
+- [ ] `lib/install-manifest.js` callers (`readManifest`, `readManifestRecovering`, `getModifiedFiles`, `getMissingFiles`, `remove`) behave correctly when the manifest is untracked — confirm with tests; no caller may assume git tracking.
+- [ ] F502 release lockstep still works without a committed manifest: update `scripts/check-install-manifest-clean.js` (and any related prepublish/CI checks) to diff installed file trees + semantic manifest content from a fresh `install-agent --all`, not `git show HEAD:.aigon/install-manifest.json`. The aigon repo itself is untracked for the manifest after migration.
+- [ ] `doctor --fix --yes` does **not** run `aigon apply` in repos other than `process.cwd()` unless `--sweep-repos` is also passed.
+- [ ] `doctor --fix` (without `--yes`) may list stale repos in the sweep section but must prompt before cross-repo `apply` (consistent with `deferFix` / `runFixDispatch` elsewhere).
+- [ ] `doctor --fix --yes --sweep-repos` prints the full repo list (name + path + version) it will touch, then runs `apply` in each stale registered repo — same `spawnSync('aigon', ['apply'], { cwd })` as today.
+- [ ] Single-repo `doctor --fix --yes` behavior for all non-sweep fixes is unchanged.
+- [ ] `npm run test:core` passes; extend `tests/integration/install-manifest.test.js` (or add a sibling) for: fresh install excludes manifest from git status; migration untracks a previously committed manifest; sweep fix is skipped without `--sweep-repos` when `batchFix` is true.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the project's general checks.
-     All commands must exit 0 for the iteration to be considered successful.
-     Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+npm run test:core
 ```
 
 ## Technical Approach
-Guardrail 1 (untrack the manifest): add the path to whatever mechanism Aigon already uses to keep its own `.aigon/`-internal files out of the user's `git status` noise (check existing patterns before inventing a new one — `applied-digest`, `cache/`, local exclude helpers, etc. may already have a precedent). Write a migration or install/apply repair step (next available version after the current head if using the migration framework) that, for repos where the file is currently tracked, runs `git rm --cached .aigon/install-manifest.json` (working tree file stays untouched) so existing repos transition cleanly on their next `apply`. Verify `lib/install-manifest.js` callers (`readManifest`, `readManifestRecovering`, `getModifiedFiles`, `getMissingFiles`) make no assumption that the file is git-tracked — they shouldn't, since they all read straight off disk, but confirm. Note that the existing migration framework primarily backs up/restores `.aigon/workflows/`, so if this uses that framework, document the install-artifact exception or add a more appropriate setup/apply migration path.
 
-Guardrail 2 (gate the sweep): in the multi-repo version sweep block in `lib/commands/setup-legacy.js`, before calling `spawnSync('aigon', ['apply'], { cwd: row.path, ... })` for each stale repo, collect the full list first and print it, then require either an interactive confirmation (consistent with how other destructive batch operations in this CLI confirm) or a new explicit flag. Decide which based on whether `doctor --fix --yes` is meant to ever run non-interactively (e.g. in CI) — if so, the flag option is required for that use case to keep working; if not, a confirmation prompt is sufficient. This needs a decision from whoever picks this up (see Open Questions).
+### Execution order
+1. **Guardrail 1** — local exclude on install/apply; strip manifest from commit hints; migration `git rm --cached`; update F502 prepublish guard; docs that tell users to commit the manifest.
+2. **Guardrail 2** — gate `queueFix` in `printMultiRepoVersionSweep` behind `--sweep-repos` when `batchFix`; keep interactive prompt on `deferFix`.
+3. **Tests** — integration coverage for both guardrails; run `test:core`.
+
+### Guardrail 1 (untrack the manifest)
+- Add `.aigon/install-manifest.json` to the `ensureLocalGitExclude` entry list on `install-agent`, `apply`, and the seed-reset exclude block (~`:5105-5112`) so new and reset repos pick it up without `.gitignore` edits.
+- Migration `2.69.0` (or next available): if `git ls-files --error-unmatch .aigon/install-manifest.json` succeeds, run `git rm --cached` and ensure local exclude; log outcome; no-op when not a git repo or already untracked.
+- Verify `lib/install-manifest.js` callers read disk only (they do today).
+- Update maintainer docs/skills that say `git add .aigon/install-manifest.json` (`CONTRIBUTING.md`, `.claude/skills/release/SKILL.md`, site reference pages as needed).
+
+### Guardrail 2 (gate the sweep)
+- Parse `--sweep-repos` in the `doctor` handler alongside existing flags (`--fix`, `--yes`).
+- In `printMultiRepoVersionSweep`, when building the stale-repo `queueFix` item (~`:2690-2704`): if `batchFix && !sweepReposFlag`, do **not** queue the cross-repo `apply` fix (still report stale repos as issues). When `sweepReposFlag` or interactive `deferFix`, queue as today; print enumerated repo list before `apply`.
+- Do not change version comparison or `readRegisteredReposForVersionSweep` source (`~/.aigon/ports.json`).
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
 -
 
 ## Out of Scope
-- Auto-resolving git stash-pop conflicts in general (e.g. teaching `restoreAutoStash()` in `lib/feature-close.js` to recognize and auto-resolve conflicts on other derived/volatile tracked files). Considered and deprioritized in favor of guardrail 1, which makes this moot for `install-manifest.json` specifically; revisit separately if other derived files turn out to need the same treatment.
-- Changing what the dashboard's "SYNCED" badge reflects (currently version-match, not manifest health) — out of scope here, though related: it's why a corrupted manifest can sit invisible behind a green badge until a user explicitly re-applies.
+- Auto-resolving git stash-pop conflicts in general (e.g. teaching `restoreAutoStash()` in `lib/feature-close.js` to recognize conflicts on other derived tracked files). Guardrail 1 makes this moot for `install-manifest.json`; revisit separately if other derived files need the same treatment.
+- Changing what the dashboard "SYNCED" badge reflects (version-match, not manifest health).
+- Rewriting git history to remove past committed manifests — migration stops future tracking only.
+- Untracking other derived `.aigon/` files (e.g. `.aigon/version`, `applied-digest`) in this pass — scoped to `install-manifest.json` only.
 
 ## Open Questions
-- Should the multi-repo sweep gate be an interactive confirmation, a required `--yes`-compatible flag, or both (flag bypasses the prompt)? Needs a decision before implementation.
-- For the untrack migration: should it also offer to delete the file from git history (e.g. via a one-time advisory message), or is leaving past commits alone (just stopping future tracking) sufficient? Recommend the latter — rewriting history is out of scope and risky.
-- Does any other Aigon-managed file under `.aigon/` have the same git-tracked-but-fully-derived problem and deserve the same untracking treatment in this pass, or should this stay scoped to `install-manifest.json` only?
-- Should this stay as one feature because both guardrails came from the same incident, or split into two smaller features (`install-manifest` untracking and multi-repo sweep consent)? They are technically independent.
+- *(Resolved in review)* Sweep gate: `--sweep-repos` required for non-interactive cross-repo apply; `doctor --fix` without `--yes` keeps the existing prompt path.
+- *(Resolved in review)* History rewrite: out of scope — `git rm --cached` only.
+- *(Resolved in review)* Other derived `.aigon/` files: out of scope for this feature.
+- *(Resolved in review)* One feature vs two: keep combined — same incident, independently testable guardrails, small enough for one implementation pass.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- F422 — install-manifest tracked files (introduced committed manifest pattern)
+- F502 — template install drift guard (prepublish lockstep depends on committed manifest today)
+- F423 — brewboard seed refresh (manifest lifecycle; noted manifest should be gitignored in seeds)
