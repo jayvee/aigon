@@ -122,13 +122,13 @@ If you genuinely need to bump the ceiling, mention it in your PR and explain why
 
 ## Release checklist (template/install lockstep)
 
-`prepublishOnly` runs `scripts/check-install-manifest-clean.js`. It re-installs every agent against the current templates and **fails the publish if the result diverges from the committed `.aigon/install-manifest.json`** (semantically — `installedAt` timestamps are ignored). This catches the case where you edited a template but forgot to commit the regenerated install.
+`prepublishOnly` runs `scripts/check-install-manifest-clean.js`. It re-installs every agent against the current templates and **fails the publish if tracked installed-file trees diverge** from what a fresh install produces. The install manifest (`.aigon/install-manifest.json`) is derived metadata and is not git-tracked (F589).
 
 If `prepublishOnly` blocks you with that error:
 
 ```bash
 aigon install-agent --all
-git add .aigon/install-manifest.json .claude/ .cursor/ .agents/ .opencode/
+git add .claude/ .cursor/ .gemini/ .agents/ .opencode/
 git commit -m "chore: refresh installed agent files for vX.Y.Z"
 ```
 
