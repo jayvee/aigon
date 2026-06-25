@@ -13,7 +13,7 @@ Visualize features and research topics in Kanban board or detailed list view.
 - When suggesting what to work on next, reference items by their letter labels (e.g., "You could prioritize item c) create-plugin") and use the agent's native Aigon command format for suggestions (e.g., `aigon-feature-prioritise c`) rather than raw `aigon ...` CLI syntax.
 
 ```bash
-aigon board $ARGUMENTS
+aigon board {{args}}
 ```
 
 ## Views

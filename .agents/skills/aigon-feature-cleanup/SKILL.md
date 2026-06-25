@@ -11,10 +11,10 @@ Remove all worktrees and branches for a feature. Useful after completing a Fleet
 
 ```bash
 # Delete worktrees and local branches
-aigon feature-cleanup $1
+aigon feature-cleanup {{args}}
 
 # Push branches to origin before deleting
-aigon feature-cleanup $1 --push
+aigon feature-cleanup {{args}} --push
 ```
 
 ## Argument Resolution

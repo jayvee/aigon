@@ -10,9 +10,9 @@ You are the author-side agent. Review all pending `spec-review:` commits on the 
 ## Resolve the spec
 
 ```bash
-SPEC_PATH=$(aigon feature-spec $1 2>/dev/null || true)
+SPEC_PATH=$(aigon feature-spec {{args}} 2>/dev/null || true)
 if [ -z "$SPEC_PATH" ]; then
-  SPEC_PATH=$(find docs/specs/features -maxdepth 2 \( -name "feature-$1-*.md" -o -name "feature-$1.md" \) | head -1)
+  SPEC_PATH=$(find docs/specs/features -maxdepth 2 \( -name "feature-{{args}}-*.md" -o -name "feature-{{args}}.md" \) | head -1)
 fi
 test -n "$SPEC_PATH" && echo "$SPEC_PATH"
 ```
@@ -59,14 +59,14 @@ After the spec is in its final state, commit exactly once with:
 
 ```bash
 git add "$SPEC_PATH"
-git commit --allow-empty -m "spec-revise: feature $1 — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
+git commit --allow-empty -m "spec-revise: feature {{args}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
 
 Decision:
 - <accept|revert|modify summary>
 
 Notes:
 - <important rationale>"
-aigon feature-spec-revise-record $1
+aigon feature-spec-revise-record {{args}}
 ```
 
 If you reverted review commits, include that rationale in the acknowledgement commit body rather than creating a second ack commit.

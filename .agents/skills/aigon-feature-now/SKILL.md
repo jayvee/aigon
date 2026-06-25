@@ -74,7 +74,7 @@ Before running the command, explore the codebase to understand the existing arch
 ### B2: Run the CLI command
 
 ```bash
-aigon feature-now $ARGUMENTS
+aigon feature-now {{args}}
 ```
 
 This will:

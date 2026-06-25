@@ -42,7 +42,7 @@ When an agent asks for permission, here's how to quickly allow:
 ## Step 1: Run the CLI command
 
 ```bash
-aigon feature-open $ARGUMENTS
+aigon feature-open {{args}}
 ```
 
 This will:
