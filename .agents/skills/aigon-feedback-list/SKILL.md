@@ -10,7 +10,7 @@ List feedback items for triage.
 ## Step 1: Run the CLI command
 
 ```bash
-aigon feedback-list $ARGUMENTS
+aigon feedback-list {{args}}
 ```
 
 ## Filter options

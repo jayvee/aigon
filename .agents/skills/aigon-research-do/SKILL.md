@@ -8,7 +8,7 @@ description: Do research <ID> - agent writes findings
 Run this command followed by the Research ID.
 
 ```bash
-aigon research-do $ARGUMENTS
+aigon research-do {{args}}
 ```
 
 ## Argument Resolution
@@ -66,6 +66,17 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 
    Spend the majority of your time here. Rushed research leads to shallow recommendations.
 
+### Antigravity-Specific Research Rules
+
+**You are Antigravity (agent ID: `ag`).** Follow these rules exactly:
+
+1. **Do NOT create branches or switch branches.** Research runs in the main repo on the current branch.
+2. **Do NOT modify source code.** You are writing a research document, not implementing anything.
+3. **Write ONLY to your findings file** (`research-{ID}-ag-findings.md`). Do not touch the main research spec or other agents' files.
+4. **Run `aigon agent-status implementing` first**, then `aigon agent-status research-complete` when done.
+5. **Commit ONLY your findings file.** Use `git add docs/specs/research-topics/logs/research-*-ag-findings.md` — never `git add .` or `git add -A`.
+6. **Do NOT run `aigon research-close`** — the user will do this.
+
 4. **Document your findings**:
    - **If findings file exists (worktree/Fleet mode)**: Write ONLY to your findings file. Do not modify the main research doc or other agents' files.
    - **If no findings file (Drive mode)**: Write directly to the `## Findings` section of the main research doc.
@@ -120,7 +131,7 @@ This updates your agent state in the main repo so the dashboard and coordinator 
 4. **Post-completion:** output exactly one line — `Findings complete — ready for evaluation.` — then STAY in the session in case the user has follow-up questions.
 
 **If Drive mode (no findings file):**
-- Run `aigon research-close $ARGUMENTS` when the research pass is complete and ready to close
+- Run `aigon research-close {{args}}` when the research pass is complete and ready to close
 
 ## Prompt Suggestion
 
@@ -128,4 +139,4 @@ If Drive mode, end your response with the suggested next command on its own line
 
 `aigon-research-close <ID>`
 
-ARGUMENTS: $ARGUMENTS
+ARGUMENTS: {{args}}

@@ -10,7 +10,7 @@ description: Move a backlog research topic back to inbox (slug filename)
 ## Step 1: Run
 
 ```bash
-aigon research-unprioritise $ARGUMENTS
+aigon research-unprioritise {{args}}
 ```
 
-`$ARGUMENTS` is the numeric research id. The spec moves from `02-backlog/` to `01-inbox/` and the workflow id re-keys to the slug until you `research-prioritise` again.
+`{{args}}` is the numeric research id. The spec moves from `02-backlog/` to `01-inbox/` and the workflow id re-keys to the slug until you `research-prioritise` again.
