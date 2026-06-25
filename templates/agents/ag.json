@@ -1,0 +1,260 @@
+{
+  "id": "ag",
+  "name": "Antigravity",
+  "aliases": [
+    "antigravity",
+    "agy",
+    "ag"
+  ],
+  "displayName": "Antigravity CLI",
+  "shortName": "AG",
+  "providerFamily": "google",
+  "portOffset": 8,
+  "terminalColor": "green",
+  "bannerColor": "#34D399",
+  "defaultFleetAgent": true,
+  "installHint": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+  "installCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+  "authCheck": {
+    "method": "command",
+    "command": "agy -p \"Reply with exactly the word PONG and nothing else.\" --print-timeout 45s",
+    "successIndicator": "PONG",
+    "loginHint": "Launch agy and complete Google sign-in in the browser, or set ANTIGRAVITY_TOKEN for CI"
+  },
+  "trust": {
+    "type": "json-array",
+    "path": "~/.gemini/antigravity-cli/settings.json",
+    "key": "trustedWorkspaces"
+  },
+  "worktreeEnv": {},
+  "legacy": {
+    "rootFile": "GEMINI.md"
+  },
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": true,
+    "resolvesSlashCommands": false
+  },
+  "runtime": {
+    "sessionStrategy": "antigravity-conversations",
+    "telemetryStrategy": "antigravity-transcript",
+    "trustInstallScope": "worktree-base",
+    "resume": {
+      "kind": "append",
+      "flag": "--continue"
+    }
+  },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "antigravity-individual-quota",
+        "match": "Individual quota reached|individual quota",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?)"
+      },
+      {
+        "id": "google-resource-exhausted",
+        "match": "RESOURCE_EXHAUSTED|quota exceeded|(?:HTTP(?:/[^\\s]*)?\\s*|(?:status|code|error)\\s*[:/]?\\s*)429\\b|429\\b\\s+too\\s+many|(?<![a-z0-9\\-_\"])rate[\\s\\-_]?limit(?:ed|ing)?\\b|(?<![a-z0-9\\-_\"])too[\\s\\-_]many[\\s\\-_]requests?\\b",
+        "verdict": "depleted",
+        "confidence": "high",
+        "resetExtractor": "(reset|retry|try again).{0,40}(\\d{1,2}:\\d{2}|in\\s+\\d+\\s+(?:hour|min|second)s?|\\d{10,13})"
+      }
+    ],
+    "successPatterns": [
+      "^PONG$",
+      "PONG"
+    ],
+    "unknownPolicy": "permit"
+  },
+  "cli": {
+    "command": "agy",
+    "implementFlag": "--dangerously-skip-permissions",
+    "planFlag": null,
+    "promptFlag": "--prompt-interactive",
+    "implementPrompt": "feature-do",
+    "evalPrompt": "feature-eval",
+    "reviewPrompt": "feature-code-review",
+    "reviewCheckPrompt": "feature-code-revise",
+    "models": {
+      "research": "gemini-3.5-flash",
+      "implement": "gemini-3.5-flash",
+      "evaluate": "gemini-3.5-flash",
+      "review": "gemini-3.5-flash"
+    },
+    "modelOptions": [
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "gemini-3.5-flash",
+        "label": "Gemini 3.5 Flash",
+        "pricing": {
+          "input": 1.5,
+          "output": 9
+        },
+        "notes": {
+          "spec_review": "Fast Gemini model; default Antigravity CLI selection as of 2026-06.",
+          "implement": "Primary implementation model for Antigravity; strong agentic coding.",
+          "review": "Solid code review at lower cost than Pro-tier models.",
+          "spec": "Fast spec drafting with good structured output.",
+          "research": "Good synthesis speed; verify quota pool is shared with desktop Antigravity."
+        },
+        "score": {
+          "spec_review": 3.5,
+          "implement": 5,
+          "review": 4,
+          "spec": 3.5,
+          "research": 3.5
+        },
+        "lastRefreshAt": "2026-06-25T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-pro-preview",
+        "label": "Gemini 3.1 Pro Preview",
+        "pricing": {
+          "input": 1.25,
+          "output": 10
+        },
+        "notes": {
+          "spec_review": "Deepest Gemini reasoning for spec review.",
+          "implement": "Top-tier implementation quality in the Gemini family.",
+          "review": "Thorough code review; best for subtle architectural issues.",
+          "spec": "Strong on ambiguous requirements.",
+          "research": "Best research synthesis in the Gemini family on Antigravity."
+        },
+        "score": {
+          "spec_review": 4,
+          "implement": 5,
+          "review": 4,
+          "spec": 4,
+          "research": 4.5
+        },
+        "lastRefreshAt": "2026-06-25T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-2.5-flash",
+        "label": "Gemini 2.5 Flash",
+        "pricing": {
+          "input": 0.15,
+          "output": 0.6
+        },
+        "notes": {
+          "spec_review": "Cost-effective routine spec checks.",
+          "implement": "Reliable fallback when 3.5 Flash quota is tight.",
+          "review": "Good cost-quality balance for routine reviews.",
+          "spec": "Fast and cheap for structured spec drafts.",
+          "research": "Decent research synthesis at low cost."
+        },
+        "score": {
+          "spec_review": 2.5,
+          "implement": 3.5,
+          "review": 2.5,
+          "spec": 2.5,
+          "research": 3
+        },
+        "lastRefreshAt": "2026-06-25T00:00:00.000Z"
+      }
+    ],
+    "effortOptions": [],
+    "complexityDefaults": {
+      "low": {
+        "model": "gemini-2.5-flash",
+        "effort": null
+      },
+      "medium": {
+        "model": "gemini-3.5-flash",
+        "effort": null
+      },
+      "high": {
+        "model": "gemini-3.5-flash",
+        "effort": null
+      },
+      "very-high": {
+        "model": "gemini-3.1-pro-preview",
+        "effort": null
+      }
+    },
+    "modelFlag": "--model",
+    "effortFlag": null,
+    "effortEnv": null,
+    "submitKey": "Enter",
+    "nudgeTransport": {
+      "submitKey": "Enter",
+      "submitAttempts": 2,
+      "retryDelayMs": 700,
+      "successPatterns": [
+        "Thinking",
+        "✦ "
+      ],
+      "promptPlaceholder": "Type your message"
+    }
+  },
+  "placeholders": {
+    "AGENT_ID": "ag",
+    "AGENT_NAME": "Antigravity",
+    "AGENT_TITLE": "Antigravity CLI Configuration",
+    "ARG_SYNTAX": "{{args}}",
+    "ARG1_SYNTAX": "{{args}}",
+    "CMD_PREFIX": "aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "\n### Antigravity-Specific Research Rules\n\n**You are Antigravity (agent ID: `ag`).** Follow these rules exactly:\n\n1. **Do NOT create branches or switch branches.** Research runs in the main repo on the current branch.\n2. **Do NOT modify source code.** You are writing a research document, not implementing anything.\n3. **Write ONLY to your findings file** (`research-{ID}-ag-findings.md`). Do not touch the main research spec or other agents' files.\n4. **Run `aigon agent-status implementing` first**, then `aigon agent-status research-complete` when done.\n5. **Commit ONLY your findings file.** Use `git add docs/specs/research-topics/logs/research-*-ag-findings.md` — never `git add .` or `git add -A`.\n6. **Do NOT run `aigon research-close`** — the user will do this.\n",
+    "AGENT_TEAMS_FEATURE_NOTE": "\n### Antigravity-Specific Feature Rules\n\n**You are Antigravity (agent ID: `ag`).** Follow these rules exactly:\n\n1. **Implementation work goes on your feature branch — not `main`.** You must be on a branch named `feature-{ID}-ag-{description}` for implementation.\n2. **Verify your branch before EVERY implementation commit.** Run `git branch --show-current` and confirm it matches your feature branch.\n3. **Run lifecycle commands in order:** `aigon agent-status implementing` → (do work) → `aigon agent-status implementation-complete`.\n4. **Commit frequently** using conventional commit prefixes (`feat:`, `fix:`, `chore:`).\n5. **Never use `git add .` or `git add -A`** — stage specific files by name.\n",
+    "AGENT_DEV_SERVER_NOTE": "",
+    "AGENT_PITFALLS": "\n## Common Pitfalls — READ THIS FIRST\n\n1. **Using the wrong workspace** — check `pwd` and `git branch --show-current` before you start.\n2. **Forgetting lifecycle commands** — `aigon agent-status implementing` before work; `implementation-complete` (or `research-complete`) after your final commit.\n3. **Using `git add .`** — always stage specific paths.\n4. **Running close/eval without being asked** — stay in the session and wait for the user.\n",
+    "PERMISSION_SAVE_NOTE": ""
+  },
+  "output": {
+    "format": "skill-md",
+    "commandDir": ".agents/skills",
+    "commandFilePrefix": "aigon-",
+    "commandFileExtension": "",
+    "skillFileName": "SKILL.md",
+    "frontmatter": [
+      "name",
+      "description"
+    ],
+    "global": false
+  },
+  "rootFile": null,
+  "supportsAgentsMd": true,
+  "agentFile": "antigravity.md",
+  "templatePath": "generic/docs/agent.md",
+  "extras": {
+    "plugin": {
+      "enabled": true,
+      "templateDir": "agents/ag-extras/plugin",
+      "stagingPath": ".aigon/antigravity-plugin"
+    }
+  },
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": {
+      "heartbeatTouch": "AfterAgent",
+      "exitEnforcement": null
+    }
+  },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [
+        1
+      ],
+      "stderrPatterns": [
+        "quota exceeded",
+        "Individual quota reached",
+        "rate limit",
+        "resource exhausted",
+        "token limit"
+      ]
+    }
+  },
+  "idleDetection": {
+    "idlePattern": "Type your message",
+    "workingPattern": "Thinking"
+  },
+  "commandExcludes": []
+}
