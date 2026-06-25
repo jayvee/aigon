@@ -82,16 +82,32 @@ Feature 576 routes engine persistence and dashboard sync reads through the local
 
 Identity helpers for `{ key, number, kind, slug }` land in feature 575. SpecStore keys address numbered specs; slug-keyed inbox entities remain workflow ids until prioritise assigns a number.
 
-## Git-ref backend (future)
+## Git-ref backend (feature 577)
 
-Not implemented in 573. Open question for the set:
+Experimental opt-in backend: set in `.aigon/config.json`:
 
-| Option | Path pattern | Trade-off |
-|--------|--------------|-----------|
-| **Key-addressed (recommended)** | `refs/aigon/specs/F42/meta`, `refs/aigon/specs/F42/events`, … | Aligns with `F42`/`R43` keys; stable across renames; matches dashboard mental model. |
-| **UUID-addressed** | `refs/aigon/specs/<uuid>/meta` | Indifferent to renumbering; requires a durable UUID index and more indirection for operators. |
+```json
+{
+  "storage": {
+    "backend": "git-ref",
+    "git": {
+      "remote": "origin",
+      "refPrefix": "refs/aigon/specs"
+    }
+  }
+}
+```
 
-**Recommendation:** prefer **key-addressed** refs (`refs/aigon/specs/<key>/…`) for the first Git-ref backend. Renumbering is rare and already a coordinated migration; key-addressed paths keep CLI, dashboard, and Git artefacts aligned. If cross-repo identity without renumbering becomes a hard requirement, add a secondary UUID index without making UUID the primary ref path.
+| Concern | Behaviour |
+|---------|-----------|
+| **Canonical store** | Append-only event payloads in Git refs at `<refPrefix>/<key>/events` (e.g. `refs/aigon/specs/F42/events`) |
+| **Local projection** | `.aigon/workflows/**` remains the read cache; `readEventsSync` / `readSnapshotSync` never hit the network |
+| **Sync** | `aigon storage sync` fetch+merge+push for `<refPrefix>/*`; `aigon storage status` reports health |
+| **Merge** | Union/dedupe by event `id`; merge commits keep push fast-forwardable |
+
+Module: `lib/spec-store/git-ref-backend.js` (+ `git-plumbing.js`, `event-merge.js`, `projection.js`, `storage-config.js`).
+
+Key-addressed refs (`refs/aigon/specs/<key>/events`) were chosen over UUID-addressed paths so CLI, dashboard, and Git artefacts stay aligned.
 
 ## Related features
 

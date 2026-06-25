@@ -2,15 +2,4 @@
 Agent: cu
 
 ## Status
-
-## New API Surface
-
-## Key Decisions
-
-## Gotchas / Known Issues
-
-## Explicitly Deferred
-
-## For the Next Feature in This Set
-
-## Test Coverage
+Shipped opt-in `git-ref` SpecStore backend with canonical events in `refs/aigon/specs/<key>/events`, local `.aigon/workflows` projection cache, merge-by-event-id push retry, and `aigon storage sync|status`.
