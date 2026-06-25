@@ -29,9 +29,9 @@ test('cx: no planFlag — argv only has the sandbox bypass flag', () => {
     assert.deepStrictEqual(cxTokens, ['--dangerously-bypass-approvals-and-sandbox'], 'cx plan tokens must only have the sandbox bypass flag');
 });
 
-test('gg: no planFlag', () => {
-    const ggCli = getAgentCliConfig('gg');
-    assert.ok(ggCli.planFlag === null || ggCli.planFlag === '' || ggCli.planFlag === undefined, 'gg planFlag must be null/empty');
+test('ag: no planFlag', () => {
+    const agCli = getAgentCliConfig('ag');
+    assert.ok(agCli.planFlag === null || agCli.planFlag === '' || agCli.planFlag === undefined, 'ag planFlag must be null/empty');
 });
 
 test('cu: planFlag is set and produces non-empty tokens', () => {

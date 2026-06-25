@@ -41,8 +41,6 @@ function buildCmd(agentConfig, modelValue) {
             return modelValue
                 ? ['opencode', ['run', '-m', modelValue, PROBE_PROMPT]]
                 : ['opencode', ['run', PROBE_PROMPT]];
-        case 'gg':
-            return ['gemini', ['-p', PROBE_PROMPT, ...modelArgs]];
         case 'ag':
             return ['agy', ['--dangerously-skip-permissions', '-i', PROBE_PROMPT, ...modelArgs]];
         case 'cx':
@@ -65,9 +63,21 @@ function listAllAgentIds() {
     return fs.readdirSync(AGENTS_DIR)
         .filter(f => f.endsWith('.json'))
         .map(f => {
-            try { return JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, f), 'utf8')).id; } catch { return null; }
+            try { return JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, f), 'utf8')); } catch { return null; }
         })
-        .filter(Boolean);
+        .filter(config => config && config.active !== false)
+        .map(config => config.id);
+}
+
+function isDeactivatedAgent(config) {
+    return Boolean(config && config.active === false);
+}
+
+function deactivatedMessage(agentId, config) {
+    const superseded = config?.deactivated?.supersededBy;
+    const supersededId = Array.isArray(superseded) ? superseded[0] : superseded;
+    const suffix = supersededId ? ` (superseded by \`${supersededId}\`)` : '';
+    return `agent \`${agentId}\` is deactivated${suffix}`;
 }
 
 function getModelOptions(agentConfig) {
@@ -247,7 +257,7 @@ function main(argv = process.argv.slice(2)) {
         ? listAllAgentIds()
         : targetAgentId
         ? [targetAgentId]
-        : ['cc', 'op', 'gg', 'cx']; // default: all probeable agents
+        : ['cc', 'op', 'ag', 'cx'];
 
     const rows = [];
     const colW = { agent: 4, model: 44 };
@@ -256,6 +266,10 @@ function main(argv = process.argv.slice(2)) {
         const config = loadAgent(agentId);
         if (!config) {
             console.error(`Unknown agent: ${agentId}`);
+            return 1;
+        }
+        if (isDeactivatedAgent(config)) {
+            console.error(deactivatedMessage(agentId, config));
             return 1;
         }
 

@@ -35,7 +35,7 @@ const TRUE_POSITIVE = [
 // Per-agent exclusions: strings the agent intentionally does NOT match.
 const AGENTS = [
     { id: 'cc', excludeFP: [],                                       excludeTP: [] },
-    { id: 'gg', excludeFP: ['"id": "anthropic-rate-limit"'],         excludeTP: ["You've hit your limit", "you've hit your limit"] },
+    { id: 'ag', excludeFP: ['"id": "anthropic-rate-limit"'],         excludeTP: ["You've hit your limit", "you've hit your limit"] },
     { id: 'cx', excludeFP: [],                                       excludeTP: TRUE_POSITIVE /* cx not tested for true-positives in original */ },
 ];
 

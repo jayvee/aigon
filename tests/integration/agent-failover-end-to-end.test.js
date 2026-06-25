@@ -72,7 +72,7 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
         const autoSessionName = buildTmuxSessionName(featureId, null, { repo: repoName, role: 'auto', entityType: 'f' });
         try {
             await wf.startFeature(repo, featureId, 'solo_worktree', ['cc'], {
-                agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
+                agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'ag'] },
             });
 
             writeAgentStatusAt(repo, featureId, 'cc', {
@@ -122,24 +122,24 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
     });
 
     // -----------------------------------------------------------------------
-    // Scenario 2: chain end — gg is last, no successor → no failover_switched
+    // Scenario 2: chain end — ag is last, no successor → no failover_switched
     // -----------------------------------------------------------------------
     await withTempDirAsync(async (repo) => {
         _resetExhaustionHandlers();
         const featureId = '2';
-        const sessionRef = { value: buildTmuxSessionName(featureId, 'gg', {
+        const sessionRef = { value: buildTmuxSessionName(featureId, 'ag', {
             repo: path.basename(repo), role: 'do', entityType: 'f',
         }) };
 
         try {
-            await wf.startFeature(repo, featureId, 'solo_worktree', ['gg'], {
-                agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
+            await wf.startFeature(repo, featureId, 'solo_worktree', ['ag'], {
+                agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'ag'] },
             });
 
-            writeAgentStatusAt(repo, featureId, 'gg', {
+            writeAgentStatusAt(repo, featureId, 'ag', {
                 status: 'needs_attention',
                 worktreePath: repo,
-                runtimeAgentId: 'gg',
+                runtimeAgentId: 'ag',
                 lastExitCode: 1,
                 lastPaneTail: 'quota exceeded: token limit',
             }, 'feature');
@@ -172,7 +172,7 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
 
         try {
             await wf.startFeature(repo, featureId, 'solo_worktree', ['cc'], {
-                agentFailover: { policy: 'notify', chain: ['cc', 'cx', 'gg'] },
+                agentFailover: { policy: 'notify', chain: ['cc', 'cx', 'ag'] },
             });
 
             writeAgentStatusAt(repo, featureId, 'cc', {
