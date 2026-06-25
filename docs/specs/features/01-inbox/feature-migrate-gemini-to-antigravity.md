@@ -39,13 +39,16 @@ Google shut down Gemini CLI for individual/free/Pro/Ultra users on 2026-06-18, r
 - [ ] As an Aigon maintainer, I no longer see `gg`/Gemini referenced anywhere in active code, docs, or tests — there is no dead config pointing at a CLI that no longer authenticates for our users.
 
 ## Acceptance Criteria
-- [ ] `templates/agents/gg.json` is deleted; `node -e "require('./lib/agent-registry').getAgent('gg')"` returns undefined/null (not a thrown crash from stale references elsewhere).
-- [ ] `.aigon/docs/agents/gemini.md` is deleted.
-<!-- review(2026-06-25): replaced the partial hand-maintained file list with a grep-clean
-     gate. The first draft named ~4 files; verification found gg/gemini hardcoded across
-     ~22. A static list will always miss sites — make the grep the source of truth. -->
-- [ ] `grep -rn "gemini\|'gg'\|\"gg\"" lib/ scripts/ templates/ docs/ AGENTS.md CONTRIBUTING.md` returns **no functional `gg`/Gemini agent-id references**. Every remaining hit is triaged into exactly one of: (a) removed, (b) replaced with the `ag`/Antigravity equivalent, or (c) a docstring/example mention updated for accuracy. No hit is left because it was simply unnoticed. (See Technical Approach for the load-bearing sites that are easy to miss.)
-- [ ] Gemini-specific parsing/runtime code is removed or repurposed for `ag` — not left as orphaned dead code referencing a deleted agent. Confirmed-existing sites: `parseGeminiTranscripts()` (`lib/telemetry.js:713`) + its dispatch (`telemetry.js:1594`) + pricing rows; the `gemini-chats` strategy (`lib/session-sidecar.js:36`); `presetGeminiTrust()` (`lib/worktree.js:1828`); the `capture-gemini-telemetry` hook command (`lib/commands/misc.js:1225`).
+<!-- review(2026-06-25): rewrote the gg acceptance criteria around the deactivated-agent
+     decision. gg.json is NOT deleted — it becomes a reduced, active:false config — so
+     getAgent('gg') must still resolve, while launch paths must reject it. -->
+- [ ] `templates/agents/gg.json` is reduced to a **deactivated** config (`"active": false` / `deactivated` audit block); `getAgent('gg')` still resolves (for records), but `getLaunchableAgentIds()` / `isAgentLaunchable('gg')` excludes it, and `aigon install-agent gg` and `feature-start … gg` both refuse with a clear "deactivated, superseded by `ag`" message.
+- [ ] `.aigon/docs/agents/gemini.md` is deleted (or trimmed to a one-line "retired — see antigravity.md" stub; either is fine — it's docs, not the records path).
+<!-- review(2026-06-25): grep gate scoped to LAUNCHABLE paths — gg legitimately remains in
+     the registry + telemetry parser, so a blanket "no gemini anywhere" gate would be wrong. -->
+- [ ] `grep -rn "gemini\|'gg'\|\"gg\"" lib/ scripts/ templates/ docs/ AGENTS.md CONTRIBUTING.md` is triaged so **no `gg`/Gemini reference survives in a *launchable/active* code path** (workflow rosters, install, Fleet & start-modal pickers, `agent-probe` defaults, `feature-start` validation, budget-poller). References that are legitimately retained — the deactivated `gg.json`, `parseGeminiTranscripts`/`gemini-chats` for historic records, and analytics/display of stored `gg` rows — are the *only* permitted survivors, and each is intentional rather than unnoticed. (See Technical Approach for the load-bearing launch sites that are easy to miss.)
+- [ ] Launch/roster/budget code no longer treats `gg` as active: `lib/workflow-definitions.js:47` drops `gg` from the implement roster, `lib/config.js:189` auto-detection no longer returns `gg` as a usable agent, `scripts/probe-agent.js`'s `case 'gg':` and default lists exclude it, and `lib/budget-poller.js`'s `SESSION_GG` polling is removed (see §1a — not ported to `ag`).
+- [ ] Historic Gemini telemetry stays readable: `parseGeminiTranscripts()` (`lib/telemetry.js:713`) + the `gemini-chats` strategy (`lib/session-sidecar.js:36`) are **retained** (read path for old `feature-*-gg-*` records), while `ag` gets its own parser/strategy. `presetGeminiTrust()` (`lib/worktree.js:1828`) and the `capture-gemini-telemetry` live-capture hook (`lib/commands/misc.js:1225`) — both launch-time only — are removed.
 - [ ] `templates/agents/ag.json` exists, fully populated per the `templates/feature-template-agent-onboard.md` checklist (see Technical Approach for Q1–Q5 answers), and `node -e "require('./lib/agent-registry').getAgent('ag')"` exits 0.
 - [ ] `.aigon/docs/agents/antigravity.md` exists, modeled on `.aigon/docs/agents/gemini.md`'s structure.
 - [ ] `aigon install-agent ag` completes without error in a scratch test repo and produces the expected output files (settings/policy/command files per whatever `output.format` is determined correct for `agy` — see Open Questions).
@@ -65,7 +68,22 @@ node -e "const r=require('./lib/agent-registry'); if (r.getAgent('gg')) { consol
 
 ## Technical Approach
 
-This is two linked workstreams: **decommission `gg`**, then **onboard `ag`** per `docs/adding-agents.md`. Do the decommission first so the onboarding test/doc edits land on a clean baseline rather than a diff against still-present Gemini content.
+This is two linked workstreams: **deactivate `gg`** (not hard-delete — see decision below), then **onboard `ag`** per `docs/adding-agents.md`. Do the deactivation first so the onboarding test/doc edits land on a clean baseline rather than a diff against still-present Gemini content.
+
+<!-- review(2026-06-25): design decision added per maintainer call — supersedes the earlier
+     "delete gg.json + tombstone-or-fallback open question". gg becomes a deactivated agent,
+     not a deletion. This mirrors the existing model-level `quarantined` state (agent-registry.js
+     :134) one level up, and keeps historic telemetry rendering for free. -->
+### Decision: introduce a first-class `deactivated` agent state (gg is its first user)
+
+Rather than deleting `templates/agents/gg.json` and teaching every render site to survive `getAgent('gg') === null`, introduce a **`deactivated` agent state** and apply it to `gg`. A deactivated agent **cannot be picked, installed, launched, probed, or appear in any workflow roster / Fleet picker**, but it **remains in the registry for records**: historic telemetry/analytics, session-transcript parsing of old records, and display metadata (name, colour) all keep resolving. This generalises cleanly — Google won't be the last provider to retire a CLI, and it mirrors the project's existing model-level `quarantined` instinct ("keep for audit, exclude from active use") promoted to the agent level.
+
+Mechanics:
+- **Config**: keep a *reduced* `templates/agents/gg.json` carrying a top-level `"active": false` (or `"deactivated": { since, reason, supersededBy: ["ag"] }` mirroring the `quarantined` block's audit shape). Retain the fields needed to *read the past*: `id`, `name`/`displayName`/`shortName`, `providerFamily`, `terminalColor`/`bannerColor`, and `runtime.telemetryStrategy`/`runtime.sessionStrategy`. The launch-only fields (`cli.*`, `authCheck`, `trust`, `installCommand`, `extras.settings.hooks`, `quota`) become inert — keep or strip them, but nothing may *use* them for launch.
+- **Registry**: `getAllAgentIds()` keeps returning every id (records path). Add `getLaunchableAgentIds()` (active-only) and an `isAgentLaunchable(id)` / `isAgentActive(id)` predicate. **Audit all ~22 `getAllAgentIds()` call sites** and route each to the correct one: telemetry/analytics/display/session-parse → all-known; install / Fleet & start-modal pickers / workflow rosters / `agent-probe` defaults / `feature-start` validation → launchable-only.
+- **Guard rails**: `aigon install-agent gg`, `feature-start … gg`, and any launch path must refuse with a clear "agent `gg` is deactivated (superseded by `ag`)" message rather than half-working.
+
+Because the transcript parser and session strategy are *retained*, the §1 "decommission" list below shrinks: the telemetry/session-sidecar code is **kept as-is for historic `gg`**, and `ag` gets its **own** parser/strategy (agy's format may differ). Only the launch/roster/install/budget surfaces are removed or filtered.
 
 ### 1. Decommission `gg`
 
@@ -82,23 +100,22 @@ This is two linked workstreams: **decommission `gg`**, then **onboard `ag`** per
 grep -rn "gemini\|'gg'\|\"gg\"\|GEMINI" lib/ scripts/ templates/ docs/ AGENTS.md CONTRIBUTING.md tests/
 ```
 
-Trivial deletes / doc rewrites:
-- `templates/agents/gg.json` — delete.
-- `.aigon/docs/agents/gemini.md` — delete.
+Config / doc changes:
+- `templates/agents/gg.json` — **reduce to a deactivated config, do not delete** (see the Decision above): set `"active": false` / `deactivated` block, keep records-path fields (`name`, colours, `runtime.*Strategy`), neutralise launch fields.
+- `.aigon/docs/agents/gemini.md` — delete or trim to a "retired → antigravity.md" stub.
 - `AGENTS.md` (roster sentence line ~3, telemetry/module-map rows ~129/145/161/167, per-agent output-file list ~242, SessionStart hook note ~250) — rewrite for `ag`/Antigravity. Line numbers indicative only; grep.
 - `docs/adding-agents.md` — `gg` is used as a *canonical example* throughout (decision tree, launch-type table, evaluated-candidates table). Needs real replacement text, not deletion.
 - `tests/integration/worktree-state-reconcile.test.js` (~165/183) — remove the `gg` assertion block (replaced by a new `ag` block in §2).
 
-Runtime/telemetry code (confirmed line numbers, 2026-06-25):
-- `lib/telemetry.js:713` `parseGeminiTranscripts()`, `:1594/:1603` the `gemini-transcript` dispatch, plus Gemini pricing rows. **See the "don't delete blindly" note below.**
-- `lib/session-sidecar.js:36` the `gemini-chats` session strategy.
-- `lib/worktree.js:1828` `presetGeminiTrust()` (a one-line `ensureAgentTrust('gg', …)` wrapper) and `:355` the `GEMINI_CLI_IDE_WORKSPACE_PATH` env-override comment. **NOTE:** worktree launch is genuinely config-driven — there are *no* `command === 'gemini'` branches to hunt for (the first draft cited 204/415/417 in error). The only real work here is deleting `presetGeminiTrust` and porting `worktreeEnv`.
-- `lib/commands/misc.js:1225` `capture-gemini-telemetry` command, `:1247–1249` hardcoded `agentId = 'gg'` / `if (agentId !== 'gg') return`, `:1317` `.gemini/settings.json` agent detection, `:1590` the `['cc','op','gg','cx']` default probe list.
+Runtime/telemetry code (confirmed line numbers, 2026-06-25) — note which are RETAINED vs removed under the deactivated-agent decision:
+- **RETAIN** `lib/telemetry.js:713` `parseGeminiTranscripts()` + `:1594/:1603` dispatch + Gemini pricing rows, and `lib/session-sidecar.js:36` the `gemini-chats` strategy — these are the read path for historic `gg` records and must keep working. `ag` gets its *own* parser/strategy alongside. (This is the "don't delete blindly" note, now resolved: don't delete at all.)
+- **REMOVE** `lib/worktree.js:1828` `presetGeminiTrust()` (one-line `ensureAgentTrust('gg', …)`, launch-time only) and `:355` the `GEMINI_CLI_IDE_WORKSPACE_PATH` env-override comment. **NOTE:** worktree launch is genuinely config-driven — there are *no* `command === 'gemini'` branches to hunt for (the first draft cited 204/415/417 in error). Real work here is just removing `presetGeminiTrust` and porting `worktreeEnv` to `ag`.
+- **REMOVE** `lib/commands/misc.js:1225` `capture-gemini-telemetry` *live-capture* hook + `:1247–1249` hardcoded `agentId = 'gg'`. **REPOINT** `:1317` `.gemini/settings.json` agent detection and `:1590` the `['cc','op','gg','cx']` default probe list to launchable agents (drop `gg`, add `ag`).
 - `lib/feature-close.js:456` `.gemini/settings.json` in `settingsFilesToReset` — replace with `ag`'s settings path once confirmed (Open Questions).
 - `lib/install-manifest.js:69/264` and `lib/template-drift.js:128/157` — `.gemini/commands/aigon/` → `'gg'` path detection; repoint to `ag`'s real output path.
 
 **Load-bearing sites the first draft missed entirely — these are functional, not cosmetic, and silently break if skipped:**
-- `lib/workflow-definitions.js:47` — `{ type: 'implement', agents: ['cc', 'cx','gg'] }`. A **default Fleet implement-stage roster**. Delete `gg.json` without fixing this and the workflow still offers a dead agent.
+- `lib/workflow-definitions.js:47` — `{ type: 'implement', agents: ['cc', 'cx','gg'] }`. A **default Fleet implement-stage roster**. Deactivate `gg` without fixing this and the workflow still offers a non-launchable agent.
 - `lib/config.js:189` — agent auto-detection returns a hardcoded `{ agentId: 'gg', agentName: 'Gemini CLI' }` on `GEMINI_CLI` env. Leaves a phantom agent; needs an `ag`/`ANTIGRAVITY*` equivalent.
 - `lib/budget-poller.js:21/556–607` — **see the dedicated budget-poller decision in §1a below.**
 - `scripts/probe-agent.js:44` (`case 'gg':`) and `:248` (default `['cc','op','gg','cx']`) — the quota-probe code path the `agent-probe --quota ag` AC depends on.
@@ -157,8 +174,9 @@ Steps 1 and 2 should land together (or step 2 immediately after step 1) rather t
 - What is the actual auth-status check command/output for `authCheck.method: "command"` (e.g. does `agy auth status` exist, and what does success output look like)?
 - Does `--model <id>` work as a literal flag, and what model IDs does `agy models` actually list (Gemini-family only, or does "optional support for Claude and open-source backends" mean cross-provider model selection inside one agent slot — which would be new territory for Aigon's per-agent `modelOptions` schema)?
 - Is there a meaningful trust/folder-approval file at all under Antigravity's keyring-based auth model, or does `trust` become a no-op (`"type": "none"`, matching `cu.json`'s `authCheck.method: "none"` pattern for a different field but a useful precedent for "this concept doesn't apply here")?
-<!-- review(2026-06-25): added — surfaced by the "will historic gg show up?" question. -->
-- **Historic `gg` telemetry rendering** (raised in review): historic `feature-*-gg-*.json` records persist and analytics still aggregates them by the stored id `'gg'`, but `getAgent('gg')` returns `null` once the config is deleted, so any registry-driven label/colour/`displayName` resolution blanks out (or throws, if unguarded). Decision needed: keep a **display-only tombstone** for `gg` in the registry (e.g. a `retired: true` entry: name "Gemini (retired)", colour preserved, but excluded from launch/install/probe/workflow-roster enumeration) so historic analytics render correctly — vs. teaching each render site to fall back to the raw id. Tombstone is the cleaner option and mirrors the project's "quarantine, don't delete" instinct, but `getAllAgentIds()` and every "active agents" enumerator must then filter `retired` agents out so `gg` can't be *launched*. Audit which call sites want all-historic ids (analytics, telemetry display) vs. only-launchable ids (workflow rosters, install, Fleet pickers, `agent-probe` defaults).
+<!-- review(2026-06-25): the historic-rendering question is now DECIDED via the deactivated-agent
+     state (see Technical Approach). What remains open is only the call-site audit's edge cases. -->
+- **Deactivated-agent enumeration audit** (decision resolved → execution detail): historic rendering is handled by keeping `gg` as a deactivated registry entry (not null). The remaining work is the audit of all ~22 `getAllAgentIds()` callers — splitting each into all-known (analytics, telemetry display, session-parse) vs launchable-only (rosters, install, Fleet/start-modal pickers, `agent-probe` defaults, `feature-start`). Open edge cases to settle during implementation: does the dashboard start-modal hide deactivated agents entirely or show them greyed/disabled? Does `agent-probe --quota gg` (explicitly targeted) still run for diagnostics, or refuse like the launch paths? Pick the least-surprising behaviour and note it in `.aigon/docs/agents/`.
 
 ## Related
 - Background: Google Developers Blog, "An important update: Transitioning Gemini CLI to Antigravity CLI" (announced 2026-05-19, Gemini CLI shutdown 2026-06-18); `google-antigravity/antigravity-cli` GitHub repo; Antigravity CLI docs at `antigravity.google/docs/cli-*`. Researched inline via web search on 2026-06-25 in response to the user's own `gemini auth login` failure ("This client is no longer supported for Gemini Code Assist for individuals").
