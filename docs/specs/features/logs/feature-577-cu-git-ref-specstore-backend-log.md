@@ -1,3 +1,17 @@
+---
+commit_count: 7
+lines_added: 1892
+lines_removed: 925
+lines_changed: 2817
+files_touched: 69
+fix_commit_count: 3
+fix_commit_ratio: 0.429
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 577 - git-ref-specstore-backend
 Agent: cu
 
