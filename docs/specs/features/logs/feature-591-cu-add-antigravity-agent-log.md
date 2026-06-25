@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 2589
+lines_removed: 705
+lines_changed: 3294
+files_touched: 40
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 591 - add-antigravity-agent
 Agent: cu
 
