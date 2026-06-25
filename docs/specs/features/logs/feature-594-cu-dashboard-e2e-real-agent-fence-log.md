@@ -14,3 +14,20 @@ F594: mock-only default E2E fence (`e2e-env.js` + `bootstrap.js`); opt-in live s
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: am
+**Date**: 2026-06-25
+
+### Fixes Applied
+- 0d847609c fix(review): check live agent auth outside fixture env
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Live smoke prerequisites now check the maintainer's real Claude auth environment instead of inheriting dashboard fixture/test env.
