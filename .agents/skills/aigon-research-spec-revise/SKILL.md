@@ -10,7 +10,7 @@ You are the author-side agent. Review all pending `spec-review:` commits on the 
 ## Resolve the spec
 
 ```bash
-SPEC_PATH=$(find docs/specs/research-topics -maxdepth 2 \( -name "research-{{args}}-*.md" -o -name "research-{{args}}.md" \) | head -1)
+SPEC_PATH=$(find docs/specs/research-topics -maxdepth 2 \( -name "research-$1-*.md" -o -name "research-$1.md" \) | head -1)
 test -n "$SPEC_PATH" && echo "$SPEC_PATH"
 ```
 
@@ -41,14 +41,14 @@ Process all pending reviewers together. Accept, revert, or modify the reviewed c
 
 ```bash
 git add "$SPEC_PATH"
-git commit --allow-empty -m "spec-revise: research {{args}} — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
+git commit --allow-empty -m "spec-revise: research $1 — <decision summary>" -m "reviewed: <comma-separated reviewer ids>
 
 Decision:
 - <accept|revert|modify summary>
 
 Notes:
 - <important rationale>"
-aigon research-spec-revise-record {{args}}
+aigon research-spec-revise-record $1
 ```
 
 ## Report

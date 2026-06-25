@@ -8,7 +8,7 @@ description: Close research <ID> - moves to done
 Run this command followed by the Research ID.
 
 ```bash
-aigon research-close {{args}}
+aigon research-close $ARGUMENTS
 ```
 
 ## Argument Resolution
@@ -28,4 +28,4 @@ This moves the research topic from `04-in-evaluation/` (or `03-in-progress/`) to
 
 **Skipping eval:** Closing from in-progress (without running eval) will show a warning but proceed. This is most relevant for single-agent research, just as feature close can skip comparative evaluation when there is nothing to compare.
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $ARGUMENTS

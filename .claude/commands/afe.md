@@ -22,13 +22,13 @@ This moves the spec to `04-in-evaluation/`, creates `./docs/specs/features/evalu
 
 ### Drive Mode (code review)
 1. Read the implementation log: `./docs/specs/features/logs/feature-{{args}}-*-log.md`
-2. `git diff main..feature-{{args}}-*`
+2. `git diff main...feature-{{args}}-*`
 3. Check spec compliance, code quality, testing, documentation, security.
 
 ### Fleet Mode (comparison)
 For each agent worktree at `../feature-{{args}}-<agent>-*`:
 - Read the implementation log from the worktree
-- Run `git diff main..HEAD` in each worktree
+- Run `git diff main...HEAD` in each worktree
 - Check spec compliance
 
 > **Bias guard:** `feature-eval` warns automatically on same-family eval. Pass `--allow-same-model-judge` to suppress if intentional.

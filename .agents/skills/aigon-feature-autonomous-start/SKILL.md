@@ -8,20 +8,20 @@ description: Start feature autonomous execution with explicit stop-after
 Start a feature in autonomous mode with explicit agent/evaluator choices and stop point control.
 
 ```bash
-aigon feature-autonomous-start {{args}} <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval|close]
+aigon feature-autonomous-start $ARGUMENTS <agents...> [--eval-agent=<agent>] [--stop-after=implement|eval|close]
 ```
 
 ## Usage
 
 ```bash
 # Solo: auto-close after implementation
-aigon feature-autonomous-start {{args}} cc
+aigon feature-autonomous-start $ARGUMENTS cc
 
 # Fleet: run through eval then stop for manual winner selection
-aigon feature-autonomous-start {{args}} cc gg --eval-agent=gg --stop-after=eval
+aigon feature-autonomous-start $ARGUMENTS cc gg --eval-agent=gg --stop-after=eval
 
 # Status
-aigon feature-autonomous-start status {{args}}
+aigon feature-autonomous-start status $ARGUMENTS
 ```
 
 ## Notes

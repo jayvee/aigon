@@ -34,7 +34,7 @@ WORKTREE=$(git worktree list | grep "feature-<name>" | awk '{print $1}')
 echo "=== WORKSPACE ==="
 echo "Current: $BRANCH  Feature: $FEATURE_BRANCH  Worktree: $WORKTREE"
 echo "=== DIFF ==="
-git diff "main..${FEATURE_BRANCH:-HEAD}"
+git diff "main...${FEATURE_BRANCH:-HEAD}"
 echo "=== IMPLEMENTATION LOG ==="
 cat docs/specs/features/logs/feature-<name>-*-log.md 2>/dev/null || echo "(no log found)"
 aigon agent-status reviewing
@@ -42,7 +42,7 @@ aigon agent-status reviewing
 
 The spec body was printed inline by the launching CLI — use that copy for acceptance criteria.
 
-If you are on the feature branch, review files directly. If you are on main, use `git diff main..$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree. Commit fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."` (review commits on main cause conflicts at `feature-close`).
+If you are on the feature branch, review files directly. If you are on main, use `git diff main...$FEATURE_BRANCH` / `git show $FEATURE_BRANCH:path` — do NOT `cd` into the worktree. Commit fixes with `git -C "$WORKTREE" add ... && git -C "$WORKTREE" commit -m "fix(review): ..."` (review commits on main cause conflicts at `feature-close`).
 
 ## Step 1.25: Research context (skip when none)
 
@@ -81,7 +81,8 @@ Before reviewing correctness, check for out-of-scope deletions. The scope snapsh
 
 ```bash
 # Check for deleted files and test file deletions in the diff
-git diff --name-status "main..${FEATURE_BRANCH:-HEAD}" | grep '^D'
+# Three-dot (merge-base) diff — two-dot would flag main's own independent drift as this branch's deletions
+git diff --name-status "main...${FEATURE_BRANCH:-HEAD}" | grep '^D'
 ```
 
 **Check for out-of-scope deletions first**, then proceed to correctness review. Flag any files deleted that:

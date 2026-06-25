@@ -8,7 +8,7 @@ description: Reset research <ID> - return to fresh backlog state
 Reset a research topic back to a fresh backlog state.
 
 ```bash
-aigon research-reset {{args}}
+aigon research-reset $1
 ```
 
 ## What this does
@@ -30,4 +30,4 @@ If no ID is provided, or the ID doesn't match an active research topic:
 2. If a partial ID or name was given, filter to matches
 3. Present the matching topics and ask the user to choose one
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $1

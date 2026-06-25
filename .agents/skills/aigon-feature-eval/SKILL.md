@@ -13,30 +13,30 @@ If no ID is provided or doesn't match an active feature, run `aigon feature-list
 ## Step 1: Run the CLI
 
 ```bash
-aigon feature-eval {{args}}
+aigon feature-eval $1
 # optional: --allow-same-model-judge    # suppress same-family bias warning
 ```
 
-This moves the spec to `04-in-evaluation/`, creates `./docs/specs/features/evaluations/feature-{{args}}-eval.md`, detects mode (Drive or Fleet), warns on same-family evaluator/implementer, and commits. The spec body is printed inline — use that copy; do not re-run `aigon feature-spec`.
+This moves the spec to `04-in-evaluation/`, creates `./docs/specs/features/evaluations/feature-$1-eval.md`, detects mode (Drive or Fleet), warns on same-family evaluator/implementer, and commits. The spec body is printed inline — use that copy; do not re-run `aigon feature-spec`.
 
 ## Step 2: Review the implementation(s)
 
 ### Drive Mode (code review)
-1. Read the implementation log: `./docs/specs/features/logs/feature-{{args}}-*-log.md`
-2. `git diff main..feature-{{args}}-*`
+1. Read the implementation log: `./docs/specs/features/logs/feature-$1-*-log.md`
+2. `git diff main...feature-$1-*`
 3. Check spec compliance, code quality, testing, documentation, security.
 
 ### Fleet Mode (comparison)
-For each agent worktree at `../feature-{{args}}-<agent>-*`:
+For each agent worktree at `../feature-$1-<agent>-*`:
 - Read the implementation log from the worktree
-- Run `git diff main..HEAD` in each worktree
+- Run `git diff main...HEAD` in each worktree
 - Check spec compliance
 
 > **Bias guard:** `feature-eval` warns automatically on same-family eval. Pass `--allow-same-model-judge` to suppress if intentional.
 
 ## Step 3: Write the evaluation
 
-Update `./docs/specs/features/evaluations/feature-{{args}}-eval.md`.
+Update `./docs/specs/features/evaluations/feature-$1-eval.md`.
 
 ### Drive Mode
 Complete the checklist (Spec Compliance, Code Quality, Testing, Documentation, Security) and add Strengths, Areas for Improvement, and an Approval decision (Approved / Needs Changes).
@@ -70,7 +70,7 @@ After the tables, include per-agent Strengths & Weaknesses (`####` headings) and
 ### Drive Mode
 Summarise your review, highlight concerns, state your recommendation, then **ask**: "Would you like to proceed with merging this implementation?" and **WAIT**.
 
-**Do NOT run `feature-close` automatically.** Once the user approves, tell them to run `aigon-feature-close {{args}}`.
+**Do NOT run `feature-close` automatically.** Once the user approves, tell them to run `aigon-feature-close $1`.
 
 ### Fleet Mode
 Summarise the comparison, show scores, state your recommendation, and update `**Winner:**` in the eval file with the winning agent code (e.g., `**Winner:** cc (Claude) — rationale`).
@@ -79,7 +79,7 @@ Summarise the comparison, show scores, state your recommendation, and update `**
 - "Before merging, consider adopting from `<agent>`: `<specific aspect>`" (be concrete), or
 - "The other implementations don't have particular features or aspects worth adopting beyond what the winner already provides."
 
-Then **ask**: "Which implementation would you like to merge?" and **WAIT**. Do NOT run `feature-close` automatically. Once chosen, tell them to run (from the main repo, not a worktree): `aigon-feature-close {{args}} <winning-agent>`.
+Then **ask**: "Which implementation would you like to merge?" and **WAIT**. Do NOT run `feature-close` automatically. Once chosen, tell them to run (from the main repo, not a worktree): `aigon-feature-close $1 <winning-agent>`.
 
 ## Prompt Suggestion
 

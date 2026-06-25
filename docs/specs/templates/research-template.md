@@ -2,6 +2,17 @@
 complexity: medium
 # agent: cc    # optional — id of the agent that owns this research spec;
 #              #   see feature-template.md for precedence rules.
+# origin: customer-feedback   # optional — set when input came from user/customer voice (vs agent discovery)
+# reporter:                   # optional — who reported it (when origin is customer-feedback)
+#   name: ""
+#   identifier: ""
+# source:                     # optional — where the input came from
+#   channel: ""
+#   reference: ""
+#   # url: "https://example.com/ticket/123"
+# feedback_refs:              # optional — stable refs to migrated legacy feedback (idempotency)
+#   - feedback:12
+#   - docs/specs/feedback/01-inbox/feedback-12-example.md
 ---
 
 # Research: {{NAME}}

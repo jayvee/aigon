@@ -58,7 +58,7 @@ This opens Warp with 3 panes:
 **Always run this command** — do NOT skip it or try to detect the terminal yourself. The CLI reads the user's terminal preference from `~/.aigon/config.json` and handles everything:
 
 ```bash
-aigon research-open {{args}}
+aigon research-open $ARGUMENTS
 ```
 
 ## Step 2: Confirm to user
@@ -68,4 +68,4 @@ Tell the user:
 - That each pane will have the research-do command pre-loaded
 - That they should run the command in each pane to start research
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $ARGUMENTS
