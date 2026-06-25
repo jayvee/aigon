@@ -205,6 +205,44 @@ test.describe('F492 autonomous stage track', () => {
         await expect(card.locator('.kcard-controller-meta')).toContainText('session exited');
     });
 
+    test('running controller surfaces live workflow state instead of unknown', async ({ page }) => {
+        const payload = buildStatusPayload({
+            featureId: '906',
+            name: 'mock-controller-running',
+            stage: 'in-progress',
+            headline: { tone: 'running', glyph: '▶', verb: 'Implementing', subject: null, owner: 'cu', age: 20, detail: null },
+            autonomousPlan: {
+                mode: 'solo_worktree',
+                workflowSlug: null,
+                error: null,
+                stages: [
+                    { key: 'implement-0', type: 'implement', label: 'Implement', status: 'running', agents: [{ id: 'cu', model: null, effort: null }] },
+                ],
+            },
+            autonomousController: {
+                status: 'running',
+                running: true,
+                reason: 'implementing',
+                reasonLabel: 'Implementing',
+                reasonCategory: 'running',
+                recommendedRecoveryKind: 'manual',
+                sessionName: 'mock-f906-auto-running',
+                sessionRunning: true,
+                workflowState: 'implementing',
+                updatedAt: new Date(Date.now() - 20 * 1000).toISOString(),
+            },
+            autonomousSession: { sessionName: 'mock-f906-auto-running', running: true, status: 'running' },
+            agents: [{ id: 'cu', status: 'implementing', tmuxRunning: true, runtimeAgentId: 'cu' }],
+        });
+        await mountWithStatus(page, payload);
+
+        const card = page.locator('.kcard[data-feature-id="906"]');
+        await expect(card.locator('.kcard-controller-title')).toHaveText('Autonomy running');
+        await expect(card.locator('.kcard-controller-reason')).toHaveText('Implementing');
+        await expect(card.locator('.kcard-controller-reason')).not.toHaveText('Unknown controller state');
+        await expect(card.locator('.kcard-controller-meta')).toContainText('session live');
+    });
+
     test('stopped-by-user controller reads as manual mode', async ({ page }) => {
         const payload = buildStatusPayload({
             featureId: '904',
