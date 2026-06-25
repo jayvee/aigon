@@ -62,15 +62,17 @@ Module: `lib/spec-store/`. Factory: `createSpecStore({ repoPath, backend?: 'loca
 |--------|------|------------------------------|
 | `listSpecs()` | Enumerate numbered specs visible under `docs/specs/` | `lib/workflow-core/paths.js` stage dirs |
 | `readSpec(key)` | Read spec markdown body | `paths.js` `getSpecPathForEntity` |
-| `readEvents(key)` | Read append-only event log | `lib/workflow-core/event-store.js` |
+| `readEvents(key)` | Read append-only event log | `event-store.js` via entity ref |
+| `readEventsSync(ref)` | Sync event read (dashboard hot paths) | `local-backend.js` |
 | `appendEvent(key, event)` | Append one event | `event-store.js` |
-| `readSnapshot(key)` | Read derived snapshot | `lib/workflow-core/snapshot-store.js` |
+| `readSnapshot(key)` | Read derived snapshot | `snapshot-store.js` |
+| `readSnapshotSync(ref)` | Sync snapshot read (dashboard hot paths) | `local-backend.js` |
 | `writeSnapshot(key, snapshot)` | Write derived snapshot | `snapshot-store.js` |
-| `lock(key, work)` | Exclusive critical section | `lib/workflow-core/lock.js` |
+| `lock(key, work, options?)` | Exclusive critical section (`try`, `retry: false`) | `lock.js` |
 | `sync()` | Backend sync hook (stub in 573) | Returns `{ ok: true, backend: 'local' }` |
 | `health()` | Backend health probe (stub in 573) | Returns `{ ok: true, backend: 'local' }` |
 
-Feature 573 does **not** migrate existing workflow-core callers onto SpecStore. The local backend is a documented façade; feature 576 routes engine persistence through it.
+Feature 576 routes engine persistence and dashboard sync reads through the local backend; non-engine callers use `lib/workflow-core/persistence-compat.js`.
 
 ## Spec keys
 
