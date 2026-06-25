@@ -12,16 +12,16 @@
       // via GET /api/repos/all-features and cached here. `null` for a repo means
       // its fetch failed — fall back to that repo's poll-path `features`.
       allFeaturesByRepo: {},
-      allFeaturesLoaded: false,
       allFeaturesLoading: false,
     };
 
-    // F590: lazy-load the full lean feature list for every repo, then re-render.
+    // F590: lazy-load the full lean feature list per repo on demand, then re-render.
     async function loadAllFeatures(repos) {
-      if (allItemsState.allFeaturesLoading || allItemsState.allFeaturesLoaded) return;
+      const pending = (repos || []).filter(repo => repo && repo.path && !(repo.path in allItemsState.allFeaturesByRepo));
+      if (allItemsState.allFeaturesLoading || pending.length === 0) return;
       allItemsState.allFeaturesLoading = true;
       try {
-        await Promise.all((repos || []).map(async repo => {
+        await Promise.all(pending.map(async repo => {
           try {
             const res = await fetch('/api/repos/all-features?repoPath=' + encodeURIComponent(repo.path), { cache: 'no-store' });
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -31,7 +31,6 @@
             allItemsState.allFeaturesByRepo[repo.path] = null; // fall back to poll-path features
           }
         }));
-        allItemsState.allFeaturesLoaded = true;
       } finally {
         allItemsState.allFeaturesLoading = false;
         if (state.view === 'all-items') renderAllItemsView();
@@ -267,7 +266,7 @@
       // While it loads (and on fetch failure) we render the poll-path `features`,
       // so the view is never blocked — it just fills in the historical done rows
       // once the fetch resolves.
-      if (!allItemsState.allFeaturesLoaded) loadAllFeatures(data.repos);
+      loadAllFeatures(data.repos);
 
       // Collect all items across features, research, and feedback.
       const allRows = [];
