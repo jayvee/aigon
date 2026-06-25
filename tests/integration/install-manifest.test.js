@@ -5,7 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync, execSync, spawnSync } = require('child_process');
-const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV } = require('../_helpers');
+const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV, initGitRepo } = require('../_helpers');
 const { runPendingMigrations } = require('../../lib/migration');
 const installManifestLib = require('../../lib/install-manifest');
 const { getAigonVersion } = require('../../lib/version');
@@ -26,12 +26,6 @@ function runRemove(repo, extraArgs = []) {
         env: { ...process.env, ...GIT_SAFE_ENV, HOME: repo, USERPROFILE: repo, AIGON_NONINTERACTIVE: '1' },
         stdio: 'pipe',
     }).toString();
-}
-
-function initGitRepo(repo) {
-    execSync('git init -b main', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    execSync('git config user.email test@aigon.test', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    execSync('git config user.name "Aigon Test"', { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
 }
 
 function runDoctor(repo, home, extraArgs = []) {
@@ -151,7 +145,7 @@ testAsync('F589 install-manifest git exclude, migration untrack, and sweep gate'
     // 1. Fresh install excludes manifest from git status
     const installRepo = path.join(home, 'install');
     fs.mkdirSync(path.join(installRepo, 'docs', 'specs'), { recursive: true });
-    initGitRepo(installRepo);
+    initGitRepo(installRepo, { seedCommit: false, branch: 'main' });
     runInstallAgent(installRepo);
     const status = execSync('git status --porcelain -- .aigon/install-manifest.json', {
         cwd: installRepo,
@@ -164,7 +158,7 @@ testAsync('F589 install-manifest git exclude, migration untrack, and sweep gate'
     // 2. Migration untracks a previously committed manifest
     const migRepo = path.join(home, 'mig');
     fs.mkdirSync(path.join(migRepo, 'docs', 'specs'), { recursive: true });
-    initGitRepo(migRepo);
+    initGitRepo(migRepo, { seedCommit: false, branch: 'main' });
     fs.mkdirSync(path.join(migRepo, '.aigon'), { recursive: true });
     installManifestLib.writeManifest(migRepo, installManifestLib.createEmptyManifest('test'));
     execSync('git add -f .aigon/install-manifest.json', { cwd: migRepo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
@@ -183,8 +177,8 @@ testAsync('F589 install-manifest git exclude, migration untrack, and sweep gate'
     const staleRepo = path.join(home, 'stale');
     fs.mkdirSync(path.join(primary, 'docs', 'specs'), { recursive: true });
     fs.mkdirSync(path.join(staleRepo, 'docs', 'specs'), { recursive: true });
-    initGitRepo(primary);
-    initGitRepo(staleRepo);
+    initGitRepo(primary, { seedCommit: false, branch: 'main' });
+    initGitRepo(staleRepo, { seedCommit: false, branch: 'main' });
     const currentVersion = getAigonVersion() || '9.9.9';
     fs.mkdirSync(path.join(primary, '.aigon'), { recursive: true });
     fs.mkdirSync(path.join(staleRepo, '.aigon'), { recursive: true });

@@ -18,7 +18,11 @@
  */
 
 const { execFileSync, execSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
+const installManifestLib = require('../lib/install-manifest');
+const { getAvailableAgents } = require('../lib/templates');
+const { getAigonVersion } = require('../lib/version');
 
 if (process.env.AIGON_SKIP_PREPUBLISH_INSTALL_CHECK === '1') {
     console.log('[prepublish] Skipping install-manifest check (AIGON_SKIP_PREPUBLISH_INSTALL_CHECK=1)');
@@ -27,6 +31,7 @@ if (process.env.AIGON_SKIP_PREPUBLISH_INSTALL_CHECK === '1') {
 
 const repoRoot = path.resolve(__dirname, '..');
 const cli = path.join(repoRoot, 'aigon-cli.js');
+const manifestPath = path.join(repoRoot, installManifestLib.MANIFEST_PATH);
 
 const INSTALL_TREE_PATHS = [
     '.claude/',
@@ -60,6 +65,40 @@ function gitCachedDiffNames() {
     }
 }
 
+function manifestSemanticSnapshot(manifest, { includeTemplateMetadata = true } = {}) {
+    if (!manifest) return null;
+    const snapshot = {
+        version: manifest.version,
+        aigonVersion: manifest.aigonVersion,
+        agents: Array.isArray(manifest.agents) ? [...manifest.agents].sort() : manifest.agents,
+        files: [...(manifest.files || [])].sort((a, b) => String(a.path).localeCompare(String(b.path))).map(f => ({
+            path: f.path,
+            sha256: f.sha256,
+            ...(includeTemplateMetadata ? {
+                templateSha: f.templateSha,
+                templatePath: f.templatePath,
+            } : {}),
+        })),
+    };
+    if (manifest.agentInstalls) {
+        snapshot.agentInstalls = Object.fromEntries(
+            Object.entries(manifest.agentInstalls)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([agentId, entry]) => [agentId, { version: entry.version }])
+        );
+    }
+    return JSON.stringify(snapshot);
+}
+
+function readManifestSemanticSnapshot(filePath) {
+    if (!fs.existsSync(filePath)) return null;
+    try {
+        return manifestSemanticSnapshot(JSON.parse(fs.readFileSync(filePath, 'utf8')));
+    } catch (e) {
+        return `__INVALID__: ${e.message}`;
+    }
+}
+
 const before = new Set([...gitDiffNames(), ...gitCachedDiffNames()]);
 
 try {
@@ -81,6 +120,34 @@ if (newDirty.length > 0) {
     newDirty.forEach(p => console.error(`   - ${p}`));
     console.error('\n   Run: aigon install-agent --all && git add ' + newDirty.join(' '));
     console.error('   Then commit before publishing.');
+    process.exit(1);
+}
+
+const currentVersion = getAigonVersion() || 'unknown';
+const expectedManifestObject = installManifestLib.synthesizeManifestFromDisk(repoRoot, currentVersion);
+expectedManifestObject.agents = getAvailableAgents();
+expectedManifestObject.agentInstalls = Object.fromEntries(
+    expectedManifestObject.agents.map(agentId => [agentId, { version: currentVersion }])
+);
+const actualManifest = readManifestSemanticSnapshot(manifestPath);
+
+if (actualManifest === null || actualManifest.startsWith('__INVALID__:')) {
+    console.error('\n[prepublish] ❌ install-manifest.json is out of sync with the freshly installed trees.');
+    if (actualManifest === null) {
+        console.error(`   Missing manifest: ${path.relative(repoRoot, manifestPath)}`);
+    } else {
+        console.error(`   Invalid manifest JSON: ${actualManifest.slice('__INVALID__: '.length)}`);
+    }
+    console.error('   Re-run: aigon install-agent --all');
+    process.exit(1);
+}
+
+const expectedManifest = manifestSemanticSnapshot(expectedManifestObject, { includeTemplateMetadata: false });
+const actualCoreManifest = manifestSemanticSnapshot(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), { includeTemplateMetadata: false });
+
+if (actualCoreManifest !== expectedManifest) {
+    console.error('\n[prepublish] ❌ install-manifest.json is out of sync with the freshly installed trees.');
+    console.error('   Re-run: aigon install-agent --all');
     process.exit(1);
 }
 
