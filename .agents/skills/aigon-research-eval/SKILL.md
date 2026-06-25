@@ -28,7 +28,7 @@ claude --model sonnet
 IMPORTANT: You MUST run this command first. It transitions the engine state to evaluating and moves the spec to the evaluation folder.
 
 ```bash
-aigon research-eval $1
+aigon research-eval {{args}}
 ```
 
 ## Step 2: Read All Findings
@@ -168,7 +168,7 @@ After creating each feature, edit the spec to add:
 ```yaml
 ---
 complexity: medium
-research: $1
+research: {{args}}
 ---
 ```
 
@@ -240,7 +240,7 @@ After updating the document, commit your changes:
 
 ```bash
 git add docs/specs/research-topics/ docs/specs/features/01-inbox/
-git commit -m "docs: research evaluation for $1"
+git commit -m "docs: research evaluation for {{args}}"
 ```
 
 Then tell the user:
@@ -258,6 +258,6 @@ Do **not** run `aigon agent-status research-complete` — that signal is for the
 - Wait for user confirmation before updating files or creating features
 - Use the exact table format so output is clean and actionable
 - Created features must include a research origin backlink
-- Every created feature spec MUST have `research: $1` in its frontmatter — this is what powers the dashboard FEATURES sub-tab
+- Every created feature spec MUST have `research: {{args}}` in its frontmatter — this is what powers the dashboard FEATURES sub-tab
 
-ARGUMENTS: $ARGUMENTS
+ARGUMENTS: {{args}}
