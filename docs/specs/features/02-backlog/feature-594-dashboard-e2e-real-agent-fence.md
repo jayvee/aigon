@@ -14,6 +14,8 @@ complexity: high
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-25T12:51:57.621Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-e2e-real-agent-fence
