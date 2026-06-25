@@ -36,6 +36,16 @@ function loadGitRefStore(repo) {
   return createSpecStore({ repoPath: repo, storage });
 }
 
+function writeProjectionEvents(repo, entityType, entityId, events) {
+  const dirName = entityType === 'research' ? 'research' : 'features';
+  const eventsDir = path.join(repo, '.aigon', 'workflows', dirName, String(entityId));
+  fs.mkdirSync(eventsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(eventsDir, 'events.jsonl'),
+    events.map((event) => JSON.stringify(event)).join('\n') + '\n',
+  );
+}
+
 test('git-ref events ref uses key-addressed naming', () => {
   // REGRESSION: canonical refs must live under refPrefix/<key>/events (feature 577 AC).
   const { createGitRefBackend } = require('../../lib/spec-store/git-ref-backend');
@@ -107,6 +117,39 @@ testAsync('push rejection merges by event id and retries', async () => {
 
     const mergedOnA = storeA._readCanonicalEvents('F99').map((e) => e.id).sort();
     assert.deepStrictEqual(mergedOnA, ['evt-a', 'evt-b']);
+  });
+});
+
+testAsync('sync imports existing numeric local projection events before pushing', async () => {
+  // REGRESSION: enabling git-ref after local workflow history exists must seed refs.
+  await withTempDirAsync('gitref-import-local-', async (base) => {
+    const { repo } = initRepoWithBareRemote(base);
+    const store = loadGitRefStore(repo);
+    writeProjectionEvents(repo, 'feature', '12', [
+      { id: 'evt-existing', type: 'feature.bootstrapped', at: '2026-06-25T04:00:00.000Z', featureId: '12', lifecycle: 'backlog' },
+    ]);
+    const result = await store.sync();
+    assert.strictEqual(result.ok, true);
+    assert.deepStrictEqual(store._readCanonicalEvents('F12').map((event) => event.id), ['evt-existing']);
+  });
+});
+
+testAsync('git-ref remote may be configured as a URL path', async () => {
+  // REGRESSION: remote tracking refs must not embed slash-containing remote URLs.
+  await withTempDirAsync('gitref-url-remote-', async (base) => {
+    const { repo, bare } = initRepoWithBareRemote(base);
+    const configPath = path.join(repo, '.aigon', 'config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    config.storage.git.remote = bare;
+    fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+    const store = loadGitRefStore(repo);
+    await store.appendEvent(
+      { entityType: 'feature', entityId: '13' },
+      { id: 'evt-url', type: 'feature.bootstrapped', at: '2026-06-25T05:00:00.000Z', featureId: '13', lifecycle: 'backlog' },
+    );
+    const result = await store.sync();
+    assert.strictEqual(result.ok, true);
+    assert.ok(store._trackingPrefix.startsWith('refs/remotes/url-'));
   });
 });
 
