@@ -17,7 +17,7 @@ If no name is provided, or the name doesn't match an existing feature in the inb
 ## Step 1: Run the CLI command
 
 ```bash
-aigon feature-prioritise $ARGUMENTS
+aigon feature-prioritise {{args}}
 ```
 
 This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`.

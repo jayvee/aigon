@@ -7,7 +7,7 @@ description: Do feature <ID> - works in both Drive and Fleet modes
 
 > **RUN THIS FIRST — no preamble, no --help, no file searches:**
 > ```bash
-> aigon feature-do $1
+> aigon feature-do {{args}}
 > ```
 > This prints the feature spec inline. Read the output, then follow the steps below.
 > Do NOT search for spec files, do NOT run `aigon --help`, do NOT hunt for the `aigon` source. Just run the command above.
@@ -22,10 +22,10 @@ If no ID is provided or it doesn't match an active feature, run `aigon feature-l
 ## Step 1: Attach to the workspace
 
 ```bash
-aigon feature-do $1
+aigon feature-do {{args}}
 ```
 
-Only run `aigon-feature-start $1` if the feature branch/worktree does not exist yet.
+Only run `aigon-feature-start {{args}}` if the feature branch/worktree does not exist yet.
 
 To run in **Autopilot mode** — iterate loop where a fresh agent session is spawned each iteration until validation passes:
 
