@@ -43,6 +43,8 @@ function buildCmd(agentConfig, modelValue) {
                 : ['opencode', ['run', PROBE_PROMPT]];
         case 'gg':
             return ['gemini', ['-p', PROBE_PROMPT, ...modelArgs]];
+        case 'ag':
+            return ['agy', ['--dangerously-skip-permissions', '-i', PROBE_PROMPT, ...modelArgs]];
         case 'cx':
             // codex uses -m not --model for exec
             return modelValue

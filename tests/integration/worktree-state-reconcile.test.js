@@ -170,6 +170,21 @@ test('headless research spec-review launches inline instructions instead of recu
     assert.ok(cmd.includes('$(< ') && cmd.includes('gemini'), 'expected inline prompt file + gemini launch');
     assert.ok(!cmd.includes('Then run `aigon research-spec-review 01` in the shell and follow its output.'));
 });
+test('Antigravity launches with --prompt-interactive and inline prompt file', () => withLiveAgentMode(() => {
+    // REGRESSION: agy -p/--print is one-shot; interactive launches use
+    // --prompt-interactive with $(< file) expansion (File-prompt type).
+    const cmd = buildRawAgentCommand({
+        agent: 'ag',
+        featureId: '07',
+        path: '/tmp/aigon-ag-linger-test-wt',
+        repoPath: process.cwd(),
+    }, 'do');
+    assert.ok(/\bagy\b/.test(cmd), cmd);
+    assert.ok(cmd.includes('--prompt-interactive') || /\s-i\s/.test(cmd), `expected --prompt-interactive: ${cmd}`);
+    assert.ok(cmd.includes('$(< '), `expected inline prompt file: ${cmd}`);
+    assert.ok(cmd.includes('--dangerously-skip-permissions'), cmd);
+    assert.ok(cmd.includes('--model'), cmd);
+}));
 test('Fleet research inline prompt files are agent-disambiguated (no shared path)', () => {
     // REGRESSION: Before this fix every Fleet research agent (cc/cu/gg) wrote its
     // rendered prompt to `<tmp>/aigon-inline-prompts/<repo>/research-<id>-research-do.md`
