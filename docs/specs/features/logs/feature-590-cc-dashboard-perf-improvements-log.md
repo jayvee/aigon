@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 667
+lines_removed: 179
+lines_changed: 846
+files_touched: 14
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 45438
+output_tokens: 130562
+cache_creation_input_tokens: 433711
+cache_read_input_tokens: 21474762
+thinking_tokens: 0
+total_tokens: 22084473
+billable_tokens: 176000
+cost_usd: 16.9393
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 590 - dashboard-perf-improvements
 Agent: cc
 
