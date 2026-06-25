@@ -947,6 +947,13 @@
       return '<div class="kcard-spec-author" title="Original spec author">' + escHtml(text) + '</div>';
     }
 
+    function buildFeatureSetScheduledGlyphHtml(feature, repoMeta) {
+      if (!feature || !feature.set || !repoMeta || !Array.isArray(repoMeta.sets)) return '';
+      const setRollup = repoMeta.sets.find(set => set && set.slug === feature.set && set.scheduledRunAt);
+      if (!setRollup) return '';
+      return buildScheduledGlyphHtml(setRollup, 'Set scheduled');
+    }
+
     function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
       const card = document.createElement('div');
       card.className = 'kcard';
@@ -998,7 +1005,7 @@
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildScheduledGlyphHtml(feature) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
         blockedByHtml +
@@ -1582,8 +1589,20 @@
             title.className = 'kanban-set-title';
             const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
             title.textContent = titlePrefix + setSlug;
-            if (roll && roll.scheduledRunAt) {
-              title.insertAdjacentHTML('beforeend', buildScheduledGlyphHtml(roll));
+            const setScheduledGlyphHtml = roll && roll.scheduledRunAt ? buildScheduledGlyphHtml(roll, 'Set scheduled') : '';
+            row.appendChild(title);
+            if (setScheduledGlyphHtml) {
+              const scheduleWrap = document.createElement('span');
+              scheduleWrap.innerHTML = setScheduledGlyphHtml;
+              const scheduleGlyph = scheduleWrap.firstElementChild;
+              if (scheduleGlyph) {
+                const scheduleTitle = scheduleGlyph.getAttribute('title') || '';
+                if (scheduleTitle) {
+                  row.title = scheduleTitle;
+                  row.setAttribute('aria-label', setSlug + ' · ' + scheduleTitle);
+                }
+                row.appendChild(scheduleGlyph);
+              }
             }
             if (isPausedOnFailure) {
               const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
@@ -1593,10 +1612,7 @@
               badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
               badge.textContent = 'PAUSED';
               badge.title = `Set paused on failure — ${failLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
-              row.appendChild(title);
               row.appendChild(badge);
-            } else {
-              row.appendChild(title);
             }
             const countEl = document.createElement('span');
             countEl.className = 'kanban-set-count';
