@@ -1,5 +1,7 @@
 ---
-complexity: high
+complexity: very-high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-06-25T08:40:01.723Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: agent-availability-state-model
@@ -26,15 +28,15 @@ Add a first-class agent availability model so Aigon can distinguish between agen
   - `getUsableAgents(repoPath, options)`
   - `assertAgentUsable(agentId, repoPath, options)`
   - `formatAgentAvailabilityReason(...)`
-- [ ] The resolver combines registry policy and user/project config using a documented precedence order:
-  - Registry policy from `templates/agents/<id>.json` for maintainer-owned states such as `active`, `deprecated`, and `retired`.
-  - Global user config for personal preference such as "subscription paused" or "hide this agent".
-  - Project config for repo-local overrides when supported.
-  - Runtime quota cache for temporary `quota_depleted` annotations only, not persistent preference.
+- [ ] The resolver combines registry policy and user/project config using this default precedence order (highest authority first); any deviation must be documented in the resolver module:
+  - Registry `retired` is absolute — no user/project config can re-enable a retired agent for new work.
+  - Registry `deprecated` outranks user `active` for *default/recommended* selection, but a user may still explicitly select a deprecated agent (warning shown) unless the registry marks the deprecation hard-blocking.
+  - Global user `disabled` outranks project `active` by default — turning off billing globally must not be silently bypassed by a repo config. A project may only re-enable a globally-disabled agent when the user has explicitly opted into project overrides for that agent.
+  - Runtime quota cache contributes `quota_depleted` annotations only, never persistent preference, and never overrides an explicit user `disabled`.
 - [ ] The canonical state vocabulary is implemented and documented:
   - `active`: usable and shown in normal choices.
   - `disabled`: user/project intentionally turned it off; valid integration, hidden from normal choices, can be enabled.
-  - `unconfigured`: supported but missing required CLI/auth/config; not offered for launch by default.
+  - `unconfigured`: supported but missing required CLI/auth/config; not offered for launch by default. v1 derives this by reusing the detection that `doctor` / `getAgentBinMap` already performs (missing CLI binary or install hint), not by building new auth-probing. Storing an explicit `unconfigured` preference in config is out of scope for v1.
   - `quota_depleted`: temporary runtime/cache state; may block a specific model pair but must not rewrite user preference.
   - `deprecated`: maintainer warning state; not preferred for default/recommended choices, optionally visible with warning.
   - `retired`: maintainer state; not usable for new launches, still readable for historical state.
@@ -123,6 +125,15 @@ node -c aigon-cli.js
 node -c lib/agent-registry.js
 node -c lib/config.js
 npm test
+
+# Kimi round-trip (the headline acceptance check). Run against a scratch HOME so the
+# real global registry/config is never mutated — see "Isolate HOME for manual CLI tests".
+export HOME=$(mktemp -d)
+aigon agent disable km --reason=subscription-paused
+aigon agent availability            # km shown under disabled, not in normal choices
+aigon feature-start 9999 km         # MUST reject with the re-enable hint, non-zero exit
+aigon agent enable km
+aigon agent availability            # km back under active; templates/agents/km.json unchanged
 ```
 
 ## Technical Approach
@@ -200,10 +211,10 @@ Suggested settings copy:
 
 ## Open Questions
 
-- Should user-global disabled always override project-level active, or should a project be allowed to re-enable an agent locally?
+- Confirm the default: user-global disabled overrides project-level active unless the user explicitly opts into a per-agent project override (see Acceptance Criteria precedence). Is the explicit opt-in mechanism worth building now, or should project re-enable of a globally-disabled agent simply be disallowed in v1?
 - Should `aigon install-agent --all` include disabled agents by default, or should it skip them unless `--include-disabled` is passed?
 - Should deprecated agents be hidden by default, or visible with a warning until they are retired?
-- Should `unconfigured` be inferred from doctor/auth checks only, stored in config, or both?
+- (Defaulted for v1: `unconfigured` is inferred from existing doctor/CLI detection, not stored in config.) Is there a case that forces a stored `unconfigured` preference into v1 scope?
 - Should disabled agents be excluded from quota polling always, or should the dashboard budget/quota page still probe them when visible in "all agents" mode?
 - What exact dashboard control should be used: a toggle per agent, a state select, or both?
 - Should the old `agents.<id>.disabled` key be migrated on write to `agents.<id>.availability.state`, or kept indefinitely as a supported alias?

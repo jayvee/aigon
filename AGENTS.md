@@ -128,7 +128,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/config.js` | ~1240 | Global/project config, agent CLI config |
 | `lib/telemetry.js` | ~1735 | Normalized session telemetry (cc JSONL, gg `~/.gemini/tmp/`, cx `~/.codex/sessions/`); cross-agent pricing |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state, XState machine, action derivation, effect lifecycle |
-| `lib/spec-store/` | ~400 | **Durable spec storage boundary (F573/F577).** `createSpecStore({ repoPath })` selects `local` (default) or opt-in `git-ref` via `.aigon/config.json` `storage.*`. Git-ref stores canonical events in `refs/aigon/specs/<key>/events`; `.aigon/workflows` is the local projection cache. CLI: `aigon storage sync|status`. Design: `docs/specstore-architecture.md` |
+| `lib/spec-store/` | ~150 | **Durable spec storage boundary (F573).** `createSpecStore({ repoPath })` exposes spec-shaped I/O (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`). Local backend thin-wraps workflow-core path/event/snapshot/lock helpers; Git-ref backend lands in F577. Design: `docs/specstore-architecture.md` |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: workflow-core snapshots → dashboard/board formats |
 | `lib/profile-placeholders.js` | ~500 | Profile presets, detection, instruction directive resolvers, `getProfilePlaceholders()`. **Does not inject package-manager commands** — per-worktree setup is operator-declared via `.aigon/config.json` `worktreeSetup` and executed by `lib/worktree.js` after `git worktree add` |
 | `lib/feature-close.js` | ~740 | Feature-close phases: target resolution, merge, telemetry, engine close, cleanup |
