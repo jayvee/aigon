@@ -12,7 +12,7 @@ Run a triage loop for one feedback item with explicit human confirmation before 
 Run:
 
 ```bash
-aigon feedback-triage $1
+aigon feedback-triage {{args}}
 ```
 
 Then gather broader context:
@@ -43,7 +43,7 @@ Do not apply triage changes until the user explicitly says yes.
 After confirmation, run:
 
 ```bash
-aigon feedback-triage $1 --type <type> --severity <severity> --tags <tag1,tag2> --status <status> [--duplicate-of <ID>] --apply --yes
+aigon feedback-triage {{args}} --type <type> --severity <severity> --tags <tag1,tag2> --status <status> [--duplicate-of <ID>] --apply --yes
 ```
 
 Notes:

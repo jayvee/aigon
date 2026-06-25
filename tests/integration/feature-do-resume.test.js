@@ -68,12 +68,13 @@ test('readLatestSidecarWithSession: agent filter — gg sidecar not returned for
     }
 });
 
-test('resolveResumeArgs: cc and gg use --resume flag (appendArgs)', () => {
+test('resolveResumeArgs: cc and ag use append resume flags', () => {
     const cc = resolveResumeArgs('cc', 'test-uuid');
     assert.deepStrictEqual(cc.appendArgs, ['--resume', 'test-uuid']);
     assert.strictEqual(cc.isSubcommand, false);
-    const gg = resolveResumeArgs('gg', 'gg-id');
-    assert.deepStrictEqual(gg.appendArgs, ['--resume', 'gg-id']);
+    const ag = resolveResumeArgs('ag', 'ag-id');
+    assert.deepStrictEqual(ag.appendArgs, ['--continue', 'ag-id']);
+    assert.strictEqual(resolveResumeArgs('gg', 'gg-id'), null, 'deactivated gg has no resume config');
 });
 
 test('resolveResumeArgs: cx uses resume subcommand (prependArgs)', () => {

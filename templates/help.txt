@@ -136,16 +136,16 @@ Scheduled kickoffs (server poller; requires aigon server):
 
 Examples:
   aigon apply                          # Initialize repo (first run) or refresh templates
-  aigon install-agent cc gg            # Install Claude and Gemini configs
+  aigon install-agent cc ag            # Install Claude Code and Antigravity configs
 
   # Feature workflow
   aigon feature-create "dark-mode"     # Create new feature spec
   aigon feature-now dark-mode          # Fast-track: inbox match or create new + implement
   aigon feature-prioritise dark-mode   # Assign ID, move to backlog
   aigon feature-start 55               # Drive mode (creates branch)
-  aigon feature-start 55 cc gg cx cu         # Fleet mode (creates worktrees)
+  aigon feature-start 55 cc ag cx cu         # Fleet mode (creates worktrees)
   aigon feature-autonomous-start 42 cc            # Solo autonomous flow (implement -> close)
-  aigon feature-autonomous-start 42 cc gg --eval-agent=gg --stop-after=eval
+  aigon feature-autonomous-start 42 cc ag --eval-agent=ag --stop-after=eval
                                                    # Fleet autonomous flow (implement -> eval)
   aigon feature-autonomous-start status 42         # Check conductor status
   aigon feature-autonomous-stop 42                 # Stop AutoConductor; keep workflow state
@@ -192,11 +192,11 @@ Examples:
   aigon research-create "api-design"   # Create new research topic
   aigon research-prioritise api-design # Assign ID, move to backlog
   aigon research-start 05              # Drive mode (one agent)
-  aigon research-start 05 cc gg        # Fleet mode (multiple agents)
+  aigon research-start 05 cc ag        # Fleet mode (multiple agents)
   aigon research-open 05               # Open all Fleet agents side-by-side
   aigon research-do 05                 # Agent conducts research
   aigon agent-status research-complete 05 cc   # Signal cc's findings are complete
-  aigon research-autopilot 08 cc gg cx cu    # Fleet autopilot: spawn + monitor + evaluate
+  aigon research-autopilot 08 cc ag cx cu    # Fleet autopilot: spawn + monitor + evaluate
   aigon research-eval 05               # Evaluate findings (after Fleet)
   aigon research-close 05              # Complete research (in-evaluation → done)
 

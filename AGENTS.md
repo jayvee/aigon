@@ -1,6 +1,6 @@
 # Aigon — Codebase Orientation
 
-> Aigon is a spec-driven multi-agent harness — feature lifecycle, git-worktree isolation, and slash-command orchestration of Claude Code, Gemini CLI, and Codex CLI.
+> Aigon is a spec-driven multi-agent harness — feature lifecycle, git-worktree isolation, and slash-command orchestration of Claude Code, Antigravity CLI, Codex CLI, and Cursor.
 
 ## Quick Facts
 - **Entry point**: `aigon-cli.js` — dispatch only, no business logic
@@ -126,7 +126,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/worktree.js` | ~2300 | Worktree creation, shell-trap signal wrapper, terminal dispatch (`terminal-adapters.js`). **Tmux compatibility facade (F554):** session naming re-exports `lib/agent-sessions/names.js`; `createDetachedTmuxSession` is a thin wrapper over `TmuxSessionHost.startSession` (capture wiring stays here via `attachSessionCapture`); `buildAgentCommand` launch composition still lives here |
 | `lib/validation.js` | ~1045 | Iterate (Autopilot) loop, acceptance-criteria parsing |
 | `lib/config.js` | ~1240 | Global/project config, agent CLI config |
-| `lib/telemetry.js` | ~1735 | Normalized session telemetry (cc JSONL, gg `~/.gemini/tmp/`, cx `~/.codex/sessions/`); cross-agent pricing |
+| `lib/telemetry.js` | ~1735 | Normalized session telemetry (cc JSONL, historic gg `~/.gemini/tmp/`, ag antigravity transcripts, cx `~/.codex/sessions/`); cross-agent pricing |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state, XState machine, action derivation, effect lifecycle |
 | `lib/spec-store/` | ~150 | **Durable spec storage boundary (F573).** `createSpecStore({ repoPath })` exposes spec-shaped I/O (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`). Local backend thin-wraps workflow-core path/event/snapshot/lock helpers; Git-ref backend lands in F577. Design: `docs/specstore-architecture.md` |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: workflow-core snapshots → dashboard/board formats |
@@ -142,7 +142,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/state-queries.js` | ~250 | Read-only UI helpers: feedback action/transition derivation (pure, no I/O) |
 | `lib/agent-status.js` | ~130 | Per-agent status files (`.aigon/state/{prefix}-{id}-{agent}.json`), atomic writes, signal-health observation |
 | `lib/signal-health.js` | ~280 | Signal reliability telemetry: append-only JSONL under `.aigon/telemetry/signal-health/`, summaries for CLI/API/doctor, missed-signal de-duplication, and retention GC |
-| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/gg/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op/km) inline the canonical template body directly. Membership is derived from `capabilities.resolvesSlashCommands` in `templates/agents/<id>.json` — never hardcode |
+| `lib/agent-prompt-resolver.js` | ~140 | Resolves launch prompt for agent + verb. Slash-invocable agents (cc/cu) pass through `cliConfig.<verb>Prompt`; non-invocable agents (cx/op/km/ag) inline the canonical template body directly. Membership is derived from `capabilities.resolvesSlashCommands` in `templates/agents/<id>.json` — never hardcode |
 | `lib/agent-launch.js` | ~130 | `resolveLaunchTriplet` + `buildAgentLaunchInvocation`. **Every** spawn path must route through this helper so per-feature `{model, effort}` overrides captured on `feature.started` survive every respawn |
 | `lib/agent-sessions/` | ~1100 | AgentSession domain model, sidecar-compatible store, event helpers, and injectable service contract for long-lived interactive agent runtime records. Normalizes `.aigon/sessions/{sessionName}.json`; models agent-less `auto` + set (`'S'`) sessions (F554). Domain files import no worktree/workflow-core/dashboard/command modules. **`names.js`** owns session naming/parsing (`parseTmuxSessionName`, `buildTmuxSessionName`, `VALID_TMUX_ROLES`); **`console.js`** holds console-snapshot DTOs; **`hosts/tmux.js`** is the `TmuxSessionHost` (the only module doing tmux mechanics — may lazy-borrow low-level exec from worktree, never imports workflow-core/dashboard/commands); **`hosts/index.js`** is the host registry. The service is the only module that knows both store and host |
 | `lib/agent-failover.js` | ~140 | Token-exhaustion detection helpers, failover chain selection, handoff prompt builder, `clearTokenExhaustedFlag` (shared by supervisor + dashboard switch) |
@@ -164,7 +164,7 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/git.js` | ~700 | Branch, worktree, status, commit helpers, attribution |
 | `lib/security.js` | ~131 | Merge gate scanning (gitleaks + semgrep) |
 | `lib/workflow-heartbeat.js` | ~160 | Display-only liveness computation (alive/stale/dead); never changes engine state |
-| `lib/budget-poller.js` | ~450 | F322 agent budget awareness: polls `claude`/`codex`/`gemini` (tmux → `/model` Model usage tiers) every 30min, caches to `.aigon/budget-cache.json`. Dashboard reads via `GET /api/budget`, refreshes via `POST /api/budget/refresh`. Silent no-op if tmux or the agent binary is missing |
+| `lib/budget-poller.js` | ~450 | F322 agent budget awareness: polls `claude`/`codex`/`kimi` (tmux) every 30min, caches to `.aigon/budget-cache.json`. Dashboard reads via `GET /api/budget`, refreshes via `POST /api/budget/refresh`. Silent no-op if tmux or the agent binary is missing. Historic `gg` cache rows may still display; live Gemini polling was removed when `gg` was deactivated (F592). |
 | `lib/quota-probe.js` / `lib/quota-poller.js` | ~340/~95 | F444 agent quota availability: wraps `scripts/probe-agent.js`, classifies CLI stdout/stderr with `templates/agents/<id>.json:quota` regex packs, caches per-(agent, model) verdicts in `.aigon/state/quota.json`, gates `feature-start`, and lets the dashboard/server refresh quota state without mutating workflow-core snapshots |
 | `lib/supervisor.js` | ~430 | Server monitoring: liveness, idle/awaiting-input notifications, and token-exhaustion detection (F308) that may append workflow events, pause a feature, or auto-switch a slot per `agentFailover` policy |
 | `lib/supervisor-service.js` | ~175 | Server auto-restart (launchd/systemd) for `aigon server start --persistent` |
@@ -239,7 +239,8 @@ Recent incidents — every one of these is a case of a read path paving over a m
 
 **Per-agent outputs:**
 - **cc**: `.claude/commands/aigon/*.md`, `.claude/settings.json` (permissions + hooks), `.claude/skills/aigon/SKILL.md`
-- **gg**: `.gemini/commands/aigon/*.toml`, `.gemini/settings.json` (hooks), `~/.gemini/policies/aigon.toml`
+- **ag**: `.agents/skills/aigon-*/SKILL.md` (project-local), Antigravity trust under `~/.gemini/antigravity-cli/`
+- **gg** (deactivated — records only): retained in `templates/agents/gg.json` for historic telemetry display; not installable or launchable
 - **cx**: `.agents/skills/aigon-*/SKILL.md` (project-local), `.codex/config.toml`. Codex also needs exact-path trust entries in `~/.codex/config.toml` for each worktree; trusting only `~/.aigon/worktrees/<repo>` is not enough for child worktrees to inherit the repo `.codex/config.toml`.
 - **cu**: `.cursor/commands/aigon-*.md`, `.cursor/cli.json`, `.cursor/hooks.json`, `.cursor/rules/aigon.mdc`
 - **op**: `.agents/skills/aigon-*/SKILL.md` (project-local). OpenCode is a router/harness; Aigon does not own its config or hardcode a default model — model/provider selection stays in the user's OpenCode config. Aigon-spawned sessions use `opencode run "<inline prompt body>"` via the shared non-slash launch path (see `lib/agent-prompt-resolver.js`).
@@ -247,7 +248,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 **Shared:** `.aigon/docs/agents/{agent}.md` (marker blocks), `.aigon/docs/development_workflow.md` (full overwrite), and any other `templates/docs/*.md` files vendored to `.aigon/docs/` (F421). The consumer's own `docs/` folder is never touched. `AGENTS.md` is **not** managed by aigon (F420). Existing aigon marker blocks are stripped on `aigon doctor --fix`; legacy `docs/development_workflow.md` and `docs/agents/` are migrated to `.aigon/docs/` on `aigon doctor --fix`.
 
 **Context delivery** (no root file injection):
-- CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
+- CC: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - CX: `.codex/prompt.md` with marker blocks; aigon-spawned Codex sessions inline template bodies directly
 

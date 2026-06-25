@@ -157,18 +157,17 @@ test('agent wrapper resets stale tmux-server test environment before plumbing ca
         }
     }
 }));
-test('headless research spec-review launches inline instructions instead of recursive shell guidance', () => {
-    // REGRESSION: Gemini spec-review sessions were told to run `aigon research-spec-review`
-    // from inside the session, so they edited the spec and made a generic commit
-    // without recording workflow state. Prompt body lives in a temp file referenced via $(< …).
-    const cmd = buildRawAgentCommand({
-        agent: 'gg',
-        featureId: '01',
-        entityType: 'research',
-        repoPath: process.cwd(),
-    }, 'spec-review');
-    assert.ok(cmd.includes('$(< ') && cmd.includes('gemini'), 'expected inline prompt file + gemini launch');
-    assert.ok(!cmd.includes('Then run `aigon research-spec-review 01` in the shell and follow its output.'));
+test('deactivated gg cannot launch via buildRawAgentCommand', () => {
+    // REGRESSION: retired Gemini CLI must not be spawnable even when tests bypass MOCK_AGENT_BIN.
+    assert.throws(
+        () => buildRawAgentCommand({
+            agent: 'gg',
+            featureId: '01',
+            entityType: 'research',
+            repoPath: process.cwd(),
+        }, 'spec-review'),
+        /deactivated.*superseded by `ag`/i,
+    );
 });
 test('Antigravity launches with --prompt-interactive and inline prompt file', () => withLiveAgentMode(() => {
     // REGRESSION: agy -p/--print is one-shot; interactive launches use
@@ -186,31 +185,27 @@ test('Antigravity launches with --prompt-interactive and inline prompt file', ()
     assert.ok(cmd.includes('--model'), cmd);
 }));
 test('Fleet research inline prompt files are agent-disambiguated (no shared path)', () => {
-    // REGRESSION: Before this fix every Fleet research agent (cc/cu/gg) wrote its
+    // REGRESSION: Before this fix every Fleet research agent (cc/cu/ag) wrote its
     // rendered prompt to `<tmp>/aigon-inline-prompts/<repo>/research-<id>-research-do.md`
     // — a single path shared across all slots. The bash `$(< file)` substitution
     // runs asynchronously inside each tmux session, so whichever JS write happened
-    // last won, and every agent read the last-writer's prompt. Symptom on 2026-05-12:
-    // gg believed it was cu, wrote to cu-findings.md, signalled research-complete
-    // for cu. Introduced by bfd5047b (2026-04-29) when cc/cu/gg joined the inline
-    // prompt path. Fix: include agent id in the filename.
+    // last won, and every agent read the last-writer's prompt.
     const wt = require('../../lib/worktree');
-    const cmdGg = wt.buildRawAgentCommand({ agent: 'gg', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
+    const cmdAg = wt.buildRawAgentCommand({ agent: 'ag', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const cmdCu = wt.buildRawAgentCommand({ agent: 'cu', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const cmdCc = wt.buildRawAgentCommand({ agent: 'cc', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const fileFromCmd = (c) => (c.match(/\$\(<\s+'?([^'\s)]+)/) || [])[1];
-    const fGg = fileFromCmd(cmdGg);
+    const fAg = fileFromCmd(cmdAg);
     const fCu = fileFromCmd(cmdCu);
     const fCc = fileFromCmd(cmdCc);
-    assert.ok(fGg && fCu && fCc, `expected inline prompt files for all three agents (gg=${fGg} cu=${fCu} cc=${fCc})`);
-    assert.notStrictEqual(fGg, fCu, 'gg and cu must not share an inline prompt path');
-    assert.notStrictEqual(fGg, fCc, 'gg and cc must not share an inline prompt path');
+    assert.ok(fAg && fCu && fCc, `expected inline prompt files for all three agents (ag=${fAg} cu=${fCu} cc=${fCc})`);
+    assert.notStrictEqual(fAg, fCu, 'ag and cu must not share an inline prompt path');
+    assert.notStrictEqual(fAg, fCc, 'ag and cc must not share an inline prompt path');
     assert.notStrictEqual(fCu, fCc, 'cu and cc must not share an inline prompt path');
-    assert.ok(fGg.includes('-gg-'), `gg path should include agent id: ${fGg}`);
+    assert.ok(fAg.includes('-ag-'), `ag path should include agent id: ${fAg}`);
     assert.ok(fCu.includes('-cu-'), `cu path should include agent id: ${fCu}`);
     assert.ok(fCc.includes('-cc-'), `cc path should include agent id: ${fCc}`);
-    // The rendered body for each agent must reference its own findings file, not a sibling's.
-    assert.ok(fs.readFileSync(fGg, 'utf8').includes('-gg-findings.md'), 'gg prompt must reference gg findings file');
+    assert.ok(fs.readFileSync(fAg, 'utf8').includes('-ag-findings.md'), 'ag prompt must reference ag findings file');
     assert.ok(fs.readFileSync(fCu, 'utf8').includes('-cu-findings.md'), 'cu prompt must reference cu findings file');
     assert.ok(fs.readFileSync(fCc, 'utf8').includes('-cc-findings.md'), 'cc prompt must reference cc findings file');
 });

@@ -11,28 +11,40 @@ const { buildAgentPortMap } = require('../../lib/profile-placeholders');
 const AGENTS_DIR = path.join(__dirname, '..', '..', 'templates', 'agents');
 const PROFILES_PATH = path.join(__dirname, '..', '..', 'templates', 'profiles.json');
 const expectedIds = fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, '')).sort((a, b) => a.localeCompare(b));
+const launchableIds = expectedIds.filter(id => agentRegistry.isAgentLaunchable(id));
 const sortIds = ids => ids.slice().sort((a, b) => a.localeCompare(b));
 const assertExactAgentSet = (actualIds, message) => assert.deepStrictEqual(sortIds(actualIds), expectedIds, message);
+const assertExactLaunchableSet = (actualIds, message) => assert.deepStrictEqual(sortIds(actualIds), launchableIds, message);
 
-test('registry file set matches runtime registry ids', () => assertExactAgentSet(agentRegistry.getSortedAgentIds(), 'runtime registry drifted from templates/agents/*.json'));
-test('template helpers expose exactly the registry agent set', () => {
-    assertExactAgentSet(agentRegistry.getSortedAgentIds(), 'registry sorted ids drifted');
+test('deactivated gg resolves but is not launchable', () => {
+    // REGRESSION: retiring gg must keep registry metadata for historic telemetry.
+    assert.ok(agentRegistry.getAgent('gg'), 'gg should remain in registry');
+    assert.strictEqual(agentRegistry.isAgentLaunchable('gg'), false);
+    assert.ok(!agentRegistry.getLaunchableAgentIds().includes('gg'));
+});
+
+test('registry launchable set excludes deactivated agents', () => assertExactLaunchableSet(agentRegistry.getSortedAgentIds(), 'runtime launchable registry drifted'));
+test('template helpers expose launchable vs all-known agent sets', () => {
+    assertExactAgentSet(templates.getAllKnownAgents(), 'templates.getAllKnownAgents drifted');
+    const available = templates.getAvailableAgents();
+    assert.ok(!available.includes('gg'), 'deactivated gg must not appear in picker agents');
+    for (const id of available) assert.ok(agentRegistry.isAgentLaunchable(id), `${id} must be launchable`);
     assertExactAgentSet(Object.keys(agentRegistry.getDisplayNames()), 'display names drifted');
     assertExactAgentSet(Object.keys(agentRegistry.getShortNames()).filter(id => id !== 'solo'), 'short names drifted');
 });
-test('downstream registry projections expose exactly the registry agent set', () => {
+test('downstream registry projections split all-known vs launchable', () => {
     assertExactAgentSet(Object.keys(agentRegistry.getPortOffsets()), 'port offsets drifted');
-    assertExactAgentSet(Object.keys(agentRegistry.buildDefaultAgentConfigs()), 'default config projection drifted');
-    assertExactAgentSet(Object.keys(agentRegistry.getAgentInstallHints()), 'install hints drifted');
-    assertExactAgentSet(Object.keys(agentRegistry.getAgentBinMap()), 'CLI map drifted');
+    assertExactLaunchableSet(Object.keys(agentRegistry.buildDefaultAgentConfigs()), 'default config projection drifted');
+    assertExactLaunchableSet(Object.keys(agentRegistry.getAgentInstallHints()), 'install hints drifted');
+    assertExactLaunchableSet(Object.keys(agentRegistry.getAgentBinMap()), 'CLI map drifted');
     assertExactAgentSet(Object.keys(agentRegistry.getLegacyAgentConfigs()), 'legacy config projection drifted');
-    assertExactAgentSet(agentRegistry.getDashboardAgents().map(agent => agent.id), 'dashboard payload drifted');
+    assertExactLaunchableSet(agentRegistry.getDashboardAgents().map(agent => agent.id), 'dashboard payload drifted');
 });
-test('help template renders exactly the registry agents', () => {
+test('help template renders launchable agents only', () => {
     const rendered = templates.processTemplate(fs.readFileSync(path.join(__dirname, '..', '..', 'templates', 'help.txt'), 'utf8'));
-    assertExactAgentSet(rendered.split('\n').map(line => line.match(/^\s{2}([a-z0-9]+) \(/i)).filter(Boolean).map(match => match[1]), 'help output drifted');
+    assertExactLaunchableSet(rendered.split('\n').map(line => line.match(/^\s{2}([a-z0-9]+) \(/i)).filter(Boolean).map(match => match[1]), 'help output drifted');
 });
-test('dashboard bootstrap payload renders exactly the registry agents', () => {
+test('dashboard bootstrap payload renders launchable agents only', () => {
     // REGRESSION: JSON may contain `;` inside string values (e.g. model label text) — do not split on the first `;`.
     const html = dashboardServer.buildDashboardHtml({ repos: [] }, 'test');
     const prefix = 'window.__AIGON_AGENTS__ = ';
@@ -68,7 +80,7 @@ test('dashboard bootstrap payload renders exactly the registry agents', () => {
         }
     }
     const jsonStr = html.slice(start + prefix.length, i);
-    assertExactAgentSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
+    assertExactLaunchableSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
 });
 test('every modelOptions entry satisfies the inclusion-policy contract (docs/model-inclusion-policy.md)', () => {
     // Keystone enforcement for the prose policy: each templates/agents/*.json
@@ -76,7 +88,7 @@ test('every modelOptions entry satisfies the inclusion-policy contract (docs/mod
     // pricing/notes shape) and clear the §1 modality / §5 alias hard-exclusions.
     // Whoever adds a model — maintainer by hand or curated tooling — trips here.
     const allErrors = [];
-    for (const id of expectedIds) {
+    for (const id of launchableIds) {
         const { errors } = agentRegistry.validateModelOptions(agentRegistry.getAgent(id));
         allErrors.push(...errors);
     }
