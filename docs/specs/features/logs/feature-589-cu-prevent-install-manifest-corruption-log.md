@@ -14,3 +14,21 @@ F589: manifest local-git-exclude + migration 2.69.0 untrack; doctor sweep gated 
 ## For the Next Feature in This Set
 
 ## Test Coverage
+✅ Status updated: reviewing (feature-589-cx)
+
+## Code Review
+
+**Reviewed by**: codex
+**Date**: 2026-06-25
+
+### Fixes Applied
+- f9da4ac70 `fix(review): harden install manifest untracking`
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Tightened the install-manifest prepublish guard so it checks the freshly generated manifest semantics against the installed tree, including opencode paths, without relying on a tracked blob.
