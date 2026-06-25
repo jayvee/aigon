@@ -90,8 +90,48 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `devProxy.healthCheck` | Project | Path to verify server is up | Default: `/` |
 | `devProxy.basePort` | Project | Starting port for allocation | Default: `3000` |
 | `worktreeSetup` | Project | Shell command run once per worktree after `git worktree add` | String (single line; use `&&` for composition) |
+| `agents.{id}.availability` | Global / Project | Structured agent availability preference | See [Agent availability](#agent-availability) |
 
-## Iterate validation override
+## Agent availability
+
+Turn supported agents on or off without editing templates. Disabled agents stay known to Aigon for historical snapshots, telemetry, and sessions — they are just hidden from normal start/review/eval pickers.
+
+```bash
+# Pause an agent you are not subscribed to (global scope is the default)
+aigon agent disable km --reason=subscription-paused --note="Reduced Kimi subscription to $0"
+
+# List grouped availability
+aigon agent availability
+aigon agent availability --all
+
+# Re-enable later
+aigon agent enable km
+```
+
+Structured config shape (written automatically by the CLI):
+
+```json
+{
+  "agents": {
+    "km": {
+      "availability": {
+        "state": "disabled",
+        "reason": "subscription-paused",
+        "hidden": true,
+        "note": "Reduced Kimi subscription to $0",
+        "updatedAt": "2026-06-25T00:00:00.000Z"
+      }
+    }
+  }
+}
+```
+
+Legacy `agents.<id>.disabled: true` remains supported and resolves as `disabled`.
+
+**Precedence:** registry `retired` is absolute. Maintainer `deprecated` agents are discouraged for defaults but may still be chosen explicitly (with a warning). Global user `disabled` outranks project config in v1. Temporary quota depletion is separate from user preference.
+
+`aigon install-agent --all` still installs all known non-retired agents — installation is not usage.
+
 
 If the profile-aware default is too broad for your repo, set an explicit iterate gate in `.aigon/config.json`:
 

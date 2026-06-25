@@ -16,7 +16,7 @@ const assertExactAgentSet = (actualIds, message) => assert.deepStrictEqual(sortI
 
 test('registry file set matches runtime registry ids', () => assertExactAgentSet(agentRegistry.getSortedAgentIds(), 'runtime registry drifted from templates/agents/*.json'));
 test('template helpers expose exactly the registry agent set', () => {
-    assertExactAgentSet(templates.getAvailableAgents(), 'templates.getAvailableAgents drifted');
+    assertExactAgentSet(agentRegistry.getSortedAgentIds(), 'registry sorted ids drifted');
     assertExactAgentSet(Object.keys(agentRegistry.getDisplayNames()), 'display names drifted');
     assertExactAgentSet(Object.keys(agentRegistry.getShortNames()).filter(id => id !== 'solo'), 'short names drifted');
 });

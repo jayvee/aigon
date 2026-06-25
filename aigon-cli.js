@@ -38,6 +38,7 @@ let createFeatureCommands, createResearchCommands, createFeedbackCommands;
 let createSetupCommands, createInfraCommands, createMiscCommands, createWorkflowCommands, createSetCommands;
 let createRecurringCommands, createScheduleCommands;
 let createAgentLaunchCommands;
+let createAgentCommands;
 let createSignalHealthCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
@@ -56,6 +57,7 @@ try {
     ({ createRecurringCommands } = require('./lib/commands/recurring'));
     ({ createScheduleCommands } = require('./lib/commands/schedule'));
     ({ createAgentLaunchCommands } = require('./lib/commands/agent-launch'));
+    ({ createAgentCommands } = require('./lib/commands/agent'));
     ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
     ({ createProCommands } = require('./lib/commands/pro'));
@@ -86,6 +88,7 @@ const commands = {
     ...createRecurringCommands(),
     ...createScheduleCommands(),
     ...createAgentLaunchCommands(),
+    ...createAgentCommands(),
     ...createSignalHealthCommands(),
     ...createSecurityScanCommands(),
     ...createProCommands(),

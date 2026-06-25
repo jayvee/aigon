@@ -115,6 +115,7 @@
       const items = [];
       agents.forEach(agent => {
         if (!agent || !agent.id) return;
+        if (agent.pickerEligible === false) return;
         const id = String(agent.id);
         const label = agent.displayName || agent.shortName || id;
         const inputId = 'create-agent-' + id;
