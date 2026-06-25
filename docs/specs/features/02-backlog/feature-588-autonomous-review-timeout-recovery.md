@@ -42,17 +42,17 @@ npm test
 
 ## Technical Approach
 - Add explicit feature autonomous resume plumbing.
-  - Add command routing for `feature-autonomous-resume <ID>`.
-  - Reuse persisted `.aigon/state/feature-<id>-auto.json` inputs when CLI args are omitted.
+  - Add command routing for `feature-autonomous-resume <ID>` alongside the existing `feature-autonomous-start` dispatch in `lib/feature-autonomous.js` (the same module that owns the `__run-loop`/`status` subcommands), wired through the top-level CLI shim.
+  - Reuse persisted `.aigon/state/feature-<id>-auto.json` inputs when CLI args are omitted. (Confirm the exact persisted filename/shape against the current `finishAuto`/state-writer before implementing; the resume path must read whatever `feature-autonomous-start` writes.)
   - Keep `feature-autonomous-start` as the normal fresh-start entry point; resume is the recovery path.
 - Add phase hydration helpers in `lib/feature-autonomous.js`.
   - Read the workflow snapshot at controller startup and before each phase decision.
   - Derive `reviewTriggered`, `reviewStarted`, `feedbackInjected`, `feedbackAddressed`, `closeTriggered`, and disposition requirements from snapshot state, persisted feature-auto state, existing review sessions, and review metadata.
   - Keep the launch path compatible with fresh backlog/in-progress starts, but make failed/stopped controller resumes continue from the engine's current lifecycle.
 - Change review waiting semantics.
-  - Replace the fixed "120 polls means failed" behavior for live review sessions with live-session-aware waiting.
-  - After 6 hours, persist/display a stale waiting diagnostic while continuing to wait if the review session is still alive.
-  - Keep hard failure for cases where the review session exits without a workflow signal, cannot be started, or records explicit quota/failure state.
+  - Today review waiting hard-fails at `MAX_REVIEW_CLOSE_POLLS = 120` (60 min at 30s polls), emitting `finishAuto('failed', { reason: 'review-timeout' })` even while the review tmux session is alive. Replace this fixed-poll failure for live review sessions with live-session-aware waiting (keyed off `reviewSessionRunning`).
+  - After 6 hours of continuous waiting, persist/display a stale waiting diagnostic while continuing to wait so long as the review session is still alive.
+  - Keep hard failure for cases where the review session exits without a workflow signal (the existing `review-exited-without-signal` path), cannot be started, or records explicit quota/failure state.
 - Reconcile autonomous controller DTOs in `lib/workflow-read-model.js` and `lib/feature-review-recovery-dashboard-actions.js`.
   - Compare feature-auto timestamps/reasons against workflow progress timestamps such as `codeReview.reviewCompletedAt`.
   - Downgrade stale failure recommendations so "rerun review" is not primary after review already completed.
@@ -63,8 +63,8 @@ npm test
   - When a member is detected done or successfully completes, remove it from `failed[]`.
   - Before propagating a failed feature-auto result, re-check the authoritative workflow snapshot and newer timestamps so stale feature-auto failure does not pause the set again.
 - Fix set dashboard rendering in `templates/dashboard/js/pipeline.js`.
-  - Render relevant `validActions` from `buildSetValidActions()`, including `set-autonomous-resume`, `set-autonomous-reset`, and `set-autonomous-stop`.
-  - Keep destructive confirmations routed through existing `templates/dashboard/js/actions/set-autonomous.js`.
+  - The set header currently looks up only `feature-set-spec-review`, `feature-set-spec-revise`, `set-autonomous-start`, and `set-autonomous-schedule` from `roll.validActions`; resume/reset are never appended, so `paused-on-failure` sets have no recovery button. Render the recovery actions `buildSetValidActions()` returns for the set's status via the existing `appendSetHeaderAction` helper — `set-autonomous-resume` and `set-autonomous-reset` for `paused-on-failure`, `set-autonomous-stop` for `running` — rather than a hardcoded per-action list.
+  - Keep destructive confirmations (reset) routed through existing `templates/dashboard/js/actions/set-autonomous.js` and the `confirmationMessage` metadata already on the action.
 - Add focused tests.
   - Unit/integration coverage for phase hydration and stale failure reconciliation.
   - Read-model coverage for F576-shaped feature recovery actions.
@@ -91,7 +91,7 @@ npm test
 - Reworking set scheduling or Pro-only scheduler behavior.
 
 ## Open Questions
-- Should stale feature-auto failures that predate workflow progress display as "stale recovered failure" in diagnostics, or should the UI hide the stale failure once better actions are available?
+- The data behavior is already fixed by the acceptance criteria: reconciliation is read-only and downgrades the stale failure's recommendation without rewriting `feature-*-auto.json`. The remaining open question is purely presentational — should the stale failure still surface as a "stale recovered failure" diagnostic, or be hidden from the operator once a better recovery action is available? Default for this feature: keep it visible as a low-priority diagnostic (no silent hiding).
 - Should the 6-hour stale waiting diagnostic be configurable later via project config, or remain a fixed controller behavior for now?
 
 ## Related
