@@ -40,11 +40,17 @@ test.describe('Dashboard state consistency', () => {
             expect(Array.isArray(repo.features)).toBe(true);
             const byStage = {};
             for (const f of repo.features) {
-                for (const key of ['id', 'name', 'stage', 'agents', 'validActions']) expect(f).toHaveProperty(key);
-                expect(Array.isArray(f.agents)).toBe(true);
-                expect(Array.isArray(f.validActions)).toBe(true);
-                for (const va of f.validActions) {
-                    for (const key of ['action', 'label']) expect(typeof va[key]).toBe('string');
+                for (const key of ['id', 'name', 'stage']) expect(f).toHaveProperty(key);
+                // F590: done features ship a LEAN shape on the poll path — no
+                // agents/validActions (those live behind /api/feature/:id/details).
+                // Heavy fields are asserted only on non-done rows.
+                if (f.stage !== 'done') {
+                    for (const key of ['agents', 'validActions']) expect(f).toHaveProperty(key);
+                    expect(Array.isArray(f.agents)).toBe(true);
+                    expect(Array.isArray(f.validActions)).toBe(true);
+                    for (const va of f.validActions) {
+                        for (const key of ['action', 'label']) expect(typeof va[key]).toBe('string');
+                    }
                 }
                 (byStage[f.stage] = byStage[f.stage] || []).push(f);
             }
