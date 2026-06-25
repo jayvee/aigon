@@ -19,7 +19,7 @@ test('static guards: home.html stays GA4-free and lib/pro.js ignores project con
 });
 // REGRESSION F594: default dashboard e2e bootstrap must fence mock-only runs.
 test('dashboard e2e mock bootstrap strips model overrides and forces mock agent bin', () => {
-    const { stripLiveAgentEnv, buildMockOnlyDashEnv, MOCK_AGENT_BIN_PATH } = require('../dashboard-e2e/e2e-env');
+    const { stripLiveAgentEnv, buildMockOnlyDashEnv, buildHostAgentEnv, MOCK_AGENT_BIN_PATH } = require('../dashboard-e2e/e2e-env');
     const stripped = stripLiveAgentEnv({
         AIGON_CC_IMPLEMENT_MODEL: 'claude-opus-4-8',
         AIGON_TEST_MODEL_CC: 'claude-opus-4-8',
@@ -32,6 +32,18 @@ test('dashboard e2e mock bootstrap strips model overrides and forces mock agent 
     const dash = buildMockOnlyDashEnv({ PORT: '4201' });
     assert.strictEqual(dash.AIGON_TEST_MODE, '1');
     assert.strictEqual(dash.MOCK_AGENT_BIN, MOCK_AGENT_BIN_PATH);
+    const host = buildHostAgentEnv({
+        HOME: '/real-home',
+        AIGON_HOME: '/tmp/e2e-home',
+        AIGON_TEST_MODE: '1',
+        MOCK_AGENT_BIN: '/tmp/mock',
+        TMUX_TMPDIR: '/tmp/tmux',
+    });
+    assert.strictEqual(host.HOME, '/real-home');
+    assert.ok(!('AIGON_HOME' in host));
+    assert.ok(!('AIGON_TEST_MODE' in host));
+    assert.ok(!('MOCK_AGENT_BIN' in host));
+    assert.ok(!('TMUX_TMPDIR' in host));
     const setup = fs.readFileSync(path.join(__dirname, '../dashboard-e2e/bootstrap.js'), 'utf8');
     assert.ok(setup.includes('isLiveAgentRun()'), 'bootstrap must reject AIGON_E2E_REAL on default path');
 });

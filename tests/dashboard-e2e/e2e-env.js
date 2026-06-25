@@ -23,6 +23,14 @@ const LIVE_AGENT_CC_MODEL = 'claude-haiku-4-5-20251001';
 const MOCK_AGENT_BIN_PATH = path.join(__dirname, '..', 'integration', 'mock-bin', 'mock-agent-bin.sh');
 
 const MODEL_OVERRIDE_KEY = /^AIGON_(?:[A-Z0-9]+_(?:RESEARCH|IMPLEMENT|EVALUATE|REVIEW|SPEC)_MODEL|TEST_MODEL(?:_[A-Z0-9]+)?)$/;
+const E2E_AGENT_ENV_KEYS = [
+    'AIGON_TEST_MODE',
+    'AIGON_E2E_SERVER',
+    'AIGON_FORCE_PRO',
+    'MOCK_AGENT_BIN',
+    'MOCK_DELAY',
+    'PORT',
+];
 
 /**
  * Remove inherited env keys that could route feature-start into a real model session.
@@ -76,6 +84,21 @@ function buildLiveAgentDashEnv(overrides = {}) {
 }
 
 /**
+ * Build env for prerequisite checks that must inspect the maintainer's real
+ * agent login, not the isolated dashboard fixture HOME/test env.
+ * @param {NodeJS.ProcessEnv} source
+ * @returns {NodeJS.ProcessEnv}
+ */
+function buildHostAgentEnv(source = process.env) {
+    const env = stripLiveAgentEnv(source);
+    for (const key of E2E_AGENT_ENV_KEYS) delete env[key];
+    delete env.AIGON_HOME;
+    delete env.TMUX;
+    delete env.TMUX_TMPDIR;
+    return env;
+}
+
+/**
  * Fail closed when live-agent prerequisites are missing.
  */
 function assertLiveAgentPrerequisites() {
@@ -85,11 +108,12 @@ function assertLiveAgentPrerequisites() {
     if (process.env.CI === 'true' || process.env.CI === '1') {
         throw new Error(`${LIVE_AGENT_GATE} live-agent smoke is opt-in only and must not run in CI`);
     }
-    const which = spawnSync('command', ['-v', 'claude'], { encoding: 'utf8', shell: true });
+    const hostEnv = buildHostAgentEnv(process.env);
+    const which = spawnSync('command', ['-v', 'claude'], { encoding: 'utf8', shell: true, env: hostEnv });
     if (which.status !== 0) {
         throw new Error('live-agent smoke requires `claude` on PATH (brew install claude)');
     }
-    const auth = spawnSync('claude', ['auth', 'status'], { encoding: 'utf8', stdio: 'pipe' });
+    const auth = spawnSync('claude', ['auth', 'status'], { encoding: 'utf8', stdio: 'pipe', env: hostEnv });
     const authOut = `${auth.stdout || ''}${auth.stderr || ''}`;
     if (auth.status !== 0 || !/loggedIn/i.test(authOut)) {
         throw new Error('live-agent smoke requires `claude auth status` to report loggedIn — run claude login');
@@ -104,5 +128,6 @@ module.exports = {
     isLiveAgentRun,
     buildMockOnlyDashEnv,
     buildLiveAgentDashEnv,
+    buildHostAgentEnv,
     assertLiveAgentPrerequisites,
 };
