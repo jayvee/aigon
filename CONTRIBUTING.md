@@ -16,9 +16,9 @@ aigon --version
 aigon doctor
 
 # Install agent configs for your coding agent(s)
-# This generates .claude/, .gemini/, .codex/, .cursor/, .agents/ settings from templates/
+# This generates .claude/, .codex/, .cursor/, .agents/ settings from templates/
 aigon install-agent cc      # Claude Code
-aigon install-agent gg      # Gemini CLI
+aigon install-agent ag      # Antigravity CLI
 aigon install-agent cx      # OpenAI Codex
 aigon install-agent am      # Amp
 
@@ -128,7 +128,7 @@ If `prepublishOnly` blocks you with that error:
 
 ```bash
 aigon install-agent --all
-git add .aigon/install-manifest.json .claude/ .cursor/ .gemini/ .agents/ .opencode/
+git add .aigon/install-manifest.json .claude/ .cursor/ .agents/ .opencode/
 git commit -m "chore: refresh installed agent files for vX.Y.Z"
 ```
 

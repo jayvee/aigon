@@ -95,7 +95,7 @@ Current shared modules:
   `recordSignalEvent`, `readSignalEvents`, `summarizeSignalEvents`, `recordMissedSignalIfDue`, `gcSignalHealth`
 - `lib/auto-nudge.js` (~190 lines): dashboard-side idle ladder. Combines idle-at-prompt detection with stale agent status writes, derives visible idle / nudged / needs-attention state, optionally sends one nudge per session, and records signal-health telemetry.
   `computeIdleLadder`, `pauseAutoNudgeForSession`
-- `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for slash-invocable agents (cc/gg/cu) and inlines the canonical `templates/generic/commands/feature-*.md` body for non-invocable agents (cx/op/km). Membership is derived from `capabilities.resolvesSlashCommands` in each `templates/agents/<id>.json`, so adding a new agent requires no code change here
+- `lib/agent-prompt-resolver.js` (~140 lines): shared feature prompt resolution for agent launches; preserves configured slash-command prompts for slash-invocable agents (cc/cu) and inlines the canonical `templates/generic/commands/feature-*.md` body for non-invocable agents (cx/op/km/ag). Membership is derived from `capabilities.resolvesSlashCommands` in each `templates/agents/<id>.json`, so adding a new agent requires no code change here
   `resolveAgentPromptBody`, `resolveCxPromptBody`
 - `lib/state-queries.js` (~250 lines): read-only UI helpers — feedback action/transition derivation (pure, no I/O). Feature/research constants retained for diagram generation only; action derivation for features/research lives in workflow-core.
   `getValidTransitions`, `getAvailableActions`, `getSessionAction`, `getRecommendedActions`, `isActionValid`, `shouldNotify`
@@ -530,7 +530,7 @@ Research follows the same pattern with `r` instead of `f`:
 Components:
 - `{repo}` — repository directory name (e.g., `aigon`, `farline-ai`, `whos-buy-is-it`)
 - `{num}` — zero-padded feature/research ID (e.g., `07`, `140`)
-- `{agent}` — agent short code (`cc`, `gg`, `cx`, `cu`)
+- `{agent}` — agent short code (`cc`, `ag`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
 ## Scheduling and recurring work

@@ -207,9 +207,9 @@ install_aigon_into_repo() {
     fail "aigon apply did not print 'First-time setup' banner on a fresh repo"
   fi
 
-  step "Install agents (cc + gg)"
-  aigon install-agent cc gg --force 2>&1 || true
-  pass "aigon install-agent cc gg"
+  step "Install agents (cc + ag)"
+  aigon install-agent cc ag --force 2>&1 || true
+  pass "aigon install-agent cc ag"
 
   step "Verify board shows seeded features"
   aigon board 2>&1 | head -20

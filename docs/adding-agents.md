@@ -6,7 +6,7 @@ Not every CLI earns a slot. Before starting the onboarding process, a candidate 
 
 1. **Unlocks a model with no other CLI route** — the model is genuinely inaccessible via the existing agents. Example: `km` (Kimi K2) earns its slot because Kimi K2 has no other natural CLI path and has a strong performance/cost ratio for code work.
 
-2. **Native CLI for a major foundation model provider** — the agent is the first-party CLI for a provider whose models are already in high demand. Example: `cc` (Claude Code), `gg` (Gemini CLI), `cx` (Codex CLI). A router CLI (Aider, Cline, etc.) wrapping the same model does *not* clear this bar — the native CLI will always be better optimised.
+2. **Native CLI for a major foundation model provider** — the agent is the first-party CLI for a provider whose models are already in high demand. Example: `cc` (Claude Code), `ag` (Antigravity CLI), `cx` (Codex CLI). A router CLI (Aider, Cline, etc.) wrapping the same model does *not* clear this bar — the native CLI will always be better optimised.
 
 3. **Genuinely superior workflow for Aigon's use case** — the CLI offers a fundamentally different and better workflow than existing agents for feature implementation specifically.
 
@@ -19,7 +19,7 @@ Not every CLI earns a slot. Before starting the onboarding process, a candidate 
 
 | CLI | Verdict | Reason |
 |---|---|---|
-| GitHub Copilot | ❌ Skip | Wraps foundation models already covered by native CLIs (cc, gg, cx); no unique model access |
+| GitHub Copilot | ❌ Skip | Wraps foundation models already covered by native CLIs (cc, ag, cx); no unique model access |
 | Aider | ❌ Disqualified | Exits after each task (one-shot); cannot call `aigon agent-status` reliably; no auto-context discovery |
 | Cline CLI 2.0 | ✅ Add when ready | CLI only launched Feb 2026 (previously IDE-only); 5M installs is VS Code extension history, not CLI users. Add once context delivery conventions stabilise. Current BYOK slot is `op` (OpenCode: 132k stars, 650k MAU — proven). |
 | Amazon Q | ❌ Low priority | ~50–66% SWE-bench (below current roster); Nova models reachable via op/Bedrock |
@@ -40,8 +40,8 @@ Answer these 5 questions in order to determine the correct configuration for any
 
 **Q2: Does the CLI understand `/slash-command` syntax natively?**
 
-- **YES** → type: **Slash-command** — set `capabilities.resolvesSlashCommands: true`. The prompt is passed as `/aigon-feature-do {featureId}` directly on the command line. Examples: `cc` (claude), `gg` (gemini), `cu` (agent/cursor)
-- **NO** → type: **File-prompt** — set `capabilities.resolvesSlashCommands: false`. The full prompt body is written to a temp file and passed as `$(< /path/to/file)` shell expansion. Example: `cx` (codex)
+- **YES** → type: **Slash-command** — set `capabilities.resolvesSlashCommands: true`. The prompt is passed as `/aigon-feature-do {featureId}` directly on the command line. Examples: `cc` (claude), `cu` (agent/cursor)
+- **NO** → type: **File-prompt** — set `capabilities.resolvesSlashCommands: false`. The full prompt body is written to a temp file and passed as `$(< /path/to/file)` shell expansion. Examples: `cx` (codex), `ag` (antigravity)
 
 **Q3: Does `--model <id>` work as a CLI flag?**
 
@@ -55,7 +55,7 @@ Answer these 5 questions in order to determine the correct configuration for any
 
 **Q5: Can aigon read the agent's transcript or session file?**
 
-- **YES** → `capabilities.transcriptTelemetry: true`; also set `runtime.sessionStrategy` to the appropriate value (e.g. `claude-jsonl`, `gemini-chats`)
+- **YES** → `capabilities.transcriptTelemetry: true`; also set `runtime.sessionStrategy` to the appropriate value (e.g. `claude-jsonl`, `antigravity-conversations`)
 - **NO** → `capabilities.transcriptTelemetry: false`
 
 ---
@@ -64,8 +64,8 @@ Answer these 5 questions in order to determine the correct configuration for any
 
 | Type | Agents | Prompt delivery | Session after work |
 |---|---|---|---|
-| Slash-command | `cc` (claude), `gg` (gemini), `cu` (agent/cursor) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
-| File-prompt | `cx` (codex) | `$(< /tmp/aigon-prompt-XX.md)` shell expansion | Stays at agent's interactive prompt |
+| Slash-command | `cc` (claude), `cu` (agent/cursor) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
+| File-prompt | `cx` (codex), `ag` (antigravity) | `$(< /tmp/aigon-prompt-XX.md)` shell expansion | Stays at agent's interactive prompt |
 | TUI-inject | `op` (opencode), `km` (kimi), `am` (amp) | Pasted via `tmux paste-buffer` after TUI is ready | Stays at agent's interactive prompt |
 
 ---
@@ -78,4 +78,4 @@ Read these before adding a new agent:
 - **`lib/agent-registry.js`** — queries capabilities at runtime (`supportsModelFlag`, `isSlashCommandInvocable`, `getProcessDetectionMap`, etc.)
 - **`lib/worktree.js`** `buildRawAgentCommand` / `buildAgentCommand` — how the config drives the tmux launch; the `injectPromptViaTmux` path and the slash-command path diverge here
 - **`lib/config.js`** `getAgentLaunchFlagTokens` — flag injection logic per launch type
-- **`tests/integration/worktree-state-reconcile.test.js`** — add one assertion block per new agent covering its launch command shape; see existing blocks for `cc`, `cu`, `op`, `km`, `gg`, `am` as examples
+- **`tests/integration/worktree-state-reconcile.test.js`** — add one assertion block per new agent covering its launch command shape; see existing blocks for `cc`, `cu`, `op`, `km`, `ag`, `am` as examples

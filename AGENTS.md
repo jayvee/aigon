@@ -248,7 +248,7 @@ Recent incidents — every one of these is a case of a read path paving over a m
 **Shared:** `.aigon/docs/agents/{agent}.md` (marker blocks), `.aigon/docs/development_workflow.md` (full overwrite), and any other `templates/docs/*.md` files vendored to `.aigon/docs/` (F421). The consumer's own `docs/` folder is never touched. `AGENTS.md` is **not** managed by aigon (F420). Existing aigon marker blocks are stripped on `aigon doctor --fix`; legacy `docs/development_workflow.md` and `docs/agents/` are migrated to `.aigon/docs/` on `aigon doctor --fix`.
 
 **Context delivery** (no root file injection):
-- CC/GG: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
+- CC: SessionStart hook `aigon project-context` prints doc pointers to stdout → agent ingests as conversation context
 - CU: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - CX: `.codex/prompt.md` with marker blocks; aigon-spawned Codex sessions inline template bodies directly
 

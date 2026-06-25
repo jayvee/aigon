@@ -83,7 +83,7 @@ test('repo-scope key at project scope is accepted', async () => {
 test('shared-scope key accepted at both global and project', async () => {
     const a = await invoke({ scope: 'global', key: 'defaultAgent', value: 'cc', repoPath: tmpRepo });
     assert.notStrictEqual(a.body.error, 'scope_violation');
-    const b = await invoke({ scope: 'project', key: 'defaultAgent', value: 'gg', repoPath: tmpRepo });
+    const b = await invoke({ scope: 'project', key: 'defaultAgent', value: 'cu', repoPath: tmpRepo });
     assert.notStrictEqual(b.body.error, 'scope_violation');
 });
 
