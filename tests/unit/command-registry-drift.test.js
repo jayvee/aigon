@@ -71,4 +71,13 @@ test('canonical code-review and code-revise commands are registered with correct
     assert.strictEqual(typeof all['feature-code-review-check'], 'undefined');
 });
 
+test('storage command is exposed through top-level infra wrapper', () => {
+    const templates = require('../../lib/templates');
+    const all = require('../../lib/commands/shared').createAllCommands();
+    const infra = require('../../lib/commands/infra').createInfraCommands();
+    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'storage'));
+    assert.strictEqual(typeof all.storage, 'function');
+    assert.strictEqual(typeof infra.storage, 'function');
+});
+
 report();
