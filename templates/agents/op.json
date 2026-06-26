@@ -312,16 +312,26 @@
         "label": "GLM-5.1 via OpenRouter",
         "pricing": { "input": 1.05, "output": 3.5 },
         "notes": {
-          "implement": "Quarantined — 0/3 bench, sessions hang for hours and drain OpenRouter credits to monthly limit."
+          "implement": "Retired — superseded by GLM 5.2 (same Z.ai family). Originally quarantined 2026-04-30 for bench timeouts and credit burn on multi-turn agent loops."
         },
         "score": { "implement": null },
         "lastRefreshAt": "2026-04-30T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-30",
-          "reason": "0/3 on brewboard bench (2 timeout, 1 error). High pricing ($1.05/$3.50 per MTok) combined with hung sessions caused a 10-hour stuck process that consumed the full OpenRouter monthly credit limit. Do not run until endpoint stability is confirmed.",
+          "reason": "Retired — superseded by openrouter/z-ai/glm-5.2 (Z.ai June 2026 release; similar tier, tools-capable). Original quarantine: 0/3 brewboard bench, hung sessions drained OpenRouter monthly credits.",
           "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json; PID 51163 ran 10h25m before manual kill on 2026-04-30",
-          "supersededBy": []
+          "supersededBy": ["openrouter/z-ai/glm-5.2"]
         }
+      },
+      {
+        "value": "openrouter/z-ai/glm-5.2",
+        "label": "GLM 5.2 via OpenRouter",
+        "pricing": { "input": 0.95, "output": 3.0 },
+        "notes": {
+          "implement": "Z.ai flagship reasoning model (Jun 2026); 1M ctx; OpenRouter reports tools support. Probed PASS in 8.4s on 2026-06-26. Successor to quarantined glm-5.1 — score pending brewboard bench."
+        },
+        "score": { "implement": null },
+        "lastRefreshAt": "2026-06-26T00:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2-speciale",
