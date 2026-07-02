@@ -76,6 +76,22 @@ testAsync('git-ref appendEvent is idempotent by event id', async () => {
   });
 });
 
+testAsync('git-ref appendEvent accepts zero-padded workflow ids', async () => {
+  // REGRESSION: real feature workflow ids are often zero-padded directory names
+  // like "01"; canonical git-ref keys must still be F1 while preserving the
+  // caller's local projection path.
+  await withTempDirAsync('gitref-padded-append-', async (base) => {
+    const { repo } = initRepoWithBareRemote(base);
+    const store = loadGitRefStore(repo);
+    const ref = { entityType: 'feature', entityId: '01' };
+    const event = { id: 'evt-padded', type: 'feature.bootstrapped', at: '2026-06-25T01:30:00.000Z', featureId: '01', lifecycle: 'backlog' };
+    await store.appendEvent(ref, event);
+    assert.deepStrictEqual(store._readCanonicalEvents('F1').map((entry) => entry.id), ['evt-padded']);
+    assert.strictEqual(store.readEventsSync(ref).length, 1);
+    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'workflows', 'features', '01', 'events.jsonl')));
+  });
+});
+
 testAsync('sync reads resolve from local projection without network', async () => {
   // REGRESSION: readEventsSync/readSnapshotSync must not call git fetch (feature 577 AC).
   await withTempDirAsync('gitref-syncread-', async (base) => {
@@ -131,6 +147,22 @@ testAsync('sync imports existing numeric local projection events before pushing'
     const result = await store.sync();
     assert.strictEqual(result.ok, true);
     assert.deepStrictEqual(store._readCanonicalEvents('F12').map((event) => event.id), ['evt-existing']);
+  });
+});
+
+testAsync('sync imports zero-padded local projection events into canonical keys', async () => {
+  // REGRESSION: Aigon workflow directories use padded ids (01) while SpecStore
+  // refs use display keys without padding (F1).
+  await withTempDirAsync('gitref-import-padded-local-', async (base) => {
+    const { repo } = initRepoWithBareRemote(base);
+    const store = loadGitRefStore(repo);
+    writeProjectionEvents(repo, 'feature', '01', [
+      { id: 'evt-existing-padded', type: 'feature.bootstrapped', at: '2026-06-25T04:30:00.000Z', featureId: '01', lifecycle: 'backlog' },
+    ]);
+    const result = await store.sync();
+    assert.strictEqual(result.ok, true);
+    assert.deepStrictEqual(store._readCanonicalEvents('F1').map((event) => event.id), ['evt-existing-padded']);
+    assert.strictEqual(store.readEventsSync({ entityType: 'feature', entityId: '01' }).length, 1);
   });
 });
 
