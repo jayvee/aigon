@@ -36,7 +36,11 @@ test.describe('Dashboard state consistency', () => {
         for (const key of ['implementing', 'complete', 'waiting', 'error']) expect(data.summary).toHaveProperty(key);
 
         for (const repo of data.repos) {
-            for (const key of ['path', 'name', 'features']) expect(repo).toHaveProperty(key);
+            for (const key of ['path', 'name', 'features', 'storage']) expect(repo).toHaveProperty(key);
+            expect(repo.storage).toHaveProperty('backend');
+            if (repo.storage.backend === 'local') {
+                expect(repo.storage.health).toBe('ok');
+            }
             expect(Array.isArray(repo.features)).toBe(true);
             const byStage = {};
             for (const f of repo.features) {
@@ -94,5 +98,29 @@ test.describe('Dashboard state consistency', () => {
                 expect(hasEval, `Solo #${f.id} (${f.name}) should not have feature-eval`).toBe(false);
             }
         }
+    });
+
+    test('lease badge renders when activeLeases present on feature card @smoke', async ({ page }) => {
+        await page.route('**/api/status', async (route) => {
+            const upstream = await route.fetch();
+            const data = await upstream.json();
+            const repo = data.repos && data.repos[0];
+            if (repo && Array.isArray(repo.features) && repo.features.length > 0) {
+                const target = repo.features.find((f) => f.stage !== 'done') || repo.features[0];
+                target.activeLeases = [{
+                    specKey: 'F1',
+                    role: 'impl',
+                    holderId: 'machine-a',
+                    agentId: 'cu',
+                    acquiredAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 600000).toISOString(),
+                    expired: false,
+                }];
+            }
+            await route.fulfill({ response: upstream, json: data });
+        });
+        await gotoPipelineWithMockedSessions(page);
+        await expect(page.locator('.kcard-lease-badge').first()).toBeVisible({ timeout: 5000 });
+        await expect(page.locator('.kcard-lease-badge').first()).toContainText('machine-a');
     });
 });
