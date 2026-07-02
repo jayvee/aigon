@@ -79,7 +79,7 @@ The local backend thin-wraps workflow-core files. The git-ref backend stores can
 - **Examples:** `F42`, `R7`, `R100`.
 - **Malformed keys** (`X1`, `F`, empty string) throw `SpecKeyError` — no silent coercion.
 
-Identity helpers for `{ key, number, kind, slug }` land in feature 575. SpecStore keys address numbered specs; slug-keyed inbox entities remain workflow ids until prioritise assigns a number.
+Identity helpers for `{ key, number, kind, slug }` shipped in feature 575. SpecStore keys address numbered specs; slug-keyed inbox entities remain workflow ids until prioritise assigns a number.
 
 ## Storage backends
 

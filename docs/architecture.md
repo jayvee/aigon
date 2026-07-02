@@ -236,7 +236,7 @@ Feedback is not a top-level spec kind — it becomes research origin metadata (f
 The Aigon workflow now has two layers:
 
 - Spec location under `docs/specs/` remains the user-visible workflow stage.
-- For **features and research**, the authoritative lifecycle state lives in the workflow engine under `.aigon/workflows/`.
+- For **features and research**, authoritative lifecycle state lives in SpecStore workflow events — under `.aigon/workflows/` for the local backend, or in Git refs (`refs/aigon/specs/<key>/events`) when git-ref storage is enabled. See the SpecStore section above for backends, sync, leases, and projection boundaries.
 
 That means "state-as-location" is still true at the UX level, but feature commands no longer mutate workflow by directly treating folder position as the only source of truth. The engine owns the lifecycle and moves the spec as a side effect.
 
@@ -292,8 +292,8 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | Effects | Explicit, durable, resumable lifecycle (requested → claimed → succeeded/failed) |
 | Dependency | `xstate` npm package |
 
-**State files** (gitignored, under `.aigon/workflows/`):
-- `.aigon/workflows/features/{id}/events.jsonl` — immutable event log
+**State files** (gitignored local projection under `.aigon/workflows/`; canonical git-ref events live under `refs/aigon/specs/<key>/events`):
+- `.aigon/workflows/features/{id}/events.jsonl` — append-only event log (local copy; rebuilt from canonical refs on sync when git-ref storage is enabled)
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
 
