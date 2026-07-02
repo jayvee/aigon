@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 358
+lines_removed: 4
+lines_changed: 362
+files_touched: 8
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 595 - canonical-stats-sync-for-git-backed-storage
 Agent: cu
 
