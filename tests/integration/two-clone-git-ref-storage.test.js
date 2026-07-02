@@ -196,6 +196,7 @@ testAsync('two-clone git-ref harness: convert, sync, leases, and stats converge'
     assert.strictEqual(agB.totals.features, 2, `${ctx(cloneB, 'B')} stats features`);
     assert.strictEqual(agA.totals.commits, agB.totals.commits, 'stats commits must converge');
     assert.strictEqual(agA.totals.cost, agB.totals.cost, 'stats cost must converge');
+    assert.strictEqual(agA.totals.linesAdded, agB.totals.linesAdded, 'stats linesAdded must converge');
 
     const healthA = await loadGitRefStore(cloneA).health();
     const healthB = await loadGitRefStore(cloneB).health();
