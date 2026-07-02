@@ -6,7 +6,7 @@ description: "Terminal-based Kanban board showing features, research, and feedba
 ## Synopsis
 
 ```bash
-aigon board [--list] [--features] [--research] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]
+aigon board [--list] [--features] [--research] [--storage] [--active] [--all] [--inbox] [--backlog] [--done] [--no-actions]
 ```
 
 ## Shortcuts
@@ -16,6 +16,8 @@ aigon board [--list] [--features] [--research] [--active] [--all] [--inbox] [--b
 ## Description
 
 Displays a terminal Kanban board showing features and research across lifecycle stages. This is the text-based equivalent of the [Dashboard Pipeline](/docs/guides/dashboard) — useful when you want a quick overview without opening a browser.
+
+With `--storage`, the board switches to a cross-repo SpecStore storage report that highlights active leases for git-ref backed workflows.
 
 ## Views
 
@@ -48,6 +50,7 @@ Displays a terminal Kanban board showing features and research across lifecycle 
 | `--list` | Show list view instead of Kanban |
 | `--features` | Features only (exclude research) |
 | `--research` | Research only (exclude features) |
+| `--storage` | Show cross-repo storage lease status instead of the normal board |
 | `--active` | Only in-progress and evaluation stages |
 | `--all` | Include all stages (default excludes done/paused) |
 | `--inbox` | Show inbox items |
@@ -69,4 +72,7 @@ aigon board --features
 
 # Everything including done
 aigon board --all
+
+# Cross-repo active storage leases
+aigon board --storage
 ```

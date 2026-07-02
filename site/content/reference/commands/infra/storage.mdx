@@ -1,0 +1,58 @@
+---
+title: "storage"
+description: "Manage SpecStore local and git-ref storage state"
+---
+
+## Synopsis
+
+```bash
+aigon storage sync
+aigon storage status
+aigon storage doctor [--fix]
+aigon storage report [--json]
+aigon storage convert --backend=git-ref [--remote=origin] [--ref-prefix=refs/aigon/specs] [--dry-run]
+```
+
+## Description
+
+Manages SpecStore storage for feature and research workflow state. Local storage is the default. Git-ref storage is opt-in and stores canonical workflow, lease, and stats events under `refs/aigon/specs/<key>/events`.
+
+Spec markdown and code changes still use normal Git. Storage commands do not commit or merge working-tree files.
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `sync` | Fetch, merge/dedupe by event id, rebuild local projections, and push git-ref events |
+| `status` | Show backend, remote, ref prefix, offline state, last sync, ahead/behind, and health |
+| `doctor` | Diagnose ref reachability, duplicate event ids, projection drift, and lease health |
+| `doctor --fix` | Apply safe projection repairs where available |
+| `report` | Show a cross-repo storage and active-lease report |
+| `report --json` | Print the report as JSON |
+| `convert` | Validate remote access, write git-ref config, import existing local events, and sync |
+| `convert --dry-run` | Show planned config and import candidates without writing config |
+
+## Examples
+
+```bash
+# Convert the current repo to git-ref storage
+aigon storage convert --backend=git-ref --remote=origin
+
+# Check whether this clone is ahead, behind, degraded, or healthy
+aigon storage status
+
+# Push/pull canonical storage refs
+aigon storage sync
+
+# Diagnose storage and lease issues
+aigon storage doctor
+
+# Inspect active leases across registered repos
+aigon storage report
+```
+
+## Git-ref requirements
+
+The configured remote must allow pushing custom refs under `refs/aigon/*`. GitHub, GitLab, and Bitbucket may not show those refs in their web UIs; use `git ls-remote origin 'refs/aigon/*'` or `aigon storage status`.
+
+See [Storage Backends](/docs/reference/storage-backends) for config examples, two-machine behavior, leases, and offline mode.

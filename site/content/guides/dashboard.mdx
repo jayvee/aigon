@@ -278,6 +278,20 @@ No phase auto-advances — every transition requires an explicit click. The pill
 | Pro status | `active`, `installed (not activated)`, or `not installed` |
 | Registry error | Last npm registry error, if any |
 
+## Settings → Storage
+
+For each registered repo, the dashboard shows the server-resolved SpecStore backend. Local repos show `local` with healthy status. Git-ref repos show remote, ref prefix, offline state, last sync time, ahead/behind counts, and health (`ok`, `ahead`, `behind`, or `degraded`).
+
+The storage settings actions run the same CLI surfaces as the terminal:
+
+| Action | CLI equivalent |
+|--------|----------------|
+| Sync storage | `aigon storage sync` |
+| Storage doctor | `aigon storage doctor` |
+| Storage report | `aigon storage report` |
+
+Feature and research cards/details show active, non-expired lease metadata when a git-ref backed workflow has a current holder. See [Storage Backends](/docs/reference/storage-backends) for the storage model and two-machine behavior.
+
 ## Remote access
 
 The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
@@ -302,4 +316,5 @@ aigon board                    # Kanban view
 aigon board --list             # List view
 aigon board --features         # Features only
 aigon board --research         # Research only
+aigon board --storage          # Cross-repo storage leases
 ```

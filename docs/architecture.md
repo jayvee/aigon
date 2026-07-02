@@ -209,14 +209,27 @@ Current shared modules:
 
 ## SpecStore (`lib/spec-store/`)
 
-Durable spec storage boundary introduced in feature 573. Specs are the top-level work objects; `feature` and `research` are spec kinds addressed by keys (`F42`, `R43`). See **[`docs/specstore-architecture.md`](specstore-architecture.md)** for the target model (events, snapshots, leases, indexes, projections) and layering:
+Durable spec storage boundary introduced in feature 573 and extended through the git-ref storage hardening set. Specs are the top-level work objects; `feature` and `research` are spec kinds addressed by keys (`F42`, `R43`). See **[`docs/specstore-architecture.md`](specstore-architecture.md)** for the current model (events, snapshots, leases, indexes, projections) and layering:
 
-- **SpecStore** — durable storage protocol (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`)
+- **SpecStore** — durable storage protocol (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`, lease helpers)
 - **workflow-core** — lifecycle semantics (XState machine, projector, effects)
-- **Spec markdown files** — human/agent-facing projections
+- **Spec markdown files** — human/agent-facing projections carried by normal Git
 - **Stage folders** — derived from lifecycle for UX, not authoritative state
 
-Feature 573 ships the local backend only (thin wrappers over `lib/workflow-core/paths.js`, `event-store.js`, `snapshot-store.js`, `lock.js`). Existing callers are not migrated until feature 576. Feedback is not a top-level spec kind — it becomes research origin metadata (feature 574).
+Backends:
+
+| Backend | Authority | Sync behavior |
+|---------|-----------|---------------|
+| `local` | `.aigon/workflows/**` event logs and snapshots in the current checkout | Default; no cross-machine storage sync beyond normal Git for specs/code |
+| `git-ref` | Canonical append-only events under `refs/aigon/specs/<key>/events` | `aigon storage sync` fetches, merges by event id, rebuilds local projections, and pushes refs |
+
+Git-ref storage is opt-in through `.aigon/config.json` or `aigon storage convert --backend=git-ref --remote=origin`. Existing numeric local workflow events are imported on first sync. Mutating commands do a pre-write fetch/merge unless storage is offline (`storage.git.offline`, `--offline`, or `AIGON_STORAGE_OFFLINE=1`).
+
+Leases are advisory append-only `lease.*` events in the same canonical stream. Defaults are a 30 minute TTL and renew checkpoints at most every 10 minutes; `--takeover` records `lease.taken_over` for auditable conflict resolution. `aigon storage status|doctor|report`, `aigon storage sync`, and `aigon board --storage` are the public CLI surfaces. `lib/dashboard-storage.js` provides server-owned DTOs for dashboard repo/settings storage health and active feature/research lease metadata.
+
+Projection boundaries are explicit: `.aigon/workflows/**` remains the local read cache, snapshots are disposable, spec markdown and code changes still move through normal Git, and analytics files such as `.aigon/workflows/**/stats.json` plus `.aigon/cache/stats-aggregate.json` are local projections/caches. Canonical `stats.recorded` events sync through git-ref storage and rebuild those local stats projections where available.
+
+Feedback is not a top-level spec kind — it becomes research origin metadata (feature 574).
 
 ## Workflow State
 

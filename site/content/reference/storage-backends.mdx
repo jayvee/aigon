@@ -1,0 +1,124 @@
+---
+title: Storage Backends
+description: Local and git-ref SpecStore storage, sync behavior, leases, and two-machine operation.
+---
+
+Aigon keeps feature and research lifecycle state in SpecStore. The default backend is local storage in the current checkout. The optional `git-ref` backend stores canonical workflow events, lease events, and canonical stats events in Git refs so multiple clones can converge without committing `.aigon/workflows/`.
+
+Spec markdown and code changes still use normal Git. SpecStore does not replace branches, commits, pulls, merges, or pushes for files in your working tree.
+
+## Choose a backend
+
+Use local storage unless you need multiple machines or clones to share workflow state before a normal branch merge.
+
+| Backend | Best for | Tradeoff |
+|---------|----------|----------|
+| `local` | One machine, simple repos, default workflow | Workflow state under `.aigon/workflows/**` is local to the checkout |
+| `git-ref` | Two machines, paired clones, shared feature/research lifecycle state | Requires push permission to `refs/aigon/*` and occasional storage diagnostics |
+
+## Local storage
+
+Local is the default. You can omit `storage` entirely, or set it explicitly in `.aigon/config.json`:
+
+```json
+{
+  "storage": {
+    "backend": "local"
+  }
+}
+```
+
+Local storage keeps workflow events and snapshots under `.aigon/workflows/**`. Spec markdown in `docs/specs/**` and code changes are still ordinary repository files.
+
+## Git-ref storage
+
+Use the conversion command when possible:
+
+```bash
+aigon storage convert --backend=git-ref --remote=origin
+aigon storage status
+```
+
+The equivalent `.aigon/config.json` shape is:
+
+```json
+{
+  "storage": {
+    "backend": "git-ref",
+    "git": {
+      "remote": "origin",
+      "refPrefix": "refs/aigon/specs",
+      "offline": false
+    }
+  }
+}
+```
+
+`aigon storage convert` validates remote access, checks push permission with a dry-run probe ref, writes the config, imports existing numeric local workflow events, and runs the same sync path as `aigon storage sync`. To preview without writing config:
+
+```bash
+aigon storage convert --backend=git-ref --remote=origin --dry-run
+```
+
+To roll back to local behavior, set `storage.backend` back to `local`. Existing Git refs are not deleted.
+
+## What syncs
+
+Git-ref storage syncs canonical events through refs like `refs/aigon/specs/F42/events`.
+
+| State | Git-ref behavior |
+|-------|------------------|
+| Workflow lifecycle events | Canonical, synced through `refs/aigon/specs/<key>/events` |
+| Workflow snapshots | Local projection cache rebuilt from events |
+| Lease events | Canonical, synced in the same event stream |
+| Canonical stats events | Synced as `stats.recorded` events |
+| `.aigon/workflows/**/stats.json` | Local projection rebuilt from canonical stats events where available |
+| `.aigon/cache/stats-aggregate.json` | Local aggregate cache |
+| Spec markdown under `docs/specs/**` | Normal Git files, not SpecStore payloads |
+| Code changes | Normal Git files, branches, and merges |
+
+## Two-machine model
+
+With `git-ref` enabled, mutating commands do a pre-write fetch and merge before appending an event. Sync merges by event `id`, so seeing the same event from two clones is idempotent. After local merge/projection rebuild, Aigon pushes the canonical refs back to the configured remote.
+
+Run these checks before relying on a second machine:
+
+```bash
+aigon storage status
+aigon storage sync
+aigon storage doctor
+git ls-remote origin 'refs/aigon/*'
+```
+
+Your remote must allow pushes to `refs/aigon/*`. Some hosting UIs hide custom refs, so `git ls-remote` or `aigon storage status` is more reliable than the web UI.
+
+## Leases and offline mode
+
+Leases are advisory coordination events, not hard locks enforced by Git. A session records `lease.acquired`, renews at most every 10 minutes, and expires after 30 minutes by default. Explicit completion records release; an operator can use `--takeover` on supported mutating commands to record an auditable `lease.taken_over` event when another holder is stale or intentionally displaced.
+
+Offline mode skips pre-write remote sync:
+
+```json
+{
+  "storage": {
+    "backend": "git-ref",
+    "git": {
+      "remote": "origin",
+      "refPrefix": "refs/aigon/specs",
+      "offline": true
+    }
+  }
+}
+```
+
+You can also set `AIGON_STORAGE_OFFLINE=1` for a single environment. After working offline, run `aigon storage sync` when the remote is reachable so other machines can see the events.
+
+## Dashboard visibility
+
+The dashboard settings and repo metadata show storage backend, health, remote, ref prefix, offline state, last sync, and ahead/behind counts. Feature and research cards/details show active non-expired leases when present. The settings surface also exposes storage actions for sync, doctor, and report.
+
+## Commands
+
+- [`storage`](/docs/reference/commands/infra/storage) — Convert, sync, inspect, diagnose, and report storage state
+- [`board --storage`](/docs/reference/commands/infra/board) — Show cross-repo active lease status in the terminal
+- [`configuration`](/docs/reference/configuration#storage-backends) — Project config examples for `local` and `git-ref`
