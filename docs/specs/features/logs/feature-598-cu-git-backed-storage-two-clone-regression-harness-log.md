@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 244
+lines_removed: 57
+lines_changed: 301
+files_touched: 3
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 598 - git-backed-storage-two-clone-regression-harness
 Agent: cu
 
