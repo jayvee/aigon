@@ -8,7 +8,7 @@ description: Prioritise research <name> - assigns ID, moves to backlog
 Run this command followed by the research topic name.
 
 ```bash
-aigon research-prioritise {{args}}
+aigon research-prioritise $ARGUMENTS
 ```
 
 ## Argument Resolution

@@ -8,13 +8,13 @@ description: Create feature <name> - creates spec in inbox
 Run this command followed by the feature name.
 
 ```bash
-aigon feature-create {{args}}
+aigon feature-create $ARGUMENTS
 ```
 
 This creates a new feature spec in `./docs/specs/features/01-inbox/`.
 
 **IMPORTANT:** After the CLI command completes, open the created feature file in markdown preview mode in a separate window:
-- File: `./docs/specs/features/01-inbox/feature-{{args}}.md` (or similar, check the CLI output for exact filename)
+- File: `./docs/specs/features/01-inbox/feature-$ARGUMENTS.md` (or similar, check the CLI output for exact filename)
 - Open the file, then use Cursor's command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run: `Markdown: Open Preview` (or press `Cmd+Shift+V` / `Ctrl+Shift+V`)
 - This will open the markdown preview in a separate window for easy reference while you work
 
@@ -57,7 +57,7 @@ git add docs/specs/features/01-inbox/
 git commit -m "feat: create feature spec - <name>"
 ```
 
-Next step: Once the spec is committed, suggest `aigon-feature-prioritise {{args}}` to assign an ID and move to backlog.
+Next step: Once the spec is committed, suggest `aigon-feature-prioritise $ARGUMENTS` to assign an ID and move to backlog.
 
 ## Prompt Suggestion
 

@@ -8,7 +8,7 @@ description: Create research <name> - creates topic in inbox
 Run this command followed by the research topic name.
 
 ```bash
-aigon research-create {{args}}
+aigon research-create $ARGUMENTS
 ```
 
 This creates a new research topic in `./docs/specs/research-topics/01-inbox/`.
@@ -46,7 +46,7 @@ The template ships with a `complexity:` frontmatter field that feeds the dashboa
 
 Set `complexity:` in the frontmatter; do not write model or effort values into the spec — defaults are resolved at start time from each agent’s `cli.complexityDefaults[<complexity>]`.
 
-Next step: Once the topic is complete, run `aigon-research-prioritise {{args}}` to assign an ID and move to backlog.
+Next step: Once the topic is complete, run `aigon-research-prioritise $ARGUMENTS` to assign an ID and move to backlog.
 
 ## Prompt Suggestion
 

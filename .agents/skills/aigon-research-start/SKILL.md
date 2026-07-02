@@ -24,13 +24,13 @@ If no ID is provided, or the ID doesn't match an existing topic in the backlog:
 
 ```bash
 # Drive mode — user passes only an ID
-aigon research-start {{args}}
+aigon research-start $1
 
 # Drive worktree mode — user passes ID + agent
-aigon research-start {{args}} <agent>
+aigon research-start $1 <agent>
 
 # Fleet mode — user passes ID + 2+ agents
-aigon research-start {{args}} <agent1> <agent2> [agent3...]
+aigon research-start $1 <agent1> <agent2> [agent3...]
 ```
 
 The mode is determined automatically based on what the user provides:
@@ -113,4 +113,4 @@ End your response with the suggested next command on its own line. This helps ag
 - **Drive worktree:** `aigon-research-do <ID>`
 - **Fleet:** `aigon-research-eval <ID>`
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $ARGUMENTS

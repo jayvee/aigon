@@ -22,7 +22,7 @@ Open a feature worktree in terminal and automatically start the AI agent with `/
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
 | cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
-| gg | Gemini | `gemini --yolo` | Auto-approves all |
+| ag | Antigravity | `agy --dangerously-skip-permissions` | Auto-approves all |
 | cx | Codex | `codex --full-auto` | Workspace-write, smart approval |
 
 Safe in worktrees since you can always `git reset --hard`.
@@ -34,7 +34,6 @@ When an agent asks for permission, here's how to quickly allow:
 | Agent | Allow once | Allow always | Toggle full-auto |
 |-------|-----------|-------------|-----------------|
 | **Claude Code** | Press Enter at prompt | Choose "Always allow" at prompt | `Shift+Tab` cycles modes |
-| **Gemini CLI** | Press `1` at prompt | Press `2` at prompt | `Ctrl+Y` toggles YOLO |
 | **Cursor** | Click "Run" | Click "Add to allowlist" | Enable YOLO in settings |
 | **Codex** | Approve at prompt | "Allow and remember" (session) | `/mode` command |
 

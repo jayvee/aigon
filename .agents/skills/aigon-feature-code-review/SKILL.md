@@ -34,14 +34,14 @@ If no ID is provided or doesn't match an active feature, run `aigon feature-list
 
 ```bash
 BRANCH=$(git branch --show-current)
-FEATURE_BRANCH=$(git branch --list 'feature-{{args}}-*' | head -1 | tr -d ' *')
-WORKTREE=$(git worktree list | grep "feature-{{args}}" | awk '{print $1}')
+FEATURE_BRANCH=$(git branch --list 'feature-$1-*' | head -1 | tr -d ' *')
+WORKTREE=$(git worktree list | grep "feature-$1" | awk '{print $1}')
 echo "=== WORKSPACE ==="
 echo "Current: $BRANCH  Feature: $FEATURE_BRANCH  Worktree: $WORKTREE"
 echo "=== DIFF ==="
 git diff "main...${FEATURE_BRANCH:-HEAD}"
 echo "=== IMPLEMENTATION LOG ==="
-cat docs/specs/features/logs/feature-{{args}}-*-log.md 2>/dev/null || echo "(no log found)"
+cat docs/specs/features/logs/feature-$1-*-log.md 2>/dev/null || echo "(no log found)"
 aigon agent-status reviewing
 ```
 
@@ -54,7 +54,7 @@ If you are on the feature branch, review files directly. If you are on main, use
 If the spec frontmatter has a `research:` field, read the linked findings before evaluating the implementation — they describe what the feature was supposed to deliver and why. If no `research:` field is present, skip this step.
 
 ```bash
-SPEC_PATH=$(aigon feature-spec {{args}} 2>/dev/null || true)
+SPEC_PATH=$(aigon feature-spec $1 2>/dev/null || true)
 RESEARCH_IDS=""
 if [ -n "$SPEC_PATH" ] && [ -f "$SPEC_PATH" ]; then
   RESEARCH_IDS=$(awk '/^---[[:space:]]*$/{f=!f;next} f && /^research:/{
@@ -82,7 +82,7 @@ Use the findings to judge whether the implementation faithfully addresses the co
 
 ## Step 1.5: Scope baseline check
 
-Before reviewing correctness, check for out-of-scope deletions. The scope snapshot at `.aigon/state/feature-{{args}}-file-snapshot.txt` (in the main repo) lists every tracked file at feature-start time.
+Before reviewing correctness, check for out-of-scope deletions. The scope snapshot at `.aigon/state/feature-$1-file-snapshot.txt` (in the main repo) lists every tracked file at feature-start time.
 
 ```bash
 # Check for deleted files and test file deletions in the diff

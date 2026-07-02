@@ -17,29 +17,29 @@ If no ID is provided, or the ID doesn't match an existing feature:
 ## Usage
 
 ### Drive mode (branch or worktree)
-If you used `feature-start {{args}}` or `feature-start {{args}} <agent>`:
+If you used `feature-start $1` or `feature-start $1 <agent>`:
 ```bash
-aigon feature-close {{args}}
+aigon feature-close $1
 ```
 The command auto-detects whether the feature uses a branch or a Drive worktree.
 
 ### Fleet mode
-If you used `feature-start {{args}} cc gg cx cu`:
+If you used `feature-start $1 cc gg cx cu`:
 ```bash
-aigon feature-close {{args}} <winning-agent>
+aigon feature-close $1 <winning-agent>
 ```
 
-Example: `aigon feature-close {{args}} cc` to merge Claude's implementation
+Example: `aigon feature-close $1 cc` to merge Claude's implementation
 
 ### Fleet mode with adoption
 Merge the winner and print diffs from losing agents for selective adoption:
 ```bash
-aigon feature-close {{args}} <winning-agent> --adopt <agents...|all>
+aigon feature-close $1 <winning-agent> --adopt <agents...|all>
 ```
 
 Examples:
-- `aigon feature-close {{args}} cc --adopt gg cu` — adopt from specific agents
-- `aigon feature-close {{args}} cc --adopt all` — adopt from all losing agents
+- `aigon feature-close $1 cc --adopt gg cu` — adopt from specific agents
+- `aigon feature-close $1 cc --adopt all` — adopt from all losing agents
 
 ## What happens
 
@@ -140,7 +140,7 @@ Skipped:
 After all adoption commits are verified, clean up the adopted agents' worktrees:
 
 ```
-aigon-feature-cleanup {{args}}
+aigon-feature-cleanup $1
 ```
 
 ### Cleanup after Fleet
@@ -148,8 +148,8 @@ aigon-feature-cleanup {{args}}
 After merging the winner (and completing adoption if applicable), clean up remaining worktrees:
 
 ```
-aigon-feature-cleanup {{args}}         # Delete locally
-aigon-feature-cleanup {{args}} --push  # Push to remote first
+aigon-feature-cleanup $1         # Delete locally
+aigon-feature-cleanup $1 --push  # Push to remote first
 ```
 
 Use `--push` if you want to preserve the alternative implementations on the remote repository.

@@ -10,7 +10,7 @@ Fully reset a feature back to backlog state. Removes all worktrees, branches, ma
 ## Usage
 
 ```bash
-aigon feature-reset {{args}}
+aigon feature-reset $1
 ```
 
 ## Argument Resolution

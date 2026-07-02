@@ -15,7 +15,7 @@ description: Prioritise every inbox feature in a set — IDs assigned in depende
 ## Step 1: Run the CLI
 
 ```bash
-aigon set-prioritise {{args}}
+aigon set-prioritise $ARGUMENTS
 ```
 
 Alias: `aigon asp <slug>`.

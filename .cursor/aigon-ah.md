@@ -55,7 +55,6 @@
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
-| gg | Gemini | `gemini --yolo` | Auto-approves all |
 | cx | Codex | `codex` | Workspace-write, smart approval |
 | cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
 | op | OpenCode | `opencode` | Workspace-write, smart approval |

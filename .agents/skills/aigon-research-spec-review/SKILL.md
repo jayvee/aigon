@@ -13,16 +13,16 @@ If `git log` shows no prior `spec-review:` commits on this spec, that is expecte
 
 You are already inside the spec-review task for this research topic.
 
-- Do not run `aigon research-spec-review {{args}}` again.
-- Do not run `aigon research-spec-revise {{args}}` — that is a different command for a later stage, run by the research author after reviewers have completed their review. It is not your job here.
+- Do not run `aigon research-spec-review $1` again.
+- Do not run `aigon research-spec-revise $1` — that is a different command for a later stage, run by the research author after reviewers have completed their review. It is not your job here.
 - Do not ask the shell to start the same command recursively.
-- Use the resolved spec path below, edit that spec in place, then make the required `spec-review:` commit and run `aigon research-spec-review-record {{args}}`.
+- Use the resolved spec path below, edit that spec in place, then make the required `spec-review:` commit and run `aigon research-spec-review-record $1`.
 - If you cannot complete the commit or record step, stop and report the blocker instead of making a generic commit.
 
 ## Resolve the spec
 
 ```bash
-SPEC_PATH=$(find docs/specs/research-topics -maxdepth 2 \( -name "research-{{args}}-*.md" -o -name "research-{{args}}.md" \) | head -1)
+SPEC_PATH=$(find docs/specs/research-topics -maxdepth 2 \( -name "research-$1-*.md" -o -name "research-$1.md" \) | head -1)
 test -n "$SPEC_PATH" && echo "$SPEC_PATH"
 ```
 
@@ -85,7 +85,7 @@ Review the spec against this checklist. Prefer small, targeted edits over broad 
 5. Clarify what a good findings document must contain without broadening the topic.
 6. Verify or bootstrap `AIGON_AGENT_ID` before committing.
 7. Commit with the exact `spec-review: research ...` format below.
-8. Run `aigon research-spec-review-record {{args}}`.
+8. Run `aigon research-spec-review-record $1`.
 9. Do not create any other commit message format.
 
 Before committing, confirm the reviewer identity is available. Dashboard/tmux launches
@@ -104,7 +104,7 @@ test -n "${AIGON_AGENT_ID:-}" || { echo "AIGON_AGENT_ID is required for spec-rev
 
 ```bash
 git add "$SPEC_PATH"
-git commit -m "spec-review: research {{args}} — <summary>" -m "Reviewer: ${AIGON_AGENT_ID}
+git commit -m "spec-review: research $1 — <summary>" -m "Reviewer: ${AIGON_AGENT_ID}
 
 Summary:
 - <high-level summary>
@@ -120,13 +120,13 @@ Risky decisions:
 
 Suggested edits:
 - <notable edits you made>"
-aigon research-spec-review-record {{args}}
+aigon research-spec-review-record $1
 ```
 
 ## Forbidden
 
-- Running `aigon research-spec-review {{args}}` from inside this task
-- Running `aigon research-spec-revise {{args}}` or `aigon research-spec-revise-record {{args}}` — that is the next stage, not this one
+- Running `aigon research-spec-review $1` from inside this task
+- Running `aigon research-spec-revise $1` or `aigon research-spec-revise-record $1` — that is the next stage, not this one
 - Making a `spec-revise:` commit (even `--allow-empty`) — that commit belongs to the revise stage
 - Making a non-`spec-review:` commit
 - Ending the task before `research-spec-review-record` succeeds
@@ -137,4 +137,4 @@ Tell the user what you changed and why.
 
 Then, as the last line of your reply, print the following **as a literal suggestion for the user to run next** — do not execute it yourself:
 
-`aigon-research-spec-revise {{args}}`
+`aigon-research-spec-revise $1`

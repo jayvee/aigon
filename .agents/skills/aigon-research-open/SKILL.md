@@ -20,7 +20,7 @@ aigon-research-open <research-id>
 This command is for **Fleet mode research only**. It opens multiple terminal panes (one per agent) so you can run parallel research.
 
 **Prerequisites:**
-- Research must be set up in Fleet mode: `aigon research-start <ID> cc gg cx`
+- Research must be set up in Fleet mode: `aigon research-start <ID> cc ag cx`
 - Findings files must exist in `docs/specs/research-topics/logs/`
 
 ## What It Does
@@ -34,7 +34,7 @@ This command is for **Fleet mode research only**. It opens multiple terminal pan
 
 After running:
 ```bash
-aigon research-start 05 cc gg cx
+aigon research-start 05 cc ag cx
 ```
 
 You can open all agents side-by-side:
@@ -44,7 +44,7 @@ aigon research-open 05
 
 This opens Warp with 3 panes:
 - **Pane 1 (cc)**: `claude --permission-mode acceptEdits "/aigon:research-do 05"`
-- **Pane 2 (gg)**: `gemini --yolo "/aigon:research-do 05"`
+- **Pane 2 (ag)**: `agy --dangerously-skip-permissions` (aigon inlines the `research-do` prompt body at launch)
 - **Pane 3 (cx)**: `codex --full-auto` (aigon inlines the `research-do` prompt body at launch; `$aigon-research-do` is also available as a Skill mention inside Codex)
 
 ## Error Cases
@@ -58,7 +58,7 @@ This opens Warp with 3 panes:
 **Always run this command** — do NOT skip it or try to detect the terminal yourself. The CLI reads the user's terminal preference from `~/.aigon/config.json` and handles everything:
 
 ```bash
-aigon research-open {{args}}
+aigon research-open $ARGUMENTS
 ```
 
 ## Step 2: Confirm to user
@@ -68,4 +68,4 @@ Tell the user:
 - That each pane will have the research-do command pre-loaded
 - That they should run the command in each pane to start research
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $ARGUMENTS

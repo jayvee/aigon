@@ -8,7 +8,7 @@ description: Research autopilot <ID> [agents...] - Fleet setup + spawn + monitor
 Run a fully autonomous Fleet research pipeline. Sets up findings files, spawns agents in parallel, monitors progress, and optionally runs synthesis when all agents submit.
 
 ```bash
-aigon research-autopilot {{args}} [agents...]
+aigon research-autopilot $ARGUMENTS [agents...]
 ```
 
 ## Argument Resolution
@@ -22,17 +22,17 @@ If no ID is provided, or the ID doesn't match an existing topic in backlog or in
 
 ### Basic usage (use configured default agents)
 ```bash
-aigon research-autopilot {{args}}
+aigon research-autopilot $ARGUMENTS
 ```
 
 ### Specify agents explicitly
 ```bash
-aigon research-autopilot {{args}} cc gg cx
+aigon research-autopilot $ARGUMENTS cc gg cx
 ```
 
 ### With auto-eval
 ```bash
-aigon research-autopilot {{args}} cc gg cx --auto-eval
+aigon research-autopilot $ARGUMENTS cc gg cx --auto-eval
 ```
 
 ## What it does
@@ -45,8 +45,8 @@ aigon research-autopilot {{args}} cc gg cx --auto-eval
 ## Subcommands
 
 ```bash
-aigon research-autopilot status {{args}}    # Check agent statuses
-aigon research-autopilot stop {{args}}      # Stop all agents
+aigon research-autopilot status $ARGUMENTS    # Check agent statuses
+aigon research-autopilot stop $ARGUMENTS      # Stop all agents
 ```
 
 ## Options
@@ -71,6 +71,6 @@ Each spawned agent will:
 
 After all agents submit, suggest the eval command:
 
-`aigon-research-eval {{args}}`
+`aigon-research-eval $ARGUMENTS`
 
-ARGUMENTS: {{args}}
+ARGUMENTS: $ARGUMENTS
