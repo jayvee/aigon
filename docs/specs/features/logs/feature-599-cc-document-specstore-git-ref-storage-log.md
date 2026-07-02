@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 368
+lines_removed: 39
+lines_changed: 407
+files_touched: 12
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 43323
+output_tokens: 2087
+cache_creation_input_tokens: 210427
+cache_read_input_tokens: 119421
+thinking_tokens: 0
+total_tokens: 375258
+billable_tokens: 45410
+cost_usd: 1.6437
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 599 - document-specstore-git-ref-storage
 Agent: cc
 
