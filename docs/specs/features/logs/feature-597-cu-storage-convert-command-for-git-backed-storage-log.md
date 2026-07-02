@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Added `aigon storage convert --backend=git-ref --remote=origin` with dry-run, remote validation, idempotent rerun, and import-on-first-enable via existing sync path.
 ## New API Surface
 
 ## Key Decisions
