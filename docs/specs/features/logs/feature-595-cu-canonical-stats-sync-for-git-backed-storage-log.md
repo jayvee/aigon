@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented `stats.recorded` canonical events, git-ref projection rebuild on sync, storage doctor drift repair, and two-clone convergence test.
 ## New API Surface
 
 ## Key Decisions
