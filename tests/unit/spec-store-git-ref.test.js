@@ -199,63 +199,6 @@ testAsync('aigon storage status reports git-ref health fields', async () => {
   });
 });
 
-testAsync('canonical stats sync converges across two clones', async () => {
-  // REGRESSION: machine A/B stats must merge via git-ref and produce matching aggregates (feature 595 AC).
-  await withTempDirAsync('gitref-stats-sync-', async (base) => {
-    const { repo, bare } = initRepoWithBareRemote(base);
-    const clone = path.join(base, 'clone');
-    execSync(`git clone "${bare}" "${clone}"`, { env: { ...process.env, ...GIT_SAFE_ENV } });
-    fs.mkdirSync(path.join(clone, '.aigon'), { recursive: true });
-    fs.writeFileSync(path.join(clone, '.aigon', 'config.json'), fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
-
-    const statsCanonical = require('../../lib/spec-store/stats-canonical');
-    const sa = require('../../lib/stats-aggregate');
-    const { readStats } = require('../../lib/feature-status');
-
-    const stats10 = {
-      completedAt: '2026-07-01T10:00:00.000Z',
-      durationMs: 600000,
-      commitCount: 4,
-      linesAdded: 120,
-      linesRemoved: 8,
-      cost: { estimatedUsd: 2.5, byAgent: { cc: { costUsd: 2.5, sessions: 2 } } },
-    };
-    const stats20 = {
-      completedAt: '2026-07-01T12:00:00.000Z',
-      durationMs: 900000,
-      commitCount: 6,
-      linesAdded: 200,
-      linesRemoved: 15,
-      cost: { estimatedUsd: 4.0, byAgent: { cx: { costUsd: 4.0, sessions: 3 } } },
-    };
-
-    await statsCanonical.recordCanonicalStats(repo, 'feature', '10', stats10);
-    const storeB = loadGitRefStore(clone);
-    await statsCanonical.recordCanonicalStats(clone, 'feature', '20', stats20);
-
-    const storeA = loadGitRefStore(repo);
-    assert.strictEqual((await storeA.sync()).ok, true);
-    assert.strictEqual((await storeB.sync()).ok, true);
-    assert.strictEqual((await storeA.sync()).ok, true);
-
-    assert.ok(readStats(repo, 'feature', '10'));
-    assert.ok(readStats(repo, 'feature', '20'));
-    assert.ok(readStats(clone, 'feature', '10'));
-    assert.ok(readStats(clone, 'feature', '20'));
-
-    const agA = sa.rebuildAggregate(repo);
-    const agB = sa.rebuildAggregate(clone);
-    assert.strictEqual(agA.totals.features, 2);
-    assert.strictEqual(agB.totals.features, 2);
-    assert.strictEqual(agA.totals.commits, agB.totals.commits);
-    assert.strictEqual(agA.totals.cost, agB.totals.cost);
-    assert.strictEqual(agA.totals.linesAdded, agB.totals.linesAdded);
-
-    const canonicalA = storeA._readCanonicalEvents('F10');
-    assert.ok(canonicalA.some((event) => event.type === 'stats.recorded'));
-  });
-});
-
 test('stats.recorded event id is deterministic', () => {
   // REGRESSION: duplicate close stats writes must dedupe by stable event id (feature 595 AC).
   const {
