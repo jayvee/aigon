@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Added `tests/integration/two-clone-git-ref-storage.test.js` — bare origin, two clones, convert/sync, lease blocking/takeover, stats convergence; removed subsumed stats unit test.
 ## New API Surface
 
 ## Key Decisions
