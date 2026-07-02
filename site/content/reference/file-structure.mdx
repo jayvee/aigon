@@ -3,13 +3,13 @@ title: File Structure
 description: How Aigon organises features, research, and feedback in your repository.
 ---
 
-Aigon stores workflow state as local files. Human-readable specs live in your repository under `docs/specs/`; the authoritative feature/research lifecycle is the workflow-core event log and snapshot under `.aigon/workflows/`.
+Aigon stores workflow state through SpecStore. Human-readable specs live in your repository under `docs/specs/`; the authoritative feature/research lifecycle is the workflow-core event log. By default that event log is local under `.aigon/workflows/`; with git-ref storage enabled, canonical events live under `refs/aigon/specs/<key>/events` and `.aigon/workflows/` becomes a local projection cache.
 
 ## Core principles
 
 - **Engine-first lifecycle**: feature and research status comes from workflow-core snapshots; folders are the committed projection users can inspect.
 - **Decoupled Lifecycles**: Research explores *what* to build; Features define *how* to build it
-- **Traceable History**: workflow events, snapshots, telemetry, specs, and logs stay on disk in the repo checkout.
+- **Traceable History**: workflow events, snapshots, telemetry, specs, and logs stay inspectable from the repo checkout; git-ref storage can also sync canonical workflow/lease/stats events through custom Git refs.
 
 ## Source of truth
 
@@ -18,7 +18,8 @@ Different files answer different questions. Use this matrix when inspecting or r
 | Question | Source of truth | Notes |
 |----------|-----------------|-------|
 | What does the human-readable spec say? | `docs/specs/.../*.md` | Specs are committed Markdown and remain the reviewable artifact. |
-| What lifecycle state is a feature or research topic in? | `.aigon/workflows/<type>/<id>/events.jsonl` projected to `snapshot.json` | Workflow-core is authoritative; folders mirror this state for users. |
+| What lifecycle state is a feature or research topic in? | SpecStore events: local `.aigon/workflows/<type>/<id>/events.jsonl` or git-ref `refs/aigon/specs/<key>/events` | Workflow-core is authoritative; folders mirror this state for users. |
+| Which clone has an active git-ref lease? | `lease.*` events in the SpecStore event stream | Dashboard cards/details, `aigon storage report`, and `aigon board --storage` surface active non-expired leases. |
 | Which Kanban column should I see? | `docs/specs/.../0N-*` as reconciled from workflow-core | Folder position is a visible projection. Do not manually move files to change state. |
 | What is an agent doing right now? | `.aigon/state/*`, `.aigon/sessions/*`, and live `tmux` state | Runtime/session state can be transient and is separate from lifecycle truth. |
 | What happened in an agent run? | logs under `docs/specs/**/logs/`, transcript references in `.aigon/sessions/*.json`, durable transcript copies under `~/.aigon/transcripts/`, and telemetry under `.aigon/telemetry/` | Useful for review and analytics; not the lifecycle authority. |
@@ -123,7 +124,7 @@ All transitions should go through Aigon commands or dashboard actions. Do not mo
 
 ## The `.aigon/` directory
 
-Local runtime state lives in `.aigon/` (gitignored). Spec folders in `docs/specs/` are the committed, human-readable view; `.aigon/` is the engine underneath.
+Local runtime state lives in `.aigon/` (gitignored). Spec folders in `docs/specs/` are the committed, human-readable view; `.aigon/` is the local engine projection underneath. When git-ref storage is enabled, canonical workflow, lease, and stats events sync through Git refs while spec markdown and code continue to use normal Git.
 
 | Path | Purpose |
 |------|---------|
@@ -133,10 +134,13 @@ Local runtime state lives in `.aigon/` (gitignored). Spec folders in `docs/specs
 | `.aigon/state/feature-{id}-{agent}.json` | Per-agent status files (heartbeat, session metadata) |
 | `.aigon/workflows/features/{id}/events.jsonl` | Append-only workflow event log |
 | `.aigon/workflows/features/{id}/snapshot.json` | Derived workflow snapshot |
+| `.aigon/workflows/features/{id}/stats.json` | Local stats projection rebuilt from canonical stats events where available |
 | `.aigon/telemetry/` | Normalised per-session telemetry records (agent, model, tokens, cost, duration) |
-| `.aigon/cache/` | Cached data (e.g. `commits.json` for commit analytics) |
+| `.aigon/cache/` | Cached data (e.g. `commits.json` for commit analytics and `stats-aggregate.json` for aggregate stats) |
 
 Run `aigon doctor --fix` to detect and repair desyncs between spec folders and engine state.
+
+For cross-machine workflow state, see [Storage Backends](/docs/reference/storage-backends).
 
 ## The complete lifecycle loop
 

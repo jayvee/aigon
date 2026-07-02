@@ -2,6 +2,7 @@ import { withPro } from "../../../../components/pro-badge";
 
 export default {
   board: "board",
+  storage: "storage",
   server: "server",
   config: "config",
   set: "set",

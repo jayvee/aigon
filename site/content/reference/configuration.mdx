@@ -84,6 +84,10 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
 | `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
 | `github.prCheck` | Project | Show GitHub PR status on dashboard cards | `true` (default), `false` to hide |
+| `storage.backend` | Project | SpecStore backend for workflow events | `local` (default), `git-ref` |
+| `storage.git.remote` | Project | Remote used by git-ref storage | Remote name such as `origin` |
+| `storage.git.refPrefix` | Project | Git ref namespace for canonical SpecStore events | Default: `refs/aigon/specs` |
+| `storage.git.offline` | Project | Skip pre-write fetch/merge for git-ref storage | `false` (default), `true` |
 | `iterate.validationCommand` | Project | Override the automatic iterate-mode validation command | String |
 | `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
@@ -144,6 +148,41 @@ If the profile-aware default is too broad for your repo, set an explicit iterate
 ```
 
 Use this to point feature iteration at your fast, scoped validation command. Keep full-suite checks for the close or pre-push gate.
+
+## Storage backends
+
+SpecStore controls feature and research workflow events, snapshots, leases, and related projections. Local storage is the default:
+
+```json
+{
+  "storage": {
+    "backend": "local"
+  }
+}
+```
+
+Git-ref storage is opt-in. Prefer the conversion command because it validates remote push access and imports existing local workflow events:
+
+```bash
+aigon storage convert --backend=git-ref --remote=origin
+```
+
+The resulting project config is:
+
+```json
+{
+  "storage": {
+    "backend": "git-ref",
+    "git": {
+      "remote": "origin",
+      "refPrefix": "refs/aigon/specs",
+      "offline": false
+    }
+  }
+}
+```
+
+Git-ref storage syncs canonical workflow, lease, and stats events through `refs/aigon/specs/<key>/events`. Spec markdown and code changes still use normal Git. See [Storage Backends](/docs/reference/storage-backends) for two-machine behavior, leases, offline mode, and diagnostics.
 
 ## Per-worktree setup (`worktreeSetup`)
 
