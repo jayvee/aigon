@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 508
+lines_removed: 4
+lines_changed: 512
+files_touched: 13
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 596 - dashboard-storage-status-and-lease-visibility
 Agent: cu
 
