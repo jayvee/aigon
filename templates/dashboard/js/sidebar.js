@@ -479,8 +479,11 @@
       if (stats.errorCount > 0) metaText += ' · ' + stats.errorCount + ' error';
 
       header.style.display = '';
+      const storageBadge = (typeof buildStorageStatusBadgeHtml === 'function')
+        ? buildStorageStatusBadgeHtml(repo.storage)
+        : '';
       header.innerHTML = '<h2 class="repo-header-name">' + escHtml(repo.displayPath) + '</h2>' +
-        '<span class="repo-header-meta">' + escHtml(metaText) + '</span>' +
+        '<span class="repo-header-meta">' + escHtml(metaText) + (storageBadge ? ' ' + storageBadge : '') + '</span>' +
         '<span class="repo-header-actions">' + buildMainDevServerHtml(repo) + buildAskAgentHtml(repo.path) + '</span>';
     }
 

@@ -329,7 +329,27 @@
         detailEl.innerHTML = '<div class="agent-detail-grid-wrap">' + cards + '</div>';
       }
 
+      function renderLeaseSection(entityType, entityId, repoPath) {
+        const located = findEntityInDashboardState(entityType, entityId, repoPath);
+        const leases = located && located.feature && Array.isArray(located.feature.activeLeases)
+          ? located.feature.activeLeases
+          : [];
+        if (leases.length === 0) return '';
+        const rows = leases.map((lease) => {
+          const holder = lease.holderId || 'unknown';
+          const agent = lease.agentId ? String(lease.agentId).toUpperCase() : '—';
+          return '<div class="stats-row"><div class="stats-key">' + escHtml(lease.role) + '</div><div class="stats-val">' +
+            escHtml(holder) + ' · ' + escHtml(agent) + ' · until ' + escHtml(lease.expiresAt || '—') + '</div></div>';
+        }).join('');
+        return '<div class="deep-status-section drawer-lease-section">' +
+          '<h5 class="stats-section-heading">Active leases</h5>' +
+          '<div class="stats-events">' + rows + '</div></div>';
+      }
+
       function renderStats(payload) {
+        const drawer = getDrawerState();
+        const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
+        const leaseHtml = renderLeaseSection(parsed.type, parsed.id, drawer.repoPath);
         const stats = computeStats(payload);
         const startup = payload.startupReadiness || (payload.manifest && payload.manifest.startupReadiness) || {};
         const c = (payload.deepStatus && payload.deepStatus.cost) || {};
@@ -420,7 +440,7 @@
             '</table>';
         }
 
-        detailEl.innerHTML =
+        detailEl.innerHTML = leaseHtml +
           '<div class="stats-grid">' +
             rows.map(([k, v, tip]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + (tip ? ' <span class="stats-tip" data-tip="' + escHtml(tip) + '">?</span>' : '') + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
           '</div>' +

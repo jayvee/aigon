@@ -85,6 +85,116 @@
       runDoctor(false);
     }
 
+    function showStorageActionModal(repoPath, displayPath, subcommand, label) {
+      const existing = document.getElementById('storage-action-modal');
+      if (existing) existing.remove();
+
+      const backdrop = document.createElement('div');
+      backdrop.id = 'storage-action-modal';
+      backdrop.className = 'modal-backdrop';
+      backdrop.setAttribute('role', 'dialog');
+      backdrop.setAttribute('aria-modal', 'true');
+
+      const box = document.createElement('div');
+      box.className = 'modal-box doctor-modal-box';
+
+      const header = document.createElement('div');
+      header.className = 'doctor-modal-header';
+      header.innerHTML = '<h3><span class="doctor-modal-icon">📦</span> ' + escHtml(label || ('Storage ' + subcommand)) + '</h3>' +
+        '<span class="doctor-modal-repo">' + escHtml(displayPath) + '</span>';
+
+      const output = document.createElement('pre');
+      output.className = 'doctor-output doctor-running';
+      output.textContent = 'Running…';
+
+      const actions = document.createElement('div');
+      actions.className = 'modal-actions doctor-modal-actions';
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn';
+      closeBtn.textContent = 'Close';
+      closeBtn.onclick = () => backdrop.remove();
+      actions.appendChild(closeBtn);
+      box.appendChild(header);
+      box.appendChild(output);
+      box.appendChild(actions);
+      backdrop.appendChild(box);
+      backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+      document.body.appendChild(backdrop);
+
+      fetch('/api/action', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'storage', args: [subcommand], repoPath }),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          const text = [data.stdout, data.stderr, data.error].filter(Boolean).join('\n').trim() || '(no output)';
+          output.textContent = text;
+          output.className = 'doctor-output' + ((data.exitCode && data.exitCode !== 0) ? ' doctor-has-issues' : '');
+          if (typeof requestRefresh === 'function') requestRefresh();
+        })
+        .catch((e) => {
+          output.textContent = 'Error: ' + e.message;
+          output.className = 'doctor-output doctor-has-issues';
+        });
+    }
+
+    function renderStorageStatusSection(section, repoSettingsData, repoPath) {
+      section.querySelectorAll('.storage-status-content').forEach((node) => node.remove());
+      const wrap = document.createElement('div');
+      wrap.className = 'storage-status-content settings-panel';
+      if (!repoPath) {
+        wrap.innerHTML = '<p class="settings-repo-context-note">Select a repository under Repository Settings to inspect storage status.</p>';
+        section.appendChild(wrap);
+        return;
+      }
+      const storage = repoSettingsData && repoSettingsData.storage;
+      if (!storage) {
+        wrap.innerHTML = '<p class="settings-empty">Storage status unavailable.</p>';
+        section.appendChild(wrap);
+        return;
+      }
+
+      const displayPath = repoPath.replace(/^\/Users\/[^/]+\//, '~/');
+      const rows = [['Backend', storage.backend]];
+      if (storage.backend === 'local') {
+        rows.push(['Health', storage.health || 'ok']);
+      } else {
+        rows.push(['Remote', storage.remote || '—']);
+        rows.push(['Ref prefix', storage.refPrefix || '—']);
+        rows.push(['Offline', storage.offline ? 'yes' : 'no']);
+        rows.push(['Last sync', storage.lastSyncAt || '(never)']);
+        rows.push(['Ahead', String(storage.ahead != null ? storage.ahead : 0)]);
+        rows.push(['Behind', String(storage.behind != null ? storage.behind : 0)]);
+        rows.push(['Health', storage.health || 'ok']);
+        if (storage.lastError) rows.push(['Last error', storage.lastError]);
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'settings-repo-context-grid';
+      rows.forEach(([label, value]) => {
+        const card = document.createElement('div');
+        card.className = 'settings-repo-context-card';
+        card.innerHTML = '<div class="settings-repo-context-label">' + escHtml(label) + '</div>' +
+          '<div class="settings-repo-context-value">' + escHtml(String(value)) + '</div>';
+        grid.appendChild(card);
+      });
+      wrap.appendChild(grid);
+
+      const actionRow = document.createElement('div');
+      actionRow.className = 'storage-action-row';
+      const actions = (repoSettingsData && repoSettingsData.storageActions) || [];
+      actions.forEach((va) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.textContent = va.label || va.action;
+        btn.onclick = () => showStorageActionModal(repoPath, displayPath, (va.args || [])[0] || 'status', va.label);
+        actionRow.appendChild(btn);
+      });
+      if (actionRow.childNodes.length) wrap.appendChild(actionRow);
+      section.appendChild(wrap);
+    }
+
     // Pro sync UI (`renderBackupSync` from @aigon/pro) targets `#backup-sync-view`, now
     // embedded in Settings → Aigon Sync (feature 236 batch).
 
@@ -1611,6 +1721,10 @@
       defaultsSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading settings...</div>');
       shell.observeSection(defaultsSection);
 
+      const storageSection = shell.addSection('storage', 'Storage', 'Storage', 'Read-only spec storage backend and sync health for the selected repository.');
+      storageSection.insertAdjacentHTML('beforeend', '<div class="settings-loading">Loading storage status...</div>');
+      shell.observeSection(storageSection);
+
       shell.setActiveSection('repositories');
       requestAnimationFrame(() => shell.syncActiveSection());
 
@@ -1629,12 +1743,15 @@
           if (loadingModels) loadingModels.remove();
           const loadingDefaults = defaultsSection.querySelector('.settings-loading');
           if (loadingDefaults) loadingDefaults.remove();
+          const loadingStorage = storageSection.querySelector('.settings-loading');
+          if (loadingStorage) loadingStorage.remove();
           const loadingPrefs = prefsSection.querySelector('.settings-loading');
           if (loadingPrefs) loadingPrefs.remove();
           renderTerminalSchemaRows(termSection, globalPayload, renderSettings);
           renderPreferencesSection(prefsSection, globalPayload, renderSettings);
           renderModelsSection(modelsSection, globalPayload, modelRepoPayload, modelRepoPath);
           renderDefaultsAndOverridesSection(defaultsSection, globalDefaultsPayload, repoDefaultsPayload, repoPath);
+          renderStorageStatusSection(storageSection, repoDefaultsPayload, repoPath);
           restoreDetailScrollTop(scrollTop);
           restoreSettingsUiState(reposRoot);
         })

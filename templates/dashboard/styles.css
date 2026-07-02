@@ -642,6 +642,13 @@
     .repo-list-item.repo-hidden .repo-list-path{text-decoration:line-through;text-decoration-color:var(--text-tertiary)}
     .repo-list-doctor{background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1;transition:color .12s ease,background .12s ease;flex-shrink:0;font-weight:600}
     .repo-list-doctor:hover{color:var(--accent);background:rgba(99,102,241,.1)}
+    .repo-storage-badge{display:inline-flex;align-items:center;padding:2px 8px;margin-left:6px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);vertical-align:middle}
+    .repo-storage-local{border-color:rgba(148,163,184,.28);color:#cbd5e1}
+    .repo-storage-git.repo-storage-ok{border-color:rgba(52,211,153,.28);color:#86efac}
+    .repo-storage-git.repo-storage-ahead{border-color:rgba(59,130,246,.28);color:#93c5fd}
+    .repo-storage-git.repo-storage-behind,.repo-storage-git.repo-storage-degraded{border-color:rgba(251,191,36,.35);color:#fcd34d}
+    .kcard-lease-badge{display:inline-flex;align-items:center;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.12);color:#fcd34d;vertical-align:middle;white-space:nowrap}
+    .storage-action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
     /* Doctor modal */
     .doctor-modal-box{max-width:640px;width:min(640px,calc(100vw - 24px));display:flex;flex-direction:column;gap:14px;padding:20px 24px}
     .doctor-modal-header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
