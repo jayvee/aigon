@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 165
+lines_removed: 4
+lines_changed: 169
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 608 - git-ref-sync-rebuilds-projections-unpadded-causing-duplicate-feature-cards-on-peer-machines
 Agent: cu
 
