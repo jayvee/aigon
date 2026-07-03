@@ -45,36 +45,66 @@ confirming it is current-code behaviour, not stale state.
 
 ## Acceptance Criteria
 
-- [ ] After a peer `storage sync`, a prioritised feature renders as exactly **one**
-      card on that peer's dashboard.
-- [ ] Local projection dirs rebuilt from canonical events match the spec-file id
-      convention (padded), OR the dashboard collector normalises feature ids
-      numerically so `1` and `01` are the same entity (decide in Technical Approach).
-- [ ] Fix holds for ids that are single-digit (`1`/`01`) and multi-digit; no
-      regression for machines that created the feature locally (already padded).
-- [ ] F598's two-clone regression harness is extended to assert single-card /
-      no-duplicate rendering (or id-normalised entity count) on the receiving clone.
+- [ ] After a peer `storage sync` with **no pre-existing local projection dir**,
+      the rebuilt workflow dir uses the **padded** id (`01`, not `1`) — i.e.
+      `.aigon/workflows/features/01/` exists and `.aigon/workflows/features/1/`
+      does not.
+- [ ] After that sync, `collectFeatures` (and therefore `/api/status`) returns
+      exactly **one** row for the feature on the receiving clone — not one
+      workflow-backed row plus one spec-only row with `workflowEventCount=0`.
+- [ ] `aigon feature-status 01` on the receiving clone resolves the synced
+      snapshot (not "no workflow-core snapshot").
+- [ ] Fix holds for single-digit ids (`F1` → `01`) and multi-digit ids
+      (`F10` → `10`); no regression when the originating machine already created
+      a padded projection dir locally.
+- [ ] F598's two-clone harness gains a **single-digit** scenario (feature `01` /
+      key `F1`): clone A records events with a padded local dir, sync propagates
+      to clone B with no local dir, and the harness asserts (a) padded rebuild
+      path on B and (b) deduped feature count from `collectFeatures` — no
+      browser/tmux required.
 
 ## Validation
 
 ```bash
 node tests/unit/spec-store-git-ref.test.js
-npm run test:related -- lib/spec-store lib/dashboard-status-collector.js lib/dashboard-storage.js
+node tests/integration/two-clone-git-ref-storage.test.js
+npm run test:related -- lib/spec-store lib/dashboard-status-collector.js lib/workflow-read-model.js
 ```
 
 ## Technical Approach
 
-Two candidate fixes — pick one, note the trade-off:
-- **Producer-side (projection rebuild):** pad the rebuilt projection dir id to the
-  spec-file convention in the sync/import path (`rebuildLocalProjection` /
-  `importLocalProjectionRefs` / `projectionRefForKey`), so peers match A.
-- **Read-side (collector):** normalise feature ids numerically when pairing spec
-  files to projections in `dashboard-status-collector` (and any other enumerator),
-  so `1` and `01` collapse to one entity. Lower blast radius; likely the safer fix,
-  but must cover every place that keys features by id string.
+**Root cause (two layers):**
 
-Prefer the read-side normalisation unless the padded-vs-unpadded split causes
-problems beyond display (e.g. CLI `feature-status 1` vs `01`, lease keys).
+1. **Producer:** `projectionRefForKey` in `lib/spec-store/git-ref-backend.js` returns
+   the bare canonical key (`F1`) when no padded local dir exists; `normalizeEntityRef`
+   in `lib/spec-store/entity-ref.js` turns that into unpadded `entityId: "1"`, so
+   `rebuildLocalProjection` writes `.aigon/workflows/features/1/`.
+2. **Consumer:** `collectFeatures` in `lib/dashboard-status-collector.js` enumerates
+   workflow dirs first, then spec files, and skips a spec row only when
+   `workflowFeatureIds.has(featureId)` — a **string** match. `"1"` ≠ `"01"`, so
+   both rows ship.
+
+**Chosen fix (producer primary, read-side belt-and-suspenders):**
+
+1. **Producer-side (required):** when deriving a workflow `entityId` from a
+   numeric SpecStore key (`F{n}`), pad to the repo convention
+   (`String(n).padStart(2, '0')`) before `rebuildLocalProjection`. Touch
+   `projectionRefForKey` / `normalizeEntityRef` (or a small helper both call) so
+   sync on a peer with no local dir rebuilds `01`, matching `feature-prioritise`
+   on the origin machine. Canonical git-ref keys stay unpadded (`F1`).
+2. **Read-side (required):** in `collectFeatures`, treat numeric feature ids as
+   equivalent when deduping workflow dirs vs spec files (same pattern as
+   `agent-status.readAgentStatus` and `setup-legacy` tmux cleanup). This covers
+   any legacy unpadded dirs already on disk without a migration.
+3. **Tests:** add a unit case in `spec-store-git-ref.test.js` for
+   merge/rebuild-from-remote-only `F1` on a clean peer → dir `01`; extend F598
+   harness with the single-digit sync scenario above.
+
+Research topics use a different collector shape (spec-first, no workflow-dir
+pre-pass) — **feature-only** unless the same padded/unpadded split is found there
+during implementation.
+
+**Execution order:** producer fix → collector dedup → unit test → F598 extension.
 
 ## Dependencies
 - Set: git-backed-storage-hardening (follows F595–F599)
@@ -85,4 +115,7 @@ problems beyond display (e.g. CLI `feature-status 1` vs `01`, lease keys).
 ## Related
 - Set: git-backed-storage-hardening
 - Prior features in set: F595, F596, F597, F598, F599
-- Regression harness to extend: F598 (two-clone git-ref storage)
+- Regression harness to extend: F598 (`tests/integration/two-clone-git-ref-storage.test.js`)
+- Existing padded-id unit coverage (append/import, not peer rebuild):
+  `tests/unit/spec-store-git-ref.test.js` — `git-ref appendEvent accepts zero-padded
+  workflow ids`, `sync imports zero-padded local projection events into canonical keys`
