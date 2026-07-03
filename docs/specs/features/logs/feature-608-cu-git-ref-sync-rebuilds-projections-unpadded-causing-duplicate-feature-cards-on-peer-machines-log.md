@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Pad feature ids when normalizing git-ref keys (`F1`→`01`); numeric-equivalent dedup in `collectFeatures` for legacy unpadded dirs.
 ## New API Surface
 
 ## Key Decisions
