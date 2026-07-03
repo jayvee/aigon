@@ -34,6 +34,13 @@ function loadStore(repo) {
   return createSpecStore({ repoPath: repo, storage: resolveStorageConfig(repo) });
 }
 
+test('machine ids are normalized for stable lease holder identity', () => {
+  const { normalizeMachineId } = require('../../lib/config');
+  assert.strictEqual(normalizeMachineId('VinorgAir.local'), 'vinorgair');
+  assert.strictEqual(normalizeMachineId(' My MacBook Pro.local '), 'my-macbook-pro');
+  assert.strictEqual(normalizeMachineId('github-machine-A'), 'github-machine-a');
+});
+
 test('deriveActiveLease expires by wall clock', () => {
   // REGRESSION: stale leases must not block after TTL (feature 578 AC).
   const { deriveActiveLease, isLeaseExpired } = require('../../lib/spec-store/leases');
