@@ -166,6 +166,36 @@ testAsync('sync imports zero-padded local projection events into canonical keys'
   });
 });
 
+testAsync('sync rebuilds peer projection at padded id when no local dir exists', async () => {
+  // REGRESSION: peer storage sync must rebuild F1 at workflow dir 01, not 1 (feature 608 AC).
+  await withTempDirAsync('gitref-peer-rebuild-padded-', async (base) => {
+    const { repo, bare } = initRepoWithBareRemote(base);
+    const storeA = loadGitRefStore(repo);
+    await storeA.appendEvent(
+      { entityType: 'feature', entityId: '01' },
+      { id: 'evt-f1-peer', type: 'feature.bootstrapped', at: '2026-07-03T00:00:00.000Z', featureId: '01', lifecycle: 'backlog' },
+    );
+    await storeA.sync();
+
+    const clone = path.join(base, 'clone');
+    execSync(`git clone "${bare}" "${clone}"`, { env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'ignore' });
+    fs.mkdirSync(path.join(clone, '.aigon'), { recursive: true });
+    fs.writeFileSync(path.join(clone, '.aigon', 'config.json'), fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
+
+    const unpaddedDir = path.join(clone, '.aigon', 'workflows', 'features', '1');
+    const paddedDir = path.join(clone, '.aigon', 'workflows', 'features', '01');
+    assert.ok(!fs.existsSync(unpaddedDir));
+    assert.ok(!fs.existsSync(paddedDir));
+
+    const storeB = loadGitRefStore(clone);
+    await storeB.sync();
+
+    assert.ok(fs.existsSync(path.join(paddedDir, 'events.jsonl')));
+    assert.ok(!fs.existsSync(unpaddedDir));
+    assert.strictEqual(storeB.readEventsSync({ entityType: 'feature', entityId: '01' }).length, 1);
+  });
+});
+
 testAsync('git-ref remote may be configured as a URL path', async () => {
   // REGRESSION: remote tracking refs must not embed slash-containing remote URLs.
   await withTempDirAsync('gitref-url-remote-', async (base) => {

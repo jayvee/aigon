@@ -207,4 +207,64 @@ testAsync('two-clone git-ref harness: convert, sync, leases, and stats converge'
   });
 });
 
+testAsync('two-clone git-ref harness: single-digit F1 peer rebuild dedupes dashboard features', async () => {
+  // REGRESSION: F1 sync on a peer with no local dir must rebuild at 01 and emit one feature row (feature 608 AC).
+  await withTempDirAsync('two-clone-f1-dedup-', async (base) => {
+    const { cloneA, cloneB } = await setupTwoCloneHarness(base);
+    const evtF1 = 'evt-f1-boot';
+    const specRel = 'docs/specs/features/02-backlog/feature-01-peer-dedup.md';
+
+    writeProjectionEvents(cloneA, 'feature', '01', [{
+      id: evtF1,
+      type: 'feature.bootstrapped',
+      at: '2026-07-03T10:00:00.000Z',
+      featureId: '01',
+      lifecycle: 'backlog',
+    }]);
+    fs.mkdirSync(path.dirname(path.join(cloneA, specRel)), { recursive: true });
+    fs.writeFileSync(path.join(cloneA, specRel), `---
+complexity: low
+---
+
+# Feature: peer-dedup
+
+## Summary
+Single-digit peer sync dedup regression.
+`);
+
+    runStorageConvert(cloneA, 'A', 'machine-a');
+    runStorageSync(cloneA, 'A', 'machine-a');
+
+    // Peer receives the prioritised spec via main; copy simulates pull after push
+    // without requiring identical apply bootstrap SHAs on both clones.
+    fs.mkdirSync(path.dirname(path.join(cloneB, specRel)), { recursive: true });
+    fs.copyFileSync(path.join(cloneA, specRel), path.join(cloneB, specRel));
+    runStorageConvert(cloneB, 'B', 'machine-b');
+    runStorageSync(cloneB, 'B', 'machine-b');
+
+    const paddedDir = path.join(cloneB, '.aigon', 'workflows', 'features', '01');
+    const unpaddedDir = path.join(cloneB, '.aigon', 'workflows', 'features', '1');
+    assert.ok(fs.existsSync(path.join(paddedDir, 'events.jsonl')), `${ctx(cloneB, 'B')} padded projection dir`);
+    assert.ok(!fs.existsSync(unpaddedDir), `${ctx(cloneB, 'B')} unpadded projection dir must not exist`);
+
+    const storeB = loadGitRefStore(cloneB);
+    assert.deepStrictEqual(storeB._readCanonicalEvents('F1').map((event) => event.id), [evtF1]);
+
+    const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
+    clearTierCache(cloneB);
+    const response = { summary: {} };
+    const repoStatus = collectRepoStatus(cloneB, response);
+    const f1Rows = (repoStatus.features || []).filter((row) => {
+      const id = String(row.id);
+      return id === '01' || id === '1';
+    });
+    assert.strictEqual(
+      f1Rows.length,
+      1,
+      `${ctx(cloneB, 'B')} expected one dashboard row for feature 01, got ${f1Rows.length}`,
+    );
+    assert.ok(f1Rows[0].workflowEventCount > 0, `${ctx(cloneB, 'B')} workflow-backed row must carry events`);
+  });
+});
+
 report();
