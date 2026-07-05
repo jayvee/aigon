@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: high
 set: git-branch-storage
 depends_on: [610]
 transitions:
@@ -22,13 +22,15 @@ Extend the two-clone regression harness (F598) to prove the `git-branch` backend
 - [ ] **Expiry + reclaim:** with an expired lease on the branch, a new claim from the other clone succeeds and the audit trail shows the supersession; TTL boundaries tested via injected clock, not sleeps.
 - [ ] **Takeover:** `--takeover` against a live lease succeeds via CAS, records `priorHolderId`, and a concurrent renew by the prior holder loses cleanly (one of the two lands; the other errors and re-reads).
 - [ ] **Offline refusal:** with the remote unreachable (and separately with `AIGON_STORAGE_OFFLINE=1`), `acquireLease` fails with `LeaseUnavailableError`; event append in the same conditions still succeeds locally and syncs later.
-- [ ] **Event convergence under contention:** both clones append events to the same and different specs while trading pushes; after both sync, `events.jsonl` contents are identical across clones, union-complete, duplicate-free.
+- [ ] **Event + stats convergence under contention:** both clones append workflow and `stats.recorded` events to the same and different specs while trading pushes; after both sync, `events.jsonl` contents are identical across clones (union-complete, duplicate-free) and local `stats.json` / aggregate cache agree with canonical stats events (F598 parity).
 - [ ] **Crash-window integrity:** kill a clone's process between commit and push, and between push and local projection update; assert the next command self-recovers (no stuck state, doctor reports clean or auto-fixable).
 - [ ] Runs inside `npm run test:core` (non-browser) within the existing test budget (`scripts/check-test-budget.sh`); parallel-process tests use bounded timeouts and leave no stray processes or temp dirs.
 - [ ] Failure output names the violated property and dumps both clones' branch tips, lease file, and relevant event tails for diagnosis.
 
 ## Validation
 ```bash
+node -c aigon-cli.js
+npm run test:related -- tests/integration/two-clone lib/spec-store
 ```
 
 ## Technical Approach
@@ -46,7 +48,7 @@ Extend the two-clone regression harness (F598) to prove the `git-branch` backend
 - Load/scale benchmarks beyond the budget check.
 
 ## Open Questions
-- Whether the deterministic interleaving hook should be a permanent internal test seam or stripped after this set — recommended: keep it, seams like this are how F598 stays useful.
+- None — the deterministic interleaving hook stays as a permanent internal test seam (F598 precedent).
 
 ## Related
 - Research: —
