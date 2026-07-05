@@ -23,7 +23,8 @@ Turn leases from advisory into **authoritative mutual exclusion** on the `git-br
 - [ ] Push rejection handling distinguishes two cases after re-fetch: (a) the lease file for this key changed → `LeaseConflictError` (lost the race); (b) only other paths changed (e.g. someone pushed events) → rebuild the lease commit on the new tip and retry, bounded (3 attempts) with short jittered backoff; exhausting retries surfaces a distinct retryable error.
 - [ ] Renew, release, and takeover use the same CAS discipline. Renew preserves existing TTL/checkpoint semantics (default TTL 30 min, checkpoint at most every 10 min — `DEFAULT_LEASE_TTL_MS` / `DEFAULT_RENEW_INTERVAL_MS` unchanged). Release clears the role entry. Takeover overwrites and records `priorHolderId`/`priorAgentId`.
 - [ ] Every successful CAS transition also appends the matching `lease.*` event to `specs/<KEY>/events.jsonl` (same commit) so audit history and existing lease-derivation code paths keep working. The file, not the derived events, is what acquire/renew/release consult on this backend.
-- [ ] **Online-mandatory claims**: on the `git-branch` backend, `acquireLease` (and takeover) with the remote unreachable, or under `--offline`/`AIGON_STORAGE_OFFLINE=1`/`storage.git.offline`, fails with a new `LeaseUnavailableError` whose message explains that claiming requires reaching the remote and names the remote. Event writes retain today's offline tolerance. `coordinateMutatingCommand` in `lease-coordination.js` enforces this in one place; `renewLease` failures due to network are surfaced as warnings, not hard stops, while the lease is still within TTL.
+- [ ] **Online-mandatory claims**: on the `git-branch` backend, `acquireLease` (and takeover) with the remote unreachable, or under `--offline`/`AIGON_STORAGE_OFFLINE=1`/`storage.git.offline`, fails with a new `LeaseUnavailableError` whose message explains that claiming requires reaching the remote and names the remote. Event writes retain today's offline tolerance. `coordinateMutatingCommand` in `lease-coordination.js` enforces this in one place; `renewLease` failures due to network are surfaced as warnings, not hard stops, while the lease is still within TTL. **`releaseLease` is not online-mandatory**: when the remote is unreachable, release logs a warning and returns (TTL still covers safety); `feature-close` must not block on release failure.
+- [ ] Lease file shape is **one `leases/<KEY>.json` per spec key** with a roles map (not per-role files). Concurrent impl vs eval on the same key serializes through one CAS blob — acceptable because roles are rarely contested simultaneously and the read path stays one `cat-file`.
 - [ ] Lease records gain a `user` field resolved from `git config user.email` (fallback `user.name`, then null); `holderId` remains the machine id from the existing `resolveHolderId()` chain; `agentId` behaviour unchanged.
 - [ ] The local backend's lease behaviour is completely unchanged (single-machine advisory, as today). The lease strategy is backend-provided: `createLeaseApi` remains the default; the git-branch backend supplies the CAS implementation behind the same five-method surface (`readLeases`, `acquireLease`, `renewLease`, `releaseLease`, `assertLeaseAllowed`).
 - [ ] Integration test on a local bare remote: two clones race `acquireLease` for the same key/role concurrently; assert exactly one `ok: true` and one `LeaseConflictError`, and the branch ends with exactly one lease record. (The fuller matrix lives in `git-branch-two-clone-race-harness`.)
@@ -32,6 +33,8 @@ Turn leases from advisory into **authoritative mutual exclusion** on the `git-br
 
 ## Validation
 ```bash
+node -c aigon-cli.js
+npm run test:related -- tests/integration lib/spec-store lib/commands/storage.js
 ```
 
 ## Technical Approach
@@ -51,10 +54,6 @@ Turn leases from advisory into **authoritative mutual exclusion** on the `git-br
 - Conversion and git-ref removal (`git-branch-convert-and-git-ref-removal`).
 - Any change to local-backend lease semantics.
 - LAN/tailnet gossip or any real-time push channel.
-
-## Open Questions
-- Should `feature-close`'s release tolerate an unreachable remote (queue the release and warn) rather than block closing? Recommended: yes — release is not safety-critical (TTL covers it), only acquisition must be online-mandatory.
-- Per-role files (`leases/F42/impl.json`) vs one file with a roles map: one file per key is recommended (fewer tree entries, single read), but confirm during implementation that role-level races (impl vs eval on the same key) are acceptable to serialize through one blob.
 
 ## Related
 - Research: —
