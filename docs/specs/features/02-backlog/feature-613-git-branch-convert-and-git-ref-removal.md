@@ -1,9 +1,7 @@
 ---
 complexity: high
 set: git-branch-storage
-depends_on:
-  [611, 612]
-  - git-branch-two-clone-race-harness
+depends_on: [611, 612]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-05T13:12:21.620Z", actor: "cli/feature-prioritise" }
 ---
@@ -19,8 +17,8 @@ Finish the replacement: teach `aigon storage convert` to migrate repos onto the 
 - [ ] As a user whose `.aigon/config.json` still says `git-ref` after upgrading aigon, every storage-touching command fails loudly with the exact convert command to run — never a silent fallback to `local` that would hide unsynced state.
 
 ## Acceptance Criteria
-- [ ] `aigon storage convert --backend=git-branch --remote=<remote> [--branch=<name>] [--keep-refs] [--dry-run]` handles `local` → `git-branch` and `git-ref` → `git-branch`. Dry-run prints the plan (specs found, event counts, refs to import/delete) without writing.
-- [ ] git-ref import is verified: per spec, event ids in the branch after import are a superset of ids in the source ref, and counts are printed; any mismatch aborts before config flip and before any ref deletion.
+- [ ] `aigon storage convert --backend=git-branch --remote=<remote> [--branch=<name>] [--keep-refs] [--dry-run]` handles `local` → `git-branch` and `git-ref` → `git-branch`. Dry-run prints the plan (specs found, event counts, refs to import/delete) without writing. On success, `.aigon/config.json` is flipped to `{ backend: "git-branch", git: { remote, branch, offline } }` with `branch` defaulting to `aigon-state`.
+- [ ] git-ref import is verified: per spec, event ids in the branch after import are a superset of ids in the source ref, **including `stats.recorded` events**, and counts are printed; any mismatch aborts before config flip and before any ref deletion.
 - [ ] Conversion is ordered for safety: import → sync/push branch → verify → flip `.aigon/config.json` → delete `refs/aigon/specs/*` locally and on the remote (skipped with `--keep-refs`, with a printed cleanup command for later). An interruption at any step leaves a re-runnable state (idempotent re-convert).
 - [ ] Active leases in the git-ref stream: unexpired advisory leases found during conversion are re-expressed as lease files on the branch (preserving holder/expiry) so a mid-flight team converting doesn't lose claim visibility; expired ones are dropped.
 - [ ] `storage-config.js` no longer accepts `git-ref`: a config specifying it produces a hard, non-zero error naming `aigon storage convert --backend=git-branch` (loud path per F294 discipline — explicitly not a silent coercion to `local`).
@@ -32,6 +30,9 @@ Finish the replacement: teach `aigon storage convert` to migrate repos onto the 
 
 ## Validation
 ```bash
+node -c aigon-cli.js
+npm run test:related -- tests/integration lib/spec-store lib/commands/storage.js
+npm run test:core
 ```
 
 ## Technical Approach
@@ -51,8 +52,7 @@ Finish the replacement: teach `aigon storage convert` to migrate repos onto the 
 - Automated migration of third-party repos (the error message + convert command is the migration UX; there is no known installed base beyond maintainer repos pre-npm-release).
 
 ## Open Questions
-- Should `--keep-refs` be the default for one release (delete opt-in) given the two-machine lab and any beta repos on git-ref? Recommended: no — default deletes after verified import, `--keep-refs` exists for the cautious; pre-npm-release there is no installed base to protect.
-- Whether `aigon doctor --fix` (repo-level) should detect a `git-ref` config and offer the convert command interactively, mirroring its snapshotless-spec guidance.
+- Whether `aigon doctor --fix` (repo-level) should detect a `git-ref` config and offer the convert command interactively, mirroring its snapshotless-spec guidance — recommended yes if low-cost during implementation.
 
 ## Related
 - Research: —
