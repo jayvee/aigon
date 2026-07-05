@@ -18,7 +18,9 @@ Add a new `git-branch` SpecStore backend that stores canonical spec state as a *
 ## Acceptance Criteria
 - [ ] `resolveStorageConfig` accepts `storage.backend: "git-branch"` with `storage.git.remote`, `storage.git.branch` (default `"aigon-state"`), and `storage.git.offline`; unknown backends still coerce to `local`.
 - [ ] `createSpecStore` returns a `git-branch` backend that passes `assertSpecStoreInterface` (full `SPEC_STORE_METHODS` contract: listSpecs, readSpec, readEvents/readEventsSync, appendEvent, readSnapshot/readSnapshotSync, writeSnapshot, lock, sync, health, and the lease helpers via the existing shared `createLeaseApi`).
-- [ ] Branch tree layout is exactly: `meta.json` (schema version + storage identity) and `specs/<KEY>/events.jsonl` (e.g. `specs/F42/events.jsonl`). A `leases/` directory is documented as reserved but not written by this feature.
+- [ ] Branch tree layout is exactly: `meta.json` (see below) and `specs/<KEY>/events.jsonl` (e.g. `specs/F42/events.jsonl`). A `leases/` directory is documented as reserved but not written by this feature. `meta.json` includes `{ schemaVersion, backend: "git-branch", branch, remote }`; `sync()` fails loudly when the branch's `schemaVersion` is newer than this aigon build understands (no silent downgrade).
+- [ ] Canonical `events.jsonl` carries workflow, lease, and `stats.recorded` events in one stream per spec (same as git-ref). After every merge/append/sync rebuild, `rebuildStatsProjectionForKey` runs so `.aigon/workflows/**/stats.json` and the stats aggregate cache stay aligned with canonical events (F595 parity).
+- [ ] `readSnapshot` / `writeSnapshot` / `lock` remain **local-projection-only** (delegate to the local backend, same as git-ref today). Snapshots are never written to the branch tree.
 - [ ] The branch is created as an **orphan** (no parent from `main`) on first write and is **never checked out** into the user's working tree — all reads/writes go through git plumbing (`hash-object`, `mktree`, `commit-tree`, `ls-tree`, `cat-file`). `git status` in the user's worktree is unaffected by any storage operation.
 - [ ] `appendEvent` follows the git-ref backend's discipline: pre-write fetch+merge unless offline, append to the spec's `events.jsonl` in a new commit on the branch tip, push. On push rejection: fetch, union-merge events by event id (reuse `event-merge.js`), create a merge commit, re-push.
 - [ ] `sync()` fetches `refs/heads/<branch>` from the remote, union-merges any divergent event files, rebuilds the local `.aigon/workflows/**` projection (reuse `projection.js`), pushes, and records sync state (reuse `sync-state.js`). `readEventsSync`/`readSnapshotSync` never hit the network.
@@ -30,13 +32,16 @@ Add a new `git-branch` SpecStore backend that stores canonical spec state as a *
 
 ## Validation
 ```bash
+node -c aigon-cli.js
+npm run test:related -- tests/integration lib/spec-store lib/commands/storage.js
 ```
 
 ## Technical Approach
 - New module `lib/spec-store/git-branch-backend.js` implementing the SpecStore interface; registered in `lib/spec-store/index.js` factory and `storage-config.js`.
 - Extend `lib/spec-store/git-plumbing.js` with tree-aware helpers: read a file from a commit (`cat-file`), list tree entries, and build a commit that replaces/adds one file path in the tree (`hash-object` → `mktree`/`update-index --index-info` against a temporary index → `commit-tree`). Never touch the user's index or worktree — use a throwaway `GIT_INDEX_FILE` under `.aigon/cache/`.
 - Reuse unchanged: `event-merge.js` (union/dedupe by event id), `projection.js` (rebuild local workflows cache), `sync-state.js`, `sync-guard.js`, `lease-api.js`/`leases.js` (advisory path for now), `spec-key.js`.
-- Push target is `refs/heads/<branch>` on the configured remote. Fetch uses a remote-tracking ref under `refs/aigon-internal/` or standard `refs/remotes/<remote>/<branch>` — pick one and document it; do not rely on the user's fetch refspec configuration.
+- Push target is `refs/heads/<branch>` on the configured remote. Fetch uses an explicit internal tracking ref `refs/aigon-internal/state` (or `refs/aigon-internal/<branch>` when branch ≠ default) via `git fetch <remote> +refs/heads/<branch>:refs/aigon-internal/state` — never rely on the user's default fetch refspec. Document the ref in `docs/specstore-architecture.md` when that doc is updated by later set members.
+- Update workflow-core's SpecStore cache key (`lib/workflow-core/engine.js`, `lib/workflow-snapshot-adapter.js`) to include `storage.git.branch` for git-branch backends so engine instances do not collide across branch names.
 - Keep per-file event streams independent so concurrent writers to *different* specs merge trivially (different paths in the tree → trees merge cleanly during union-merge commit construction).
 - Non-functional: a sync on a repo with ~200 specs must stay under a few seconds on a warm local clone; batch `cat-file` reads where possible.
 - Follow AGENTS.md § Write-Path Contract: every write path (append, merge, import) must leave the branch tree and the local projection in the state the read paths assume; add the corresponding grep-discipline checks.
@@ -50,10 +55,6 @@ Add a new `git-branch` SpecStore backend that stores canonical spec state as a *
 - Dashboard/doctor/report surfacing for the new backend beyond a truthful `health()` (`git-branch-observability`).
 - Multi-clone race/regression harness beyond the single convergence test (`git-branch-two-clone-race-harness`).
 - Contents-API (HTTPS) transport — git protocol only in this set.
-
-## Open Questions
-- Fetch bookkeeping: standard `refs/remotes/<remote>/aigon-state` vs a private `refs/aigon-internal/state` tracking ref — prefer whichever keeps `git fetch` behaviour predictable for users with narrow refspecs.
-- Should `meta.json` carry a monotonically increasing schema version checked at sync time (fail loudly on unknown-newer)? Recommended: yes, mirroring how doctor treats unknown state.
 
 ## Related
 - Research: —
