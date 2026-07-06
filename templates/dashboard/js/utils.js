@@ -183,21 +183,37 @@
         SCHEDULED_CLOCK_SVG + '</span>';
     }
 
-    function buildLeaseBadgeHtml(entity) {
+    function formatLeaseHolderLabel(lease) {
+      const user = lease.user ? String(lease.user) : null;
+      const machine = lease.holderId || 'unknown';
+      const agent = lease.agentId ? String(lease.agentId).toUpperCase() : null;
+      if (user) {
+        return agent ? (user + ' @ ' + machine + ' (' + agent + ')') : (user + ' @ ' + machine);
+      }
+      return agent ? (machine + ' · ' + agent) : machine;
+    }
+
+    function buildLeaseBadgeHtml(entity, repoStorage) {
       const leases = entity && Array.isArray(entity.activeLeases) ? entity.activeLeases : [];
       if (leases.length === 0) return '';
       const primary = leases[0];
-      const holder = primary.holderId || 'unknown';
-      const agent = primary.agentId ? String(primary.agentId).toUpperCase() : null;
-      const label = agent ? (holder + ' · ' + agent) : holder;
-      const title = leases.map((lease) => {
-        const parts = [lease.role, lease.holderId];
-        if (lease.agentId) parts.push(lease.agentId);
+      const label = formatLeaseHolderLabel(primary);
+      const localHolderId = repoStorage && repoStorage.localHolderId ? String(repoStorage.localHolderId) : null;
+      const heldByMe = localHolderId && primary.holderId === localHolderId;
+      const stale = Boolean(entity.leaseDataStale || (repoStorage && repoStorage.leaseDataStale));
+      const titleParts = leases.map((lease) => {
+        const parts = [lease.role, formatLeaseHolderLabel(lease)];
         if (lease.expiresAt) parts.push('until ' + lease.expiresAt);
         return parts.join(' · ');
-      }).join('\n');
+      });
+      if (stale && repoStorage && repoStorage.lastLeaseRefreshAt) {
+        titleParts.push('lease data stale since ' + repoStorage.lastLeaseRefreshAt);
+      }
+      const title = titleParts.join('\n');
       const extra = leases.length > 1 ? ' +' + (leases.length - 1) : '';
-      return '<span class="kcard-lease-badge" title="' + escHtml(title) + '">🔒 ' + escHtml(label) + escHtml(extra) + '</span>';
+      const cssClass = 'kcard-lease-badge'
+        + (stale ? ' kcard-lease-stale' : (heldByMe ? ' kcard-lease-held-by-me' : ' kcard-lease-held-by-other'));
+      return '<span class="' + cssClass + '" title="' + escHtml(title) + '">🔒 ' + escHtml(label) + escHtml(extra) + '</span>';
     }
 
     function buildStorageStatusBadgeHtml(storage) {
@@ -206,16 +222,19 @@
         return '<span class="repo-storage-badge repo-storage-local" title="Local spec storage">local</span>';
       }
       const health = storage.health || 'ok';
-      const healthLabel = health === 'ok' ? 'synced' : health;
+      const healthLabel = storage.leaseDataStale ? 'stale' : (health === 'ok' ? 'synced' : health);
+      const backendLabel = storage.backend === 'git-branch' ? 'git-branch' : 'git-ref';
       const titleParts = [
-        'Git-ref storage',
+        backendLabel + ' storage',
         storage.remote ? 'remote ' + storage.remote : null,
+        storage.branch ? 'branch ' + storage.branch : null,
         storage.refPrefix ? 'prefix ' + storage.refPrefix : null,
         storage.offline ? 'offline' : null,
+        storage.lastLeaseRefreshAt ? 'leases refreshed ' + storage.lastLeaseRefreshAt : null,
         storage.lastSyncAt ? 'last sync ' + storage.lastSyncAt : null,
         storage.ahead != null ? 'ahead ' + storage.ahead : null,
         storage.behind != null ? 'behind ' + storage.behind : null,
         storage.lastError ? storage.lastError : null,
       ].filter(Boolean);
-      return '<span class="repo-storage-badge repo-storage-git repo-storage-' + escHtml(health) + '" title="' + escHtml(titleParts.join(' · ')) + '">git-ref · ' + escHtml(healthLabel) + '</span>';
+      return '<span class="repo-storage-badge repo-storage-git repo-storage-' + escHtml(healthLabel === 'stale' ? 'behind' : health) + '" title="' + escHtml(titleParts.join(' · ')) + '">' + escHtml(backendLabel) + ' · ' + escHtml(healthLabel) + '</span>';
     }

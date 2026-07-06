@@ -336,10 +336,11 @@
           : [];
         if (leases.length === 0) return '';
         const rows = leases.map((lease) => {
-          const holder = lease.holderId || 'unknown';
-          const agent = lease.agentId ? String(lease.agentId).toUpperCase() : '—';
+          const holder = typeof formatLeaseHolderLabel === 'function'
+            ? formatLeaseHolderLabel(lease)
+            : ((lease.holderId || 'unknown') + (lease.agentId ? ' · ' + String(lease.agentId).toUpperCase() : ''));
           return '<div class="stats-row"><div class="stats-key">' + escHtml(lease.role) + '</div><div class="stats-val">' +
-            escHtml(holder) + ' · ' + escHtml(agent) + ' · until ' + escHtml(lease.expiresAt || '—') + '</div></div>';
+            escHtml(holder) + ' · until ' + escHtml(lease.expiresAt || '—') + '</div></div>';
         }).join('');
         return '<div class="deep-status-section drawer-lease-section">' +
           '<h5 class="stats-section-heading">Active leases</h5>' +

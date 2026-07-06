@@ -648,6 +648,9 @@
     .repo-storage-git.repo-storage-ahead{border-color:rgba(59,130,246,.28);color:#93c5fd}
     .repo-storage-git.repo-storage-behind,.repo-storage-git.repo-storage-degraded{border-color:rgba(251,191,36,.35);color:#fcd34d}
     .kcard-lease-badge{display:inline-flex;align-items:center;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.12);color:#fcd34d;vertical-align:middle;white-space:nowrap}
+    .kcard-lease-held-by-me{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.12);color:#86efac}
+    .kcard-lease-held-by-other{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.12);color:#fcd34d}
+    .kcard-lease-stale{border-color:rgba(148,163,184,.35);background:rgba(148,163,184,.12);color:#cbd5e1}
     .storage-action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
     /* Doctor modal */
     .doctor-modal-box{max-width:640px;width:min(640px,calc(100vw - 24px));display:flex;flex-direction:column;gap:14px;padding:20px 24px}
