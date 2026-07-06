@@ -1,3 +1,26 @@
+---
+commit_count: 5
+lines_added: 859
+lines_removed: 8
+lines_changed: 867
+files_touched: 8
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 56431
+output_tokens: 181500
+cache_creation_input_tokens: 472219
+cache_read_input_tokens: 15608684
+thinking_tokens: 0
+total_tokens: 16318834
+billable_tokens: 237931
+cost_usd: 15.5754
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 610 - git-branch-cas-leases
 Agent: cc
 
