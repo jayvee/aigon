@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 921
+lines_removed: 107
+lines_changed: 1028
+files_touched: 18
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 611 - git-branch-observability
 Agent: cu
 
