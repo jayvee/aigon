@@ -158,7 +158,11 @@ function setBudgetWidgetCollapsed(collapsed) {
 }
 
 function budgetAgentEnabled(agentId) {
-  return AIGON_AGENTS.some(agent => agent.id === agentId);
+  const agent = AIGON_AGENTS.find(a => a.id === agentId);
+  if (!agent) return false;
+  const state = agent.availability && agent.availability.state;
+  if (state === 'disabled' || state === 'retired') return false;
+  return true;
 }
 
 function hasAnyBudgetData(data) {
@@ -168,6 +172,7 @@ function hasAnyBudgetData(data) {
   const quotaAgents = _quotaCache && _quotaCache.agents;
   if (quotaAgents) {
     for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'ag']) {
+      if (!budgetAgentEnabled(id)) continue;
       if (quotaAgents[id] && quotaAgents[id].models && Object.keys(quotaAgents[id].models).length > 0) return true;
     }
   }
@@ -231,6 +236,7 @@ function budgetOverallSummaryClass(data) {
   // … and F444 verdicts (so op-depleted alone turns the panel red even when cc/cx are healthy).
   const severity = { 'budget-red': 4, 'budget-amber': 3, 'budget-yellow': 2, 'budget-stale': 1, 'budget-green': 0 };
   for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'ag']) {
+    if (!budgetAgentEnabled(id)) continue;
     const rollup = agentQuotaRollup(id);
     if (!rollup.probeable) continue;
     const rcls = quotaRollupClass(rollup);

@@ -153,6 +153,43 @@ test('getDefaultFleetAgents excludes disabled agents', () => withTempDir(async (
     }
 }));
 
+// REGRESSION: disabled/retired agents must be omitted from dashboard quota panel reads.
+test('isAgentQuotaPanelVisible hides disabled and retired agents', () => withTempDir(async (tmp) => {
+    const home = path.join(tmp, 'home');
+    const repo = path.join(tmp, 'repo');
+    fs.mkdirSync(path.join(home, '.aigon'), { recursive: true });
+    fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.aigon', 'config.json'), JSON.stringify({
+        repos: {},
+        agents: { km: { availability: { state: 'disabled', reason: 'prefer-other-agent' } } },
+        terminalApp: 'apple-terminal',
+    }, null, 2));
+
+    const prevHome = process.env.HOME;
+    const prevCwd = process.cwd();
+    process.env.HOME = home;
+    process.chdir(repo);
+    try {
+        agentRegistryReset();
+        const agentAvailability = require('../../lib/agent-availability');
+        assert.strictEqual(agentAvailability.isAgentQuotaPanelVisible('km', repo), false);
+        assert.strictEqual(agentAvailability.isAgentQuotaPanelVisible('cc', repo), true);
+        const filtered = agentAvailability.filterQuotaStateByAvailability({
+            schemaVersion: 1,
+            agents: {
+                km: { models: { default: { verdict: 'available' } } },
+                cc: { models: { default: { verdict: 'available' } } },
+            },
+        }, repo);
+        assert.ok(!filtered.agents.km);
+        assert.ok(filtered.agents.cc);
+    } finally {
+        process.env.HOME = prevHome;
+        process.chdir(prevCwd);
+        agentRegistryReset();
+    }
+}));
+
 function agentRegistryReset() {
     try {
         const agentRegistry = require('../../lib/agent-registry');

@@ -36,6 +36,23 @@
     "trustInstallScope": "worktree-base",
     "resume": null
   },
+  "quota": {
+    "errorPatterns": [
+      {
+        "id": "amp-out-of-credits",
+        "match": "Out of Credits|out of credits",
+        "verdict": "depleted",
+        "confidence": "high"
+      },
+      {
+        "id": "amp-add-credits",
+        "match": "Add credits to keep using Amp|ampcode\\.com/pay",
+        "verdict": "depleted",
+        "confidence": "high"
+      }
+    ],
+    "unknownPolicy": "permit"
+  },
   "cli": {
     "command": "amp",
     "implementFlag": "--no-ide --no-jetbrains --no-notifications --dangerously-allow-all",
@@ -172,6 +189,16 @@
     "shellTrap": true,
     "heartbeatSidecar": true,
     "cliHooks": null
+  },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [1],
+      "stderrPatterns": [
+        "out of credits",
+        "add credits to keep using amp",
+        "insufficient credits"
+      ]
+    }
   },
   "commandExcludes": []
 }

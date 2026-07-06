@@ -30,6 +30,16 @@ for (const [agentId, fixture, patternId] of CASES) {
     });
 }
 
+test('quota classifier: am out-of-credits modal (no reset time)', () => {
+    const raw = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'quota', 'am-out-of-credits.txt'), 'utf8');
+    const result = quotaProbe.classifyProbeResult(agentRegistry.getAgent('am'), {
+        ok: false,
+        stdout: raw,
+    });
+    assert.strictEqual(result.verdict, 'depleted');
+    assert.strictEqual(result.matchedPatternId, 'amp-out-of-credits');
+});
+
 test('quota classifier: successful PONG is available', () => {
     const result = quotaProbe.classifyProbeResult(agentRegistry.getAgent('cx'), {
         ok: true,
