@@ -223,12 +223,12 @@
       }
       const health = storage.health || 'ok';
       const healthLabel = storage.leaseDataStale ? 'stale' : (health === 'ok' ? 'synced' : health);
-      const backendLabel = storage.backend === 'git-branch' ? 'git-branch' : 'git-ref';
+      const backendLabel = storage.backend === 'git-branch' ? 'git-branch' : (storage.backend === 'git-ref-removed' ? 'git-ref (removed)' : storage.backend);
       const titleParts = [
         backendLabel + ' storage',
         storage.remote ? 'remote ' + storage.remote : null,
         storage.branch ? 'branch ' + storage.branch : null,
-        storage.refPrefix ? 'prefix ' + storage.refPrefix : null,
+        storage.convertHint ? storage.convertHint : null,
         storage.offline ? 'offline' : null,
         storage.lastLeaseRefreshAt ? 'leases refreshed ' + storage.lastLeaseRefreshAt : null,
         storage.lastSyncAt ? 'last sync ' + storage.lastSyncAt : null,

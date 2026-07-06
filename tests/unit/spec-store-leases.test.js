@@ -21,8 +21,8 @@ function initRepoWithBareRemote(base) {
   fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
   fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), `${JSON.stringify({
     storage: {
-      backend: 'git-ref',
-      git: { remote: 'origin', refPrefix: 'refs/aigon/specs' },
+      backend: 'git-branch',
+      git: { remote: 'origin', branch: 'aigon-state' },
     },
   }, null, 2)}\n`);
   return { repo, bare };
@@ -62,7 +62,7 @@ test('deriveActiveLease expires by wall clock', () => {
   assert.strictEqual(isLeaseExpired(active), true);
 });
 
-testAsync('lease acquire/renew/release round-trip on git-ref backend', async () => {
+testAsync('lease acquire/renew/release round-trip on git-branch backend', async () => {
   // REGRESSION: lease events must append to canonical log and sync (feature 578 AC).
   await withTempDirAsync('lease-roundtrip-', async (base) => {
     const { repo } = initRepoWithBareRemote(base);
@@ -142,7 +142,7 @@ testAsync('storage doctor flags expired-but-unreleased lease', async () => {
   });
 });
 
-testAsync('cross-repo report merges specs from two git-ref repos', async () => {
+testAsync('cross-repo report merges specs from two git-branch repos', async () => {
   // REGRESSION: storage report must assemble fetched refs across repos (feature 578 AC).
   await withTempDirAsync('lease-report-', async (base) => {
     fs.mkdirSync(path.join(base, 'a'), { recursive: true });
