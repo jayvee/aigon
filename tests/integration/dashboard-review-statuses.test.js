@@ -170,6 +170,23 @@ test('buildSetValidActions exposes restart actions for stopped partial sets', ()
     assert.ok(!stoppedDone.some(a => a.action === 'set-autonomous-start'), 'complete set should not offer start');
 });
 
+test('buildSetValidActions exposes recovery for paused-on-quota partial sets', () => {
+    const pausedQuota = buildSetValidActions({
+        slug: 'git-branch-storage',
+        status: 'paused-on-quota',
+        isComplete: false,
+        autonomous: {
+            status: 'paused-on-quota',
+            members: ['609', '610', '611'],
+            completed: ['609', '610'],
+            pausedFeature: '611',
+            reason: 'review-quota-paused',
+        },
+    }, { requiresPro: false, proAvailable: true });
+    assert.ok(pausedQuota.some(a => a.action === 'set-autonomous-start' && a.label === 'Resume (choose agents…)'));
+    assert.ok(pausedQuota.some(a => a.action === 'set-autonomous-resume' && a.label === 'Resume (same agents)'));
+});
+
 // --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read
 // from tmux presence instead of the snapshot. Spec-review status now flows from

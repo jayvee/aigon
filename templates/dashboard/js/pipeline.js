@@ -1577,18 +1577,20 @@
             const members = bySet.get(setSlug);
             const roll = setsRollup.find(x => x.slug === setSlug);
             const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
+            const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
+            const isSetPaused = isPausedOnFailure || isPausedOnQuota;
 
             const bundle = document.createElement('div');
-            bundle.className = 'kanban-set-bundle' + (isPausedOnFailure ? ' kanban-set-bundle--paused' : '');
+            bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
 
             const header = document.createElement('div');
-            header.className = 'kanban-set-header kanban-set-bundle-head' + (isPausedOnFailure ? ' kanban-set-bundle-head--paused' : '');
+            header.className = 'kanban-set-header kanban-set-bundle-head' + (isSetPaused ? ' kanban-set-bundle-head--paused' : '');
 
             const row = document.createElement('div');
             row.className = 'kanban-set-header-row';
             const title = document.createElement('span');
             title.className = 'kanban-set-title';
-            const titlePrefix = isPausedOnFailure ? '⚠ ' : '◉ ';
+            const titlePrefix = isSetPaused ? '⚠ ' : '◉ ';
             title.textContent = titlePrefix + setSlug;
             const setScheduledGlyphHtml = roll && roll.scheduledRunAt ? buildScheduledGlyphHtml(roll, 'Set scheduled') : '';
             row.appendChild(title);
@@ -1605,14 +1607,19 @@
                 row.appendChild(scheduleGlyph);
               }
             }
-            if (isPausedOnFailure) {
-              const failedId = roll.autonomous.failedFeature || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
-              const failLabel = failedId ? `feature #${parseInt(failedId, 10) || failedId} failed` : 'review failed';
+            if (isSetPaused) {
+              const pausedId = roll.autonomous.pausedFeature || roll.autonomous.failedFeature || roll.autonomous.currentFeature
+                || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
+              const pauseLabel = isPausedOnQuota
+                ? (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} reviewer quota` : 'reviewer quota')
+                : (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} failed` : 'review failed');
               const badge = document.createElement('span');
               badge.className = 'kanban-set-paused-badge';
               badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
-              badge.textContent = 'PAUSED';
-              badge.title = `Set paused on failure — ${failLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
+              badge.textContent = isPausedOnQuota ? 'QUOTA PAUSE' : 'PAUSED';
+              badge.title = isPausedOnQuota
+                ? `Set paused on quota — ${pauseLabel}. Cancel/re-run review or resume with new agents: aigon set-autonomous-resume ${setSlug}`
+                : `Set paused on failure — ${pauseLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
               row.appendChild(badge);
             }
             const countEl = document.createElement('span');
@@ -1631,7 +1638,7 @@
               } else {
                 const st = a.status || '';
                 const base = repo && repo.name ? String(repo.name) : '';
-                if (base && (st === 'running' || a.running || st === 'paused-on-failure')) {
+                if (base && (st === 'running' || a.running || st === 'paused-on-failure' || st === 'paused-on-quota')) {
                   setConductorSession = base + '-s' + setSlug + '-auto';
                 }
               }

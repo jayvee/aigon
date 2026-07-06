@@ -56,8 +56,43 @@ test('ready-after-cancel re-tags code review as re-run review', () => withTempDi
     const merged = appendFeatureReviewRecoveryDashboardActions(repo, '563', null, snapshot, [
         { action: 'feature-code-review', label: 'Code Review', mode: 'agent' },
     ]);
-    assert.strictEqual(merged[0].label, 'Re-run code review');
-    assert.strictEqual(merged[0].metadata.recovery, true);
+    const review = merged.find((a) => a.action === 'feature-code-review');
+    assert.ok(review);
+    assert.strictEqual(review.label, 'Run Review');
+    assert.strictEqual(review.metadata.recovery, true);
+    assert.strictEqual(review.metadata.recoverySurface, true);
+}));
+
+// REGRESSION: implementation-complete must satisfy review/close guards (not only literal ready).
+test('allAgentsSubmitted accepts implementation-complete', () => {
+    const { allAgentsSubmitted, allAgentsReady } = require('../../lib/state-queries');
+    const ctx = { agentStatuses: { cu: 'implementation-complete' } };
+    assert.strictEqual(allAgentsSubmitted(ctx), true);
+    assert.strictEqual(allAgentsReady(ctx), false);
+});
+
+test('review-quota-paused on ready injects surfaced Run Review', () => withTempDir('aigon-quota-review-', (repo) => {
+    const snapshot = {
+        currentSpecState: 'ready',
+        lifecycle: 'ready',
+        codeReview: { cancelledAt: '2026-07-06T02:56:34.439Z' },
+    };
+    const autoState = { status: 'stopped', reason: 'review-quota-paused', agents: ['cu'] };
+    const autonomousController = {
+        status: 'stopped',
+        reason: 'review-quota-paused',
+        reasonLabel: 'Reviewer quota paused (review cancelled — pick a new reviewer)',
+        recommendedRecoveryKind: 'rerun-review',
+        staleFailureRecovered: true,
+    };
+    const merged = appendFeatureReviewRecoveryDashboardActions(repo, '611', autoState, snapshot, [], autonomousController);
+    const runReview = merged.find((a) => a.action === 'feature-code-review');
+    assert.ok(runReview, 'Run Review injected');
+    assert.strictEqual(runReview.label, 'Run Review');
+    assert.strictEqual(runReview.metadata.recoverySurface, true);
+    const recover = merged.find((a) => a.action === 'autonomous-recover');
+    assert.ok(recover, 'recover action present');
+    assert.strictEqual(recover.payload.recommendedRecoveryKind, 'rerun-review');
 }));
 
 test('read-model exposes recovery actions for autonomous review trouble', () => withTempDir('aigon-f563-recovery-', (repo) => {

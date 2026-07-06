@@ -23,7 +23,7 @@
 
   function statusLabel(status) {
     const raw = String(status || 'idle');
-    if (raw === 'paused-on-failure') return 'paused-on-failure';
+    if (raw === 'paused-on-failure' || raw === 'paused-on-quota') return raw;
     return raw;
   }
 

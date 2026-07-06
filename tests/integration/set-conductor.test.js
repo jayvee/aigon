@@ -123,7 +123,19 @@ test('pause notification message contains slug, feature ID and resume command', 
     assert.ok(msg.includes('aigon set-autonomous-resume feature-set') && msg.includes('review failed'));
     assert.ok(buildPauseNotificationMessage('s', 'x', []).includes('aigon set-autonomous-resume s'));
 });
-// REGRESSION F588: stale feature-auto review-timeout is not treated as set-blocking failure
+// REGRESSION: reviewer quota pause must not leave set conductor polling forever.
+test('isFeatureAutoQuotaPause detects stopped review-quota-paused feature-auto', () => {
+    const { isFeatureAutoQuotaPause } = require('../../lib/set-conductor');
+    assert.strictEqual(isFeatureAutoQuotaPause({ status: 'stopped', reason: 'review-quota-paused' }), true);
+    assert.strictEqual(isFeatureAutoQuotaPause({ status: 'quota-paused', reason: 'quota-cap' }), true);
+    assert.strictEqual(isFeatureAutoQuotaPause({ status: 'failed', reason: 'review-timeout' }), false);
+});
+test('quota pause notification message contains resume guidance', () => {
+    const { buildQuotaPauseNotificationMessage } = require('../../lib/set-conductor');
+    const msg = buildQuotaPauseNotificationMessage('git-branch-storage', '611', 'review-quota-paused');
+    assert.ok(msg.includes('git-branch-storage') && msg.includes('feature #611'));
+    assert.ok(msg.includes('reviewer quota') && msg.includes('set-autonomous-resume'));
+});
 test('isStaleFeatureAutoFailure when workflow advanced past review-timeout', () => {
     const featureAuto = { status: 'failed', reason: 'review-timeout', updatedAt: '2026-06-20T10:00:00Z' };
     const snapshot = {
