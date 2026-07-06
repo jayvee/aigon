@@ -11,9 +11,10 @@ async function handleSetActionModule(ctx) {
 
   switch (va.action) {
     case 'set-autonomous-start': {
+      const resumeWithPicker = String(va.label || '').includes('choose agents');
       const pick = await H.showAgentPicker(slug, 'set ' + slug, {
-        title: 'Choose set agents',
-        submitLabel: 'Start set',
+        title: resumeWithPicker ? 'Resume set — choose agents' : 'Choose set agents',
+        submitLabel: resumeWithPicker ? 'Resume set' : 'Start set',
         repoPath,
         taskType: 'implement',
         action: va.action,

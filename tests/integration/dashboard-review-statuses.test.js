@@ -131,6 +131,45 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
     assert.ok(gatedSchedule && gatedSchedule.disabled, 'expected set schedule action to be Pro-gated');
 });
 
+// REGRESSION: user-stopped set with partial progress must expose restart/resume, not only Reset.
+test('buildSetValidActions exposes restart actions for stopped partial sets', () => {
+    const stoppedPartial = buildSetValidActions({
+        slug: 'git-branch-storage',
+        status: 'stopped',
+        isComplete: false,
+        autonomous: {
+            status: 'stopped',
+            members: ['609', '610', '611', '612', '613'],
+            completed: ['609', '610'],
+        },
+    }, {
+        requiresPro: false,
+        proAvailable: true,
+    });
+    assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-start'), 'expected restart start action');
+    assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-resume'), 'expected resume action');
+    assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-reset'), 'expected reset action');
+    assert.strictEqual(
+        stoppedPartial.find(a => a.action === 'set-autonomous-start').label,
+        'Resume (choose agents…)',
+    );
+    assert.strictEqual(
+        stoppedPartial.find(a => a.action === 'set-autonomous-resume').label,
+        'Resume (same agents)',
+    );
+    const stoppedDone = buildSetValidActions({
+        slug: 'git-branch-storage',
+        status: 'stopped',
+        isComplete: true,
+        autonomous: {
+            status: 'stopped',
+            members: ['609', '610'],
+            completed: ['609', '610'],
+        },
+    });
+    assert.ok(!stoppedDone.some(a => a.action === 'set-autonomous-start'), 'complete set should not offer start');
+});
+
 // --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read
 // from tmux presence instead of the snapshot. Spec-review status now flows from
