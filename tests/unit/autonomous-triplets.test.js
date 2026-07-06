@@ -68,4 +68,36 @@ test('launch resolution ignores stale configured models that are no longer in th
     assert.ok(current.args.some(arg => arg.includes('--model gpt-5.4-mini')));
 });
 
+// REGRESSION: failover must not pass the exhausted agent's modelOverride to the replacement runtime agent.
+test('launch resolution ignores slot modelOverride when invalid for replacement agent', () => {
+    const snapshot = {
+        agents: {
+            cc: {
+                modelOverride: 'claude-opus-4-8',
+                effortOverride: 'medium',
+                currentAgentId: 'cx',
+            },
+        },
+    };
+    const failover = buildAgentLaunchInvocation({
+        agentId: 'cx',
+        slotAgentId: 'cc',
+        snapshot,
+        stageDefaultModel: 'gpt-5.5',
+    });
+    assert.strictEqual(failover.resolved.model, 'gpt-5.5');
+    assert.strictEqual(failover.resolved.modelSource, 'config');
+    assert.ok(failover.args.some((arg) => arg.includes('--model gpt-5.5')));
+
+    const handoff = buildAgentLaunchInvocation({
+        agentId: 'cu',
+        slotAgentId: 'cc',
+        snapshot,
+        stageDefaultModel: 'composer-2.5',
+        launcherModel: 'composer-2.5',
+    });
+    assert.strictEqual(handoff.resolved.model, 'composer-2.5');
+    assert.strictEqual(handoff.resolved.modelSource, 'launcher');
+});
+
 report();

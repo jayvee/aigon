@@ -128,4 +128,24 @@ test('projector replays token_exhausted + failover_switched in order', () => {
     a.strictEqual(ctx.agents.cx.tokenExhausted, null);
 });
 
+// REGRESSION: cross-agent failover clears slot triplet overrides from the exhausted runtime agent.
+test('projector clears modelOverride on cross-agent failover_switched', () => {
+    const ctx = projectContext([
+        {
+            type: 'feature.started',
+            featureId: '81',
+            mode: 'solo_worktree',
+            agents: ['cc'],
+            modelOverrides: { cc: 'claude-opus-4-8' },
+            effortOverrides: { cc: 'medium' },
+            at: '2026-04-22T10:00:00Z',
+        },
+        { type: 'agent.token_exhausted', agentId: 'cc', source: 'live_pane_pattern', currentAgentId: 'cc', at: '2026-04-22T10:05:00Z' },
+        { type: 'agent.failover_switched', agentId: 'cc', previousAgentId: 'cc', replacementAgentId: 'cx', at: '2026-04-22T10:06:00Z' },
+    ]);
+    a.strictEqual(ctx.agents.cc.currentAgentId, 'cx');
+    a.strictEqual(ctx.agents.cc.modelOverride, null);
+    a.strictEqual(ctx.agents.cc.effortOverride, null);
+});
+
 report();
