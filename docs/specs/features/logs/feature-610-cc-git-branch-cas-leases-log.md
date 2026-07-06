@@ -28,3 +28,23 @@ Implemented authoritative CAS leases on the git-branch backend. The current leas
 
 ## Test Coverage
 `tests/integration/git-branch-cas-leases.test.js`: concurrent two-clone acquire race (exactly one winner + one LeaseConflictError, byte-identical lease file), audit-event-in-same-commit, renew/takeover/release round-trip, offline claim refusal (LeaseUnavailableError) + offline-tolerant release, and unrelated-events-push does-not-conflict.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-06
+
+### Fixes Applied
+- None — implementation was clean
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- CAS protocol matches the spec: `leases/<KEY>.json` roles map, FF-only push, blob-sha classification on rejection (unchanged lease → retry; changed → `LeaseConflictError`), audit events in the same commit, and `mergeRemote` remote lease carry-forward are all wired correctly.
+- Online-mandatory claims are enforced at both `coordinateMutatingCommand` (explicit offline) and `acquireLease` (unreachable remote); `renewLease`/`releaseLease` offline tolerance matches the AC.
+- Local and git-ref backends remain on advisory `createLeaseApi`; git-branch swaps in `createGitBranchLeaseApi` behind the same five-method surface.
+- Same-repo concurrent `acquireLease` interleaving with `mergeRemote` event pushes is out of scope here (F612 race harness); two-clone integration coverage is sufficient for this feature.
