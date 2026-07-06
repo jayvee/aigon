@@ -42,7 +42,7 @@ function buildCmd(agentConfig, modelValue) {
                 ? ['opencode', ['run', '-m', modelValue, PROBE_PROMPT]]
                 : ['opencode', ['run', PROBE_PROMPT]];
         case 'ag':
-            return ['agy', ['--dangerously-skip-permissions', '-i', PROBE_PROMPT, ...modelArgs]];
+            return ['agy', ['--dangerously-skip-permissions', '-p', PROBE_PROMPT, ...modelArgs]];
         case 'cx':
             // codex uses -m not --model for exec
             return modelValue

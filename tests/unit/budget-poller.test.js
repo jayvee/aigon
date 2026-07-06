@@ -7,7 +7,7 @@
 
 const assert = require('assert');
 const { test, report } = require('../_helpers');
-const { parseClaudeStatus, parseGeminiModelUsage, parseGeminiFooterPlanQuota, parseKimiUsage, stripAnsi } = require('../../lib/budget-poller');
+const { parseClaudeStatus, parseGeminiModelUsage, parseGeminiFooterPlanQuota, parseAntigravityUsage, parseKimiUsage, stripAnsi } = require('../../lib/budget-poller');
 
 // REGRESSION: GET /api/budget cc — parseClaudeStatus misread 0% used when % is on progress-bar line above Resets.
 test('parseClaudeStatus: new format — pct on progress-bar line above Resets', () => {
@@ -116,6 +116,29 @@ Model usage
 test('parseGeminiFooterPlanQuota: extracts footer-level quota pct', () => {
     const foot = parseGeminiFooterPlanQuota('sandbox  /model  quota\n  no sandbox   Auto (Gemini 3)   15% used (Limit resets in 14h 41m)');
     assert.strictEqual(foot.pct_used, 15);
+});
+
+// REGRESSION: GET /api/budget ag — parse Antigravity CLI /usage "Models & Quota" groups.
+test('parseAntigravityUsage: extracts Gemini and Claude/GPT weekly headroom', () => {
+    const fixture = `
+└ Models & Quota
+GEMINI MODELS
+  Weekly Limit
+    [░░░░░░░░░░░░░░░░░░░░] 0.00%
+    Refreshes in 106h 54m
+CLAUDE AND GPT MODELS
+  Weekly Limit
+    [████████████████████] 100.00%
+    Quota available
+`;
+    const tiers = parseAntigravityUsage(fixture);
+    assert.strictEqual(tiers.length, 2);
+    assert.strictEqual(tiers[0].tier, 'gemini_models');
+    assert.strictEqual(tiers[0].pct_used, 100);
+    assert.strictEqual(tiers[0].resets_at, '106h 54m');
+    assert.strictEqual(tiers[1].tier, 'claude_gpt_models');
+    assert.strictEqual(tiers[1].pct_used, 0);
+    assert.strictEqual(tiers[1].resets_at, 'Quota available');
 });
 
 // REGRESSION: GET /api/budget km — parse Kimi CLI /usage output.

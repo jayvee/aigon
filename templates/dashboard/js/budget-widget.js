@@ -131,9 +131,9 @@ function quotaReasonText(agentId) {
 function fetchBudget(force) {
   if (_budgetFetchPromise && !force) return _budgetFetchPromise;
   _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null, km: null })
-    .catch(() => ({ cc: null, cx: null, gg: null, km: null }))
-    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null, km: null }; _budgetFetchPromise = null; return _budgetCache; });
+    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null, km: null, ag: null })
+    .catch(() => ({ cc: null, cx: null, gg: null, km: null, ag: null }))
+    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null, km: null, ag: null }; _budgetFetchPromise = null; return _budgetCache; });
   return _budgetFetchPromise;
 }
 
@@ -163,11 +163,11 @@ function budgetAgentEnabled(agentId) {
 
 function hasAnyBudgetData(data) {
   const entry = data || _budgetCache || {};
-  if (entry.cc || entry.cx || entry.gg || entry.km) return true;
-  // Show panel even when only F444 quota data exists (e.g. op/cu only).
+  if (entry.cc || entry.cx || entry.gg || entry.km || entry.ag) return true;
+  // Show panel even when only F444 quota data exists (e.g. op/ag only).
   const quotaAgents = _quotaCache && _quotaCache.agents;
   if (quotaAgents) {
-    for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'cu']) {
+    for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'ag']) {
       if (quotaAgents[id] && quotaAgents[id].models && Object.keys(quotaAgents[id].models).length > 0) return true;
     }
   }
@@ -212,6 +212,15 @@ function collectBudgetPctValues(data) {
       }
     }
   }
+  if (budgetAgentEnabled('ag') && data.ag && Array.isArray(data.ag.tiers)) {
+    touchPoll(data.ag.polled_at);
+    for (const t of data.ag.tiers) {
+      if (t && t.pct_used != null) {
+        const rem = 100 - t.pct_used;
+        if (Number.isFinite(rem)) values.push(rem);
+      }
+    }
+  }
   return { values, polledAt };
 }
 
@@ -221,7 +230,7 @@ function budgetOverallSummaryClass(data) {
   let cls = values.length === 0 ? 'budget-stale' : budgetClassFor(values.reduce((a, b) => Math.min(a, b), 100), polledAt);
   // … and F444 verdicts (so op-depleted alone turns the panel red even when cc/cx are healthy).
   const severity = { 'budget-red': 4, 'budget-amber': 3, 'budget-yellow': 2, 'budget-stale': 1, 'budget-green': 0 };
-  for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'cu']) {
+  for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'ag']) {
     const rollup = agentQuotaRollup(id);
     if (!rollup.probeable) continue;
     const rcls = quotaRollupClass(rollup);
@@ -239,7 +248,7 @@ function budgetOverallAriaLabel(summaryClass) {
 
 function budgetCollapsedSummaryLine(data) {
   const parts = [];
-  for (const id of ['cc', 'cx', 'gg', 'km']) {
+  for (const id of ['cc', 'cx', 'gg', 'km', 'ag']) {
     if (!budgetAgentEnabled(id)) continue;
     const s = budgetSummaryForAgent(id, data[id]);
     parts.push(`${s.name}: ${s.summaryText}`);
@@ -258,11 +267,11 @@ function buildBudgetStatusDot(summaryClass) {
 }
 
 // Per-agent dot strip for the collapsed view: one tiny coloured dot + agent
-// code per agent so the user can scan all six without expanding.
+// code per agent so the user can scan probeable agents without expanding.
 function buildCollapsedDotsRow(data) {
   const wrap = createEl('div', { className: 'budget-collapsed-dots', attrs: { 'aria-label': 'Per-agent quota state' } });
   const agentMeta = [
-    ['cc', 'cc'], ['cx', 'cx'], ['gg', 'gg'], ['op', 'op'], ['cu', 'cu'], ['km', 'km'],
+    ['cc', 'cc'], ['cx', 'cx'], ['gg', 'gg'], ['km', 'km'], ['op', 'op'], ['ag', 'ag'],
   ];
   for (const [id, code] of agentMeta) {
     if (!budgetAgentEnabled(id)) continue;
@@ -568,7 +577,11 @@ function ccRemaining(entry) {
 }
 
 function budgetSummaryForAgent(agentId, entry) {
-  const name = agentId === 'cc' ? 'Claude Code' : agentId === 'cx' ? 'Codex' : agentId === 'km' ? 'Kimi' : 'Gemini';
+  const name = agentId === 'cc' ? 'Claude Code'
+    : agentId === 'cx' ? 'Codex'
+    : agentId === 'km' ? 'Kimi'
+    : agentId === 'ag' ? 'Antigravity'
+    : 'Gemini';
   if (!entry) {
     return {
       id: agentId,
@@ -585,7 +598,7 @@ function budgetSummaryForAgent(agentId, entry) {
   let metrics = [];
   let values = [];
   let summaryText = 'usage unavailable';
-  if (agentId === 'gg' || agentId === 'km') {
+  if (agentId === 'gg' || agentId === 'km' || agentId === 'ag') {
     if (!entry.tiers || !entry.tiers.length) {
       return {
         id: agentId,
@@ -713,11 +726,12 @@ function updateAutonomousBudgetNotice() {
 function renderBudgetWidget() {
   const el = document.getElementById('budget-widget');
   if (!el) return;
-  const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
+  const data = _budgetCache || { cc: null, cx: null, gg: null, km: null, ag: null };
   const cc = data.cc;
   const cx = data.cx;
   const gg = data.gg;
   const km = data.km;
+  const ag = data.ag;
   if (!hasAnyBudgetData(data)) {
     el.style.display = 'none';
     el.classList.remove('budget-widget--collapsed');
@@ -731,7 +745,7 @@ function renderBudgetWidget() {
 
   const children = [];
 
-  const latest = [cc && cc.polled_at, cx && cx.polled_at, gg && gg.polled_at, km && km.polled_at].filter(Boolean).sort().pop();
+  const latest = [cc && cc.polled_at, cx && cx.polled_at, gg && gg.polled_at, km && km.polled_at, ag && ag.polled_at].filter(Boolean).sort().pop();
   const head = createEl('div', { className: 'budget-widget-head' });
   head.appendChild(buildBudgetStatusDot(overallClass));
   const headTitles = createEl('div', { className: 'budget-widget-head-titles' });
@@ -876,8 +890,37 @@ function renderBudgetWidget() {
     }
     agentsWrap.appendChild(row);
   }
-
-  // OpenCode (op) — F444 verdict only; no F445 numeric bars from the OpenRouter CLI.
+  if (budgetAgentEnabled('ag')) {
+    const row = createEl('span', { className: 'budget-agent' });
+    const head = createEl('span', { className: 'budget-agent-head' });
+    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Antigravity' }));
+    row.appendChild(head);
+    if (ag && Array.isArray(ag.tiers) && ag.tiers.length) {
+      for (const t of ag.tiers) {
+        const pctRem = t.pct_used != null ? 100 - t.pct_used : null;
+        row.appendChild(buildBudgetMetric({
+          label: (t.label || t.tier || 'tier') + ' weekly remaining',
+          pctRemaining: pctRem,
+          resetsAt: t.resets_at || null,
+          polledAt: ag.polled_at,
+        }));
+      }
+    } else {
+      const rollup = agentQuotaRollup('ag');
+      if (rollup.total > 0 || _quotaCache) {
+        const support = rollup.probeable
+          ? `${rollup.available} / ${rollup.total} available`
+          : 'not probeable';
+        head.appendChild(createEl('span', { className: 'budget-agent-support', text: support }));
+        const reason = quotaReasonText('ag');
+        if (reason) row.appendChild(createEl('span', { className: 'budget-agent-reason', text: reason }));
+        else row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
+      } else {
+        row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'usage unavailable' }));
+      }
+    }
+    agentsWrap.appendChild(row);
+  }
   if (budgetAgentEnabled('op')) {
     const rollup = agentQuotaRollup('op');
     if (rollup.total > 0 || _quotaCache) {
@@ -894,17 +937,6 @@ function renderBudgetWidget() {
       else if (!rollup.probeable) row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'no headless CLI' }));
       agentsWrap.appendChild(row);
     }
-  }
-
-  // Cursor (cu) — no headless CLI; status is permanently 'not probeable' per F444.
-  if (budgetAgentEnabled('cu')) {
-    const row = createEl('span', { className: 'budget-agent' });
-    const head = createEl('span', { className: 'budget-agent-head' });
-    head.appendChild(createEl('span', { className: 'budget-agent-name', text: 'Cursor' }));
-    head.appendChild(createEl('span', { className: 'budget-agent-support', text: 'not probeable' }));
-    row.appendChild(head);
-    row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'no headless CLI' }));
-    agentsWrap.appendChild(row);
   }
 
   if (agentsWrap.childNodes.length) children.push(agentsWrap);
@@ -988,7 +1020,7 @@ function budgetWarningForAgents(agentIds) {
       const wk = entry.weekly && entry.weekly.pct_remaining;
       if (fh != null && fh < 20) { worst = fh; label = '5-hour window'; }
       if (wk != null && wk < 20 && (worst == null || wk < worst)) { worst = wk; label = 'weekly window'; }
-    } else if ((id === 'gg' || id === 'km') && Array.isArray(entry.tiers)) {
+    } else if ((id === 'gg' || id === 'km' || id === 'ag') && Array.isArray(entry.tiers)) {
       for (const t of entry.tiers) {
         const rem = t.pct_used != null ? 100 - t.pct_used : null;
         const tierLabel = t.label || t.tier || 'tier';
@@ -999,7 +1031,7 @@ function budgetWarningForAgents(agentIds) {
       }
     }
     if (worst != null) {
-      const name = id === 'cc' ? 'Claude Code' : id === 'cx' ? 'Codex' : id === 'km' ? 'Kimi' : 'Gemini';
+      const name = id === 'cc' ? 'Claude Code' : id === 'cx' ? 'Codex' : id === 'km' ? 'Kimi' : id === 'ag' ? 'Antigravity' : 'Gemini';
       warnings.push(`${name} has only ${worst}% remaining in its ${label}.`);
     }
   }
