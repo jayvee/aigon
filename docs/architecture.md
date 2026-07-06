@@ -209,7 +209,7 @@ Current shared modules:
 
 ## SpecStore (`lib/spec-store/`)
 
-Durable spec storage boundary introduced in feature 573 and extended through the git-ref storage hardening set. Specs are the top-level work objects; `feature` and `research` are spec kinds addressed by keys (`F42`, `R43`). See **[`docs/specstore-architecture.md`](specstore-architecture.md)** for the current model (events, snapshots, leases, indexes, projections) and layering:
+Durable spec storage boundary introduced in feature 573 and extended through the git-branch storage set (609-613). Specs are the top-level work objects; `feature` and `research` are spec kinds addressed by keys (`F42`, `R43`). See **[`docs/specstore-architecture.md`](specstore-architecture.md)** for the current model (events, snapshots, leases, indexes, projections) and layering:
 
 - **SpecStore** — durable storage protocol (`listSpecs`, `readSpec`, `readEvents`, `appendEvent`, `readSnapshot`, `writeSnapshot`, `lock`, `sync`, `health`, lease helpers)
 - **workflow-core** — lifecycle semantics (XState machine, projector, effects)
@@ -221,14 +221,13 @@ Backends:
 | Backend | Authority | Sync behavior |
 |---------|-----------|---------------|
 | `local` | `.aigon/workflows/**` event logs and snapshots in the current checkout | Default; no cross-machine storage sync beyond normal Git for specs/code |
-| `git-ref` | Canonical append-only events under `refs/aigon/specs/<key>/events` | `aigon storage sync` fetches, merges by event id, rebuilds local projections, and pushes refs |
-| `git-branch` (F609) | Canonical events as a file tree on an orphan branch (default `aigon-state`): `meta.json` + `specs/<KEY>/events.jsonl` | Same durability model as git-ref, but state is an ordinary branch — browsable in the forge UI and immune to custom-ref rulesets. Fetched to `refs/aigon-internal/state`, union-merged by event id, pushed to `refs/heads/<branch>`; never checked out (all I/O via git plumbing) |
+| `git-branch` (F609) | Canonical events as a file tree on an orphan branch (default `aigon-state`): `meta.json` + `specs/<KEY>/events.jsonl` + `leases/<KEY>.json` | Fetched to `refs/aigon-internal/state`, union-merged by event id, pushed to `refs/heads/<branch>`; never checked out (all I/O via git plumbing). CAS lease files are authoritative on this backend (F610). |
 
-Git-ref and git-branch storage are opt-in through `.aigon/config.json` or `aigon storage convert --backend=git-ref --remote=origin`. Existing numeric local workflow events are imported on first sync. Mutating commands do a pre-write fetch/merge unless storage is offline (`storage.git.offline`, `--offline`, or `AIGON_STORAGE_OFFLINE=1`). The git-branch backend keeps snapshots/locks local-projection-only (never written to the branch) and stores leases as advisory events in the same stream until `git-branch-cas-leases` lands.
+Git-branch storage is opt-in through `.aigon/config.json` or `aigon storage convert --backend=git-branch --remote=origin`. Legacy `git-ref` config is rejected — convert first (F613). Existing numeric local workflow events are imported on first sync/convert. Mutating commands do a pre-write fetch/merge unless storage is offline (`storage.git.offline`, `--offline`, or `AIGON_STORAGE_OFFLINE=1`). Snapshots/locks stay local-projection-only.
 
 Leases are advisory append-only `lease.*` events in the same canonical stream. Defaults are a 30 minute TTL and renew checkpoints at most every 10 minutes; `--takeover` records `lease.taken_over` for auditable conflict resolution. `aigon storage status|doctor|report`, `aigon storage sync`, and `aigon board --storage` are the public CLI surfaces. `lib/dashboard-storage.js` provides server-owned DTOs for dashboard repo/settings storage health and active feature/research lease metadata.
 
-Projection boundaries are explicit: `.aigon/workflows/**` remains the local read cache, snapshots are disposable, spec markdown and code changes still move through normal Git, and analytics files such as `.aigon/workflows/**/stats.json` plus `.aigon/cache/stats-aggregate.json` are local projections/caches. Canonical `stats.recorded` events sync through git-ref storage and rebuild those local stats projections where available.
+Projection boundaries are explicit: `.aigon/workflows/**` remains the local read cache, snapshots are disposable, spec markdown and code changes still move through normal Git, and analytics files such as `.aigon/workflows/**/stats.json` plus `.aigon/cache/stats-aggregate.json` are local projections/caches. Canonical `stats.recorded` events sync through git-branch storage and rebuild those local stats projections where available.
 
 Feedback is not a top-level spec kind — it becomes research origin metadata (feature 574).
 
@@ -237,7 +236,7 @@ Feedback is not a top-level spec kind — it becomes research origin metadata (f
 The Aigon workflow now has two layers:
 
 - Spec location under `docs/specs/` remains the user-visible workflow stage.
-- For **features and research**, authoritative lifecycle state lives in SpecStore workflow events — under `.aigon/workflows/` for the local backend, or in Git refs (`refs/aigon/specs/<key>/events`) when git-ref storage is enabled. See the SpecStore section above for backends, sync, leases, and projection boundaries.
+- For **features and research**, authoritative lifecycle state lives in SpecStore workflow events — under `.aigon/workflows/` for the local backend, or on the `aigon-state` branch when git-branch storage is enabled. See the SpecStore section above for backends, sync, leases, and projection boundaries.
 
 That means "state-as-location" is still true at the UX level, but feature commands no longer mutate workflow by directly treating folder position as the only source of truth. The engine owns the lifecycle and moves the spec as a side effect.
 
@@ -293,8 +292,8 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | Effects | Explicit, durable, resumable lifecycle (requested → claimed → succeeded/failed) |
 | Dependency | `xstate` npm package |
 
-**State files** (gitignored local projection under `.aigon/workflows/`; canonical git-ref events live under `refs/aigon/specs/<key>/events`):
-- `.aigon/workflows/features/{id}/events.jsonl` — append-only event log (local copy; rebuilt from canonical refs on sync when git-ref storage is enabled)
+**State files** (gitignored local projection under `.aigon/workflows/`; canonical git-branch events live on `refs/heads/aigon-state` as `specs/<KEY>/events.jsonl`):
+- `.aigon/workflows/features/{id}/events.jsonl` — append-only event log (local copy; rebuilt from the state branch on sync when git-branch storage is enabled)
 - `.aigon/workflows/features/{id}/snapshot.json` — derived snapshot
 - `.aigon/workflows/features/{id}/lock` — transient lock file
 

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** Removed the `git-ref` SpecStore backend. Repos with `storage.backend: "git-ref"` must run `aigon storage convert --backend=git-branch --remote=origin` before any storage-touching command succeeds. `refPrefix` is no longer a config surface.
+- `aigon storage convert` now targets `git-branch` (from `local` or legacy `git-ref`), verifies event-id superset including `stats.recorded`, migrates active advisory leases to branch lease files, and optionally deletes legacy `refs/aigon/specs/*` refs.
+
+### Removed
+
+- `lib/spec-store/git-ref-backend.js` and git-ref-only doctor/report/dashboard paths. Legacy ref reading for conversion lives import-only in `lib/spec-store/convert.js`.
+
 ## [2.67.0-beta.1] — 2026-06-17
 
 Architecture simplification, AgentSession runtime boundary, dashboard action hardening, and doctor/test-policy improvements.

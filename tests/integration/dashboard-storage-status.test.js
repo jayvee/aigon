@@ -14,7 +14,6 @@ const { buildDashboardSettingsPayload } = require('../../lib/dashboard-settings'
 const {
     buildRepoStorageStatus,
     buildEntityActiveLeases,
-    buildRepoStorageActions,
 } = require('../../lib/dashboard-storage');
 
 function initRepoWithBareRemote(base) {
@@ -32,23 +31,37 @@ function initRepoWithBareRemote(base) {
     fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
     fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), `${JSON.stringify({
         storage: {
-            backend: 'git-ref',
-            git: { remote: 'origin', refPrefix: 'refs/aigon/specs' },
+            backend: 'git-branch',
+            git: { remote: 'origin', branch: 'aigon-state' },
         },
     }, null, 2)}\n`);
     return { repo, bare };
 }
 
-test('buildRepoStorageStatus: local backend omits git-ref-only fields', () => {
-    // REGRESSION: local repos must not surface misleading git-ref metadata (feature 596 AC).
+test('buildRepoStorageStatus: local backend omits git-branch-only fields', () => {
+    // REGRESSION: local repos must not surface misleading git metadata (feature 596 AC).
     const status = buildRepoStorageStatus(process.cwd());
     assert.strictEqual(status.backend, 'local');
     assert.strictEqual(status.health, 'ok');
     assert.strictEqual(status.remote, undefined);
-    assert.strictEqual(status.refPrefix, undefined);
+    assert.strictEqual(status.branch, undefined);
 });
 
-testAsync('collectRepoStatus attaches storage and active leases for git-ref repo', async () => {
+test('buildRepoStorageStatus: legacy git-ref config surfaces convert hint', () => {
+    // REGRESSION F613: git-ref config must fail loudly with convert command, not silent local fallback.
+    const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dash-gitref-'));
+    fs.mkdirSync(path.join(tmp, '.aigon'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, '.aigon', 'config.json'), JSON.stringify({
+        storage: { backend: 'git-ref', git: { remote: 'origin' } },
+    }));
+    const status = buildRepoStorageStatus(tmp);
+    assert.strictEqual(status.backend, 'git-ref-removed');
+    assert.match(status.lastError, /git-ref.*no longer supported/i);
+    assert.match(status.convertHint, /storage convert/);
+    fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+testAsync('collectRepoStatus attaches storage and active leases for git-branch repo', async () => {
     // REGRESSION: poll payload must carry storage DTO + active lease rows (feature 596 AC).
     await withTempDirAsync('dash-storage-', async (base) => {
         const { repo } = initRepoWithBareRemote(base);
@@ -69,9 +82,9 @@ testAsync('collectRepoStatus attaches storage and active leases for git-ref repo
         clearTierCache(repo);
         const status = collectRepoStatus(repo, { summary: { total: 0 } });
         assert.ok(status.storage, 'repo.storage missing');
-        assert.strictEqual(status.storage.backend, 'git-ref');
+        assert.strictEqual(status.storage.backend, 'git-branch');
         assert.strictEqual(status.storage.remote, 'origin');
-        assert.strictEqual(status.storage.refPrefix, 'refs/aigon/specs');
+        assert.strictEqual(status.storage.branch, 'aigon-state');
         assert.ok(Array.isArray(status.validActions));
         assert.ok(status.validActions.some((va) => va.action === 'storage' && va.args[0] === 'sync'));
 
@@ -89,7 +102,7 @@ testAsync('collectRepoStatus attaches storage and active leases for git-ref repo
         assert.ok(lease.expiresAt);
 
         const settings = buildDashboardSettingsPayload(repo);
-        assert.deepStrictEqual(settings.storage.backend, 'git-ref');
+        assert.deepStrictEqual(settings.storage.backend, 'git-branch');
         assert.ok(Array.isArray(settings.storageActions));
         assert.ok(settings.storageActions.some((va) => va.action === 'storage' && va.args[0] === 'doctor'));
     });

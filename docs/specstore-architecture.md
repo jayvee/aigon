@@ -1,6 +1,6 @@
 # SpecStore Architecture
 
-> Maintainer note for SpecStore storage. Features 573-578 introduced the boundary, local backend, git-ref backend, sync, and leases; features 595-598 hardened stats sync, dashboard visibility, conversion, and two-clone regression coverage.
+> Maintainer note for SpecStore storage. Features 573-578 introduced the boundary, local backend, git-backed sync, and leases; features 595-598 hardened stats sync, dashboard visibility, conversion, and two-clone regression coverage; features 609-613 replaced per-spec Git refs with the `git-branch` orphan-branch backend and removed legacy `git-ref`.
 
 ## Purpose
 
@@ -13,9 +13,9 @@ Aigon is a spec-driven development (SDD) tool. The durable work object is a **sp
 | **Spec** | The durable work object — human/agent-facing markdown plus engine-backed events and snapshots. |
 | **Spec kind** | `feature` or `research`. These are the only top-level spec kinds in the target architecture. |
 | **Spec key** | Stable identity string: `F42` (feature #42), `R43` (research #43). Parsed and formatted by `lib/spec-identity.js` (re-exported from `lib/spec-store/spec-key.js` for store callers). |
-| **Events** | Append-only lifecycle log (`events.jsonl`). Source of truth for workflow semantics. Git-ref storage stores canonical events in Git refs. |
+| **Events** | Append-only lifecycle log (`events.jsonl`). Source of truth for workflow semantics. Git-branch storage stores canonical events as `specs/<KEY>/events.jsonl` on an orphan branch. |
 | **Snapshot** | Derived point-in-time projection (`snapshot.json`). Disposable cache of projector output; never the cross-machine authority. |
-| **Leases** | Advisory cross-machine coordination via append-only `lease.*` events in the canonical log (feature 578). Default TTL 30 min; renew checkpoints at most every 10 min. |
+| **Leases** | On `git-branch`, authoritative CAS lease files (`leases/<KEY>.json`) plus audit `lease.*` events in the canonical log (F610). Local backend uses advisory lease events only. Default TTL 30 min; renew checkpoints at most every 10 min. |
 | **Indexes** | Future read-optimised lookups (dashboard spec index today; SpecStore indexes later). |
 | **Projections** | Human-facing and local artefacts derived from durable state — spec markdown files, folder placement, snapshots, and analytics cache files. |
 
@@ -39,7 +39,7 @@ Customer feedback is **not** a top-level spec kind. It is represented as **resea
 └───────────────────────────┬─────────────────────────────────┘
                             │ backends
               ┌─────────────┴─────────────┐
-              │ local (573) │ git-ref (577) │
+              │ local (573) │ git-branch (609) │
               └─────────────────────────────┘
 
 Spec markdown files  = projections (human/agent-facing)
@@ -63,15 +63,15 @@ Module: `lib/spec-store/`. Factory: `createSpecStore({ repoPath, storage?: resol
 | `listSpecs()` | Enumerate numbered specs visible under `docs/specs/` |
 | `readSpec(key)` | Read spec markdown body |
 | `readEvents(ref)` / `readEventsSync(ref)` | Read append-only workflow, lease, and canonical stats events |
-| `appendEvent(ref, event)` | Append one event, with git-ref pre-write sync when enabled |
+| `appendEvent(ref, event)` | Append one event, with git-branch pre-write sync when enabled |
 | `readSnapshot(ref)` / `readSnapshotSync(ref)` | Read derived snapshot cache |
 | `writeSnapshot(ref, snapshot)` | Write derived snapshot cache |
 | `lock(ref, work, options?)` | Local exclusive critical section (`try`, `retry: false`) |
-| `sync()` | Backend sync hook; local is a no-op, git-ref imports/merges/pushes canonical refs |
+| `sync()` | Backend sync hook; local is a no-op, git-branch imports/merges/pushes the state branch |
 | `health()` | Backend health probe for CLI/dashboard status |
-| `acquireLease` / `renewLease` / `releaseLease` / `readLeases` | Advisory lease events layered onto the same canonical event stream |
+| `acquireLease` / `renewLease` / `releaseLease` / `readLeases` | Lease coordination (CAS files on git-branch; advisory events on local) |
 
-The local backend thin-wraps workflow-core files. The git-ref backend stores canonical event streams in refs and rebuilds the local workflow projection after sync. Non-engine callers still use `lib/workflow-core/persistence-compat.js` where they need compatibility shims.
+The local backend thin-wraps workflow-core files. The git-branch backend stores canonical event streams on an orphan branch and rebuilds the local workflow projection after sync. Non-engine callers still use `lib/workflow-core/persistence-compat.js` where they need compatibility shims.
 
 ## Spec keys
 
@@ -97,17 +97,17 @@ Default backend. No storage config is required:
 
 Lifecycle events, snapshots, locks, and projection files remain local under `.aigon/workflows/**`. Normal Git still carries spec markdown and code changes.
 
-### Git-ref backend
+### Git-branch backend
 
-Opt-in backend. Enable with `aigon storage convert --backend=git-ref --remote=origin` or set `.aigon/config.json` manually:
+Opt-in backend. Enable with `aigon storage convert --backend=git-branch --remote=origin` or set `.aigon/config.json` manually:
 
 ```json
 {
   "storage": {
-    "backend": "git-ref",
+    "backend": "git-branch",
     "git": {
       "remote": "origin",
-      "refPrefix": "refs/aigon/specs",
+      "branch": "aigon-state",
       "offline": false
     }
   }
@@ -116,49 +116,38 @@ Opt-in backend. Enable with `aigon storage convert --backend=git-ref --remote=or
 
 | Concern | Behaviour |
 |---------|-----------|
-| **Canonical store** | Append-only event payloads in Git refs at `<refPrefix>/<key>/events` (e.g. `refs/aigon/specs/F42/events`) |
-| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally; `readEventsSync` / `readSnapshotSync` never hit the network |
-| **Sync** | `aigon storage sync` fetch+merge+push for `<refPrefix>/*`; `aigon storage status` reports health |
-| **Pre-write sync** | Mutating commands fetch+merge before append unless `storage.git.offline: true`, `--offline`, or `AIGON_STORAGE_OFFLINE=1` |
-| **Merge** | Union/dedupe by event `id`; merge commits keep push fast-forwardable |
-| **First sync import** | Existing numeric local workflow events are imported into canonical refs before remote merge/push |
-| **Stats** | Canonical `stats.recorded` events sync through refs; `.aigon/workflows/**/stats.json` and `.aigon/cache/stats-aggregate.json` are local projections/caches rebuilt from canonical data where available |
+| **Canonical store** | File tree on orphan branch `aigon-state` (default): `meta.json`, `specs/<KEY>/events.jsonl`, `leases/<KEY>.json` |
+| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally |
+| **Sync** | `aigon storage sync` fetch+merge+push for `refs/heads/<branch>`; `aigon storage status` reports health |
+| **Pre-write sync** | Mutating commands fetch+merge before append unless offline |
+| **Merge** | Union/dedupe by event `id` per spec key |
+| **First sync import** | Existing numeric local workflow events are imported into the branch before remote merge/push |
+| **Stats** | Canonical `stats.recorded` events sync through the branch; local `stats.json` is a projection |
 
-Module: `lib/spec-store/git-ref-backend.js` (+ `git-plumbing.js`, `event-merge.js`, `projection.js`, `storage-config.js`).
+Module: `lib/spec-store/git-branch-backend.js` (+ `git-plumbing.js`, `event-merge.js`, `projection.js`, `storage-config.js`).
 
-Key-addressed refs (`refs/aigon/specs/<key>/events`) were chosen over UUID-addressed paths so CLI, dashboard, and Git artefacts stay aligned.
+### Legacy git-ref migration (F613)
+
+`storage.backend: "git-ref"` is **rejected** at runtime with the exact convert command to run — no silent fallback to `local`. Import-only readers for `refs/aigon/specs/*/events` live in `lib/spec-store/convert.js` so the old backend module could be deleted while conversion remains supported.
 
 ## CLI, leases, doctor, and reporting
 
-Advisory cross-machine coordination uses append-only lease events in the same canonical log as workflow events:
-
-| Event type | Purpose |
-|------------|---------|
-| `lease.acquired` | Session start — records holder, agent, role, TTL |
-| `lease.renewed` | Rate-limited checkpoint (default: at most every **10 min** while session alive) |
-| `lease.released` | Explicit release |
-| `lease.taken_over` | Auditable takeover when another machine uses `--takeover` |
-
-Defaults: **TTL 30 min**, renew checkpoint **10 min**. Expiry is derived from the latest unreleased event's `expiresAt` vs wall clock — no separate expiry event. Heartbeats stay local/display-only; only lease renewals append to Git when the advertised expiry window changes.
-
 | Command | Role |
 |---------|------|
-| `aigon storage convert --backend=git-ref --remote=origin` | Validate remote push access, write storage config, import existing local projection events, and sync |
-| `aigon storage sync` | Fetch, merge/dedupe, rebuild local projections, and push canonical refs |
-| `aigon storage status` | Show backend, remote/ref prefix, offline state, last sync, ahead/behind, and health |
-| `aigon storage doctor [--fix]` | Read-only diagnostics: ref reachability, duplicate event ids, projection drift, lease health |
-| `aigon storage report [--json]` | Cross-repo read-only report from configured repos / bare mirrors under `~/.aigon/remotes/` |
+| `aigon storage convert --backend=git-branch --remote=origin [--branch=aigon-state] [--keep-refs] [--dry-run]` | Migrate from `local` or legacy `git-ref`; verify event ids; flip config; delete legacy refs unless `--keep-refs` |
+| `aigon storage sync` | Fetch, merge/dedupe, rebuild local projections, and push the state branch |
+| `aigon storage status` | Show backend, remote/branch, offline state, last sync, ahead/behind, and health |
+| `aigon storage doctor [--fix]` | Read-only diagnostics: branch reachability, duplicate event ids, projection drift, lease health; flags legacy `git-ref` config |
+| `aigon storage report [--json]` | Cross-repo read-only report from configured git-branch repos |
 | `aigon board --storage` | Portfolio view of active leases across repos |
-
-**Git remote permissions:** push access to `refs/aigon/*` is required for sync. Hosting UIs (GitHub/GitLab/Bitbucket) may not display custom refs — use `git ls-remote` or `aigon storage status`.
 
 ## Dashboard visibility
 
 `lib/dashboard-storage.js` is the server-owned DTO boundary for storage visibility:
 
-- Settings and repo metadata expose the resolved backend, health, remote, ref prefix, offline state, last sync, ahead/behind, and storage actions.
-- Feature and research rows/detail payloads attach active, non-expired leases from canonical events.
-- The frontend renders only these DTOs; it does not derive backend or lease state from raw files.
+- Settings and repo metadata expose the resolved backend, health, remote, branch, offline state, last sync, ahead/behind, and storage actions.
+- Legacy `git-ref` config surfaces `git-ref-removed` with the convert hint — never a silent degrade.
+- Feature and research rows attach active leases from branch lease files (git-branch) or derived events (local).
 
 ## Related features
 
@@ -168,12 +157,17 @@ Defaults: **TTL 30 min**, renew checkpoint **10 min**. Expiry is derived from th
 | 574 | Deprecate feedback into research origins |
 | 575 | Repo-wide spec identity keys |
 | 576 | Route workflow-core persistence through local SpecStore |
-| 577 | Git-ref SpecStore backend |
+| 577 | Git-ref SpecStore backend (removed F613) |
 | 578 | Sync, leases, reporting |
-| 595 | Canonical stats sync and projection rebuild for git-ref storage |
+| 595 | Canonical stats sync and projection rebuild |
 | 596 | Dashboard storage status and active lease visibility |
-| 597 | `aigon storage convert` |
-| 598 | Two-clone git-ref storage regression harness |
+| 597 | `aigon storage convert` (git-ref era) |
+| 598 | Two-clone git-ref storage regression harness (superseded by 612) |
+| 609 | Git-branch backend core |
+| 610 | CAS leases on branch |
+| 611 | Git-branch observability |
+| 612 | Two-clone git-branch race harness |
+| 613 | Convert to git-branch + git-ref removal |
 
 ## Reading order
 

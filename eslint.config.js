@@ -121,6 +121,8 @@ const dashboardAppGlobals = {
     buildProGatedChart: 'readonly', buildProGatedStatCard: 'readonly',
     buildReworkRatioSeries: 'readonly', buildScheduledGlyphHtml: 'readonly',
     buildSparklineSvg: 'readonly', buildSpecDriftBadgeHtml: 'readonly',
+    buildLeaseBadgeHtml: 'readonly', buildStorageStatusBadgeHtml: 'readonly',
+    formatLeaseHolderLabel: 'readonly',
     buildStatCard: 'readonly', buildTokenSeries: 'readonly', buildVolumeSeries: 'readonly',
     closeDrawer: 'readonly', complexityBadgeHtml: 'readonly', copyText: 'readonly',
     createDrawerDetailTabs: 'readonly', createEl: 'readonly', drawerState: 'writable',

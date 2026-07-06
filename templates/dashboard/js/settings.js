@@ -159,9 +159,14 @@
       const rows = [['Backend', storage.backend]];
       if (storage.backend === 'local') {
         rows.push(['Health', storage.health || 'ok']);
+      } else if (storage.backend === 'git-ref-removed') {
+        rows.push(['Status', 'Legacy git-ref — conversion required']);
+        if (storage.convertHint) rows.push(['Convert', storage.convertHint]);
+        rows.push(['Health', storage.health || 'degraded']);
+        if (storage.lastError) rows.push(['Error', storage.lastError]);
       } else {
         rows.push(['Remote', storage.remote || '—']);
-        rows.push(['Ref prefix', storage.refPrefix || '—']);
+        rows.push(['Branch', storage.branch || 'aigon-state']);
         rows.push(['Offline', storage.offline ? 'yes' : 'no']);
         rows.push(['Last sync', storage.lastSyncAt || '(never)']);
         rows.push(['Ahead', String(storage.ahead != null ? storage.ahead : 0)]);

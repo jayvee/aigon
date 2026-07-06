@@ -1,6 +1,5 @@
 'use strict';
 
-const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { execSync, fork } = require('child_process');
@@ -141,7 +140,7 @@ function forkAcquireLease(repo, machineId, featureId, holderId, agentId) {
       }
       try {
         resolve(JSON.parse(stdout.trim()));
-      } catch (error) {
+      } catch (_error) {
         reject(new Error(`worker parse failed: ${stdout}`));
       }
     });
