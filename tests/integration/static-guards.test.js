@@ -6,9 +6,10 @@ const { test, withTempDir, withRepoCwd, report } = require('../_helpers');
 // REGRESSION F538: dashboard registry must read dashboard-runtime.json via AIGON_HOME, not lsof on 4100.
 test('getServerRegistryEntry uses dashboard-runtime.json scoped to AIGON_HOME', () => {
     const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
-    const block = infra.match(/function getServerRegistryEntry\(\) \{[\s\S]*?\n    \}/);
+    const block = infra.match(/function getServerRegistryEntry\([^)]*\) \{[\s\S]*?\n    \}/);
     assert.ok(block, 'getServerRegistryEntry must exist');
     assert.ok(block[0].includes('getDashboardRuntimeEntry'));
+    assert.ok(block[0].includes('instanceId'));
     assert.ok(!block[0].includes('lsof'));
 });
 test('static guards: home.html stays GA4-free and lib/pro.js ignores project config', () => {
@@ -47,13 +48,12 @@ test('dashboard e2e mock bootstrap strips model overrides and forces mock agent 
     const setup = fs.readFileSync(path.join(__dirname, '../dashboard-e2e/bootstrap.js'), 'utf8');
     assert.ok(setup.includes('isLiveAgentRun()'), 'bootstrap must reject AIGON_E2E_REAL on default path');
 });
-// REGRESSION: dashboard e2e servers use the fixed `aigon` app id and an
-// ephemeral port. They must never rewrite the real aigon.localhost Caddy route.
-test('server start/restart gates Caddy proxy writes for e2e dashboard servers', () => {
+// REGRESSION F600: Caddy route writes are gated on instance identity, not only AIGON_E2E_SERVER.
+test('server start/restart gates Caddy proxy writes for ephemeral dashboard instances', () => {
     const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
-    assert.ok(infra.includes("const isE2eServer = process.env.AIGON_E2E_SERVER === '1';"));
-    const guarded = (infra.match(/proxyAvailable:\s*!isE2eServer && isProxyAvailable\(\)/g) || []).length;
-    assert.strictEqual(guarded, 2, 'server start and restart launch paths must both be e2e-gated');
+    assert.ok(infra.includes('resolveServerIdentity'));
+    assert.ok(infra.includes('proxyAvailable: !identity.isEphemeral && isProxyAvailable()'));
+    assert.ok(!infra.includes("const isE2eServer = process.env.AIGON_E2E_SERVER === '1';"));
 });
 // REGRESSION: F286 mode-conditional implementation logs (fleet-only + skip copy).
 test('implementation logging policy', () => {

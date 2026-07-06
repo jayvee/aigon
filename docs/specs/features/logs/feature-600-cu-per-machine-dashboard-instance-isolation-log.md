@@ -2,6 +2,7 @@
 Agent: cu
 
 ## Status
+Implemented `lib/instance-identity.js` and routed server start/stop/restart, ports, Caddy hosts, and dashboard-runtime registry slots through it.
 
 ## New API Surface
 
