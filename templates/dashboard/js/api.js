@@ -767,3 +767,9 @@
         showToast('Mark complete failed: ' + e.message, null, null, { error: true });
       }
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        fetch('/api/storage/refresh', { method: 'POST' }).catch(() => {});
+      }
+    });

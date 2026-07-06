@@ -1006,7 +1006,7 @@
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildLeaseBadgeHtml(feature) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildLeaseBadgeHtml(feature, repoMeta && repoMeta.storage) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
         blockedByHtml +
