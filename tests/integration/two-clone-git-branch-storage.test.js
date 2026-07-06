@@ -25,6 +25,7 @@ const {
 const statsCanonical = require('../../lib/spec-store/stats-canonical');
 const sa = require('../../lib/stats-aggregate');
 const { runStorageDoctor } = require('../../lib/spec-store/doctor');
+const { runGit } = require('../../lib/spec-store/git-plumbing');
 
 function liveLeaseClock() {
   clearLeaseNowForTests();
@@ -107,6 +108,12 @@ async function main() {
           assert.deepStrictEqual(map, leaseFileAt(cloneB, 'F42'));
           const leaseEvents = makeStore(cloneA)._readCanonicalEvents('F42').filter((e) => e.type && e.type.startsWith('lease.'));
           assert.ok(leaseEvents.length >= 1, 'coherent lease audit trail');
+          const tip = runGit(cloneA, ['rev-parse', 'refs/heads/aigon-state']);
+          const rawLease = runGit(cloneA, ['cat-file', '-p', `${tip}:leases/F42.json`]);
+          const rawEvents = runGit(cloneA, ['cat-file', '-p', `${tip}:specs/F42/events.jsonl`]);
+          assert.ok(rawLease.length > 0, 'lease file present at branch tip');
+          const acqAtTip = rawEvents.split('\n').filter(Boolean).map((l) => JSON.parse(l)).filter((e) => e.type === 'lease.acquired');
+          assert.ok(acqAtTip.length >= 1, 'lease.acquired event in same branch commit as lease file');
         });
       });
     } finally {
@@ -394,7 +401,25 @@ async function main() {
     });
   })) failed += 1;
 
-  const passed = 12 - failed;
+  if (!await runCase('two-clone git-branch harness: releaseLease clears the role entry via CAS', async () => {
+    liveLeaseClock();
+    try {
+      await withTempDirAsync('two-clone-release-', async (base) => {
+        const { cloneA } = await setupTwoCloneHarness(base);
+        const ref = { entityType: 'feature', entityId: '60' };
+        const acquired = await makeStore(cloneA).acquireLease(ref, { role: 'impl', agentId: 'cc', holderId: 'machine-a' });
+        assert.strictEqual(acquired.action, 'acquired');
+        const released = await makeStore(cloneA).releaseLease(ref, { role: 'impl', holderId: 'machine-a' });
+        assert.strictEqual(released.action, 'released');
+        assert.strictEqual(released.ok, true);
+        assert.ok(!leaseFileAt(cloneA, 'F60').impl, 'impl entry cleared after release');
+      });
+    } finally {
+      clearLeaseNowForTests();
+    }
+  })) failed += 1;
+
+  const passed = 13 - failed;
   console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
 }
