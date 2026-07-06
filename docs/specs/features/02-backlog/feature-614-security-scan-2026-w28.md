@@ -2,13 +2,13 @@
 recurring_slug: security-scan-weekly
 complexity: low
 cron: 0 6 * * 1
-recurring_week: 2026-W27
+recurring_week: 2026-W28
 recurring_template: security-scan-weekly.md
 transitions:
-  - { from: "inbox", to: "backlog", at: "2026-06-29T01:23:40.185Z", actor: "recurring/feature-prioritise" }
+  - { from: "inbox", to: "backlog", at: "2026-07-06T21:01:16.665Z", actor: "recurring/feature-prioritise" }
 ---
 
-# security-scan-2026-W27
+# security-scan-2026-W28
 
 ## Summary
 
