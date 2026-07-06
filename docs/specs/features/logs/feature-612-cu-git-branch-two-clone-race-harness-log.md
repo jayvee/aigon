@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 719
+lines_removed: 291
+lines_changed: 1010
+files_touched: 7
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 612 - git-branch-two-clone-race-harness
 Agent: cu
 
