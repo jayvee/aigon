@@ -222,8 +222,9 @@ Backends:
 |---------|-----------|---------------|
 | `local` | `.aigon/workflows/**` event logs and snapshots in the current checkout | Default; no cross-machine storage sync beyond normal Git for specs/code |
 | `git-ref` | Canonical append-only events under `refs/aigon/specs/<key>/events` | `aigon storage sync` fetches, merges by event id, rebuilds local projections, and pushes refs |
+| `git-branch` (F609) | Canonical events as a file tree on an orphan branch (default `aigon-state`): `meta.json` + `specs/<KEY>/events.jsonl` | Same durability model as git-ref, but state is an ordinary branch — browsable in the forge UI and immune to custom-ref rulesets. Fetched to `refs/aigon-internal/state`, union-merged by event id, pushed to `refs/heads/<branch>`; never checked out (all I/O via git plumbing) |
 
-Git-ref storage is opt-in through `.aigon/config.json` or `aigon storage convert --backend=git-ref --remote=origin`. Existing numeric local workflow events are imported on first sync. Mutating commands do a pre-write fetch/merge unless storage is offline (`storage.git.offline`, `--offline`, or `AIGON_STORAGE_OFFLINE=1`).
+Git-ref and git-branch storage are opt-in through `.aigon/config.json` or `aigon storage convert --backend=git-ref --remote=origin`. Existing numeric local workflow events are imported on first sync. Mutating commands do a pre-write fetch/merge unless storage is offline (`storage.git.offline`, `--offline`, or `AIGON_STORAGE_OFFLINE=1`). The git-branch backend keeps snapshots/locks local-projection-only (never written to the branch) and stores leases as advisory events in the same stream until `git-branch-cas-leases` lands.
 
 Leases are advisory append-only `lease.*` events in the same canonical stream. Defaults are a 30 minute TTL and renew checkpoints at most every 10 minutes; `--takeover` records `lease.taken_over` for auditable conflict resolution. `aigon storage status|doctor|report`, `aigon storage sync`, and `aigon board --storage` are the public CLI surfaces. `lib/dashboard-storage.js` provides server-owned DTOs for dashboard repo/settings storage health and active feature/research lease metadata.
 
