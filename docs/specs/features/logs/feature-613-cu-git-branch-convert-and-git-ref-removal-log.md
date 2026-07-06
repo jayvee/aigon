@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 749
+lines_removed: 1386
+lines_changed: 2135
+files_touched: 30
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 613 - git-branch-convert-and-git-ref-removal
 Agent: cu
 
