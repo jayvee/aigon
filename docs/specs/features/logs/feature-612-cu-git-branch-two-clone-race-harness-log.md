@@ -24,4 +24,26 @@ Extended F598-style two-clone harness for git-branch: parallel + interleaved CAS
 - F613 convert/removal can gate on `tests/integration/two-clone-git-branch-storage.test.js` green in `test:core`; keep `setCasTestHooks` when adding new CAS scenarios.
 
 ## Test Coverage
-`tests/integration/two-clone-git-branch-storage.test.js` (12 sequential cases): event union-merge, parallel/interleaved one-winner races, unrelated-push retry, expiry reclaim, takeover+priorHolder, offline/env-offline/unreachable refusal + offline append sync, stats convergence, pre-push and post-push crash recovery, health.
+`tests/integration/two-clone-git-branch-storage.test.js` (13 sequential cases): event union-merge, parallel/interleaved one-winner races, unrelated-push retry, expiry reclaim, takeover+priorHolder, offline/env-offline/unreachable refusal + offline append sync, stats convergence, pre-push and post-push crash recovery, health, releaseLease clears entry.
+
+## Code Review
+
+**Reviewed by**: cc
+**Date**: 2026-07-06
+
+### Fixes Applied
+- cc6efd3cd fix(review): port two missing coverage cases from deleted git-branch-cas-leases.test.js
+  - Added same-commit atomicity assertion (cat-file on branch tip) to the parallel race test
+  - Added 13th case: releaseLease clears the impl entry via CAS on git-branch backend
+  - Updated case count from 12 to 13
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues
+- None
+
+### Notes
+- The implementation is well-structured. CAS hook seams are minimal and correctly scoped. Clock injection pattern is clean. Sequential test execution within the file correctly prevents hook/clock leak across cases.
+- `assertHarness` (sync) is exported but unused in the current test suite — fine as future scaffolding.
+- `liveLeaseClock()` name is slightly misleading (it sets a fixed timestamp, not a live clock) but causes no correctness issue.
