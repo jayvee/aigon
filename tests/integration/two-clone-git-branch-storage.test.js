@@ -419,7 +419,97 @@ async function main() {
     }
   })) failed += 1;
 
-  const passed = 13 - failed;
+  if (!await runCase('two-clone git-branch harness: close-releases writes lease.released audit event', async () => {
+    liveLeaseClock();
+    const prevMachine = process.env.AIGON_MACHINE_ID;
+    process.env.AIGON_MACHINE_ID = 'machine-a';
+    try {
+      await withTempDirAsync('two-clone-close-release-', async (base) => {
+        const { cloneA } = await setupTwoCloneHarness(base);
+        const ref = { entityType: 'feature', entityId: '61' };
+        const store = makeStore(cloneA);
+        await store.acquireLease(ref, { role: 'impl', agentId: 'cc' });
+        await store.acquireLease(ref, { role: 'close', agentId: 'cc' });
+        const { releaseLeasesAfterClose } = require('../../lib/spec-store/lease-coordination');
+        await releaseLeasesAfterClose(store, ref, 'feature', 'cc');
+        assert.ok(!leaseFileAt(cloneA, 'F61').impl, 'impl cleared after close release path');
+        assert.ok(!leaseFileAt(cloneA, 'F61').close, 'close cleared after close release path');
+        const events = store._readCanonicalEvents('F61').filter((e) => e.type === 'lease.released');
+        assert.ok(events.length >= 2, 'lease.released audit events recorded');
+        const tip = runGit(cloneA, ['rev-parse', 'refs/heads/aigon-state']);
+        const rawEvents = runGit(cloneA, ['cat-file', '-p', `${tip}:specs/F61/events.jsonl`]);
+        assert.ok(rawEvents.includes('lease.released'), 'lease.released in branch tip events');
+      });
+    } finally {
+      if (prevMachine === undefined) delete process.env.AIGON_MACHINE_ID;
+      else process.env.AIGON_MACHINE_ID = prevMachine;
+      clearLeaseNowForTests();
+    }
+  })) failed += 1;
+
+  if (!await runCase('two-clone git-branch harness: renewal extends expiry under injected clock', async () => {
+    const t0 = Date.parse('2026-07-01T12:00:00.000Z');
+    setLeaseNowForTests(t0);
+    try {
+      await withTempDirAsync('two-clone-renewal-', async (base) => {
+        const { cloneA } = await setupTwoCloneHarness(base);
+        const ref = { entityType: 'feature', entityId: '62' };
+        const store = makeStore(cloneA);
+        const { DEFAULT_RENEW_INTERVAL_MS } = require('../../lib/spec-store/leases');
+        await store.acquireLease(ref, { role: 'impl', agentId: 'cc', holderId: 'machine-a' });
+        const before = leaseFileAt(cloneA, 'F62').impl;
+        setLeaseNowForTests(t0 + DEFAULT_RENEW_INTERVAL_MS + 1000);
+        const renewed = await store.renewLease(ref, { role: 'impl', holderId: 'machine-a', agentId: 'cc' });
+        assert.strictEqual(renewed.action, 'renewed');
+        const after = leaseFileAt(cloneA, 'F62').impl;
+        assert.ok(Date.parse(after.expiresAt) > Date.parse(before.expiresAt), 'expiresAt advanced');
+        assert.strictEqual(after.renewCount, 1);
+      });
+    } finally {
+      clearLeaseNowForTests();
+    }
+  })) failed += 1;
+
+  if (!await runCase('two-clone git-branch harness: reset-releases clears impl lease', async () => {
+    liveLeaseClock();
+    const prevMachine = process.env.AIGON_MACHINE_ID;
+    process.env.AIGON_MACHINE_ID = 'machine-a';
+    try {
+      await withTempDirAsync('two-clone-reset-release-', async (base) => {
+        const { cloneA } = await setupTwoCloneHarness(base);
+        const ref = { entityType: 'feature', entityId: '63' };
+        const store = makeStore(cloneA);
+        await store.acquireLease(ref, { role: 'impl', agentId: 'cc' });
+        const { releaseLeasesAfterResetOrPause } = require('../../lib/spec-store/lease-coordination');
+        await releaseLeasesAfterResetOrPause(store, ref, 'feature', 'cc');
+        assert.ok(!leaseFileAt(cloneA, 'F63').impl, 'impl cleared after reset release path');
+      });
+    } finally {
+      if (prevMachine === undefined) delete process.env.AIGON_MACHINE_ID;
+      else process.env.AIGON_MACHINE_ID = prevMachine;
+      clearLeaseNowForTests();
+    }
+  })) failed += 1;
+
+  if (!await runCase('two-clone git-branch harness: non-holder release leaves lease intact', async () => {
+    liveLeaseClock();
+    try {
+      await withTempDirAsync('two-clone-not-holder-', async (base) => {
+        const { cloneA, cloneB } = await setupTwoCloneHarness(base);
+        const ref = { entityType: 'feature', entityId: '64' };
+        await makeStore(cloneA).acquireLease(ref, { role: 'impl', agentId: 'cc', holderId: 'machine-a' });
+        await makeStore(cloneB).sync();
+        const result = await makeStore(cloneB).releaseLease(ref, { role: 'impl', holderId: 'machine-b', agentId: 'cx' });
+        assert.strictEqual(result.action, 'not_holder');
+        assert.strictEqual(result.ok, false);
+        assert.strictEqual(leaseFileAt(cloneB, 'F64').impl.holderId, 'machine-a');
+      });
+    } finally {
+      clearLeaseNowForTests();
+    }
+  })) failed += 1;
+
+  const passed = 17 - failed;
   console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
 }
