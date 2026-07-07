@@ -43,3 +43,19 @@ Added `lib/dashboard-fs-watch.js` — debounced fs.watch on `.aigon/state`, work
 - `tests/integration/dashboard-fs-watch.test.js` — ignore paths, watch roots, debounced trigger, config disable, spec move + re-collect.
 
 ## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-07
+
+### Fixes Applied
+- 7d609fb2a fix(review): enable recursive fs watch on macOS
+- 071545e82 fix(review): avoid duplicate and leaked fs watchers
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Review found the implementation aligned with the F621 scope after the watcher lifecycle fixes above.
