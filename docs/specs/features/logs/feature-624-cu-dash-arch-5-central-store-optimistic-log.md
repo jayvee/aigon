@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 728
+lines_removed: 400
+lines_changed: 1128
+files_touched: 11
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 624 - dash-arch-5-central-store-optimistic
 Agent: cu
 
