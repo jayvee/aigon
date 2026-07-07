@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 486
+lines_removed: 81
+lines_changed: 567
+files_touched: 10
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 600 - per-machine-dashboard-instance-isolation
 Agent: cu
 
