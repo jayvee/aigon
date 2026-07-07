@@ -11,15 +11,19 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const zlib = require('zlib');
 const {
     test, withTempDir, report, seedEntityDirs, writeSpec, writeSnap,
 } = require('../_helpers');
+const engine = require('../../lib/workflow-core/engine');
 
 const {
     collectRepoStatus,
     collectAllFeaturesLean,
     clearTierCache,
+    refreshRepoInDashboardStatus,
 } = require('../../lib/dashboard-status-collector');
 const { sendJsonSerialized, GZIP_THRESHOLD_BYTES } = require('../../lib/dashboard-routes/util');
 
@@ -151,5 +155,31 @@ test('F590: sendJsonSerialized skips gzip below threshold or without Accept-Enco
     assert.ok(!r2._head['content-encoding'], 'no Accept-Encoding → no compression');
     assert.strictEqual(r2._body, big, 'uncompressed body sent verbatim');
 });
+
+// REGRESSION: post-delete UI refresh must rescan only the affected repo, not all
+// conductor repos, and must invalidate the spec index so removed cards disappear.
+test('refreshRepoInDashboardStatus drops a removed backlog feature', () => withTempDir('aigon-repo-refresh-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-05-fast-delete.md');
+    fs.writeFileSync(specPath, '# Feature: fast delete\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '05', 'backlog', specPath);
+    clearTierCache(repo);
+
+    const initialRepo = collectRepoStatus(repo, newResponse());
+    assert.ok((initialRepo.features || []).some(f => String(f.id) === '5' || String(f.id) === '05'));
+    const initial = {
+        generatedAt: new Date().toISOString(),
+        repos: [initialRepo],
+        summary: { implementing: 0, waiting: 0, complete: 0, error: 0, total: 0 },
+    };
+
+    fs.unlinkSync(specPath);
+    fs.rmSync(path.join(repo, '.aigon/workflows/features/05'), { recursive: true, force: true });
+    const next = refreshRepoInDashboardStatus(initial, repo);
+    const refreshed = (next.repos || []).find(r => path.resolve(r.path) === path.resolve(repo));
+    assert.ok(refreshed, 'refreshed repo should remain in payload');
+    assert.ok(!(refreshed.features || []).some(f => String(f.id) === '5' || String(f.id) === '05'),
+        'deleted feature must disappear after scoped repo refresh');
+}));
 
 report();

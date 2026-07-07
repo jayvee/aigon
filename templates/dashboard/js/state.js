@@ -64,6 +64,9 @@
       }
       state.hiddenRepos = [...hidden];
       localStorage.setItem(lsKey('hiddenRepos'), JSON.stringify(state.hiddenRepos));
+      if (typeof syncDashboardHiddenRepos === 'function') {
+        syncDashboardHiddenRepos(state.hiddenRepos);
+      }
     }
     let state = _rawState;
 

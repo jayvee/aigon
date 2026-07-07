@@ -15,11 +15,27 @@
       }
     }
 
-    async function requestRefresh() {
+    async function syncDashboardHiddenRepos(hiddenRepos) {
+      try {
+        await fetch('/api/dashboard-preferences', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ hiddenRepos: hiddenRepos || [] }),
+          cache: 'no-store',
+        });
+      } catch (_) { /* non-fatal — next toggle or reload will retry */ }
+    }
+
+    async function requestRefresh(repoPath) {
       const btn = document.getElementById('refresh-btn');
       if (btn) btn.disabled = true;
       try {
-        const res = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
+        const init = { method: 'POST', cache: 'no-store' };
+        if (repoPath) {
+          init.headers = { 'content-type': 'application/json' };
+          init.body = JSON.stringify({ repoPath });
+        }
+        const res = await fetch('/api/refresh', init);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const next = await res.json();
         state.failures = 0;
@@ -36,6 +52,19 @@
       } finally {
         if (btn) btn.disabled = false;
       }
+    }
+
+    function applyOptimisticEntityDelete(action, args, repoPath) {
+      if (!state.data || !repoPath) return;
+      const entityId = String((args || [])[0] || '');
+      if (!entityId) return;
+      const repos = state.data.repos || [];
+      const repo = repos.find(r => String(r.path || '') === String(repoPath));
+      if (!repo) return;
+      const listKey = action === 'research-delete' ? 'research' : 'features';
+      const before = (repo[listKey] || []).length;
+      repo[listKey] = (repo[listKey] || []).filter(item => String(item.id) !== entityId);
+      if ((repo[listKey] || []).length !== before) render();
     }
 
     async function fetchPrStatus(repoPath, featureId) {
@@ -336,7 +365,10 @@
           return; // skip refresh — the server is about to die
         }
         if (processingToast) processingToast.remove();
-        await requestRefresh();
+        if (action === 'feature-delete' || action === 'research-delete') {
+          applyOptimisticEntityDelete(action, args, repoPath);
+        }
+        await requestRefresh(repoPath);
       } catch (e) {
         if (action === 'feature-close') {
           const featureId = (args || [])[0];

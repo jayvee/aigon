@@ -17,7 +17,7 @@ const os = require('os');
 const { execFileSync, spawnSync } = require('child_process');
 
 const { test, withTempDir, report, GIT_SAFE_ENV } = require('../_helpers');
-const { stageAndCommitSpecMove, isGitTracked } = require('../../lib/git-staging');
+const { stageAndCommitSpecMove, commitStagedPaths, isGitTracked } = require('../../lib/git-staging');
 
 const FEATURE_FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 const RESEARCH_FOLDERS = [...FEATURE_FOLDERS, 'logs'];
@@ -181,6 +181,39 @@ test('feature-prioritise succeeds for never-committed inbox spec', () => withTem
         dstPath: 'docs/specs/features/02-backlog/feature-01-never-committed.md',
         srcPath: 'docs/specs/features/01-inbox/feature-never-committed.md',
     });
+}));
+
+// REGRESSION: entityDelete must commit after `git rm` without re-`git add`ing the
+// deleted path (pathspec miss) and must not rebuild every dependency SVG.
+test('feature-delete commits tracked backlog removal after git rm', () => withTempDir('aigon-delete-commit-', (root) => {
+    initRepo(root);
+    seedSpec(root, 'features', 'delete-me');
+    const prioritise = runCli(root, ['feature-prioritise', 'delete-me']);
+    assert.strictEqual(prioritise.code, 0, prioritise.stdout + prioritise.stderr);
+    const del = runCli(root, ['feature-delete', '01']);
+    assert.strictEqual(del.code, 0, del.stdout + del.stderr);
+    const tracked = lsFiles(root, 'docs/specs/features/');
+    assert.ok(!/feature-01-delete-me/.test(tracked), `spec should be untracked after delete:\n${tracked}`);
+    const subject = execFileSync('git', ['log', '-1', '--pretty=%s'], {
+        cwd: root,
+        encoding: 'utf8',
+        env: { ...process.env, ...GIT_SAFE_ENV },
+    }).trim();
+    assert.match(subject, /delete feature 01/);
+}));
+
+test('commitStagedPaths commits a deletion already staged by git rm', () => withTempDir('aigon-commit-staged-', (root) => {
+    initRepo(root);
+    const rel = 'docs/specs/features/02-backlog/feature-01-gone.md';
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), '# gone\n');
+    git(root, ['add', rel]);
+    git(root, ['commit', '-m', 'add spec']);
+    git(root, ['rm', '--', rel]);
+    const runGit = (cmd) => execFileSync(cmd, { cwd: root, shell: true, stdio: 'pipe', env: { ...process.env, ...GIT_SAFE_ENV } });
+    commitStagedPaths(runGit, root, [path.join(root, rel)], 'chore: delete feature 01 - remove spec');
+    const tracked = lsFiles(root, 'docs/specs/features/');
+    assert.ok(!tracked.includes(rel), `deleted spec should not be tracked:\n${tracked}`);
 }));
 
 test('feature-create -> prioritise -> start succeeds without manual commits', () => withTempDir('aigon-untr-flow-', (root) => {

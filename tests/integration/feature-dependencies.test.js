@@ -56,4 +56,32 @@ test('feature dependency helpers stay backward-compatible with old caller signat
     assert.ok(updated.includes('Feature dependency graph for feature 02'));
 }));
 
+// REGRESSION: done specs and completed-set members are immutable read surfaces;
+// rebuilding their embedded SVG blocks is pure overhead on prioritise/start/close.
+test('refreshFeatureDependencyGraphs skips done features and completed set members', () => withTempDir('aigon-feature-deps-skip-', (root) => {
+    const featurePaths = makeFeaturePaths(root);
+    const donePath = path.join(root, '05-done', 'feature-01-closed.md');
+    const activeDepPath = path.join(root, '02-backlog', 'feature-02-core-graph.md');
+    const activePath = path.join(root, '02-backlog', 'feature-03-api-layer.md');
+
+    fs.writeFileSync(donePath, '---\nset: ship-it\n---\n\n# Closed\n');
+    fs.writeFileSync(activeDepPath, '---\nset: ship-it\n---\n\n# Core Graph\n');
+    fs.writeFileSync(activePath, [
+        '---',
+        'set: ship-it',
+        'depends_on: [core-graph]',
+        '---',
+        '',
+        '# API Layer',
+        '',
+    ].join('\n'));
+
+    const result = refreshFeatureDependencyGraphs(featurePaths, {
+        safeWriteWithStatus() {},
+    });
+    assert.strictEqual(result.changedSpecs, 2);
+    assert.ok(!fs.readFileSync(donePath, 'utf8').includes('## Dependency Graph'));
+    assert.ok(fs.readFileSync(activePath, 'utf8').includes('## Dependency Graph'));
+}));
+
 report();

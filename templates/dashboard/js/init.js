@@ -588,6 +588,9 @@
 
     applyForceProOverride(state.data);
     render();
+    if (typeof syncDashboardHiddenRepos === 'function') {
+      syncDashboardHiddenRepos(state.hiddenRepos || []);
+    }
     if (typeof window.__aigonSyncStatusFingerprint === 'function') window.__aigonSyncStatusFingerprint();
     // Docs link — probe whether local docs server is up, fall back to public site
     fetch('/api/docs-url').then(r => r.json()).then(({ url }) => {

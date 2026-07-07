@@ -1339,6 +1339,7 @@
             toggleRepoVisibility(repoPath);
             renderSettings();
             render();
+            if (typeof requestRefresh === 'function') requestRefresh();
           };
 
           item.innerHTML = '<span class="repo-list-path" title="' + escHtml(repoPath) + '">' + escHtml(displayPath) + '</span>';
