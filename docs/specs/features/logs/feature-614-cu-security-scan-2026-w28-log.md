@@ -3,6 +3,8 @@ Agent: cu
 
 ## Status
 
+Weekly scan (2026-07-07): exit 0, 0 findings; no actionable remediation — no follow-up features created.
+
 ## New API Surface
 
 ## Key Decisions
