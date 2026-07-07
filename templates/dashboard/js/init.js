@@ -452,42 +452,11 @@
       return false;
     }
 
-    // F454: cheap structural fingerprint of /api/status used to skip the
-    // kanban re-render when nothing material has changed. Includes per-feature
-    // idleLadder.state so the auto-nudge ladder still updates visibly, and
-    // lastCloseFailure so a freshly-failed close re-renders.
-    function statusFingerprint(data) {
-      if (!data) return '';
-      const parts = [];
-      const summary = data.summary || {};
-      parts.push((summary.waiting || 0) + ',' + (summary.inProgress || 0) + ',' + (summary.inEval || 0));
-      (data.repos || []).forEach(repo => {
-        const features = repo.features || [];
-        const research = repo.research || [];
-        const feedback = repo.feedback || [];
-        parts.push(repo.path + ':' + features.length + '/' + research.length + '/' + feedback.length);
-        features.forEach(f => {
-          const agents = (f.agents || []).map(a => {
-            const ladder = (a.idleLadder && a.idleLadder.state) || '';
-            return a.id + ':' + a.status + ':' + ladder;
-          }).join('|');
-          const closeFail = f.lastCloseFailure ? '!' : '';
-          parts.push('F' + f.id + ':' + (f.stage || '') + ':' + (f.currentSpecState || '') + ':' + (f.startupPhase || '') + ':' + agents + closeFail);
-        });
-        research.forEach(r => {
-          const agents = (r.agents || []).map(a => {
-            const ladder = (a.idleLadder && a.idleLadder.state) || '';
-            return a.id + ':' + a.status + ':' + ladder;
-          }).join('|');
-          parts.push('R' + r.id + ':' + (r.stage || '') + ':' + (r.startupPhase || '') + ':' + agents);
-        });
-      });
-      return parts.join('\n');
+    function etagFromResponse(res) {
+      const raw = res.headers.get('etag');
+      if (!raw) return null;
+      return raw.replace(/^W\//i, '').replace(/^"|"$/g, '');
     }
-
-    window.__aigonSyncStatusFingerprint = function () {
-      state.lastFingerprint = statusFingerprint(state.data);
-    };
 
     // F590: client-side poll instrumentation. Off by default; enable with
     // `?debug=perf` in the URL or `localStorage.aigon-debug-perf = '1'`. Emits a
@@ -502,12 +471,26 @@
 
     async function poll() {
       const perfOn = isPerfDebugOn();
-      const perf = perfOn ? { t0: performance.now(), bytes: 0, fetchMs: 0, parseMs: 0, fpMs: 0, renderMs: 0, rendered: false } : null;
+      const perf = perfOn ? { t0: performance.now(), bytes: 0, fetchMs: 0, parseMs: 0, renderMs: 0, rendered: false, notModified: false } : null;
       const previous = flattenStatuses(state.data || {});
       const previousData = state.data || {};
       try {
         const tFetch = perfOn ? performance.now() : 0;
-        const res = await fetch('/api/status', { cache: 'no-store' });
+        const headers = {};
+        if (state.lastStatusVersion != null) headers['If-None-Match'] = `"${state.lastStatusVersion}"`;
+        const res = await fetch('/api/status', { cache: 'no-store', headers });
+        if (res.status === 304) {
+          state.failures = 0;
+          setHealth();
+          refreshTimestamps();
+          if (perfOn) {
+            perf.fetchMs = Math.round((performance.now() - tFetch) * 100) / 100;
+            perf.notModified = true;
+            const totalMs = Math.round((performance.now() - perf.t0) * 100) / 100;
+            console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms 304`);
+          }
+          return;
+        }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         if (perfOn) {
           perf.fetchMs = Math.round((performance.now() - tFetch) * 100) / 100;
@@ -516,6 +499,17 @@
         const tParse = perfOn ? performance.now() : 0;
         const next = await res.json();
         if (perfOn) perf.parseMs = Math.round((performance.now() - tParse) * 100) / 100;
+        const etag = etagFromResponse(res);
+        const incomingVersion = etag != null ? Number(etag) : next.statusVersion;
+        if (incomingVersion != null && state.lastStatusVersion != null && incomingVersion < state.lastStatusVersion) {
+          state.failures = 0;
+          setHealth();
+          refreshTimestamps();
+          return;
+        }
+        if (etag != null) state.lastStatusVersion = Number(etag);
+        else if (next.statusVersion != null) state.lastStatusVersion = next.statusVersion;
+        const prevVersion = state._lastRenderedStatusVersion;
         state.failures = 0;
         const current = flattenStatuses(next);
         current.forEach((v, k) => {
@@ -528,28 +522,22 @@
         });
         state.data = applyForceProOverride(next);
         reapplyPendingOptimisticEntityStarts();
-        // Always refresh timestamp + title; gate kanban re-render on fingerprint.
         document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
         updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
         if (state.view === 'settings') {
           if (settingsNeedsRerender(previousData, state.data)) renderSettings();
-        } else {
-          const tFp = perfOn ? performance.now() : 0;
-          const nextFp = statusFingerprint(state.data);
-          if (perfOn) perf.fpMs = Math.round((performance.now() - tFp) * 100) / 100;
-          if (nextFp !== state.lastFingerprint) {
-            state.lastFingerprint = nextFp;
-            const tRender = perfOn ? performance.now() : 0;
-            render();
-            if (perfOn) { perf.renderMs = Math.round((performance.now() - tRender) * 100) / 100; perf.rendered = true; }
-          }
+        } else if (incomingVersion !== prevVersion) {
+          state._lastRenderedStatusVersion = incomingVersion;
+          const tRender = perfOn ? performance.now() : 0;
+          render();
+          if (perfOn) { perf.renderMs = Math.round((performance.now() - tRender) * 100) / 100; perf.rendered = true; }
         }
         setHealth();
         renderUpdateBadge();
         if (perfOn) {
           const totalMs = Math.round((performance.now() - perf.t0) * 100) / 100;
           const kb = perf.bytes ? ` wire=${Math.round(perf.bytes / 1024)}KB` : '';
-          console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms fingerprint=${perf.fpMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kb}`);
+          console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kb}`);
         }
       } catch (e) {
         state.failures += 1;
@@ -591,7 +579,6 @@
     if (typeof syncDashboardHiddenRepos === 'function') {
       syncDashboardHiddenRepos(state.hiddenRepos || []);
     }
-    if (typeof window.__aigonSyncStatusFingerprint === 'function') window.__aigonSyncStatusFingerprint();
     // Docs link — probe whether local docs server is up, fall back to public site
     fetch('/api/docs-url').then(r => r.json()).then(({ url }) => {
       const docsLink = document.getElementById('docs-link');

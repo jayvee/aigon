@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Server-side `statusVersion` + ETag/304 on `/api/status`; client sends `If-None-Match` and dropped F454 fingerprint gate.
 ## New API Surface
 
 ## Key Decisions

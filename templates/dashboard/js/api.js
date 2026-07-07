@@ -41,8 +41,9 @@
         state.failures = 0;
         state.data = applyForceProOverride(next);
         reapplyPendingOptimisticEntityStarts();
-        if (typeof window.__aigonSyncStatusFingerprint === 'function') {
-          window.__aigonSyncStatusFingerprint();
+        if (next.statusVersion != null) {
+          state.lastStatusVersion = next.statusVersion;
+          state._lastRenderedStatusVersion = next.statusVersion;
         }
         render();
       } catch (e) {
