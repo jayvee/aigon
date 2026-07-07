@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 502
+lines_removed: 12
+lines_changed: 514
+files_touched: 15
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 622 - dash-arch-3-sse-status-push
 Agent: cu
 
