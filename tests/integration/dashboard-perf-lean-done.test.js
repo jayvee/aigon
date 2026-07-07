@@ -15,12 +15,13 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const {
-    test, withTempDir, report, seedEntityDirs, writeSpec, writeSnap,
+    test, testAsync, withTempDir, withTempDirAsync, report, seedEntityDirs, writeSpec, writeSnap,
 } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 
 const {
     collectRepoStatus,
+    collectRepoStatusAsync,
     collectAllFeaturesLean,
     clearTierCache,
     refreshRepoInDashboardStatus,
@@ -180,6 +181,71 @@ test('refreshRepoInDashboardStatus drops a removed backlog feature', () => withT
     assert.ok(refreshed, 'refreshed repo should remain in payload');
     assert.ok(!(refreshed.features || []).some(f => String(f.id) === '5' || String(f.id) === '05'),
         'deleted feature must disappear after scoped repo refresh');
+}));
+
+// ---------------------------------------------------------------------------
+// Event-loop-hang fix: the poll path skips the expensive read-model pass for
+// historical done dirs by peeking `snapshotToStage` BEFORE calling
+// getFeatureDashboardState. Two invariants this fix rests on:
+//   1. The cheap peek classifies each row the same way the read model would —
+//      active rows still get FULL enrichment, done rows still get the LEAN shape.
+//      A drift here would silently drop active cards or fully-enrich done ones.
+//   2. The yielding async collect (collectRepoStatusAsync, used by the poll loop)
+//      produces byte-identical rows to the synchronous collectRepoStatus (used by
+//      tests/routes). The yields must not change the payload, only its timing.
+// ---------------------------------------------------------------------------
+function seedEngineActive(repo, id, name) {
+    writeSpec(repo, 'features', '03-in-progress', `feature-${id}-${name}.md`);
+    writeSnap(repo, 'features', id, 'implementing');
+}
+
+test('hang-fix: snapshot peek routes active rows to full enrichment, done rows to lean shape', () => withTempDir('aigon-hangfix-peek-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    // 3 active (implementing) + 12 done. All done ids sit inside the recent-15
+    // window so both shapes are asserted on the same poll payload.
+    for (let i = 1; i <= 3; i++) seedEngineActive(repo, String(i), `active-${i}`);
+    for (let i = 4; i <= 15; i++) seedEngineDone(repo, String(i), `done-${i}`);
+    clearTierCache(repo);
+
+    const repoStatus = collectRepoStatus(repo, newResponse());
+    const byId = new Map((repoStatus.features || []).map(f => [String(f.id), f]));
+
+    // No active row was dropped or mis-peeked as done.
+    for (let i = 1; i <= 3; i++) {
+        const row = byId.get(String(i));
+        assert.ok(row, `active feature ${i} must survive the peek and appear in the payload`);
+        assert.strictEqual(row.stage, 'in-progress', `active feature ${i} must keep its read-model stage`);
+        // Heavy enrichment ran — these are the exact keys the lean-done path omits.
+        assert.ok(Array.isArray(row.agents), `active feature ${i} must carry full agents[]`);
+        assert.ok('detailFingerprint' in row, `active feature ${i} must carry detailFingerprint`);
+        assert.ok('cardHeadline' in row, `active feature ${i} must carry cardHeadline`);
+    }
+    // Done rows still lean.
+    for (let i = 4; i <= 15; i++) {
+        const row = byId.get(String(i));
+        assert.ok(row, `done feature ${i} must appear (inside recent-15 window)`);
+        assert.strictEqual(row.stage, 'done');
+        FORBIDDEN_DONE_KEYS.forEach(k => assert.ok(!(k in row), `done feature ${i} carries forbidden heavy key: ${k}`));
+    }
+}));
+
+testAsync('hang-fix: yielding async collect produces rows identical to the sync collect', () => withTempDirAsync('aigon-hangfix-parity-', async (repo) => {
+    seedEntityDirs(repo, 'features');
+    for (let i = 1; i <= 3; i++) seedEngineActive(repo, String(i), `active-${i}`);
+    // 20 done → exercises both the in-window lean rows and the out-of-window skip.
+    for (let i = 4; i <= 23; i++) seedEngineDone(repo, String(i), `done-${i}`);
+
+    clearTierCache(repo);
+    const sync = collectRepoStatus(repo, newResponse());
+    clearTierCache(repo);
+    const async = await collectRepoStatusAsync(repo, newResponse());
+
+    const norm = (s) => (s.features || []).slice().sort((a, b) => Number(a.id) - Number(b.id));
+    assert.deepStrictEqual(norm(async), norm(sync),
+        'the yielding poll path must emit byte-identical feature rows to the sync path');
+    assert.strictEqual(async.doneTotal, sync.doneTotal, 'doneTotal must match across sync/async');
+    assert.strictEqual(norm(sync).filter(f => f.stage === 'done').length, 15,
+        'done rows must still be bounded to the recent-15 window in both paths');
 }));
 
 report();
