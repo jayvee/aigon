@@ -3,6 +3,7 @@
  * Dashboard ESM entry — preserves classic script load order via sequential side-effect imports.
  * Pro-tier scripts are fetched from the same URLs the server resolves (stub vs @aigon/pro).
  */
+import './store.js';
 import './state.js';
 import './utils.js';
 import './api.js';

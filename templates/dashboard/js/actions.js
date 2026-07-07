@@ -219,7 +219,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   primary.forEach(va => { html += renderBtn(va, 'btn btn-primary'); });
   secondary.forEach(va => { html += renderBtn(va, 'btn btn-secondary'); });
 
-  if (state.closeFailedFeatures && state.closeFailedFeatures.has(String(feature.id))) {
+  if (hasCloseFailure(String(feature.id))) {
     html += '<button class="btn btn-secondary kcard-close-resolve-btn">Close with agent</button>';
   }
 

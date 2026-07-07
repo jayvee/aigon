@@ -166,12 +166,10 @@
         },
         isCollapsed(path) { return !!(Alpine.store('dashboard').collapsed || {})[path]; },
         toggleCollapse(path) {
-          const s = Alpine.store('dashboard');
-          s.collapsed[path] = !s.collapsed[path];
-          localStorage.setItem(lsKey('collapsed'), JSON.stringify(s.collapsed));
+          globalThis.toggleCollapse(path);
         },
-        setFilter(f) { Alpine.store('dashboard').filter = f; localStorage.setItem(lsKey('filter'), f); },
-        setMonitorType(t) { Alpine.store('dashboard').monitorType = t; localStorage.setItem(lsKey('monitorType'), t); },
+        setFilter(f) { globalThis.setFilter(f); },
+        setMonitorType(t) { globalThis.setMonitorType(t); },
         getFeatures(repo) {
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';

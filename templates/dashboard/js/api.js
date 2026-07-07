@@ -1,5 +1,26 @@
 /* dashboard-esm-processed */
 import { defaultAgent } from './injected.js';
+import {
+  state,
+  lsKey,
+  replaceData,
+  addOptimistic,
+  dropOptimistic,
+  createEntityStartOverlay,
+  createEntityDeleteOverlay,
+  clearStartupPhaseForEntity,
+  markActionPending,
+  clearActionPending,
+  isActionPending,
+  markDevServerPokePending,
+  clearDevServerPokePending,
+  recordCloseFailure,
+  clearCloseFailure,
+  setView,
+  setFailures,
+  setLastStatusVersion,
+  setLastRenderedStatusVersion,
+} from './store.js';
 
     async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
@@ -41,41 +62,27 @@ import { defaultAgent } from './injected.js';
         }
         const res = await fetch('/api/refresh', init);
         if (res.status === 304) {
-          state.failures = 0;
+          setFailures(0);
           setHealth();
           if (typeof refreshTimestamps === 'function') refreshTimestamps();
           return;
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const next = await res.json();
-        state.failures = 0;
-        state.data = applyForceProOverride(next);
-        reapplyPendingOptimisticEntityStarts();
+        setFailures(0);
+        replaceData(next);
         if (next.statusVersion != null) {
-          state.lastStatusVersion = next.statusVersion;
-          state._lastRenderedStatusVersion = next.statusVersion;
+          setLastStatusVersion(next.statusVersion);
+          setLastRenderedStatusVersion(next.statusVersion);
         }
         render();
       } catch (e) {
-        state.failures += 1;
+        setFailures(state.failures + 1);
         setHealth();
         showToast('Refresh failed: ' + e.message, null, null, {error:true});
       } finally {
         if (btn) btn.disabled = false;
       }
-    }
-
-    function applyOptimisticEntityDelete(action, args, repoPath) {
-      if (!state.data || !repoPath) return;
-      const entityId = String((args || [])[0] || '');
-      if (!entityId) return;
-      const repos = state.data.repos || [];
-      const repo = repos.find(r => String(r.path || '') === String(repoPath));
-      if (!repo) return;
-      const listKey = action === 'research-delete' ? 'research' : 'features';
-      const before = (repo[listKey] || []).length;
-      repo[listKey] = (repo[listKey] || []).filter(item => String(item.id) !== entityId);
-      if ((repo[listKey] || []).length !== before) render();
     }
 
     async function fetchPrStatus(repoPath, featureId) {
@@ -95,212 +102,10 @@ import { defaultAgent } from './injected.js';
       return payload;
     }
 
-    const STARTUP_PHASE_LABELS = ['Setting up', 'Preparing worktrees', 'Launching agents'];
-    const STARTUP_PHASE_SEGMENT_MS = 5500;
-
-    function serverStartupPhaseLabel(entity) {
-      const readiness = entity && entity.startupReadiness;
-      const phase = readiness && readiness.phase ? String(readiness.phase) : '';
-      if (phase === 'agents_booting' || phase === 'agents_partially_booted' || phase === 'agents_active') {
-        return readiness.phaseLabel || null;
-      }
-      return null;
-    }
-
-    function hasCompletedStartup(entity) {
-      const readiness = entity && entity.startupReadiness;
-      if (readiness && readiness.phase === 'all_ready') return true;
-      return Array.isArray(entity && entity.agents)
-        && entity.agents.length > 0
-        && entity.agents.every(agent => {
-          const status = String(agent && agent.status || '').toLowerCase();
-          return status === 'ready'
-            || status === 'implementation-complete'
-            || status === 'research-complete'
-            || status === 'review-complete'
-            || status === 'spec-review-complete';
-        });
-    }
-
-    function markEntityStartupPhase(entity, opts) {
-      const resetClock = opts && opts.resetClock;
-      if (!entity) return;
-      const serverPhase = serverStartupPhaseLabel(entity);
-      if (serverPhase) {
-        entity.startupPhase = serverPhase;
-        return;
-      }
-      if (hasCompletedStartup(entity)) {
-        delete entity.startupPhase;
-        delete entity.startupPhaseStartedAt;
-        return;
-      }
-      if (resetClock || entity.startupPhaseStartedAt == null) {
-        entity.startupPhaseStartedAt = Date.now();
-      }
-      const elapsed = Date.now() - entity.startupPhaseStartedAt;
-      const idx = Math.min(
-        STARTUP_PHASE_LABELS.length - 1,
-        Math.floor(elapsed / STARTUP_PHASE_SEGMENT_MS)
-      );
-      entity.startupPhase = STARTUP_PHASE_LABELS[idx];
-    }
-
-    function clearEntityStartupPhase(entity) {
-      if (!entity) return;
-      delete entity.startupPhase;
-      delete entity.startupPhaseStartedAt;
-    }
-
-    function restoreEntityStartupClientState(entity, prevPhase, prevStartedAt) {
-      if (prevPhase === undefined && prevStartedAt === undefined) {
-        clearEntityStartupPhase(entity);
-        return;
-      }
-      if (prevPhase !== undefined) entity.startupPhase = prevPhase;
-      else delete entity.startupPhase;
-      if (prevStartedAt !== undefined) entity.startupPhaseStartedAt = prevStartedAt;
-      else delete entity.startupPhaseStartedAt;
-    }
-
-    function clearStartupPhaseForEntityStart(action, args, repoPath) {
-      if (action !== 'feature-start' && action !== 'research-start') return;
-      const entityKey = action === 'research-start' ? 'research' : 'features';
-      const entityId = String(((args || [])[0]) || '');
-      if (!entityId) return;
-      const repos = (state.data && state.data.repos) || [];
-      const repoMatch = repoPath
-        ? repos.find(r => r && r.path === repoPath)
-        : null;
-      const repo = repoMatch || repos.find(r => (r && (r[entityKey] || []).some(e => String(e.id) === entityId)));
-      if (!repo) return;
-      const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
-      if (!entity) return;
-      if (entity.startupPhase === undefined && entity.startupPhaseStartedAt == null) return;
-      clearEntityStartupPhase(entity);
-      repo[entityKey] = (repo[entityKey] || []).slice();
-      render();
-    }
-
-    // F522: optimistic stage move for feature-start / research-start so the
-    // card jumps from BACKLOG → IN-PROGRESS within a frame instead of waiting
-    // ~20s for the full CLI (worktree + tmux setup) to complete. Returns a
-    // rollback function (or null if the action isn't optimistically handled).
-    // F527: carry a client-only startupPhase while the start request is in
-    // flight so the optimistic card explains that setup is still active.
-    function applyOptimisticEntityStart(action, args, repoPath) {
-      if (action !== 'feature-start' && action !== 'research-start') return null;
-      const entityKey = action === 'research-start' ? 'research' : 'features';
-      const entityId = String(((args || [])[0]) || '');
-      if (!entityId) return null;
-      const repos = (state.data && state.data.repos) || [];
-      const repoMatch = repoPath
-        ? repos.find(r => r && r.path === repoPath)
-        : null;
-      const repo = repoMatch || repos.find(r => (r && (r[entityKey] || []).some(e => String(e.id) === entityId)));
-      if (!repo) return null;
-      const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
-      if (!entity) return null;
-      const previousStage = entity.stage;
-      const previousStartupPhase = entity.startupPhase;
-      const previousStartupPhaseStartedAt = entity.startupPhaseStartedAt;
-      // Helper: re-lookup entity+repo from current state.data by ID. The status
-      // poll replaces state.data wholesale while the action fetch is in-flight,
-      // so closure-captured object references become stale. Rollback and startup-
-      // phase restore must operate on whatever objects are live in state.data.
-      function lookupLive() {
-        const liveRepos = (state.data && state.data.repos) || [];
-        const liveRepo = repoPath
-          ? liveRepos.find(r => r && r.path === repoPath)
-          : liveRepos.find(r => r && (r[entityKey] || []).some(e => String(e.id) === entityId));
-        if (!liveRepo) return null;
-        const liveEntity = (liveRepo[entityKey] || []).find(e => String(e.id) === entityId);
-        if (!liveEntity) return null;
-        return { repo: liveRepo, entity: liveEntity };
-      }
-
-      if (previousStage === 'in-progress') {
-        markEntityStartupPhase(entity, { resetClock: true });
-        repo[entityKey] = (repo[entityKey] || []).slice();
-        render();
-        return () => {
-          const live = lookupLive();
-          if (!live) return;
-          restoreEntityStartupClientState(live.entity, previousStartupPhase, previousStartupPhaseStartedAt);
-          live.repo[entityKey] = (live.repo[entityKey] || []).slice();
-          render();
-        };
-      }
-      entity.stage = 'in-progress';
-      markEntityStartupPhase(entity, { resetClock: true });
-      // F525: bump array identity so Alpine's set-trap fires on repo[entityKey]
-      // — every kanban column's x-effect re-runs, picking up the moved card.
-      // Per-item mutation alone doesn't invalidate columns whose effects didn't
-      // iterate this item on their last run (e.g. an empty IN-PROGRESS column).
-      repo[entityKey] = (repo[entityKey] || []).slice();
-      render();
-      return () => {
-        // Re-lookup from current state.data — the status poll may have replaced
-        // state.data while the action fetch was in-flight, making the closure's
-        // entity/repo references stale (they point to the old object graph).
-        const live = lookupLive();
-        if (!live) return;
-        if (live.entity.stage === 'in-progress') {
-          live.entity.stage = previousStage;
-          restoreEntityStartupClientState(live.entity, previousStartupPhase, previousStartupPhaseStartedAt);
-          live.repo[entityKey] = (live.repo[entityKey] || []).slice();
-          render();
-        }
-      };
-    }
-
-    // F522: `/api/status` poll + requestRefresh replace `state.data` wholesale. Re-apply
-    // in-flight feature-start / research-start optimistics so the card does not snap
-    // back to Backlog until the action finishes (~20s fleet) or the server advances.
-    function reapplyPendingOptimisticEntityStarts() {
-      const pending = state.pendingActions;
-      if (!pending || pending.size === 0) return;
-      const repos = (state.data && state.data.repos) || [];
-      for (const key of pending) {
-        let entityKey;
-        let rest = '';
-        if (key.startsWith('feature-start:')) {
-          entityKey = 'features';
-          rest = key.slice('feature-start:'.length);
-        } else if (key.startsWith('research-start:')) {
-          entityKey = 'research';
-          rest = key.slice('research-start:'.length);
-        } else {
-          continue;
-        }
-        const entityId = String((rest.split(':')[0] || ''));
-        if (!entityId) continue;
-        for (let i = 0; i < repos.length; i++) {
-          const repo = repos[i];
-          if (!repo) continue;
-          const entity = (repo[entityKey] || []).find(e => String(e.id) === entityId);
-          if (!entity) continue;
-          if (entity.stage === 'backlog' || entity.stage === 'inbox') {
-            entity.stage = 'in-progress';
-          } else if (entity.stage !== 'in-progress') {
-            continue;
-          }
-          markEntityStartupPhase(entity, { resetClock: false });
-          // F525: see applyOptimisticEntityStart — bump array identity to trigger
-          // Alpine's set-trap so every column's x-effect re-runs.
-          // F527 follow-up: if the server already has workflow startupReadiness,
-          // preserve that phase instead of deleting it just because snapshot
-          // agents exist. Agents are registered before they are actually ready.
-          repo[entityKey] = (repo[entityKey] || []).slice();
-          break;
-        }
-      }
-    }
-
     async function requestAction(action, args, repoPath, btn) {
       const key = action + ':' + (args || []).join(':');
-      if (state.pendingActions.has(key)) return;
-      state.pendingActions.add(key);
+      if (isActionPending(key)) return;
+      markActionPending(key);
       const origText = btn ? btn.textContent : '';
       if (btn) {
         btn.disabled = true;
@@ -308,7 +113,15 @@ import { defaultAgent } from './injected.js';
       }
       const startingCard = btn ? btn.closest('.card') : null;
       if (startingCard) startingCard.classList.add('card-starting');
-      const optimisticRollback = applyOptimisticEntityStart(action, args, repoPath);
+      let optimisticKey = null;
+      if (action === 'feature-start' || action === 'research-start') {
+        const overlay = createEntityStartOverlay(action, args, repoPath);
+        if (overlay) {
+          optimisticKey = overlay.key;
+          addOptimistic(overlay);
+          render();
+        }
+      }
       const label = (action || '').replace(/^(feature|research)-/, '');
       const processingToast = showToast('Processing ' + label + '…', null, null, { processing: true });
 
@@ -345,23 +158,23 @@ import { defaultAgent } from './injected.js';
         const stderrStr = String(payload.stderr || '');
         const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
-          if (optimisticRollback) optimisticRollback();
-          showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
+          if (optimisticKey) { dropOptimistic(optimisticKey); render(); }
+          showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { setView('logs'); render(); }, { error: true });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: payload.error || 'exit ' + payload.exitCode });
           }
         } else if (payload.agentWarning) {
-          showToast('Warning: ' + payload.agentWarning, 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); }, { error: true });
+          showToast('Warning: ' + payload.agentWarning, 'Logs', () => { setView('logs'); render(); }, { error: true });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: true });
           }
         } else if (stderrError) {
-          showToast('Done with warnings — check Logs', 'Logs', () => { state.view = 'logs'; localStorage.setItem(lsKey('view'), 'logs'); render(); });
+          showToast('Done with warnings — check Logs', 'Logs', () => { setView('logs'); render(); });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: true });
           }
         } else {
-          if (action === 'feature-close') state.closeFailedFeatures.delete(String((args || [])[0]));
+          if (action === 'feature-close') clearCloseFailure(String((args || [])[0]));
           showToast('Done: ' + (payload.command || action));
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: true });
@@ -377,7 +190,11 @@ import { defaultAgent } from './injected.js';
         }
         if (processingToast) processingToast.remove();
         if (action === 'feature-delete' || action === 'research-delete') {
-          applyOptimisticEntityDelete(action, args, repoPath);
+          const deleteOverlay = createEntityDeleteOverlay(action, args, repoPath);
+          if (deleteOverlay) {
+            addOptimistic(deleteOverlay);
+            render();
+          }
         }
         await requestRefresh(repoPath);
       } catch (e) {
@@ -399,7 +216,7 @@ import { defaultAgent } from './injected.js';
           if (!agentId) {
             agentId = defaultAgent || 'cc';
           }
-          state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
+          recordCloseFailure(String(featureId), { agentId, repoPath });
           if (actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, {
               ok: false, error: e.message,
@@ -413,7 +230,7 @@ import { defaultAgent } from './injected.js';
           );
           render();
         } else {
-          if (optimisticRollback) optimisticRollback();
+          if (optimisticKey) { dropOptimistic(optimisticKey); render(); }
           showToast('Action failed: ' + e.message, null, null, {error:true});
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
@@ -422,9 +239,10 @@ import { defaultAgent } from './injected.js';
         if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || action; }
       } finally {
         if (processingToast) processingToast.remove();
-        state.pendingActions.delete(key);
+        clearActionPending(key);
         if (action !== 'feature-start' && action !== 'research-start') {
-          clearStartupPhaseForEntityStart(action, args, repoPath);
+          clearStartupPhaseForEntity(action, args, repoPath);
+          render();
         }
         if (startingCard) startingCard.classList.remove('card-starting');
       }
@@ -432,8 +250,8 @@ import { defaultAgent } from './injected.js';
 
     async function requestEntityNudge(entityType, entityId, payload, repoPath, btn) {
       const pendingKey = entityType + '-nudge:' + String(entityId || '');
-      if (state.pendingActions.has(pendingKey)) return null;
-      state.pendingActions.add(pendingKey);
+      if (isActionPending(pendingKey)) return null;
+      markActionPending(pendingKey);
       const origText = btn ? btn.textContent : '';
       if (btn) {
         btn.disabled = true;
@@ -466,7 +284,7 @@ import { defaultAgent } from './injected.js';
         return null;
       } finally {
         if (processingToast) processingToast.remove();
-        state.pendingActions.delete(pendingKey);
+        clearActionPending(pendingKey);
         if (btn) {
           btn.disabled = false;
           btn.textContent = origText || 'Send nudge';
@@ -649,10 +467,10 @@ import { defaultAgent } from './injected.js';
       if (!repoToken || !featureToken || !agentToken) return;
 
       const pendingKey = `dev-poke:${repoPath}:${featureId}:${agentId}`;
-      if (state.pendingActions.has(pendingKey)) return;
-      state.pendingActions.add(pendingKey);
+      if (isActionPending(pendingKey)) return;
+      markActionPending(pendingKey);
       const uiKey = `${repoPath}:${featureId}:${agentId}`;
-      state.pendingDevServerPokes.add(uiKey);
+      markDevServerPokePending(uiKey);
       render();
 
       const origText = btn ? btn.textContent : '';
@@ -676,8 +494,8 @@ import { defaultAgent } from './injected.js';
         if (processingToast) processingToast.remove();
         showToast('Preview start failed: ' + e.message, null, null, { error: true });
       } finally {
-        state.pendingActions.delete(pendingKey);
-        state.pendingDevServerPokes.delete(uiKey);
+        clearActionPending(pendingKey);
+        clearDevServerPokePending(uiKey);
         render();
         if (btn) {
           btn.disabled = false;
@@ -697,8 +515,8 @@ import { defaultAgent } from './injected.js';
 
     async function requestSpecReconcile(repoPath, entityType, entityId, btn) {
       const pendingKey = `spec-reconcile:${repoPath || ''}:${entityType || ''}:${entityId || ''}`;
-      if (state.pendingActions.has(pendingKey)) return;
-      state.pendingActions.add(pendingKey);
+      if (isActionPending(pendingKey)) return;
+      markActionPending(pendingKey);
 
       const origText = btn ? btn.textContent : '';
       if (btn) {
@@ -728,7 +546,7 @@ import { defaultAgent } from './injected.js';
         showToast('Reconcile failed: ' + e.message, null, null, { error: true });
       } finally {
         if (processingToast) processingToast.remove();
-        state.pendingActions.delete(pendingKey);
+        clearActionPending(pendingKey);
         if (btn) {
           btn.disabled = false;
           btn.textContent = origText || 'Reconcile';
@@ -818,4 +636,4 @@ import { defaultAgent } from './injected.js';
     });
 
 // ── ESM exports (F623) ──
-Object.assign(globalThis, { fetchPrStatus, postMarkComplete, reapplyPendingOptimisticEntityStarts, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos });
+Object.assign(globalThis, { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos });

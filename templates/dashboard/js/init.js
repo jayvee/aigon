@@ -314,8 +314,7 @@
 
     function render() {
       if (state.view === 'backup-sync' || state.view === 'scheduled-features') {
-        state.view = 'settings';
-        localStorage.setItem(lsKey('view'), 'settings');
+        setView('settings');
       }
       updateViewTabs();
       updateSidebarToggle();
@@ -481,7 +480,7 @@
         if (state.lastStatusVersion != null) headers['If-None-Match'] = `"${state.lastStatusVersion}"`;
         const res = await fetch('/api/status', { cache: 'no-store', headers });
         if (res.status === 304) {
-          state.failures = 0;
+          setFailures(0);
           setHealth();
           refreshTimestamps();
           if (perfOn) {
@@ -503,15 +502,15 @@
         const etag = etagFromResponse(res);
         const incomingVersion = etag != null ? Number(etag) : next.statusVersion;
         if (incomingVersion != null && state.lastStatusVersion != null && incomingVersion < state.lastStatusVersion) {
-          state.failures = 0;
+          setFailures(0);
           setHealth();
           refreshTimestamps();
           return;
         }
-        if (etag != null) state.lastStatusVersion = Number(etag);
-        else if (next.statusVersion != null) state.lastStatusVersion = next.statusVersion;
+        if (etag != null) setLastStatusVersion(Number(etag));
+        else if (next.statusVersion != null) setLastStatusVersion(next.statusVersion);
         const prevVersion = state._lastRenderedStatusVersion;
-        state.failures = 0;
+        setFailures(0);
         const current = flattenStatuses(next);
         current.forEach((v, k) => {
           const prev = previous.get(k);
@@ -521,14 +520,13 @@
           }
           if (prev.status !== 'error' && v.status === 'error') showToast('Agent entered error state', null, null, {error:true});
         });
-        state.data = applyForceProOverride(next);
-        reapplyPendingOptimisticEntityStarts();
+        replaceData(next);
         document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
         updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
         if (state.view === 'settings') {
           if (settingsNeedsRerender(previousData, state.data)) renderSettings();
         } else if (incomingVersion !== prevVersion) {
-          state._lastRenderedStatusVersion = incomingVersion;
+          setLastRenderedStatusVersion(incomingVersion);
           const tRender = perfOn ? performance.now() : 0;
           render();
           if (perfOn) { perf.renderMs = Math.round((performance.now() - tRender) * 100) / 100; perf.rendered = true; }
@@ -541,7 +539,7 @@
           console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kb}`);
         }
       } catch (e) {
-        state.failures += 1;
+        setFailures(state.failures + 1);
         setHealth();
         // feature 234: while a restart is in progress, poll aggressively (500ms)
         // until the new server answers, so the banner clears within ~2s.
@@ -549,33 +547,8 @@
       }
     }
 
-    // ── ?forcePro override ────────────────────────────────────────────────────
-    function getForceProOverride() {
-      const params = new URLSearchParams(location.search);
-      if (!params.has('forcePro')) return null;
-      const val = params.get('forcePro');
-      if (val === '0' || val === 'false') return false;
-      if (val === '1' || val === 'true') return true;
-      return null;
-    }
-
-    function applyForceProOverride(data) {
-      if (!data) return data;
-      const override = getForceProOverride();
-      if (override === false) data.proAvailable = false;
-      return data;
-    }
-
-    // Helper: check Pro availability from current state (respects URL override)
-    function isProActive() {
-      const override = getForceProOverride();
-      if (override === false) return false;
-      return !!(state.data && state.data.proAvailable);
-    }
-
     // ── Init ──────────────────────────────────────────────────────────────────
 
-    applyForceProOverride(state.data);
     render();
     if (typeof syncDashboardHiddenRepos === 'function') {
       syncDashboardHiddenRepos(state.hiddenRepos || []);
@@ -589,8 +562,7 @@
     }).catch(() => {});  // fallback: keep the href baked into the HTML
     document.getElementById('refresh-btn').onclick = requestRefresh;
     document.getElementById('sidebar-toggle-btn').onclick = () => {
-      state.sidebarHidden = !state.sidebarHidden;
-      localStorage.setItem(lsKey('sidebarHidden'), String(state.sidebarHidden));
+      toggleSidebarHidden();
       render();
     };
     setInterval(refreshTimestamps, TS_MS);
@@ -605,8 +577,7 @@
 
     document.querySelectorAll('.view-tab').forEach(tab => {
       tab.onclick = () => {
-        state.view = tab.getAttribute('data-view');
-        localStorage.setItem(lsKey('view'), state.view);
+        setView(tab.getAttribute('data-view'));
         render();
       };
     });
@@ -730,4 +701,4 @@
     loadNotifications();
 
 // ── ESM exports (F623) ──
-Object.assign(globalThis, { applyForceProOverride, isProActive, loadNotifications, poll, refreshTimestamps, render, setPollInterval });
+Object.assign(globalThis, { loadNotifications, poll, refreshTimestamps, render, setPollInterval });

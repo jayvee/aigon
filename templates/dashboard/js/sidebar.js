@@ -347,8 +347,7 @@ import { agents, defaultAgent } from './injected.js';
     // ── Repo sidebar ──────────────────────────────────────────────────────────
 
     function selectRepo(repoPath) {
-      state.selectedRepo = repoPath;
-      localStorage.setItem(lsKey('selectedRepo'), repoPath);
+      setSelectedRepo(repoPath);
       // Sync mobile dropdown
       const mobile = document.getElementById('repo-select-mobile');
       if (mobile) mobile.value = repoPath;
