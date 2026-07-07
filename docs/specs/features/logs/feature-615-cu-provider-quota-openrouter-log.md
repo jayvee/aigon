@@ -14,3 +14,23 @@ Implemented OpenRouter provider quota poller, schema v2 quota.json, dashboard su
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: op
+**Date**: 2026-07-07
+
+### Fixes Applied
+- `ef83c7dc5` fix(review): provider verdict is 'unknown' not 'error' when both endpoints unreachable
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Implementation is solid: provider registry, schema v2 migration (v1 reads as v2 with empty providers), balance precedence (wallet > key cap), feature-start gate (depleted blocks, low warns), doctor section with correct scope filtering, dashboard sub-row rendering, and poller piggybacking on existing quota-poller interval.
+- The verdict fix above was the only spec mismatch: spec explicitly states "both endpoints unreachable" → `unknown`, but `buildProviderEntry` returned `error` when `lastError` was set and `balanceUsd` was null. `computeVerdict` already returns `unknown` for null balance, so the fix delegates to it; `lastError` still records the failure for diagnostics.
+- `filterQuotaStateByAvailability` and `mergeBenchVerdictsIntoQuota` both preserve the `providers` key via spread — provider data flows through to `/api/quota` correctly.
+- `templates/providers/openrouter.json` is repo-only (read directly by `lib/provider-registry.js`), matching the spec's open question recommendation — no install step needed.
