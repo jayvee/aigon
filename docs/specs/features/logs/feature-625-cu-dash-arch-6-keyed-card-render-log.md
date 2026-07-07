@@ -1,5 +1,17 @@
 ---
 agent: cu
+commit_count: 4
+lines_added: 779
+lines_removed: 303
+lines_changed: 1082
+files_touched: 6
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
 ---
 # Implementation Log: Feature 625 - dash-arch-6-keyed-card-render
 Agent: cu
