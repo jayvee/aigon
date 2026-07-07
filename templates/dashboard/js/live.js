@@ -4,6 +4,7 @@
   let warnedUnavailable = false;
   let es = null;
   let connected = false;
+  let everOpened = false;
   let fetchInFlight = false;
   let needsFollowUp = false;
 
@@ -52,12 +53,17 @@
     }
 
     es.addEventListener('open', () => {
+      everOpened = true;
       setSseConnected(true);
       scheduleStatusFetch();
     });
 
     es.addEventListener('error', () => {
       setSseConnected(false);
+      if (!everOpened) {
+        warnOnce('[aigon] SSE unavailable — using poll fallback');
+        try { es.close(); } catch (_) {}
+      }
     });
 
     es.addEventListener('status', () => {
