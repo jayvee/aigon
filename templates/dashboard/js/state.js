@@ -44,10 +44,9 @@
       // feature 234: true while the backend is restarting after a lib/*.js merge
       serverRestarting: false,
       settingsInitialSectionId: settingsInitialSectionId,
-      // F454: structural fingerprint of the last-rendered status; poll() skips
-      // render() when the fingerprint is unchanged so scroll position and
-      // open menus are preserved between identical polls.
-      lastFingerprint: '',
+      // F620: last server statusVersion for If-None-Match on /api/status polls.
+      lastStatusVersion: null,
+      _lastRenderedStatusVersion: null,
     };
 
     function isRepoHidden(repoPath) {
