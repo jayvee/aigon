@@ -1,0 +1,67 @@
+---
+title: "preview"
+description: "Launch an isolated dashboard for a feature worktree without disturbing the primary server"
+---
+
+## Synopsis
+
+```bash
+aigon preview <feature-id> [--stop] [--sandbox[=fixture]] [--agent=<id>] [--open]
+aigon preview gc
+```
+
+## Description
+
+`aigon preview` boots the **worktree's own** dashboard server on an isolated port and `<agent>-<id>.aigon.localhost` subdomain. It never touches the primary `aigon.localhost` server.
+
+### Default preview (real data)
+
+By default, the preview runs the worktree's modified UI and backend code against your **real** project data and `~/.aigon` state. This is ideal for UI changes and read-only backend changes.
+
+```bash
+aigon preview 50
+aigon preview 50 --open
+aigon preview 50 --stop
+```
+
+### Sandboxed preview (isolated data)
+
+When your worktree changes backend code that **writes** state — workflow snapshots, spec moves, config — use `--sandbox` so all writes land in a disposable copy:
+
+```bash
+aigon preview 50 --sandbox
+aigon preview 50 --sandbox=brewboard
+aigon preview 50 --sandbox=empty
+aigon preview 50 --sandbox --stop
+```
+
+Sandbox mode provisions:
+
+- A throwaway `AIGON_HOME` (temp profile directory)
+- A seeded copy of a fixture repo (`brewboard` by default, or `empty` for a minimal repo)
+- An isolated port and preview subdomain — never the primary identity
+
+Your real `~/.aigon` and project repo are not modified.
+
+### Garbage collection
+
+```bash
+aigon preview gc
+```
+
+Removes orphaned sandbox homes and registry entries when the preview process is no longer running.
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--stop` | Stop the preview for the given feature |
+| `--sandbox` | Use isolated seeded data (`brewboard` fixture) |
+| `--sandbox=<fixture>` | Pick seed fixture: `brewboard` or `empty` |
+| `--agent=<id>` | Select worktree when multiple agents exist for the feature |
+| `--open` | Open the preview URL in your browser |
+
+## Related
+
+- [`aigon server`](/docs/reference/commands/infra/server) — primary dashboard
+- [`aigon dev-server`](/docs/reference/commands/infra/dev-server) — feature worktree app servers
