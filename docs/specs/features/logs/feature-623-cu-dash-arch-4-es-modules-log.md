@@ -27,3 +27,21 @@ Wave 1 ESM entry landed: `main.js` + `injected.js` + `alpine-bindings.js`, boots
 ## Test Coverage
 - `npm run test:iterate` green (lint + scoped integration + browser @smoke)
 - Lease-badge smoke: strip `If-None-Match` on Playwright `route.fetch` (304 empty body vs F620 ETag)
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- aa5682a41 fix(review): remove inline nudge hover handlers
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:architectural — The implementation log explicitly defers the spec's full import-graph cleanup, cycle break (`state`/`api`/`init`), `typeof fn === 'function'` guard removal, and eslint allowlist reduction. Completing those acceptance criteria would require a broad follow-up refactor across the dashboard module graph rather than a targeted review patch.
+
+### Notes
+- No out-of-scope deletions were present in the branch diff.
+- The applied fix removes the remaining inline hover handlers found in the nudge quick-item HTML while preserving the same hover behavior through attached event listeners.
