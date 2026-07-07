@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Broke quota↔availability recursion (raw quota read in isPairDepleted, quota-free isAgentQuotaPanelVisible, re-entrancy guard); removed kill-switch.
 ## New API Surface
 
 ## Key Decisions

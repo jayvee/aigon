@@ -190,6 +190,69 @@ test('isAgentQuotaPanelVisible hides disabled and retired agents', () => withTem
     }
 }));
 
+// REGRESSION F638: mutual recursion quota-probe ↔ availability must not hang or flood command -v.
+test('getAgentAvailability and getDashboardAgents terminate with quota state present', () => withTempDir(async (tmp) => {
+    const home = path.join(tmp, 'home');
+    const repo = path.join(tmp, 'repo');
+    fs.mkdirSync(path.join(home, '.aigon'), { recursive: true });
+    fs.mkdirSync(path.join(repo, '.aigon', 'state'), { recursive: true });
+    fs.writeFileSync(path.join(home, '.aigon', 'config.json'), JSON.stringify({
+        repos: {},
+        agents: {},
+        terminalApp: 'apple-terminal',
+    }, null, 2));
+    fs.writeFileSync(path.join(repo, '.aigon', 'state', 'agent-quota.json'), JSON.stringify({
+        schemaVersion: 1,
+        agents: {
+            cc: { models: { __default__: { verdict: 'depleted', lastProbedAt: '2026-01-01T00:00:00.000Z' } } },
+            cx: { models: { __default__: { verdict: 'available', lastProbedAt: '2026-01-01T00:00:00.000Z' } } },
+        },
+        providers: {},
+    }, null, 2));
+
+    const prevHome = process.env.HOME;
+    const prevCwd = process.cwd();
+    process.env.HOME = home;
+    process.chdir(repo);
+    const security = require('../../lib/security');
+    const origBinary = security.isBinaryAvailable;
+    security.isBinaryAvailable = () => true;
+    let getAgentAvailabilityCalls = 0;
+    const agentAvailability = require('../../lib/agent-availability');
+    const origGetAvail = agentAvailability.getAgentAvailability;
+    agentAvailability.getAgentAvailability = (...args) => {
+        getAgentAvailabilityCalls += 1;
+        return origGetAvail(...args);
+    };
+    try {
+        agentRegistryReset();
+        const quotaProbe = require('../../lib/quota-probe');
+        const t0 = Date.now();
+        const depleted = quotaProbe.isPairDepleted(repo, 'cc', null);
+        assert.ok(depleted && depleted.verdict === 'depleted');
+        assert.ok(Date.now() - t0 < 50, 'isPairDepleted should return quickly');
+        assert.strictEqual(getAgentAvailabilityCalls, 0, 'isPairDepleted must not call getAgentAvailability');
+
+        getAgentAvailabilityCalls = 0;
+        const availT0 = Date.now();
+        const avail = origGetAvail('cc', repo);
+        assert.ok(Date.now() - availT0 < 50, 'getAgentAvailability should return in <50ms');
+        assert.ok(avail.quotaDepleted || avail.state === 'quota_depleted' || avail.quota);
+
+        const agentRegistry = require('../../lib/agent-registry');
+        const dashT0 = Date.now();
+        const dashboard = agentRegistry.getDashboardAgents({ repoPath: repo });
+        assert.ok(Date.now() - dashT0 < 250, 'getDashboardAgents should return in <250ms');
+        assert.ok(dashboard.length > 0);
+        assert.ok(getAgentAvailabilityCalls <= dashboard.length * 2, 'no availability re-entry storm');
+    } finally {
+        security.isBinaryAvailable = origBinary;
+        process.env.HOME = prevHome;
+        process.chdir(prevCwd);
+        agentRegistryReset();
+    }
+}));
+
 function agentRegistryReset() {
     try {
         const agentRegistry = require('../../lib/agent-registry');
