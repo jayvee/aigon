@@ -1,7 +1,5 @@
 ---
 complexity: high
-set: quota
-depends_on: [444]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-06T23:56:02.919Z", actor: "cli/feature-prioritise" }
 ---
@@ -154,9 +152,13 @@ templates/agents/op.json  quotaProviders: ["openrouter"]
 
 ## Dependencies
 
-- **F444 `agent-quota-awareness`** (done) — quota.json, `/api/quota`, dashboard widget, `feature-start` gate pattern, `quota.refreshed` events.
+- None (blocking). F615 can start independently; it extends existing quota infrastructure where present but does not require any prior feature to be incomplete.
+
+## Related (non-blocking)
+
+- **F444 `agent-quota-awareness`** (done) — extends `quota.json`, `/api/quota`, dashboard widget, `feature-start` gate pattern, `quota.refreshed` events when shipped.
 - **F457 `agent-quota-overview-panel`** (done) — op card in quota panel; extend, do not rewrite.
-- Soft: **bench-monitor** (inbox) — auto-quarantine/zombie-kill is separate; this feature addresses the *proactive balance* gap that made that incident painful.
+- **bench-monitor** (inbox) — auto-quarantine/zombie-kill is separate; this feature addresses the *proactive balance* gap that made that incident painful.
 
 ## Out of Scope
 
@@ -176,12 +178,6 @@ templates/agents/op.json  quotaProviders: ["openrouter"]
 ## Related
 
 - Research: —
-- Set: `quota` (with F444, F446, F457)
-- Prior features in set: F444 agent-quota-awareness, F457 agent-quota-overview-panel
+- **F444 / F446 / F457** (all done) — prior quota work F615 builds on or sits beside; see Dependencies above. Not co-members of a feature set with F615.
 - External: [OpenRouter limits / key endpoint](https://openrouter.ai/docs/api/reference/limits), [credits endpoint](https://openrouter.ai/docs/api/api-reference/credits/get-credits)
 - Incident context: `docs/specs/features/01-inbox/feature-bench-monitor.md` (OpenRouter credit burn, 10h zombie)
-## Dependency Graph
-
-<!-- AIGON_DEP_GRAPH_START -->
-<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 615" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-615" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-615)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#444</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">agent quota awareness</text><text x="36" y="90" font-size="12" fill="#475569">done</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#615</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">provider quota openrouter</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
-<!-- AIGON_DEP_GRAPH_END -->
