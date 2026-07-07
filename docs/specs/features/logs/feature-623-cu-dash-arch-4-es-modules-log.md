@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 946
+lines_removed: 401
+lines_changed: 1347
+files_touched: 46
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 623 - dash-arch-4-es-modules
 Agent: cu
 
