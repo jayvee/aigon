@@ -109,8 +109,10 @@ testAsync('server start with isolated AIGON_HOME does not stop foreign dashboard
     } finally {
         try { dashProc.kill('SIGTERM'); } catch (_) {}
         try { sentinel.kill('SIGTERM'); } catch (_) {}
-        fs.rmSync(homeA, { recursive: true, force: true });
-        fs.rmSync(homeB, { recursive: true, force: true });
+        await new Promise((r) => setTimeout(r, 250));
+        const rmOpts = { recursive: true, force: true, maxRetries: 5, retryDelay: 100 };
+        fs.rmSync(homeA, rmOpts);
+        fs.rmSync(homeB, rmOpts);
     }
 });
 

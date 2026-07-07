@@ -154,12 +154,13 @@ const dashboardAppGlobals = {
     requestAgentDevServerPoke: 'readonly', requestAgentFlagAction: 'readonly',
     requestAttach: 'readonly', requestFeatureOpen: 'readonly', requestRefresh: 'readonly',
     requestRepoMainDevServerStart: 'readonly', requestSpecReconcile: 'readonly',
-    requestSpecReviewLaunch: 'readonly', runAskAgent: 'readonly', saveStatsPrefs: 'readonly',
+    requestSpecReviewLaunch: 'readonly', refreshTimestamps: 'readonly', runAskAgent: 'readonly', saveStatsPrefs: 'readonly',
     setAskAgent: 'readonly', setHealth: 'readonly', setPickerRecommendation: 'readonly',
     setPollInterval: 'writable',
     setTerminalClickTarget: 'readonly', setTerminalFont: 'readonly',
     showAgentPicker: 'readonly', showConfirm: 'readonly', showDangerConfirm: 'readonly',
     showNudgeModal: 'readonly', showServerRestartBanner: 'readonly', showToast: 'readonly',
+    syncDashboardHiddenRepos: 'readonly',
     state: 'writable', statsState: 'writable', statusRank: 'readonly', termState: 'writable',
     toggleRepoVisibility: 'readonly', trendIcon: 'readonly', tripletsToCliArgs: 'readonly',
     updatePickerBudgetNotice: 'readonly', updateTitleAndFavicon: 'readonly',
@@ -198,43 +199,19 @@ module.exports = [
             }],
         },
     },
-    // F556: dashboard classic <script> files. These are browser scripts loaded
-    // in order by index.html and sharing one global scope. Lint with
-    // sourceType:'script' + no-undef:error so an undeclared application global
-    // (the AUTONOMOUS_AGENT_IDS incident) is caught before it ships.
+    // F623: dashboard ES modules. Transitional globalThis bridges (wave 1) keep a
+    // reduced allowlist until cross-file imports replace bare globals (wave 2/3).
     {
-        files: ['templates/dashboard/js/*.js'],
-        languageOptions: {
-            ecmaVersion: 'latest',
-            sourceType: 'script',
-            globals: {
-                ...browserGlobals,
-                ...dashboardVendorGlobals,
-                ...dashboardAppGlobals,
-            },
-        },
-        rules: {
-            'no-undef': 'error',
-            // The cross-file globals above ARE declared in their defining file,
-            // so the legitimate definition must not trip no-redeclare. We still
-            // catch true in-file duplicate declarations (builtinGlobals only
-            // governs whether configured globals count as prior declarations).
-            'no-redeclare': ['error', { builtinGlobals: false }],
-            'no-unused-vars': 'off',
-        },
-    },
-    // F556: dashboard action modules under js/actions/** are ES modules
-    // (import/export) lazy-loaded via dynamic import(). They reach classic-script
-    // globals through `window.*`, so they need browser globals but not the
-    // cross-file app-global allowlist.
-    {
-        files: ['templates/dashboard/js/actions/**/*.js'],
+        files: ['templates/dashboard/js/**/*.js'],
+        ignores: ['templates/dashboard/js/vendor/**'],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',
             globals: {
                 ...browserGlobals,
                 ...dashboardVendorGlobals,
+                ...dashboardAppGlobals,
+                __AIGON_BOOTSTRAP__: 'readonly',
             },
         },
         rules: {

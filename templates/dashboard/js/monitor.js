@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Shared render helpers ─────────────────────────────────────────────────
 
     function updateTitleAndFavicon(waiting){
@@ -365,3 +366,19 @@
         }
       };
     }
+
+// ── ESM exports (F623) ──
+export { getVisibleRepos, monitorView, renderUpdateBadge, setHealth, showServerRestartBanner, updateTitleAndFavicon, updateViewTabs };
+Object.assign(globalThis, {
+  updateTitleAndFavicon,
+  setHealth,
+  renderUpdateBadge,
+  showServerRestartBanner,
+  hideServerRestartBanner,
+  updateViewTabs,
+  getVisibleRepos,
+  buildMonitorActionHtml,
+  buildAwaitingBadgeHtml,
+  buildWorkflowIdleBadgeHtml,
+  monitorView,
+});

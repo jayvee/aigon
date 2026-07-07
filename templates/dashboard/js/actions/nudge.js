@@ -101,14 +101,15 @@ function renderNudgeQuickItems(entityType) {
       ];
   const rowStyle = 'display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;transition:border-color .12s';
   box.innerHTML = items.map((item, i) =>
-    '<div style="' + rowStyle + '" data-quick-nudge-index="' + i + '"' +
-    ' onmouseover="this.style.borderColor=\'var(--border-default)\'" onmouseout="this.style.borderColor=\'\'">' +
+    '<div style="' + rowStyle + '" data-quick-nudge-index="' + i + '">' +
     '<span style="font-size:11px;color:var(--text-secondary);font-weight:600;flex-shrink:0;min-width:130px">' + H.escHtml(item.label) + '</span>' +
     '<span style="font-size:11px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:var(--mono)">' + H.escHtml(item.signal) + '</span>' +
     '</div>'
   ).join('');
   box.querySelectorAll('[data-quick-nudge-index]').forEach(el => {
     const idx = parseInt(el.getAttribute('data-quick-nudge-index'), 10);
+    el.addEventListener('mouseenter', () => { el.style.borderColor = 'var(--border-default)'; });
+    el.addEventListener('mouseleave', () => { el.style.borderColor = ''; });
     el.onclick = () => {
       const input = document.getElementById('nudge-modal-message');
       if (input) input.value = items[idx].message;

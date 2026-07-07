@@ -1,8 +1,10 @@
+/* dashboard-esm-processed */
+import { agents, defaultAgent } from './injected.js';
     // ── AI session picker ──────────────────────────────────────────────────────
 
     // ── Ask-agent helpers ─────────────────────────────────────────────────────
 
-    const ASK_AGENTS = (Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : []).map(agent => ({
+    const ASK_AGENTS = agents.map(agent => ({
       id: agent.id,
       name: agent.displayName || agent.id
     }));
@@ -10,8 +12,8 @@
     function isSidebarKnownAgentModelValue(agentId, value) {
       const modelValue = value == null ? '' : String(value);
       if (!modelValue) return false;
-      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
-      const agent = agents.find(a => a.id === agentId);
+      const agentsList = agents;
+      const agent = agentsList.find(a => a.id === agentId);
       const modelOptions = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
       const concreteValues = modelOptions
         .map(opt => (!opt || opt.value == null) ? null : String(opt.value))
@@ -22,7 +24,7 @@
     function getAskAgent() {
       const preferred = localStorage.getItem(lsKey('askAgent'));
       if (preferred && ASK_AGENTS.some(agent => agent.id === preferred)) return preferred;
-      return ASK_AGENTS[0] ? ASK_AGENTS[0].id : (window.__AIGON_DEFAULT_AGENT__ || 'cc');
+      return ASK_AGENTS[0] ? ASK_AGENTS[0].id : (defaultAgent || 'cc');
     }
     function setAskAgent(id) { localStorage.setItem(lsKey('askAgent'), id); }
 
@@ -522,3 +524,6 @@
     document.getElementById('repo-select-mobile').addEventListener('change', (e) => {
       selectRepo(e.target.value);
     });
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { buildAskAgentHtml, buildMainDevServerHtml, fetchAgentModels, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker });

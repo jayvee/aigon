@@ -6,8 +6,7 @@
   <title>Aigon Dashboard</title>
   <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico"/>
   <link rel="icon" type="image/svg+xml" href="assets/icon/aigon-icon.svg"/>
-  <link rel="stylesheet" href="/styles.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/styles.css?v=${AIGON_VERSION}" />
 </head>
 <body>
   <div class="wrap">
@@ -437,7 +436,7 @@
     <div class="drawer-header">
       <span class="panel-status-dot" id="panel-status-dot"></span>
       <span class="drawer-title" id="panel-title">Terminal</span>
-      <button id="panel-copy-session" title="Copy session name" style="display:none;background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--text-tertiary);flex-shrink:0;line-height:1;border-radius:4px;margin-left:-2px" onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-tertiary)'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg></button>
+      <button id="panel-copy-session" title="Copy session name" style="display:none;background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--text-tertiary);flex-shrink:0;line-height:1;border-radius:4px;margin-left:-2px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg></button>
       <div class="drawer-actions" id="panel-actions-normal">
         <button class="btn" id="panel-back" style="display:none" title="Close both panels and return to dashboard">← Dashboard</button>
         <button class="btn" id="panel-view-spec" style="display:none" title="View the spec file alongside the terminal">View Spec</button>
@@ -526,40 +525,11 @@
   <script src="/js/vendor/xterm/addon-webgl.js"></script>
   <script src="/js/vendor/xterm/addon-unicode11.js"></script>
   <script src="/js/vendor/xterm/addon-web-links.js"></script>
-  <!-- Server-injected data (populated by buildDashboardHtml) -->
+  <!-- Server-injected bootstrap (populated by buildDashboardHtml) -->
   <script>
-    const INITIAL_DATA = ${INITIAL_DATA};
-    const INSTANCE_NAME = ${INSTANCE_NAME};
-    window.__AIGON_AGENTS__ = ${AIGON_AGENTS};
-    window.__AIGON_DEFAULT_AGENT__ = ${AIGON_DEFAULT_AGENT};
+    window.__AIGON_BOOTSTRAP__ = ${AIGON_BOOTSTRAP};
   </script>
-  <!-- Dashboard modules — load order matters: state → utils → api → features → views → init -->
-  <script src="/js/state.js"></script>
-  <script src="/js/utils.js"></script>
-  <script src="/js/api.js"></script>
-  <script src="/js/live.js"></script>
-  <script src="/js/terminal.js"></script>
-  <script src="/js/sidebar.js"></script>
-  <script src="/js/detail-tabs.js"></script>
-  <script src="/js/spec-drawer.js"></script>
-  <script src="/js/budget-widget.js"></script>
-  <script src="/js/actions-picker.js"></script>
-  <script src="/js/actions.js"></script>
-  <script src="/js/matrix-peek.js"></script>
-  <script src="/js/set-cards.js"></script>
-  <script src="/js/monitor.js"></script>
-  <script src="/js/autonomous-plan.js"></script>
-  <script src="/js/pipeline.js"></script>
-  <script src="/js/benchmark-matrix.js"></script>
-  <script src="/js/settings.js"></script>
-  <script src="/js/statistics.js"></script>
-  <script src="/js/backup-sync.js"></script>
-  <script src="/js/scheduled-features.js"></script>
-  <script src="/js/failover-dashboard.js"></script>
-
-  <script src="/js/logs.js"></script>
-  <script src="/js/close-log-panel.js"></script>
-  <script src="/js/init.js"></script>
-  <script src="/js/aigon-status-pill.js"></script>
+  <script type="module" src="/js/main.js?v=${AIGON_VERSION}"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 </body>
 </html>

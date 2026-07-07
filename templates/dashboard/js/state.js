@@ -1,6 +1,7 @@
+/* dashboard-esm-processed */
+import { INITIAL_DATA, INSTANCE_NAME } from './injected.js';
 // ── State & constants ─────────────────────────────────────────────────────
-// INITIAL_DATA and INSTANCE_NAME are defined in the inline <script> in index.html
-    const POLL_MS = 10000;
+const POLL_MS = 10000;
     const TS_MS = 30000;
     function lsKey(k) { return 'aigon-' + INSTANCE_NAME + '-' + k; }
     // _rawState is the plain JS object; state becomes the Alpine proxy after init
@@ -69,10 +70,17 @@
         syncDashboardHiddenRepos(state.hiddenRepos);
       }
     }
-    let state = _rawState;
+    export let state = _rawState;
 
     // ── Alpine store — initialised from state so mutations trigger re-renders ─
+    // ESM: reassign module `state` and globalThis.state together so init.js and
+    // Alpine x-show read the same Alpine proxy (F623).
     document.addEventListener('alpine:init', () => {
       Alpine.store('dashboard', _rawState);
-      state = Alpine.store('dashboard'); // all future writes go through the proxy
+      state = Alpine.store('dashboard');
+      globalThis.state = state;
     });
+
+// ── ESM exports (F623) ──
+export { POLL_MS, TS_MS, lsKey, isRepoHidden, toggleRepoVisibility };
+Object.assign(globalThis, { POLL_MS, TS_MS, lsKey, isRepoHidden, toggleRepoVisibility, state });

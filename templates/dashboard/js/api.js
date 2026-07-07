@@ -1,4 +1,5 @@
-    // ── API helpers ───────────────────────────────────────────────────────────
+/* dashboard-esm-processed */
+import { defaultAgent } from './injected.js';
 
     async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
@@ -396,7 +397,7 @@
             }
           }
           if (!agentId) {
-            agentId = window.__AIGON_DEFAULT_AGENT__ || 'cc';
+            agentId = defaultAgent || 'cc';
           }
           state.closeFailedFeatures.set(String(featureId), { agentId, repoPath });
           if (actionId && window.finalizeCloseLogPanel) {
@@ -815,3 +816,6 @@
         fetch('/api/storage/refresh', { method: 'POST' }).catch(() => {});
       }
     });
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { fetchPrStatus, postMarkComplete, reapplyPendingOptimisticEntityStarts, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos });

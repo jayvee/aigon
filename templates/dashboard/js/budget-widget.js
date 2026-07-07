@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
 // F519: agent budget + quota widget (extracted from actions.js)
 // ── Agent budget widget (F322; extended for op + cu coverage in F457) ──────
 
@@ -1189,3 +1190,6 @@ document.addEventListener('DOMContentLoaded', () => {
     autoObs.observe(autonomousModalEl, { attributes: true, attributeFilter: ['style'] });
   }
 });
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { benchTooltip, budgetWarningForAgents, fetchBudget, quotaEntryForModel, quotaTooltip, updatePickerBudgetNotice });

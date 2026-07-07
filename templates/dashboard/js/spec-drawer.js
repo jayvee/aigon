@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Spec drawer ──────────────────────────────────────────────────────────
 
     const drawerState = {
@@ -275,3 +276,6 @@
         toggleDrawerFullscreen();
       }
     });
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { closeDrawer, drawerState, openDrawer });

@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Insights view ──────────────────────────────────────────────────────────
     async function renderInsights(opts) {
       var embedded = opts && opts.embedded;
@@ -727,3 +728,6 @@
 
     // Initial badge load (F622: push via SSE notification events replaces 30s poll)
     loadNotifications();
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { applyForceProOverride, isProActive, loadNotifications, poll, refreshTimestamps, render, setPollInterval });

@@ -1,5 +1,6 @@
 /** F519 action module: schedule-kickoff */
 import * as H from './shared.js';
+import { defaultAgent } from '../injected.js';
 
 // ── Schedule kickoff: datetime-local helpers ──
 
@@ -235,7 +236,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     const agent = window.AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
     const row = H.buildAgentCheckRow({
       value: agentId,
-      checked: agentId === (window.__AIGON_DEFAULT_AGENT__ || 'cc'),
+      checked: agentId === (defaultAgent || 'cc'),
       label: agentId,
       hint: displayName,
       tripletGrid: true,

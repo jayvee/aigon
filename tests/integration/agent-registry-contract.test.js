@@ -47,11 +47,11 @@ test('help template renders launchable agents only', () => {
 test('dashboard bootstrap payload renders launchable agents only', () => {
     // REGRESSION: JSON may contain `;` inside string values (e.g. model label text) — do not split on the first `;`.
     const html = dashboardServer.buildDashboardHtml({ repos: [] }, 'test');
-    const prefix = 'window.__AIGON_AGENTS__ = ';
+    const prefix = 'window.__AIGON_BOOTSTRAP__ = ';
     const start = html.indexOf(prefix);
-    assert.ok(start >= 0, 'dashboard payload was not injected');
+    assert.ok(start >= 0, 'dashboard bootstrap was not injected');
     let i = start + prefix.length;
-    assert.strictEqual(html[i], '[', 'expected JSON array after __AIGON_AGENTS__');
+    assert.strictEqual(html[i], '{', 'expected JSON object after __AIGON_BOOTSTRAP__');
     let depth = 0;
     let inString = false;
     let escaped = false;
@@ -70,8 +70,8 @@ test('dashboard bootstrap payload renders launchable agents only', () => {
             continue;
         }
         if (inString) continue;
-        if (c === '[') depth++;
-        if (c === ']') {
+        if (c === '{') depth++;
+        if (c === '}') {
             depth--;
             if (depth === 0) {
                 i++;
@@ -80,7 +80,9 @@ test('dashboard bootstrap payload renders launchable agents only', () => {
         }
     }
     const jsonStr = html.slice(start + prefix.length, i);
-    assertExactLaunchableSet(JSON.parse(jsonStr).map(agent => agent.id), 'dashboard HTML payload drifted');
+    const bootstrap = JSON.parse(jsonStr);
+    assert.ok(Array.isArray(bootstrap.agents), 'bootstrap.agents must be an array');
+    assertExactLaunchableSet(bootstrap.agents.map(agent => agent.id), 'dashboard HTML payload drifted');
 });
 test('every modelOptions entry satisfies the inclusion-policy contract (docs/model-inclusion-policy.md)', () => {
     // Keystone enforcement for the prose policy: each templates/agents/*.json

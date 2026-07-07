@@ -1,5 +1,6 @@
 /** F519 action module: autonomous */
 import * as H from './shared.js';
+import { defaultAgent } from '../injected.js';
 
 function budgetNotice() {
   if (typeof window.updateAutonomousBudgetNotice === 'function') window.updateAutonomousBudgetNotice();
@@ -63,7 +64,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
     const modelName = agent.defaultImplementModel || '';
     const row = H.buildAgentCheckRow({
       value: agentId,
-      checked: agentId === (window.__AIGON_DEFAULT_AGENT__ || 'cc'),
+      checked: agentId === (defaultAgent || 'cc'),
       label: agentId,
       hint: displayName,
       tripletGrid: true,

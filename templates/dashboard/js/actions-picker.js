@@ -1,10 +1,14 @@
+/* dashboard-esm-processed */
 // F519: triplet picker + shared DOM helpers
 // ── Unified action renderer + dispatcher ────────────────────────────────────
 // Single source of truth for feature/research/feedback action buttons.
 // Both Monitor and Pipeline views call these functions instead of maintaining
 // their own rendering logic.
 
-const AIGON_AGENTS = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
+/* dashboard-esm-processed */
+import { agents, defaultAgent } from './injected.js';
+
+const AIGON_AGENTS = agents;
 const AGENT_DISPLAY_NAMES = AIGON_AGENTS.reduce((map, agent) => {
   map[agent.id] = agent.displayName || agent.id;
   map.solo = 'Agent';
@@ -623,3 +627,6 @@ if (typeof window !== 'undefined') {
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof renderAgentPickerRows === 'function') renderAgentPickerRows();
 });
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, AIGON_AGENTS, AUTONOMOUS_AGENT_IDS, complexityBadgeHtml, createEl, fetchSpecRecommendation, renderAgentPickerRows, renderPickerRecommendationBanner, replaceNodeChildren, setPickerRecommendation, showConfirm, showDangerConfirm, tripletsToCliArgs });

@@ -8,7 +8,8 @@ const { testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const ast = require('../../lib/agent-status');
 const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
-const { buildAutonomousPlanHtml } = require('../../templates/dashboard/js/autonomous-plan.js');
+const { AIGON_AUTONOMOUS_PLAN } = require('../../templates/dashboard/js/autonomous-plan.js');
+const buildAutonomousPlanHtml = AIGON_AUTONOMOUS_PLAN.buildAutonomousPlanHtml;
 const w = (root, rel, body) => { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, body); };
 
 testAsync('dashboard payload: awaitingInput + anyAwaitingInput (feature + research)', async () => {
