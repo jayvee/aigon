@@ -314,7 +314,12 @@ export function createEntityStartOverlay(action, args, repoPath) {
   const entityId = String(((args || [])[0]) || '');
   if (!entityId) return null;
   const key = optimisticKey(action, repoPath, entityKey, entityId);
-  const captured = { previousStage: null, previousStartupPhase: undefined, previousStartupPhaseStartedAt: undefined };
+  const captured = {
+    previousStage: null,
+    previousStartupPhase: undefined,
+    previousStartupPhaseStartedAt: undefined,
+    optimisticStartupStartedAt: null,
+  };
 
   return {
     key,
@@ -329,11 +334,17 @@ export function createEntityStartOverlay(action, args, repoPath) {
         captured.previousStartupPhase = entity.startupPhase;
         captured.previousStartupPhaseStartedAt = entity.startupPhaseStartedAt;
       }
+      if (captured.optimisticStartupStartedAt == null) {
+        captured.optimisticStartupStartedAt = Date.now();
+      }
+      if (entity.startupPhaseStartedAt == null) {
+        entity.startupPhaseStartedAt = captured.optimisticStartupStartedAt;
+      }
       if (captured.previousStage === 'in-progress') {
-        markEntityStartupPhase(entity, { resetClock: true });
+        markEntityStartupPhase(entity, { resetClock: false });
       } else if (entity.stage === 'backlog' || entity.stage === 'inbox' || entity.stage === 'in-progress') {
         entity.stage = 'in-progress';
-        markEntityStartupPhase(entity, { resetClock: true });
+        markEntityStartupPhase(entity, { resetClock: false });
       }
       bumpEntityListIdentity(draft, repo, entityKey);
     },
