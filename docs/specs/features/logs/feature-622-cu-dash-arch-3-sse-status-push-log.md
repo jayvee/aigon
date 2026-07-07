@@ -14,3 +14,20 @@ SSE `/api/events` + client `live.js`: statusVersion push, notification/restart e
 ## For the Next Feature in This Set
 
 ## Test Coverage
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-07
+
+### Fixes Applied
+- 92dcee699 fix(review): stop unavailable SSE retries
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- SSE fallback now closes an endpoint that never successfully opens after a single warning, while keeping normal browser reconnect behavior for streams that previously connected.
