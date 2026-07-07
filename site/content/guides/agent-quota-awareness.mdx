@@ -34,6 +34,18 @@ That warning is there to help you make a better choice, not to stop you from shi
 
 In practice, Aigon’s quota awareness helps you balance speed, specialization, and remaining headroom. That makes agent selection a planning decision instead of a guess.
 
+## Where the data lives
+
+Aigon keeps **one unified cache** at **`.aigon/state/agent-quota.json`** in the repo the dashboard server runs from. That file merges:
+
+- **Budget windows** (subscription-style bars from tmux / app-server scrapes)
+- **Probe verdicts** per agent and model (headless CLI pattern checks)
+- **Provider wallet** balances when configured (e.g. OpenRouter)
+
+The dashboard reads **`GET /api/agent-quota`** — a single request for the Agent Quota Usage panel and start-flow warnings. One background poller refreshes all phases on the same schedule (default every 30 minutes). Use **↻** on the panel or `aigon agent-quota refresh` for a manual pass; `aigon agent-quota refresh --force` bypasses the five-minute rate limit.
+
+Legacy **`GET /api/budget`** and **`GET /api/quota`** still project slices from the unified file for one release. After upgrading, run **`aigon doctor --fix`** to migrate older `budget-cache.json` and `quota.json` into `agent-quota.json`.
+
 ## See also
 
 - [Agent Failover](./agent-failover)

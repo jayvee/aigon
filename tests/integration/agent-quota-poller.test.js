@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+// REGRESSION: must be set before poller module load so PROBE_PACE_MS is zero in tests.
+process.env.AIGON_QUOTA_TEST = '1';
+
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -64,8 +67,6 @@ test('migration merges legacy budget-cache + quota.json into agent-quota.json', 
 
 // Async poller tests share module-level in-flight state — run sequentially.
 testAsync('agent-quota poller integration scenarios', async () => {
-    const prevTestEnv = process.env.AIGON_QUOTA_TEST;
-    process.env.AIGON_QUOTA_TEST = '1';
     const quotaProbe = require('../../lib/quota-probe');
     const origProbePairAsync = quotaProbe.probePairAsync;
     const fastProbe = async ({ modelValue, modelLabel }) => ({
@@ -114,13 +115,19 @@ testAsync('agent-quota poller integration scenarios', async () => {
             stubBudgetPolls();
             stubProviderPolls();
             let release;
+            let gateEntered = false;
             const gate = new Promise((resolve) => { release = resolve; });
             quotaProbe.probePairAsync = async (opts) => {
-                await gate;
+                if (!gateEntered) {
+                    gateEntered = true;
+                    await gate;
+                }
                 return fastProbe(opts);
             };
             const first = agentQuotaPoller.refreshWithLock({ repoPath: dir, force: true, allModels: false });
-            await new Promise(r => setTimeout(r, 50));
+            for (let i = 0; i < 100 && !gateEntered; i += 1) {
+                await new Promise(r => setTimeout(r, 10));
+            }
             let blocked = false;
             try {
                 await agentQuotaPoller.triggerRefresh({ repoPath: dir, force: true });
@@ -149,10 +156,62 @@ testAsync('agent-quota poller integration scenarios', async () => {
             budgetPoller.pollAntigravityBudget = originalAg;
             agentQuotaPoller._resetForTests();
         });
+
+        // REGRESSION: probe subprocess non-zero exit records error slice; other phases still write.
+        await withTempDirAsync(async (dir) => {
+            agentQuotaPoller._resetForTests();
+            const budgetAt = new Date().toISOString();
+            const agentRegistry = require('../../lib/agent-registry');
+            const origGetAllAgents = agentRegistry.getAllAgents;
+            agentRegistry.getAllAgents = () => ['cc', 'cx'].map((id) => origGetAllAgents().find((a) => a.id === id)).filter(Boolean);
+            budgetPoller.pollClaudeBudget = async () => ({
+                polled_at: budgetAt,
+                session: { pct_used: 12, resets_at: '6pm' },
+            });
+            budgetPoller.pollCodexBudget = async () => null;
+            budgetPoller.pollKimiBudget = async () => null;
+            budgetPoller.pollAntigravityBudget = async () => null;
+            stubProviderPolls();
+            const providerQuotaPoller = require('../../lib/provider-quota-poller');
+            providerQuotaPoller.pollProvider = async () => {
+                const entry = { verdict: 'available', balanceUsd: 9.5, lastPolledAt: budgetAt };
+                agentQuotaRead.updateProviderEntry(dir, 'openrouter', entry);
+                return { entry, changed: true, skipped: false };
+            };
+            quotaProbe.probePairAsync = async ({ repoPath, agentId, modelValue, modelLabel }) => {
+                if (agentId === 'cc') {
+                    return {
+                        entry: { verdict: 'unknown', lastProbedAt: budgetAt },
+                        changed: true,
+                        result: { ok: false, exitCode: 1, error: 'probe subprocess failed' },
+                    };
+                }
+                const modelKey = modelValue || '__default__';
+                const entry = {
+                    verdict: 'available',
+                    lastProbedAt: budgetAt,
+                    modelLabel: modelLabel || modelValue || '(agent default)',
+                };
+                agentQuotaRead.updateProbeEntry(repoPath, agentId, modelKey, entry, () => true);
+                return { entry, changed: true, result: { ok: true, output: 'PONG' } };
+            };
+            try {
+                await agentQuotaPoller.runTick({ repoPath: dir, force: true, skipCacheGate: true, allModels: false });
+                const state = agentQuotaRead.readAgentQuotaState(dir);
+                assert.ok(state.agents.cc.budget, 'budget phase should write cc slice');
+                const ccModels = Object.values(state.agents.cc.models || {});
+                assert.ok(ccModels.some((m) => m.verdict === 'error' && /probe/.test(m.lastError || '')), 'cc probe error slice');
+                const cxModels = Object.values(state.agents.cx.models || {});
+                assert.ok(cxModels.some((m) => m.verdict === 'available'), 'cx probe still writes available slice');
+                assert.strictEqual(state.providers.openrouter.verdict, 'available');
+                assert.ok(state.lastPollAt);
+            } finally {
+                agentRegistry.getAllAgents = origGetAllAgents;
+                agentQuotaPoller._resetForTests();
+            }
+        });
     } finally {
         quotaProbe.probePairAsync = origProbePairAsync;
-        if (prevTestEnv == null) delete process.env.AIGON_QUOTA_TEST;
-        else process.env.AIGON_QUOTA_TEST = prevTestEnv;
     }
 });
 
