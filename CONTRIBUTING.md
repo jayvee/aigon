@@ -79,6 +79,19 @@ Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10�
 
 **Screenshot path rule:** always save screenshots to `./tmp/` (e.g. `./tmp/my-feature-check.png`). Never write image files to the repo root — they accumulate as untracked noise. `tmp/` is gitignored.
 
+## Upgrading vendored dashboard libraries
+
+Third-party scripts loaded by the dashboard (Alpine.js, marked, Chart.js, xterm.js, etc.) live under `templates/dashboard/js/vendor/` as static files — not npm `dependencies`. Versions are recorded in `templates/dashboard/js/vendor/VERSIONS.md`; each subfolder includes the upstream `LICENSE`.
+
+To bump a library:
+
+1. Check the current pin in `VERSIONS.md` and pick the target npm release.
+2. Download the same dist file the table lists (UMD/bundle builds for Chart.js and the date-fns adapter; `dist/cdn.min.js` for Alpine; scoped `@xterm/*` paths for xterm).
+3. Overwrite the vendored file(s), copy the package license alongside, and update `VERSIONS.md`.
+4. Run `npm run test:browser:smoke` (or `npm run test:browser` before push). For xterm or Alpine bumps, also spot-check the in-dashboard terminal and monitor/pipeline views via `aigon preview <id>`.
+
+Do not reintroduce CDN `<script>` tags for dashboard runtime assets.
+
 ## Submitting a PR
 
 1. Fork the repo, create a feature branch from `main`
