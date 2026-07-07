@@ -29,17 +29,24 @@ URL (CLAUDE.md / AGENTS.md), not the primary dashboard.
 
 ## Acceptance Criteria
 - [ ] `aigon preview <feature-id>` resolves the feature's worktree path, then launches that worktree's `aigon-cli.js` dashboard server in preview mode (`options.templateRoot` → the worktree root, `lib/dashboard-server.js:449-450`, `157-165`, `1134`) so the UI is served from the worktree's `templates/dashboard/`.
-- [ ] The preview binds an isolated, deterministic port (via the instance-identity model from the foundation feature; reuse `hashBranchToPort`) and registers a `<id>.aigon.localhost` Caddy route — never `aigon.localhost` / the primary port.
-- [ ] Launching, re-launching, and stopping a preview never touches the primary dashboard's PID, port, or `aigon.localhost` route.
+- [ ] The preview binds an isolated port (via the instance-identity model from the foundation feature; reuse `hashBranchToPort` — hash collisions fall back to `allocatePort`, so the **preview URL** `<id>.aigon.localhost` is the deterministic contract, not the port number) and registers that subdomain route — never `aigon.localhost` / the primary port.
+- [ ] Launching, re-launching, and stopping a preview never touches the primary dashboard's PID, port, or `aigon.localhost` route. In particular, because the preview shares the real `~/.aigon` (see below), it must **never write the primary's `dashboard-runtime.json` slot** — it registers under its own instance key / file per the foundation feature's registry model, so a later `aigon server stop`/`restart` from the main checkout still resolves to the primary, not the preview.
 - [ ] The command prints the preview URL and supports stopping it (`aigon preview <id> --stop` or equivalent), with dead previews garbage-collected like other worktree dev servers.
 - [ ] Read-only backend changes in the worktree (e.g. status collectors, analytics, a new read-only API endpoint) are exercised correctly because the preview runs the worktree's own `lib/*.js`.
-- [ ] By default the preview reads the same project/`~/.aigon` data so a pure UI change renders against realistic content (write-heavy isolation is the separate sandbox feature).
+- [ ] By default the preview reads the same project/`~/.aigon` data so a pure UI change renders against realistic content (write-heavy isolation is the separate sandbox feature). This shared-data default is exactly the "identity isolated, data shared" split defined in the foundation feature — the preview shares the data half but must own its identity half (port, subdomain, registry slot).
 - [ ] **Agent operating instructions are updated** so aigon-on-aigon agents actually use this. CLAUDE.md rule 4 (browser-MCP verification) and the AGENTS.md browser-MCP section state that when verifying a dashboard UI change **from a worktree**, the agent must run `aigon preview <id>` and snapshot/screenshot **that preview URL** — never the primary `aigon.localhost` (which serves main's HTML, not the worktree's edits) and never by starting a server that collides with the primary.
 - [ ] The verification discipline distinguishes the two isolated-instance uses so agents pick correctly: **automated regression** = the e2e bootstrap (`tests/dashboard-e2e/bootstrap.js`); **interactive UI verification** = `aigon preview <id>`. This guidance lives in CLAUDE.md / AGENTS.md (not memory), because worktree agents cannot read the operator's memory.
 - [ ] CONTRIBUTING.md (Browser MCP / test-stages section) notes where `aigon preview` sits relative to `test:browser` / `test:browser:smoke`.
 
 ## Validation
 ```bash
+node -c lib/commands/infra.js && node -c lib/server-runtime.js
+npm run test:quick
+# With the primary dashboard running: `aigon preview <id>` for a worktree with a
+# visible dashboard edit → curl the preview URL, assert the edit is in the HTML
+# and the primary's HTML is unchanged; assert primary PID + aigon.localhost route
+# + dashboard-runtime slot are untouched. Then `aigon preview <id> --stop` and
+# assert the same invariants again.
 ```
 
 ## Technical Approach
