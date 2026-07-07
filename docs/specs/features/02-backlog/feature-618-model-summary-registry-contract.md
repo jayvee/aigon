@@ -1,6 +1,8 @@
 ---
 complexity: medium
 depends_on: []
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-07T01:10:59.615Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: model-summary-registry-contract
