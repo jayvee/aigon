@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented OpenRouter provider quota poller, schema v2 quota.json, dashboard sub-row, feature-start gate, doctor section, and integration tests.
 ## New API Surface
 
 ## Key Decisions

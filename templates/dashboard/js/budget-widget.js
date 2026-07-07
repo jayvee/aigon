@@ -12,10 +12,67 @@ let _quotaFetchPromise = null;
 function fetchQuota(force) {
   if (_quotaFetchPromise && !force) return _quotaFetchPromise;
   _quotaFetchPromise = fetch('/api/quota', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { agents: {} })
-    .catch(() => ({ agents: {} }))
-    .then(data => { _quotaCache = data || { agents: {} }; _quotaFetchPromise = null; return _quotaCache; });
+    .then(r => r.ok ? r.json() : { agents: {}, providers: {} })
+    .catch(() => ({ agents: {}, providers: {} }))
+    .then(data => {
+      _quotaCache = data || { agents: {}, providers: {} };
+      if (!_quotaCache.providers) _quotaCache.providers = {};
+      _quotaFetchPromise = null;
+      return _quotaCache;
+    });
   return _quotaFetchPromise;
+}
+
+function linkedProviderIds(agentId) {
+  const agent = AIGON_AGENTS.find(a => a.id === agentId);
+  return agent && Array.isArray(agent.quotaProviders) ? agent.quotaProviders : [];
+}
+
+function providerEntry(providerId) {
+  return _quotaCache && _quotaCache.providers && _quotaCache.providers[providerId]
+    ? _quotaCache.providers[providerId]
+    : null;
+}
+
+function formatUsd(value) {
+  if (value == null || !Number.isFinite(value)) return null;
+  return '$' + value.toFixed(2);
+}
+
+function providerHeadline(entry) {
+  if (!entry) return null;
+  if (entry.walletUsd != null) return `${entry.displayName || 'Provider'} · ${formatUsd(entry.balanceUsd)} remaining`;
+  if (entry.keyLimitUsd != null && entry.keyLimitRemainingUsd != null) {
+    const reset = entry.keyLimitReset ? ` ${entry.keyLimitReset}` : '';
+    return `${entry.displayName || 'Provider'} · limit ${formatUsd(entry.keyLimitRemainingUsd)} / ${formatUsd(entry.keyLimitUsd)}${reset}`;
+  }
+  if (entry.balanceUsd != null) return `${entry.displayName || 'Provider'} · ${formatUsd(entry.balanceUsd)} remaining`;
+  return `${entry.displayName || 'Provider'} · balance unknown`;
+}
+
+function providerSpendLine(entry) {
+  if (!entry) return null;
+  const parts = [];
+  if (entry.usageDailyUsd != null) parts.push(`${formatUsd(entry.usageDailyUsd)} today`);
+  if (entry.usageWeeklyUsd != null) parts.push(`${formatUsd(entry.usageWeeklyUsd)} this week`);
+  return parts.length ? parts.join(' · ') : null;
+}
+
+function worstProviderVerdict(agentId) {
+  const ids = linkedProviderIds(agentId);
+  const severity = { depleted: 4, low: 3, error: 2, unknown: 1, available: 0 };
+  let worst = null;
+  let worstScore = -1;
+  for (const id of ids) {
+    const entry = providerEntry(id);
+    if (!entry || !entry.verdict) continue;
+    const score = severity[entry.verdict] || 0;
+    if (score > worstScore) {
+      worstScore = score;
+      worst = entry;
+    }
+  }
+  return worst;
 }
 
 function quotaEntryForModel(agentId, modelValue) {
@@ -69,6 +126,7 @@ function budgetClassFor(pctRemaining, polledAt) {
 // F444 verdict → existing budget-status-dot colour class.
 function quotaVerdictClass(verdict) {
   if (verdict === 'depleted') return 'budget-red';
+  if (verdict === 'low') return 'budget-amber';
   if (verdict === 'unknown') return 'budget-yellow';
   if (verdict === 'error') return 'budget-amber';
   if (verdict === 'available') return 'budget-green';
@@ -96,15 +154,29 @@ function agentQuotaRollup(agentId) {
   else if (error > 0 && available === 0) verdict = 'error';
   else if (unknown > 0 && available === 0) verdict = 'unknown';
   else verdict = 'available';
-  return { verdict, total, depleted, available, unknown, error, probeable };
+
+  const provider = worstProviderVerdict(agentId);
+  if (provider) {
+    if (provider.verdict === 'depleted') verdict = 'depleted';
+    else if (provider.verdict === 'low' && verdict !== 'depleted') verdict = 'mixed';
+    else if (provider.verdict === 'error' && verdict === 'available') verdict = 'error';
+    else if (provider.verdict === 'unknown' && verdict === 'available' && !probeable) verdict = 'unknown';
+  }
+  return { verdict, total, depleted, available, unknown, error, probeable, provider };
 }
 
 function quotaRollupClass(rollup) {
-  if (!rollup || rollup.verdict === 'not-probeable') return 'budget-stale';
+  if (!rollup || rollup.verdict === 'not-probeable') {
+    if (rollup && rollup.provider && rollup.provider.verdict) return quotaVerdictClass(rollup.provider.verdict);
+    return 'budget-stale';
+  }
   if (rollup.verdict === 'depleted') return 'budget-red';
   if (rollup.verdict === 'mixed') return 'budget-amber';
   if (rollup.verdict === 'error') return 'budget-amber';
   if (rollup.verdict === 'unknown') return 'budget-yellow';
+  if (rollup.provider && (rollup.provider.verdict === 'low' || rollup.provider.verdict === 'depleted')) {
+    return quotaVerdictClass(rollup.provider.verdict);
+  }
   return 'budget-green';
 }
 
@@ -176,6 +248,8 @@ function hasAnyBudgetData(data) {
       if (quotaAgents[id] && quotaAgents[id].models && Object.keys(quotaAgents[id].models).length > 0) return true;
     }
   }
+  const providers = _quotaCache && _quotaCache.providers;
+  if (providers && Object.keys(providers).length > 0) return true;
   return false;
 }
 
@@ -238,7 +312,7 @@ function budgetOverallSummaryClass(data) {
   for (const id of ['cc', 'cx', 'gg', 'km', 'op', 'ag']) {
     if (!budgetAgentEnabled(id)) continue;
     const rollup = agentQuotaRollup(id);
-    if (!rollup.probeable) continue;
+    if (!rollup.probeable && !rollup.provider) continue;
     const rcls = quotaRollupClass(rollup);
     if ((severity[rcls] || 0) > (severity[cls] || 0)) cls = rcls;
   }
@@ -293,6 +367,13 @@ function buildCollapsedDotsRow(data) {
       else if (rollup.verdict === 'not-probeable') title = `${id}: no headless CLI`;
       else if (rollup.verdict === 'error') title = `${id}: probe error`;
       else title = `${id}: available (${rollup.available}/${rollup.total} models)`;
+      if (rollup.provider && rollup.provider.verdict === 'depleted') {
+        cls = 'budget-red';
+        title = `${id}: provider balance depleted`;
+      } else if (rollup.provider && rollup.provider.verdict === 'low') {
+        if (cls === 'budget-green') cls = 'budget-amber';
+        title += ` · provider low (${formatUsd(rollup.provider.balanceUsd)})`;
+      }
     } else if (data && data[id]) {
       // Has F445 budget bars but no F444 verdict — derive class from bars.
       const sub = collectBudgetPctValues({ [id]: data[id] });
@@ -941,6 +1022,21 @@ function renderBudgetWidget() {
       const reason = quotaReasonText('op');
       if (reason) row.appendChild(createEl('span', { className: 'budget-agent-reason', text: reason }));
       else if (!rollup.probeable) row.appendChild(createEl('span', { className: 'budget-unavailable', text: 'no headless CLI' }));
+
+      const provider = rollup.provider || worstProviderVerdict('op');
+      if (provider) {
+        const providerRow = createEl('span', { className: 'budget-provider-subrow' });
+        const providerHead = createEl('span', { className: 'budget-provider-head' });
+        providerHead.appendChild(createEl('span', {
+          className: 'budget-status-dot ' + quotaVerdictClass(provider.verdict),
+          attrs: { role: 'img', 'aria-label': `${provider.displayName || 'Provider'} ${provider.verdict}` },
+        }));
+        providerHead.appendChild(createEl('span', { className: 'budget-provider-line', text: providerHeadline(provider) }));
+        providerRow.appendChild(providerHead);
+        const spend = providerSpendLine(provider);
+        if (spend) providerRow.appendChild(createEl('span', { className: 'budget-provider-spend', text: spend }));
+        row.appendChild(providerRow);
+      }
       agentsWrap.appendChild(row);
     }
   }
@@ -953,7 +1049,10 @@ function renderBudgetWidget() {
   refreshBtn.onclick = () => {
     refreshBtn.classList.add('spinning');
     fetch('/api/budget/refresh', { method: 'POST' }).catch(() => {});
-    setTimeout(() => { fetchBudget(true).then(renderBudgetWidget).finally(() => refreshBtn.classList.remove('spinning')); }, 10000);
+    fetch('/api/quota/refresh', { method: 'POST' }).catch(() => {});
+    setTimeout(() => {
+      Promise.all([fetchBudget(true), fetchQuota(true)]).then(renderBudgetWidget).finally(() => refreshBtn.classList.remove('spinning'));
+    }, 10000);
   };
   meta.appendChild(refreshBtn);
   children.push(meta);

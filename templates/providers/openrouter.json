@@ -1,0 +1,16 @@
+{
+  "id": "openrouter",
+  "displayName": "OpenRouter",
+  "pollIntervalSeconds": 1800,
+  "defaultLowThresholdUsd": 5,
+  "topUpUrl": "https://openrouter.ai/settings/credits",
+  "keyResolution": [
+    { "type": "env", "name": "OPENROUTER_API_KEY" },
+    { "type": "env", "name": "OPENCODE_API_KEY" },
+    { "type": "opencode-auth", "path": "~/.local/share/opencode/auth.json", "field": "openrouter.key" }
+  ],
+  "endpoints": {
+    "key": "https://openrouter.ai/api/v1/key",
+    "credits": "https://openrouter.ai/api/v1/credits"
+  }
+}
