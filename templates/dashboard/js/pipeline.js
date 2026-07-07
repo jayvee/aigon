@@ -1535,6 +1535,7 @@ import { subscribeDataChange } from './store.js';
         id: feature.id,
         displayKey: feature.displayKey,
         slug: feature.slug,
+        createdAt: feature.createdAt,
         set: feature.set,
         agents: feature.agents,
         validActions: feature.validActions,
@@ -1547,10 +1548,15 @@ import { subscribeDataChange } from './store.js';
         reviewSessionSummary: feature.reviewSessionSummary,
         reviewSessions: feature.reviewSessions,
         reviewCycles: feature.reviewCycles,
+        autonomousController: feature.autonomousController,
+        autonomousPlan: feature.autonomousPlan,
         autonomousSession: feature.autonomousSession,
         specAuthor: feature.specAuthor,
         specDrift: feature.specDrift,
+        specPath: feature.specPath,
         lease: feature.lease,
+        activeLeases: feature.activeLeases,
+        leaseDataStale: feature.leaseDataStale,
         scheduledRunAt: feature.scheduledRunAt,
         startupPhase: feature.startupPhase,
         startupReadiness: feature.startupReadiness,
@@ -1563,6 +1569,8 @@ import { subscribeDataChange } from './store.js';
         evalPath: feature.evalPath,
         detailFingerprint: feature.detailFingerprint,
         prStatus: feature.prStatus,
+        repoGithubRemote: repo.githubRemote,
+        repoStorage: repo.storage,
         setRollup: setRoll ? {
           slug: setRoll.slug,
           completed: setRoll.completed,
@@ -1988,7 +1996,7 @@ import { subscribeDataChange } from './store.js';
             builders[key] = (existing) => {
               const fp = cardFingerprint(feature, repo, pType);
               if (existing && existing.dataset.kanbanFp === fp) return existing;
-              return replaceKeyedCard(colBody, key, feature, repo, pType, stats);
+              return replaceKeyedCard(colBody, key, feature, repo, pType, null);
             };
             }
           }
@@ -1996,14 +2004,14 @@ import { subscribeDataChange } from './store.js';
           for (const feature of displayCards) {
             const key = kanbanCardKey(pType, feature);
             desired.push(key);
-            builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, stats);
+            builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, null);
           }
         }
       } else {
         for (const feature of displayCards) {
           const key = kanbanCardKey(pType, feature);
           desired.push(key);
-          builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, stats);
+          builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, null);
         }
       }
 
