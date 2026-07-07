@@ -11,6 +11,10 @@ const LEGACY_PRO_TAB_TO_SETTINGS_SECTION = {
   'scheduled-features': 'schedule',
 };
 
+const VALID_VIEW_IDS = new Set([
+  'monitor', 'pipeline', 'sessions', 'statistics', 'insights', 'logs', 'all-items', 'settings',
+]);
+
 const DEFAULT_OPTIMISTIC_TTL_MS = 60000;
 const STARTUP_PHASE_LABELS = ['Setting up', 'Preparing worktrees', 'Launching agents'];
 const STARTUP_PHASE_SEGMENT_MS = 5500;
@@ -32,6 +36,7 @@ const PERSISTENCE = {
       if (stored === 'console') return 'logs';
       if (stored === 'logs') return 'all-items';
       if (stored === 'config') return 'settings';
+      if (!VALID_VIEW_IDS.has(stored)) return 'pipeline';
       return stored;
     },
   },
@@ -434,10 +439,16 @@ export function getCloseFailure(featureId) {
 
 // ── Preference mutations ────────────────────────────────────────────────────
 export function setView(view) {
+  if (LEGACY_PRO_TAB_TO_SETTINGS_SECTION[view]) {
+    storeTarget().settingsInitialSectionId = LEGACY_PRO_TAB_TO_SETTINGS_SECTION[view];
+    view = 'settings';
+  }
+  if (!VALID_VIEW_IDS.has(view)) view = 'pipeline';
   const prev = storeTarget().view;
   storeTarget().view = view;
   persistWrite('view', view);
   if (view === 'pipeline' && prev !== 'pipeline') notifyDataChange();
+  if (typeof globalThis.applyView === 'function') globalThis.applyView();
 }
 
 export function setFilter(filter) {

@@ -1,431 +1,4 @@
 /* dashboard-esm-processed */
-    // ── Insights view ──────────────────────────────────────────────────────────
-    async function renderInsights(opts) {
-      var embedded = opts && opts.embedded;
-      var c = document.getElementById('insights-view');
-      if (!c) return;
-
-      if (!embedded) {
-        document.getElementById('monitor-summary').style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-      }
-
-      // Gate entire Insights view when Pro is not active
-      if (!isProActive()) {
-        c.innerHTML = '<div class="amp-empty" style="padding:28px 0;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights is a Pro feature — coming later</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div style="font-size:11px;color:var(--text-tertiary)">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
-        return;
-      }
-
-      // Load analytics data for the Insights metrics section (Reports embed)
-      if (!statsState.data) {
-        c.innerHTML = '<div class="amp-empty" style="padding:20px"><span class="toast-spinner"></span>Loading insights…</div>';
-        await loadAnalytics();
-      }
-
-      // Load insights data
-      if (!statsState.insightsData && !statsState.insightsLoading) {
-        await loadInsights(false);
-      }
-
-      var analytics = statsState.data;
-      var filteredFeatures = analytics ? analytics.features || [] : [];
-
-      // Build Insights metrics section (reuses function from logs.js)
-      var ampHtml = '';
-      if (typeof buildInsightsMetricsSection === 'function') {
-        ampHtml = buildInsightsMetricsSection(filteredFeatures);
-      }
-
-      // Build insights observations
-      var insightsHtml = '';
-      var payload = statsState.insightsData;
-
-      if (statsState.insightsLoading) {
-        insightsHtml = '<div class="amp-empty"><span class="toast-spinner"></span>Loading insights…</div>';
-      } else if (statsState.insightsError) {
-        insightsHtml = '<div class="amp-empty">Failed to load insights: ' + escHtml(statsState.insightsError) + '</div>';
-      } else if (!payload || !payload.report) {
-        insightsHtml = '<div class="amp-empty">Run <code>aigon insights</code> or click Refresh to generate insights.</div>';
-      } else if (payload.report.insufficientData) {
-        insightsHtml = '<div class="amp-empty">' + escHtml(payload.report.summary || 'Not enough data for insights yet.') + '</div>';
-      } else {
-        insightsHtml = (payload.report.observations || []).map(function(obs) {
-          var severity = escHtml(String(obs.severity || 'info').toLowerCase());
-          var rawObs = obs.observation || '';
-          var obsHtml;
-          if (rawObs.indexOf(' | ') !== -1) {
-            var items = rawObs.split(' | ');
-            var rows = items.map(function(item) {
-              var isCost = item.indexOf('(cost:') !== -1;
-              var isTokens = item.indexOf('(tokens:') !== -1;
-              var badgeHtml = '';
-              if (isCost) badgeHtml = '<span class="amp-outlier-badge cost">$</span>';
-              else if (isTokens) badgeHtml = '<span class="amp-outlier-badge tokens">T</span>';
-              return '<div class="amp-outlier-row">' + badgeHtml + '<span class="amp-outlier-text">' + escHtml(item.trim()) + '</span></div>';
-            }).join('');
-            obsHtml = '<div class="amp-outlier-list">' + rows + '</div>';
-          } else {
-            obsHtml = '<div class="amp-insight-observation">' + escHtml(rawObs) + '</div>';
-          }
-          return '<article class="amp-insight-item">' +
-            '<div class="amp-insight-title"><span class="amp-insight-sev ' + severity + '">' + severity.toUpperCase() + '</span> ' + escHtml(obs.title || 'Insight') + '</div>' +
-            obsHtml +
-            '<div class="amp-insight-action">Action: ' + escHtml(obs.action || '—') + '</div>' +
-            '</article>';
-        }).join('');
-
-        var coachingHtml = '<div class="amp-insights-gated">AI coaching is available for Pro tier with <code>aigon insights --coach</code>.</div>';
-        if (payload.coaching && payload.coaching.ok && Array.isArray(payload.coaching.recommendations) && payload.coaching.recommendations.length > 0) {
-          coachingHtml = '<div class="amp-insights-coaching-title">AI Coaching (Pro)</div><ol class="amp-insights-coaching-list">' + payload.coaching.recommendations.slice(0, 5).map(function(rec) { return '<li>' + escHtml(rec) + '</li>'; }).join('') + '</ol>';
-        } else if (payload.coaching && payload.coaching.error && !payload.coaching.gated) {
-          coachingHtml = '<div class="amp-insights-gated">AI coaching unavailable: ' + escHtml(payload.coaching.error) + '</div>';
-        }
-        insightsHtml += coachingHtml;
-      }
-
-      var meta = payload && payload.generatedAt ? 'Updated ' + escHtml(relTime(payload.generatedAt)) : 'No cached insights yet';
-
-      c.innerHTML = '<div style="padding:0 0 28px">' +
-        ampHtml +
-        '<div class="stats-section-title" style="margin-top:20px">Observations</div>' +
-        '<div class="amp-insights-toolbar">' +
-          '<span class="amp-insights-meta">' + meta + '</span>' +
-          '<button class="btn" id="amp-insights-refresh-btn">Refresh</button>' +
-        '</div>' +
-        '<div class="amp-insights-body">' + insightsHtml + '</div>' +
-        '</div>';
-
-      // Init Chart.js token charts after DOM is ready
-      if (typeof initAmpTokenCharts === 'function') initAmpTokenCharts();
-
-      var refreshBtn = document.getElementById('amp-insights-refresh-btn');
-      if (refreshBtn) refreshBtn.onclick = async function() {
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<span class="run-next-spinner"></span>Refreshing…';
-        var body = document.querySelector('.amp-insights-body');
-        if (body) body.innerHTML = '<div class="amp-empty"><span class="toast-spinner"></span>Generating insights…</div>';
-        await loadInsights(true);
-        renderInsights();
-      };
-    }
-
-    // ── Main render dispatch ───────────────────────────────────────────────────
-
-    function viewUsesRepoSidebar(view) {
-      return view === 'monitor' || view === 'pipeline' || view === 'sessions' || view === 'config' || view === 'statistics';
-    }
-
-    function updateSidebarToggle() {
-      const btn = document.getElementById('sidebar-toggle-btn');
-      if (!btn) return;
-      const enabled = viewUsesRepoSidebar(state.view);
-      btn.style.display = enabled ? '' : 'none';
-      btn.setAttribute('aria-label', state.sidebarHidden ? 'Show sidebar' : 'Hide sidebar');
-      btn.setAttribute('title', state.sidebarHidden ? 'Show sidebar' : 'Hide sidebar');
-      btn.classList.toggle('is-hidden', !!state.sidebarHidden);
-    }
-
-    // Stored reference so render() can re-filter without re-fetching
-    let _sessionsFilterFn = null;
-
-    async function renderSessions() {
-      const container = document.getElementById('sessions-view');
-      container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
-
-      let sessions = [];
-      let orphanCount = 0;
-      try {
-        const res = await fetch('/api/sessions');
-        const data = await res.json();
-        sessions = data.sessions || [];
-        orphanCount = data.orphanCount || 0;
-      } catch (e) {
-        container.innerHTML = '<div class="empty">Failed to load sessions: ' + escHtml(e.message) + '</div>';
-        return;
-      }
-
-      container.innerHTML = '';
-
-      // Toolbar
-      const toolbar = document.createElement('div');
-      toolbar.className = 'sessions-toolbar';
-      toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
-        '<span style="font-size:12px;color:var(--text-tertiary)" id="sessions-count-label">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
-        (orphanCount > 0 ? '<button class="btn btn-warn" id="sessions-kill-orphans-btn" style="font-size:11px;padding:4px 10px">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
-        '<button class="btn" id="sessions-tile-btn" style="margin-left:auto" title="Arrange all iTerm2 windows into a grid">⊞ Tile Windows</button>' +
-        '<button class="btn" id="sessions-refresh-btn">↺ Refresh</button>';
-      container.appendChild(toolbar);
-      document.getElementById('sessions-tile-btn').onclick = async () => {
-        try {
-          const r = await fetch('/api/tile-windows', { method: 'POST' });
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || 'Failed');
-          showToast('Windows tiled');
-        } catch (e) { showToast('Tile failed: ' + e.message, null, null, {error:true}); }
-      };
-      document.getElementById('sessions-refresh-btn').onclick = () => renderSessions();
-      const killOrphansBtn = document.getElementById('sessions-kill-orphans-btn');
-      if (killOrphansBtn) {
-        killOrphansBtn.onclick = async () => {
-          if (!confirm('Kill all ' + orphanCount + ' orphaned session' + (orphanCount === 1 ? '' : 's') + '?')) return;
-          try {
-            const r = await fetch('/api/sessions/cleanup', { method: 'POST' });
-            const d = await r.json();
-            showToast('Killed ' + (d.count || 0) + ' orphan' + (d.count === 1 ? '' : 's'));
-          } catch (e) { showToast('Cleanup failed: ' + e.message); }
-          renderSessions();
-        };
-      }
-
-      function entityBadge(s) {
-        if (!s.entityType) return '';
-        if (s.entityType === 'S') {
-          return '<span class="session-entity-badge feature" title="Set autonomous (orchestrates members)">set ' + escHtml(s.entityId) + '</span>';
-        }
-        const label = s.entityType + s.entityId;
-        const cls = s.entityType === 'f' ? 'feature' : 'research';
-        return '<span class="session-entity-badge ' + cls + '">' + escHtml(label) + '</span>';
-      }
-
-      function repoBadge(s) {
-        if (!s.repoPath) return '';
-        const name = s.repoPath.split('/').pop();
-        return '<span class="session-entity-badge" style="background:var(--bg-surface);color:var(--text-secondary)">' + escHtml(name) + '</span>';
-      }
-
-      function statusBadge(s) {
-        if (s.orphan) {
-          const reasonLabels = { done: 'feature done', paused: 'feature paused', 'spec-missing': 'spec deleted' };
-          const label = reasonLabels[s.orphan.reason] || 'orphan';
-          const entity = s.entityType && s.entityId ? ' — ' + s.entityType.toUpperCase() + s.entityId : '';
-          const tip = s.orphan.reason === 'done' ? 'This session\'s feature has been completed'
-            : s.orphan.reason === 'paused' ? 'This session\'s feature is paused'
-            : s.orphan.reason === 'spec-missing' ? 'No spec file found for this session\'s feature'
-            : 'Session has no active feature';
-          return '<span class="session-orphan-badge" title="' + escHtml(tip + entity) + '">' + label + entity + '</span>';
-        }
-        if (s.attached) return '<span class="session-attached-badge">attached</span>';
-        return '';
-      }
-
-      function renderGroup(target, title, items, opts) {
-        if (items.length === 0) return;
-        const group = document.createElement('div');
-        group.className = 'sessions-group';
-        const titleCls = 'sessions-group-title' + (opts && opts.orphan ? ' orphan-title' : '');
-        group.innerHTML = '<div class="' + titleCls + '">' + escHtml(title) + ' (' + items.length + ')</div>';
-        items.forEach(s => {
-          const row = document.createElement('div');
-          const rowCls = 'session-row' + (s.attached ? ' attached' : '') + (s.orphan ? ' orphan' : '');
-          row.className = rowCls;
-          const age = relTime(s.createdAt);
-          row.innerHTML =
-            '<span class="session-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>' +
-            entityBadge(s) +
-            ((state.selectedRepo || 'all') === 'all' ? repoBadge(s) : '') +
-            statusBadge(s) +
-            '<span class="session-meta">' + age + '</span>' +
-            '<span style="display:flex;gap:5px">' +
-              '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Open</button>' +
-              '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
-            '</span>';
-
-          row.querySelector('[data-session]').onclick = async (e) => {
-            e.stopPropagation();
-            if (getTerminalClickTarget() === 'dashboard') {
-              openTerminalPanel(s.name, null, s.name, null, null);
-            } else {
-              try {
-                const res = await fetch('/api/session/view', {
-                  method: 'POST', headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ sessionName: s.name, repoPath: s.repoPath || null })
-                });
-                const payload = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
-                showToast(payload.message || 'Session focused in terminal');
-                openTerminalPanel(s.name, null, null, null, null);
-              } catch (err) {
-                showToast('View failed: ' + err.message, null, null, {error:true});
-              }
-            }
-          };
-          row.querySelector('[data-kill]').onclick = async (e) => {
-            e.stopPropagation();
-            if (!confirm('Kill session "' + s.name + '"?')) return;
-            await fetch('/api/session/stop', {
-              method: 'POST', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ sessionName: s.name })
-            });
-            showToast('Killed: ' + s.name);
-            renderSessions();
-          };
-          group.appendChild(row);
-        });
-        target.appendChild(group);
-      }
-
-      _sessionsFilterFn = renderSessionGroups;
-      function renderSessionGroups() {
-        // Remove existing groups (keep toolbar)
-        container.querySelectorAll('.sessions-group, .empty').forEach(el => el.remove());
-
-        // Read from shared sidebar repo selector
-        const repoFilter = state.selectedRepo || 'all';
-        const filtered = repoFilter === 'all'
-          ? sessions
-          : sessions.filter(s => s.repoPath === repoFilter || s.name.startsWith('aigon-dash'));
-        const dashFiltered = filtered.filter(s => s.name.startsWith('aigon-dash'));
-        const orphanFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && s.orphan);
-        const agentFiltered = filtered.filter(s => !s.name.startsWith('aigon-dash') && !s.orphan);
-        // Unlinked sessions (no repo) — only show in "all" view
-        const unlinkedSessions = repoFilter === 'all'
-          ? sessions.filter(s => !s.repoPath && !s.name.startsWith('aigon-dash') && !s.orphan)
-          : [];
-
-        const countLabel = document.getElementById('sessions-count-label');
-        if (countLabel) {
-          const total = filtered.length;
-          countLabel.textContent = total + ' session' + (total === 1 ? '' : 's');
-        }
-
-        if (filtered.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'empty';
-          empty.textContent = 'No sessions for this repo.';
-          container.appendChild(empty);
-          return;
-        }
-
-        renderGroup(container, 'Agent Sessions', agentFiltered);
-        renderGroup(container, 'Orphaned Sessions', orphanFiltered, { orphan: true });
-        if (unlinkedSessions.length > 0) renderGroup(container, 'Unlinked Sessions', unlinkedSessions);
-        renderGroup(container, 'Dashboard Sessions', dashFiltered);
-      }
-
-      if (sessions.length === 0) {
-        container.innerHTML += '<div class="empty">No tmux sessions running.</div>';
-        return;
-      }
-
-      renderSessionGroups();
-    }
-
-    function render() {
-      if (state.view === 'backup-sync' || state.view === 'scheduled-features') {
-        setView('settings');
-      }
-      updateViewTabs();
-      updateSidebarToggle();
-      const sidebar = document.getElementById('repo-sidebar');
-      const mobileSelect = document.getElementById('repo-select-mobile');
-      if (state.view === 'settings') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = '';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _ivSet = document.getElementById('insights-view'); if (_ivSet) _ivSet.style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        renderSettings();
-      } else if (state.view === 'sessions') {
-        sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = '';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = '';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _ivSes = document.getElementById('insights-view'); if (_ivSes) _ivSes.style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos);
-        // Re-filter if sessions already loaded, otherwise fetch
-        if (_sessionsFilterFn) { _sessionsFilterFn(); } else { renderSessions(); }
-      } else if (state.view === 'statistics') {
-        sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = '';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = '';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _ivStat = document.getElementById('insights-view'); if (_ivStat) _ivStat.style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos);
-        renderStatistics();
-      } else if (state.view === 'insights') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('insights-view').style.display = '';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        renderInsights();
-      } else if (state.view === 'all-items') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = '';
-        document.getElementById('logs-view').style.display = 'none';
-        var _ivAi = document.getElementById('insights-view'); if (_ivAi) _ivAi.style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        renderAllItemsView();
-      } else if (state.view === 'logs') {
-        sidebar.style.display = 'none';
-        mobileSelect.style.display = 'none';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = '';
-        var _ivLogs = document.getElementById('insights-view'); if (_ivLogs) _ivLogs.style.display = 'none';
-        document.getElementById('repo-header').style.display = 'none';
-        renderLogs();
-      } else {
-        // monitor or pipeline — Alpine components handle the view content
-        sidebar.style.display = state.sidebarHidden ? 'none' : '';
-        mobileSelect.style.display = '';
-        document.getElementById('settings-view').style.display = 'none';
-        document.getElementById('empty').style.display = 'none';
-        document.getElementById('sessions-view').style.display = 'none';
-        document.getElementById('statistics-view').style.display = 'none';
-        document.getElementById('all-items-view').style.display = 'none';
-        document.getElementById('logs-view').style.display = 'none';
-        var _ivMon = document.getElementById('insights-view'); if (_ivMon) _ivMon.style.display = 'none';
-        // Sidebar + header are shared between monitor and pipeline
-        const allRepos = ((state.data || {}).repos || []);
-        renderSidebar(allRepos);
-        const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-        renderRepoHeader(selectedRepoData);
-        setHealth();
-        renderUpdateBadge();
-        updateTitleAndFavicon(((state.data || {}).summary || {}).waiting || 0);
-        document.getElementById('updated-text').textContent = 'Updated ' + relTime((state.data || {}).generatedAt || new Date().toISOString());
-        // Alpine reactively renders #monitor-view and #pipeline-view based on state.view
-      }
-    }
-
-    function refreshTimestamps() {
-      document.querySelectorAll('[data-updated]').forEach(n => { n.textContent = relTime(n.getAttribute('data-updated')); });
-      const generatedAt = (state.data && state.data.generatedAt) ? state.data.generatedAt : new Date().toISOString();
-      document.getElementById('updated-text').textContent = 'Updated ' + relTime(generatedAt);
-    }
-
     function flattenStatuses(data) {
       const map = new Map();
       (data.repos || []).forEach(repo => {
@@ -436,20 +9,6 @@
         });
       });
       return map;
-    }
-
-    function listRepoPaths(data) {
-      return ((data && data.repos) || []).map(repo => repo.path);
-    }
-
-    function settingsNeedsRerender(previousData, nextData) {
-      const previousRepos = listRepoPaths(previousData);
-      const nextRepos = listRepoPaths(nextData);
-      if (previousRepos.length !== nextRepos.length) return true;
-      for (let i = 0; i < previousRepos.length; i += 1) {
-        if (previousRepos[i] !== nextRepos[i]) return true;
-      }
-      return false;
     }
 
     function etagFromResponse(res) {
@@ -467,6 +26,10 @@
         if (new URLSearchParams(location.search).get('debug') === 'perf') return true;
         return localStorage.getItem('aigon-debug-perf') === '1';
       } catch (_) { return false; }
+    }
+
+    function render() {
+      applyView();
     }
 
     async function poll() {
@@ -528,7 +91,7 @@
         } else if (incomingVersion !== prevVersion) {
           setLastRenderedStatusVersion(incomingVersion);
           const tRender = perfOn ? performance.now() : 0;
-          render();
+          updateActiveView(state.data, { prevData: previousData, statusChanged: true });
           if (perfOn) { perf.renderMs = Math.round((performance.now() - tRender) * 100) / 100; perf.rendered = true; }
         }
         setHealth();
@@ -551,9 +114,15 @@
       }
     }
 
+    function refreshTimestamps() {
+      document.querySelectorAll('[data-updated]').forEach(n => { n.textContent = relTime(n.getAttribute('data-updated')); });
+      const generatedAt = (state.data && state.data.generatedAt) ? state.data.generatedAt : new Date().toISOString();
+      document.getElementById('updated-text').textContent = 'Updated ' + relTime(generatedAt);
+    }
+
     // ── Init ──────────────────────────────────────────────────────────────────
 
-    render();
+    initViewShell();
     if (typeof syncDashboardHiddenRepos === 'function') {
       syncDashboardHiddenRepos(state.hiddenRepos || []);
     }
@@ -567,7 +136,7 @@
     document.getElementById('refresh-btn').onclick = requestRefresh;
     document.getElementById('sidebar-toggle-btn').onclick = () => {
       toggleSidebarHidden();
-      render();
+      applyView();
     };
     setInterval(refreshTimestamps, TS_MS);
     let pollTimer = null;
@@ -578,13 +147,6 @@
     setPollInterval(POLL_MS);
     setTimeout(poll, 400);
     if (typeof connectLive === 'function') connectLive();
-
-    document.querySelectorAll('.view-tab').forEach(tab => {
-      tab.onclick = () => {
-        setView(tab.getAttribute('data-view'));
-        render();
-      };
-    });
 
     // Sidebar resize
     (() => {

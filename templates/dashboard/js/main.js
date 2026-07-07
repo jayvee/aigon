@@ -29,5 +29,6 @@ import '/js/failover-dashboard.js';
 import './logs.js';
 import './close-log-panel.js';
 import './alpine-bindings.js';
+import './view-registry.js';
 import './init.js';
 import './aigon-status-pill.js';
