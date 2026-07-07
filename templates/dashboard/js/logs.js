@@ -96,8 +96,6 @@
     async function renderLogs() {
       const container = document.getElementById('logs-view');
       if (!container) return;
-
-      // Fetch events from server, merge with localStorage
       let events = logsState.events;
       try {
         const res = await fetch('/api/logs', { cache: 'no-store' });
@@ -255,11 +253,6 @@
 
     function renderAllItemsView() {
       const container = document.getElementById('all-items-view');
-      document.getElementById('monitor-summary').style.display = 'none';
-      document.getElementById('repo-header').style.display = 'none';
-      document.getElementById('settings-view').style.display = 'none';
-      document.getElementById('empty').style.display = 'none';
-
       const data = state.data;
       if (!data || !data.repos) { container.innerHTML = '<div class="stats-empty-msg">No data</div>'; return; }
 

@@ -140,6 +140,8 @@ const dashboardAppGlobals = {
     openDrawer: 'readonly', openResearchFindingsPeek: 'readonly',
     openTerminalPanel: 'readonly', panCycleTimeChart: 'readonly', panVolumeChart: 'readonly',
     poll: 'readonly',
+    applyView: 'readonly', updateActiveView: 'readonly', initViewShell: 'readonly',
+    settingsNeedsRerender: 'readonly',
     postMarkComplete: 'readonly', quotaEntryForModel: 'readonly', quotaTooltip: 'readonly',
     reapplyPendingOptimisticEntityStarts: 'readonly', relTime: 'readonly', render: 'readonly',
     renderActionButtons: 'readonly', renderAgentPickerRows: 'readonly',
