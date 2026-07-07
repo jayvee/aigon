@@ -141,6 +141,9 @@ testAsync('agent-quota poller integration scenarios', async () => {
             agentQuotaPoller._resetForTests();
         });
 
+        // ag (Antigravity) must never be polled automatically — not on a background
+        // tick, not on a forced refresh, not even with ANTIGRAVITY_TOKEN set —
+        // because launching agy opens a Google sign-in tab in the user's browser.
         await withTempDirAsync(async (dir) => {
             agentQuotaPoller._resetForTests();
             stubProviderPolls();
@@ -150,9 +153,10 @@ testAsync('agent-quota poller integration scenarios', async () => {
             budgetPoller.pollCodexBudget = async () => null;
             budgetPoller.pollKimiBudget = async () => null;
             budgetPoller.pollAntigravityBudget = async () => { agCalled = true; return null; };
+            process.env.ANTIGRAVITY_TOKEN = 'test-token';
+            await agentQuotaPoller.runTick({ repoPath: dir, force: true, skipCacheGate: true });
+            assert.strictEqual(agCalled, false, 'agy budget must never be polled, even forced with a token');
             delete process.env.ANTIGRAVITY_TOKEN;
-            await agentQuotaPoller.runTick({ repoPath: dir, force: false, skipCacheGate: true });
-            assert.strictEqual(agCalled, false);
             budgetPoller.pollAntigravityBudget = originalAg;
             agentQuotaPoller._resetForTests();
         });

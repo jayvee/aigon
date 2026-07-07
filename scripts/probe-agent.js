@@ -42,7 +42,12 @@ function buildCmd(agentConfig, modelValue) {
                 ? ['opencode', ['run', '-m', modelValue, PROBE_PROMPT]]
                 : ['opencode', ['run', PROBE_PROMPT]];
         case 'ag':
-            return ['agy', ['--dangerously-skip-permissions', '-p', PROBE_PROMPT, ...modelArgs]];
+            // ag (Antigravity) is never probed. Even headless `agy -p` opens a
+            // Google/Antigravity sign-in tab in the browser when there is no valid
+            // session, which hijacks the user's Chrome. agy is only ever launched
+            // by an explicit, interactive feature/research assignment — never by an
+            // automated probe. Return null so every probe path skips it.
+            return null;
         case 'cx':
             // codex uses -m not --model for exec
             return modelValue
@@ -258,7 +263,7 @@ function main(argv = process.argv.slice(2)) {
         ? listAllAgentIds()
         : targetAgentId
         ? [targetAgentId]
-        : ['cc', 'op', 'ag', 'cx'];
+        : ['cc', 'op', 'cx'];
 
     const rows = [];
     const colW = { agent: 4, model: 44 };

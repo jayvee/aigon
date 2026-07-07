@@ -141,11 +141,16 @@ test('quota shouldProbe backs off unauthenticated probes for hours', () => {
     assert.strictEqual(quotaProbe.shouldProbe(stale, cfg), true);
 });
 
-test('budget poller skips interactive agy unless forced or token present', () => {
+test('ag is never probed or polled automatically (no browser sign-in hijack)', () => {
+    const probeSrc = fs.readFileSync(path.join(__dirname, '../../scripts/probe-agent.js'), 'utf8');
     const budgetSrc = fs.readFileSync(path.join(__dirname, '../../lib/budget-poller.js'), 'utf8');
     const pollerSrc = fs.readFileSync(path.join(__dirname, '../../lib/agent-quota-poller.js'), 'utf8');
-    assert.ok(budgetSrc.includes('ANTIGRAVITY_TOKEN'), 'budget poller must gate interactive agy on headless auth');
-    assert.ok(pollerSrc.includes('skipped-interactive-auth'), 'unified poller must skip ag budget without token');
+    // probe-agent must never build an `agy` command — buildCmd returns null for ag.
+    assert.ok(!/return \[['"]agy['"]/.test(probeSrc), 'probe-agent must not spawn agy');
+    // Budget poller must not include ag in its automated agent set.
+    assert.ok(!/budgetAgents = \[[^\]]*['"]ag['"]/.test(pollerSrc), 'unified poller must not list ag as a budget agent');
+    // Budget poller must not call the interactive Antigravity scrape from pollOnce.
+    assert.ok(!/pollAntigravityBudget\(\{\s*repoPath: root/.test(budgetSrc), 'budget poller must not launch interactive agy');
 });
 
 test('quota polling defaults to 30 minutes and allows that interval at runtime', () => {
