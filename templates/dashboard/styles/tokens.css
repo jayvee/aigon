@@ -1,0 +1,2 @@
+    [x-cloak] { display: none !important; }
+    :root{color-scheme:dark;-webkit-font-smoothing:antialiased;--bg-root:#0a0a0b;--bg-surface:#111113;--bg-elevated:#1a1a1f;--bg-hover:#222228;--border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--text-primary:#ededef;--text-secondary:#a0a0a8;--text-tertiary:#6b6b76;--accent:#3b82f6;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--radius:12px;--mono:"SF Mono","Cascadia Code",ui-monospace,monospace}

@@ -1,0 +1,36 @@
+    /* Update badge — top bar */
+    .update-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.08);color:#fcd34d;text-decoration:none;cursor:default;transition:border-color .12s,background .12s}
+    .update-pill:hover{border-color:rgba(245,158,11,.7);background:rgba(245,158,11,.14)}
+    .update-pill[data-hidden]{display:none}
+    /* Version section in settings */
+    .sync-actions{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .sync-refresh-btn{min-width:0;padding:4px 9px}
+    .sync-status-panel{display:grid;gap:0;padding:0;overflow:hidden}
+    .sync-meta-table{display:grid;gap:0}
+    .sync-meta-row{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:12px;border-bottom:1px solid var(--border-subtle)}
+    .sync-meta-row:last-child{border-bottom:none}
+    .sync-meta-label{color:var(--text-tertiary);min-width:80px;flex-shrink:0;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+    .sync-meta-value{color:var(--text-primary);font-family:var(--mono);font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sync-not-configured{padding:12px 0;color:var(--text-tertiary);font-size:12px;line-height:1.6}
+    .sync-not-configured code{font-family:var(--mono);color:var(--text-secondary);background:rgba(255,255,255,.05);padding:1px 5px;border-radius:4px}
+    .version-info{display:grid;gap:8px}
+    .version-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;font-size:12px}
+    .version-label{color:var(--text-tertiary);min-width:200px;flex-shrink:0;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+    .version-subheader{margin-top:8px;padding:0 4px;color:var(--text-secondary);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .version-subheader:first-child{margin-top:0}
+    .version-value{color:var(--text-primary);font-family:var(--mono);font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .version-state-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;flex-shrink:0}
+    .version-state-badge.state-latest{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac}
+    .version-state-badge.state-update{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d}
+    .version-state-badge.state-prerelease{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);color:#c4b5fd}
+    .version-state-badge.state-unavailable{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);color:var(--text-tertiary)}
+    /* Settings — Pro subsection headings */
+    .settings-pro-badge{font-size:8px;font-weight:700;opacity:0.65;margin-left:5px;vertical-align:super;letter-spacing:0.06em;color:var(--text-tertiary)}
+    .settings-nav-btn .settings-pro-badge{margin-left:6px;flex-shrink:0}
+    /* Settings — scheduled kickoffs table */
+    .settings-schedule-toolbar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:8px}
+    .schedule-jobs-table-host{margin-top:4px;overflow-x:auto}
+    .schedule-jobs-table{width:100%;border-collapse:collapse;font-size:12px}
+    .schedule-jobs-table th,.schedule-jobs-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border-subtle);vertical-align:top}
+    .schedule-jobs-table th{color:var(--text-tertiary);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+    .schedule-jobs-table td{font-family:var(--mono);color:var(--text-secondary)}

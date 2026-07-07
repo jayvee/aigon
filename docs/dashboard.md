@@ -6,7 +6,7 @@ Quick reference for agents working on the Aigon dashboard UI and the AIGON serve
 
 The dashboard is a single-page web app served by the AIGON server, a foreground Node.js process whose HTTP/UI transport lives in `lib/dashboard-server.js`. The dashboard is the interface; the AIGON server serves static UI assets, exposes the JSON API, polls workflow state, and handles runtime concerns such as WebSocket terminal relay and notifications.
 
-The UI source is split across `templates/dashboard/index.html`, `templates/dashboard/styles.css`, and browser modules under `templates/dashboard/js/`. The server reads these assets fresh from disk on each request; frontend-only edits usually do not require a server restart.
+The UI source is split across `templates/dashboard/index.html`, `templates/dashboard/styles/` (per-concern CSS sheets concatenated at `/styles.css`), and browser modules under `templates/dashboard/js/`. The server reads these assets fresh from disk on each request; frontend-only edits usually do not require a server restart.
 
 ## Starting & Stopping
 
@@ -94,7 +94,7 @@ tail -50 ~/.aigon/dashboard.log
 | `lib/config.js` | Global/project config, profiles, agent CLI config |
 | `lib/worktree.js` | Worktree management, tmux sessions, terminal launching |
 | `templates/dashboard/index.html` | SPA shell and markup templates; loads CSS and JS modules |
-| `templates/dashboard/styles.css` | Dashboard styling |
+| `templates/dashboard/styles/` | Dashboard styling (ordered sheets; served as `/styles.css`) |
 | `templates/dashboard/js/*.js` | Browser-side modules: state, API, actions, monitor, pipeline, settings, terminal, reports, etc. |
 | `lib/workflow-core/` | Workflow engine — sole authority for feature lifecycle state |
 | `lib/state-queries.js` | Pure action/transition derivation for feedback entities — used by the AIGON server for feedback dashboard behavior. Feature/research actions come from workflow-core exclusively |
