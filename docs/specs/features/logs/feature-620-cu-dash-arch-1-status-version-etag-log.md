@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 424
+lines_removed: 89
+lines_changed: 513
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 620 - dash-arch-1-status-version-etag
 Agent: cu
 
