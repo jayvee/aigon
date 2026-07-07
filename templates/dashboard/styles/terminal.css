@@ -1,0 +1,28 @@
+    /* Terminal panel (reuses spec-drawer positioning) */
+    .terminal-panel{position:fixed;top:0;right:0;bottom:0;width:min(80vw,1200px);background:#0a0a0b;z-index:201;transform:translateX(100%);transition:transform .25s ease,width .25s ease,right .25s ease;display:flex;flex-direction:column;border-left:1px solid var(--border-subtle)}
+    .terminal-panel.open{transform:translateX(0)}
+    .terminal-panel.fullscreen{width:100vw;border-left:none;right:0}
+    /* Split-view: terminal left, spec drawer right — both headers accessible */
+    body.split-view .terminal-panel.open{transform:none;width:calc(100vw - min(55vw,720px));right:min(55vw,720px);border-left:none;border-right:1px solid var(--border-subtle)}
+    body.split-view.drawer-wide .terminal-panel.open{width:calc(100vw - min(70vw,960px));right:min(70vw,960px)}
+    body.split-view #terminal-panel-overlay{display:none!important}
+    body.split-view #panel-back{display:block!important}
+    body:not(.split-view) #panel-back{display:none!important}
+    /* Stale file indicator on the spec drawer refresh button */
+    #drawer-refresh.stale{color:#f59e0b;border-color:rgba(245,158,11,.5);animation:stale-pulse 1.5s ease-in-out infinite}
+    @keyframes stale-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+    .panel-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--text-tertiary);margin-right:4px;flex-shrink:0}
+    .panel-status-dot.running{background:var(--success);box-shadow:0 0 6px rgba(34,197,94,.4);animation:pulse 1.5s infinite}
+    .panel-status-dot.error{background:var(--error)}
+    #terminal-container{flex:1;overflow:hidden;background:#0a0a0b;position:relative}
+    .panel-footer{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;border-top:1px solid var(--border-subtle);flex-shrink:0;background:#0a0a0b}
+    /* AI session picker (single-agent selection) */
+    .ask-agent-group{position:relative;display:inline-flex;flex-shrink:0;margin-left:8px}
+    .ask-agent-primary{font-size:11px;border-radius:8px 0 0 8px;border-right:none!important;padding:3px 8px}
+    .ask-agent-chevron{font-size:10px;padding:3px 5px;border-radius:0 8px 8px 0;min-width:unset}
+    .ask-agent-primary:only-child{border-radius:8px}
+    .ask-agent-dropdown{position:absolute;top:calc(100% + 4px);right:0;z-index:300;min-width:160px;background:var(--bg-elevated);border:1px solid var(--border-default);border-radius:10px;padding:4px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .ask-agent-dropdown.open{display:block}
+    .ask-agent-option{display:block;width:100%;padding:7px 12px;background:none;border:none;color:var(--text-primary);font:inherit;font-size:12px;text-align:left;cursor:pointer;border-radius:6px;transition:background .1s ease}
+    .ask-agent-option:hover{background:var(--bg-surface)}
+    @media(max-width:768px){.terminal-panel{width:100vw;border-left:none}}

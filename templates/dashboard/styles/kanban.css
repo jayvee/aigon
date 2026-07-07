@@ -1,0 +1,264 @@
+    /* Pipeline toolbar */
+    .pipeline-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
+    .pipeline-type-toggle{display:flex;gap:0;border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;width:fit-content}
+    .toggle-btn{padding:5px 14px;font-size:12px;font-weight:500;background:var(--bg-surface);color:var(--text-secondary);border:none;cursor:pointer;transition:background .12s,color .12s}
+    .toggle-btn:not(:last-child){border-right:1px solid var(--border-subtle)}
+    .toggle-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+    .toggle-btn.active{background:var(--accent);color:#fff}
+    /* Pipeline / Kanban */
+    /* minmax: set headers + feature cards need ~220px+; 180px clipped "Start set" and kcard actions */
+    .kanban{display:grid;grid-template-columns:repeat(var(--kanban-cols,5),minmax(220px,1fr));gap:10px;align-items:start;overflow-x:auto;padding-bottom:8px;min-width:0}
+    .kanban-col{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;min-height:120px;min-width:0}
+    .kanban-col.drag-over{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.06)}
+    .kanban-col.drag-blocked{border-color:rgba(239,68,68,.4)}
+    .col-h{padding:9px 12px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center}
+    .col-title{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
+    .col-count{font-size:11px;color:var(--text-tertiary)}
+    .col-new-feature-btn{font-size:10px;padding:3px 8px}
+    .col-body{padding:8px;display:grid;gap:6px;min-height:60px;min-width:0}
+    /* Group-by-set: header row must wrap / truncate so kcards are not clipped by narrow columns */
+    .kanban-set-header-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;width:100%;min-width:0}
+    .kanban-set-header-row .kanban-set-title{min-width:0;flex:1 1 80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .kanban-set-header-row .kanban-set-count{flex-shrink:0;white-space:nowrap}
+    .kanban-set-header-row .kanban-set-start-autonomous{flex-shrink:0}
+    .kanban-set-header-row .kcard-scheduled-glyph{flex-shrink:0;margin-left:0}
+    .kanban-set-prioritise-strip{padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--border-default) 80%,transparent);background:rgba(59,130,246,.08)}
+    .kanban-set-prioritise-banner{width:100%;justify-content:center;font-size:12px;font-weight:600;padding:8px 12px}
+    .kanban-set-header-row .kanban-set-paused-badge{flex-shrink:0}
+    .kanban-set-header-row .kcard-peek-btn{flex-shrink:0}
+    /* Group-by-set: one visual “bundle” so members read as a single unit */
+    .kanban-set-bundle{
+    display:flex;flex-direction:column;gap:0;
+    margin:8px 0 10px;
+    padding:0 0 8px;
+    border-radius:10px;
+    border:1px solid color-mix(in srgb, var(--border-default) 85%, transparent);
+    background:color-mix(in srgb, var(--bg-elevated) 55%, var(--bg-surface));
+    box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 4px 14px rgba(0,0,0,.08);
+    border-left:1px solid color-mix(in srgb, var(--accent) 55%, var(--border-default));
+    min-width:0;
+    }
+    .kanban-set-bundle--paused{
+    border-left-color:rgba(229,124,42,.85);
+    box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 14px rgba(229,124,42,.08);
+    }
+    .kanban-set-bundle-head.kanban-set-header{
+    display:block;
+    margin:0;
+    padding:8px 10px 6px;
+    font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--text-secondary);
+    background:color-mix(in srgb, var(--bg-surface) 70%, transparent);
+    border:none;border-bottom:1px solid var(--border-subtle);
+    border-radius:10px 10px 0 0;
+    }
+    .kanban-set-bundle-head--paused{
+    background:rgba(229,124,42,.09);
+    border-bottom-color:rgba(229,124,42,.35);
+    }
+    .kanban-set-bundle-head--paused .kanban-set-title{color:#e57c2a}
+    .kanban-set-progress{width:100%;height:4px;border-radius:2px;background:rgba(128,128,128,.2);margin-top:6px;overflow:hidden}
+    .kanban-set-progress-fill{height:100%;width:0;background:var(--accent,#3b82f6);border-radius:2px;transition:width .2s ease}
+    .kanban-set-bundle--paused .kanban-set-progress-fill{background:linear-gradient(90deg,#e57c2a,#fb923c)}
+    /* Stacked members; single accent spine is .kanban-set-bundle border-left only */
+    .kanban-set-stack{
+    margin:8px 10px 2px 10px;
+    padding:2px 0 4px 0;
+    }
+    .kanban-set-stack > .kcard.kcard-in-set{
+    margin:5px 0 0;
+    border-radius:8px;
+    box-shadow:none;
+    }
+    .kanban-set-stack > .kcard.kcard-in-set:first-child{margin-top:0}
+    .kcard{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.01);padding:8px 10px;cursor:grab;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease;min-width:0;overflow:hidden}
+    .kcard:hover{background:var(--bg-elevated);border-color:var(--border-default)}
+    .kcard.dragging{opacity:.3;cursor:grabbing}
+    .kcard-id{font-size:11px;color:var(--text-tertiary);font-family:var(--mono)}
+    .kcard-name{font-size:12px;font-weight:500;margin:2px 0 6px;line-height:1.3;color:var(--text-primary);word-break:break-word}
+    .kcard-spec-author{font-size:10px;color:var(--text-muted,#94a3b8);margin:-2px 0 6px;line-height:1.3}
+    .kcard-scheduled-glyph{display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:var(--text-tertiary)}
+    .kcard-scheduled-glyph-svg{width:14px;height:14px;flex-shrink:0;opacity:0.92}
+    /* Backlog dependency hint — neutral (not “blocked” / error styling) */
+    .kcard-dep-chain{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:4px 0 6px;font-size:10px;color:var(--text-tertiary);line-height:1.35}
+    .kcard-dep-chain-label{font-weight:400;font-style:italic;color:var(--text-tertiary);letter-spacing:.01em;text-transform:none;margin-right:1px}
+    .kcard-dep-wires{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0}
+    .kcard-dep-wire{flex:0 0 10px;height:1px;background:var(--border-subtle);margin:0 1px;opacity:.5}
+    .kcard-dep-chip{display:inline-flex;align-items:center;padding:0 5px;border-radius:4px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-tertiary);font-weight:500;font-variant-numeric:tabular-nums;opacity:.8}
+    .kcard-start-pending-deps{opacity:.92}
+    .kcard-nudges{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+    .kcard-nudge-chip{appearance:none;border:1px solid color-mix(in srgb, var(--accent) 28%, var(--border-default));background:color-mix(in srgb, var(--accent) 10%, var(--bg-surface));color:var(--text-secondary);border-radius:999px;padding:3px 8px;font:600 10px/1.2 var(--mono);cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kcard-nudge-chip:hover{background:color-mix(in srgb, var(--accent) 16%, var(--bg-surface));color:var(--text-primary)}
+    .spec-drift-wrap{display:inline-flex;position:relative;margin-left:6px;vertical-align:middle}
+    .spec-drift-wrap.open .spec-drift-popover{display:flex}
+    .spec-drift-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid rgba(251,146,60,.38);background:rgba(251,146,60,.12);color:#fdba74;cursor:pointer}
+    .spec-drift-badge:hover{background:rgba(251,146,60,.18);border-color:rgba(251,146,60,.55)}
+    .spec-drift-popover{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:240;min-width:240px;flex-direction:column;gap:6px;padding:10px;border-radius:8px;border:1px solid rgba(251,146,60,.25);background:rgba(15,23,42,.98);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+    .spec-drift-title{font-size:11px;font-weight:700;color:#fed7aa}
+    .spec-drift-meta{font-size:10px;color:var(--text-secondary)}
+    .spec-drift-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em}
+    .spec-drift-path{display:block;font-size:10px;line-height:1.45;padding:6px 8px;border-radius:6px;background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.16);color:#e2e8f0;white-space:normal;word-break:break-all}
+    .spec-drift-actions{display:flex;justify-content:flex-end}
+    .kcard-agents{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+    .agent-badge{font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-secondary)}
+    .agent-badge.implementing{border-color:rgba(59,130,246,.4);color:#93c5fd}
+    .agent-badge.waiting{border-color:rgba(245,158,11,.4);color:#fcd34d}
+    .agent-badge.submitted{border-color:rgba(34,197,94,.4);color:#86efac}
+    .agent-badge.error{border-color:rgba(239,68,68,.4);color:#fca5a5}
+    .kcard-status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+    .kcard-status-label{font-size:10px;color:var(--text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+    .kcard-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border-subtle)}
+    .kcard-actions .btn{font-size:11px;padding:3px 8px}
+    .kcard-actions .btn-secondary{font-size:10px;padding:2px 7px}
+    /* Agent sections within in-progress/in-evaluation cards */
+    .kcard-agent{border-left:3px solid var(--border-subtle);border-radius:4px;padding:5px 8px;margin-top:5px;background:rgba(255,255,255,.015);min-width:0;overflow:hidden}
+    .agent-cc{border-left-color:#6B9EFF}
+    .agent-gg{border-left-color:#A78BFA}
+    .agent-cx{border-left-color:#4ADE80}
+    .agent-cu{border-left-color:#FB923C}
+    .agent-solo{border-left-color:#94A3B8}
+    .agent-github{border-left-color:#8B949E}
+    .kcard-gh-logo{width:12px;height:12px;vertical-align:-1px;margin-right:3px;opacity:.7}
+    .kcard-agent-header{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0}
+    .kcard-agent-name{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--text-secondary);flex-shrink:0;letter-spacing:.03em}
+    .kcard-agent-was{font-size:10px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;margin:-1px 0 3px 0;line-height:1.2}
+    .kcard-agent-triplet{font-size:9px;font-family:var(--mono);color:var(--text-tertiary);opacity:.7;letter-spacing:.02em;padding:1px 5px;border:1px solid var(--border-subtle);border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+    .kcard-agent-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+    .kcard-agent-status-row.is-idle-ladder{opacity:.72}
+    .kcard-agent-status{font-size:10px;color:var(--text-tertiary);white-space:nowrap}
+    .kcard-idle-chip{display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:1px 6px;border-radius:999px;border:1px dashed rgba(251,191,36,.5);background:rgba(251,191,36,.1);color:#fcd34d;font:600 10px/1.4 var(--mono);white-space:nowrap}
+    .kcard-idle-chip-attention{border-color:rgba(248,113,113,.65);background:rgba(248,113,113,.12);color:#fca5a5}
+    .kcard-agent-status.status-running{color:#4ADE80}
+    .kcard-agent-status.status-waiting{color:#FCD34D}
+    .kcard-agent-status.status-complete{color:#86EFAC}
+    .kcard-agent-status.status-failed{color:#FB7185}
+    .kcard-agent-status.status-ready{color:#86EFAC}
+    .kcard-agent-status.status-ended,.kcard-agent-status.status-idle{color:var(--text-tertiary)}
+    .kcard-agent-status.status-flagged{color:#FB923C}
+    .kcard-agent-status.status-needs-attention{color:#fbbf24;font-weight:600}
+    .kcard-dev-slot{display:inline-flex;width:20px;flex-shrink:0;justify-content:center;margin-left:auto}
+    .monitor-dev-link{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:999px;text-decoration:none;opacity:.86;transition:opacity .12s ease,border-color .12s ease,color .12s ease}
+    .monitor-dev-link svg{width:11px;height:11px;display:block}
+    .monitor-dev-link:hover{opacity:1;border-color:var(--accent);color:var(--text-primary)}
+    .kcard-agent-actions{display:flex;gap:4px;align-items:center;margin-top:3px;flex-wrap:wrap}
+    .kcard-agent-actions .btn{font-size:11px;padding:3px 8px}
+    .kcard-autonomous-plan{display:flex;flex-direction:column;align-items:stretch;gap:3px;margin-top:6px}
+    .kcard-stage-track{font-size:11px;line-height:1.4}
+    .kcard-stage-track-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:1px}
+    .kcard-stage-track-title{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary)}
+    .kcard-stage{display:flex;align-items:center;gap:6px;color:var(--text-tertiary)}
+    .kcard-stage-marker{font-size:11px;width:12px;flex-shrink:0;display:inline-flex;justify-content:center}
+    .kcard-stage-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kcard-stage-agent{color:var(--text-tertiary);opacity:.85;font-weight:400}
+    .kcard-stage.is-complete{color:var(--text-secondary)}
+    .kcard-stage.is-complete .kcard-stage-marker{color:#86EFAC}
+    .kcard-stage.is-running{color:var(--text-primary)}
+    .kcard-stage.is-running .kcard-stage-label{font-weight:600}
+    .kcard-stage.is-running .kcard-stage-marker{color:#4ADE80;animation:kcard-stage-pulse 1.6s ease-in-out infinite}
+    .kcard-stage.is-waiting{color:var(--text-tertiary)}
+    .kcard-stage.is-waiting .kcard-stage-marker{color:var(--text-tertiary)}
+    .kcard-stage.is-failed{color:#FB7185}
+    .kcard-stage.is-failed .kcard-stage-marker{color:#FB7185}
+    .kcard-autonomous-plan-error-wrap{display:flex;align-items:center;gap:6px}
+    .kcard-autonomous-plan-error{font-size:10px;line-height:1.45;color:#FB7185}
+    @keyframes kcard-stage-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+    /* F492 AC3: pulsing liveness dot inside cards. Inline-block so it sits
+    beside the agent name; alignment baseline-tweaked to read centered
+    next to text. The base .dot style is 8px round; .live colors it green
+    and pulses opacity. */
+    .kcard .dot{display:inline-block;background:var(--text-tertiary);vertical-align:middle;margin:0 4px 0 2px}
+    .kcard .dot.live{background:#4ADE80;animation:kcard-stage-pulse 1.6s ease-in-out infinite}
+    .kcard-gh-refresh{margin-left:auto;background:rgba(139,148,158,.12);border:1px solid rgba(139,148,158,.25);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease}
+    .kcard-gh-refresh:hover{color:var(--text-primary);background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4)}
+    .kcard-gh-refresh.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite}
+    .kcard-gh-check-btn{background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);border-radius:4px;color:var(--text-secondary);font-family:var(--mono);font-size:10px;padding:2px 8px;cursor:pointer;transition:all .15s ease;max-width:50%}
+    .kcard-gh-check-btn:hover{color:var(--text-primary);background:rgba(139,148,158,.18);border-color:rgba(139,148,158,.35)}
+    .kcard-gh-check-btn.is-loading{opacity:.65;animation:kcard-gh-pulse .8s ease-in-out infinite;cursor:wait}
+    .kcard-gh-status.status-none,.kcard-gh-status.status-unavailable{color:var(--text-tertiary)}
+    .kcard-gh-status.status-open{color:#6B9EFF}
+    .kcard-gh-status.status-draft{color:#FCD34D}
+    .kcard-gh-status.status-merged{color:#4ADE80}
+    .kcard-gh-link{color:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:22px;padding:2px 6px;border-radius:4px;background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);margin-left:4px;transition:all .15s ease}
+    .kcard-gh-link:hover{background:rgba(139,148,158,.22);border-color:rgba(139,148,158,.4);text-decoration:none}
+    .kcard-gh-helper{font-size:10px;color:#86EFAC;margin-top:2px}
+    .kcard-va-btn--pr-warning{border-color:#FB923C!important;box-shadow:0 0 0 1px rgba(251,146,60,.3) inset}
+    @keyframes kcard-gh-pulse{0%,100%{opacity:.65}50%{opacity:1}}
+    .kcard-flag-btn{font-size:10px!important;padding:2px 6px!important}
+    .kcard-dev-poke-btn{display:inline-flex;align-items:center;gap:6px}
+    .kcard-dev-poke-btn.is-pending{opacity:.9}
+    .btn-overflow{padding:2px 8px!important;font-size:14px;line-height:1;color:var(--text-tertiary);letter-spacing:.05em}
+    .kcard-overflow{position:relative;display:inline-flex}
+    .kcard-overflow-menu{display:none;position:fixed;z-index:200;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;padding:3px;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+    .kcard-overflow-menu.open{display:block}
+    .kcard-overflow-item{display:block;width:100%;text-align:left;padding:5px 10px;font-size:11px;background:transparent;border:none;color:var(--text-secondary);border-radius:4px;cursor:pointer;white-space:nowrap;transition:background .1s,color .1s}
+    .kcard-overflow-item:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
+    .kcard-overflow-item.btn-danger{color:#F87171}
+    .kcard-overflow-item.btn-danger:hover{background:rgba(239,68,68,.08);color:#F87171}
+    .kcard-overflow-item+.kcard-overflow-item.btn-danger{border-top:1px solid rgba(239,68,68,.12);margin-top:2px;padding-top:7px}
+    .kcard-overflow-item.kcard-overflow-item-neutral{color:var(--text-secondary)}
+    .kcard-overflow-item.kcard-overflow-item-neutral:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
+    .kcard-spec-status{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;letter-spacing:.03em;line-height:1;white-space:nowrap}
+    .kcard-spec-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
+    .kcard-spec-checking{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
+    .kcard-state-badge.status-reviewing{color:#93c5fd;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18)}
+    .kcard-state-badge.status-review-done{color:#6ee7b7;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18)}
+    /* Card headline banner — replaces inline kcard-state-badge with a prominent block under the title */
+    .kcard-headline{margin:6px 0 4px;padding:5px 8px 5px 9px;border-left:3px solid var(--border-default);background:rgba(255,255,255,.025);border-radius:0 4px 4px 0;font-family:var(--mono);line-height:1.2}
+    .kcard-headline-top{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.04em}
+    .kcard-headline-glyph{font-size:11px;line-height:1;display:inline-block;width:10px;text-align:center}
+    .kcard-headline-verb{color:var(--text-primary)}
+    .kcard-headline-meta{margin-top:2px;font-size:10px;color:var(--text-secondary);letter-spacing:.02em}
+    /* Headline detail: render full text with reasonable wrapping. No
+    truncation, no tooltip — native title= tooltips are unreliable
+    and clamped detail forced the user to discover the rest. Long
+    awaitingInput messages grow the card vertically (rare; the card
+    SHOULD be loud when the user needs to respond). */
+    .kcard-headline-detail{margin-top:2px;font-size:10px;color:var(--text-tertiary);letter-spacing:.01em;line-height:1.4;word-break:break-word}
+    /* Action hint shown for 'Needs you' state — points the user at where
+    to respond. Bright amber matches the attention tone, font-weight 600
+    so it reads as a directive. No display:block needed since it's the
+    sole content of the detail line. */
+    .kcard-headline-detail-action{color:#fcd34d;font-weight:600}
+    .kcard-headline.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.05)}
+    .kcard-headline.tone-running .kcard-headline-verb,.kcard-headline.tone-running .kcard-headline-glyph{color:#4ADE80}
+    .kcard-headline.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.04)}
+    .kcard-headline.tone-waiting .kcard-headline-verb,.kcard-headline.tone-waiting .kcard-headline-glyph{color:#fbbf24}
+    .kcard-headline.tone-attention{border-left-color:#fbbf24;background:rgba(251,191,36,.09)}
+    .kcard-headline.tone-attention .kcard-headline-verb,.kcard-headline.tone-attention .kcard-headline-glyph{color:#fde68a}
+    .kcard-headline.tone-blocked{border-left-color:#f87171;background:rgba(248,113,113,.05)}
+    .kcard-headline.tone-blocked .kcard-headline-verb,.kcard-headline.tone-blocked .kcard-headline-glyph{color:#fca5a5}
+    .kcard-headline.tone-warn{border-left-color:#f87171;background:rgba(248,113,113,.1)}
+    .kcard-headline.tone-warn .kcard-headline-verb,.kcard-headline.tone-warn .kcard-headline-glyph{color:#fca5a5}
+    .kcard-headline.tone-ready{border-left-color:#6ee7b7;background:rgba(110,231,183,.05)}
+    .kcard-headline.tone-ready .kcard-headline-verb,.kcard-headline.tone-ready .kcard-headline-glyph{color:#6ee7b7}
+    .kcard-headline.tone-done{border-left-color:var(--border-subtle);background:transparent}
+    .kcard-headline.tone-done .kcard-headline-verb,.kcard-headline.tone-done .kcard-headline-glyph{color:var(--text-tertiary)}
+    .kcard-headline.tone-idle{border-left-color:var(--border-subtle);background:transparent}
+    .kcard-headline.tone-idle .kcard-headline-verb,.kcard-headline.tone-idle .kcard-headline-glyph{color:var(--text-secondary)}
+    .kcard-controller-status{margin:4px 0 4px;padding:5px 8px;border:1px solid var(--border-subtle);border-left:3px solid var(--border-default);border-radius:4px;background:rgba(255,255,255,.02);font-family:var(--mono);line-height:1.25}
+    .kcard-controller-title{font-size:10px;font-weight:700;color:var(--text-primary);letter-spacing:.03em}
+    .kcard-controller-reason{margin-top:2px;font-size:10px;color:var(--text-secondary);word-break:break-word}
+    .kcard-controller-meta{margin-top:2px;font-size:9px;color:var(--text-tertiary);letter-spacing:.01em}
+    .kcard-controller-status.tone-running{border-left-color:#4ADE80;background:rgba(74,222,128,.035)}
+    .kcard-controller-status.tone-running .kcard-controller-title{color:#4ADE80}
+    .kcard-controller-status.tone-warn{border-left-color:#f87171;background:rgba(248,113,113,.075)}
+    .kcard-controller-status.tone-warn .kcard-controller-title{color:#fca5a5}
+    .kcard-controller-status.tone-waiting{border-left-color:#fbbf24;background:rgba(251,191,36,.035)}
+    .kcard-controller-status.tone-waiting .kcard-controller-title{color:#fcd34d}
+    .kcard-controller-status.tone-ready{border-left-color:#6ee7b7;background:rgba(110,231,183,.035)}
+    .kcard-controller-status.tone-ready .kcard-controller-title{color:#6ee7b7}
+    .kcard-cycle-history{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;padding:3px 7px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:4px;font-size:10px;font-family:var(--mono);color:var(--text-secondary)}
+    .kcard-cycle-label{font-weight:600;color:var(--text-tertiary);margin-right:4px}
+    .kcard-cycle-entry{color:var(--text-secondary)}
+    .kcard-cycle-when{color:var(--text-tertiary);font-size:9px}
+    /* Ready-to-close: status label only, NOT a clickable affordance.
+    The Close button at the card bottom is the actual click target.
+    Stripped padding/border/border-radius/background that previously
+    made this look like a clickable button. */
+    .kcard-ready-indicator{display:flex;align-items:center;gap:5px;margin:6px 10px 0;font-size:10px;font-family:var(--mono);font-weight:600;color:#86efac;letter-spacing:.02em}
+    .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
+    .kcard-close-failure-icon{flex-shrink:0}
+    .kcard-close-failure-text{word-break:break-word}
+    .kcard-transitions{margin-top:6px;padding-top:6px;border-top:1px solid var(--border-subtle);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+    .kcard-transitions .btn{font-size:11px;padding:3px 8px}
+    .col-empty{padding:12px 8px;color:var(--text-tertiary);font-size:12px;text-align:center}

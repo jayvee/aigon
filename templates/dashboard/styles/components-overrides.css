@@ -1,0 +1,17 @@
+    /* ── Nudge modal agent/role grid ─────────────────────────────────────── */
+    .nudge-agent-role-grid{display:grid;grid-template-columns:1fr 180px;gap:10px;margin-bottom:12px}
+
+    /* ── Drawer close button — always a direct flex child, never clipped ── */
+    .drawer-close-x{flex-shrink:0;padding:5px 10px;font-size:16px}
+
+    /* ── Drawer tabs must scroll on narrow widths ────────────────────────── */
+    .drawer-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .drawer-tab{white-space:nowrap;flex-shrink:0}
+
+    /* ── Matrix peek close button ────────────────────────────────────────── */
+    .matrix-peek-close-btn{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:20px;line-height:1;padding:4px 6px;border-radius:4px;z-index:1}
+    .matrix-peek-close-btn:hover{color:var(--text-primary);background:var(--bg-elevated)}
+    #matrix-peek-panel{position:relative}
+
+    /* ── Modal actions can wrap on very narrow screens ───────────────────── */
+    .modal-actions{flex-wrap:wrap}

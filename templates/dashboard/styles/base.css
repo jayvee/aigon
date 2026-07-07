@@ -1,0 +1,47 @@
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg-root);color:var(--text-primary);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+    body{padding:0;overflow:hidden;height:100vh}
+    .wrap{display:flex;flex-direction:column;height:100vh;max-width:1400px;margin:0 auto;padding:0 16px}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:16px 0 8px;flex-shrink:0;flex-wrap:wrap}
+    h1{margin:0;font-size:24px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+    h1 img{width:28px;height:28px;flex-shrink:0}
+    .meta{display:flex;gap:10px;color:var(--text-secondary);align-items:center}
+    .sidebar-toggle-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;background:transparent;color:var(--text-tertiary);cursor:pointer;transition:border-color .12s ease,color .12s ease,background .12s ease;flex-shrink:0;align-self:flex-start;margin:8px 0 0 6px}
+    .sidebar-toggle-btn svg{width:14px;height:14px}
+    .sidebar-toggle-btn:hover{color:var(--text-primary);border-color:var(--accent);background:rgba(255,255,255,.03)}
+    .health{display:flex;align-items:center;gap:6px}
+    /* View tabs */
+    .view-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);padding-bottom:0;flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .view-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);padding:8px 16px;cursor:pointer;font-size:13px;margin-bottom:-1px;transition:color .12s ease,border-color .12s ease;white-space:nowrap;flex-shrink:0}
+    .view-tab:hover{color:var(--text-primary)}
+    .view-tab.active{color:var(--text-primary);border-bottom-color:var(--accent)}
+    /* Dashboard body: sidebar + detail */
+    .dashboard-body{display:flex;flex:1;min-height:0;margin-top:8px}
+    /* Repo sidebar */
+    .repo-sidebar{width:var(--sidebar-width,240px);min-width:140px;max-width:400px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border-subtle);padding:6px 0;display:flex;flex-direction:column;gap:1px;position:relative}
+    .sidebar-resize{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:10}
+    .sidebar-resize:hover,.sidebar-resize.active{background:var(--accent);opacity:.4}
+    .sidebar-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;border-left:3px solid transparent;color:var(--text-secondary);cursor:pointer;font:inherit;font-size:13px;text-align:left;transition:background .12s ease,color .12s ease}
+    .sidebar-item:hover{background:var(--bg-hover);color:var(--text-primary)}
+    .sidebar-item.active{border-left-color:var(--accent);background:var(--bg-elevated);color:var(--text-primary)}
+    .sidebar-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px}
+    .sidebar-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sidebar-indicators{display:flex;align-items:center;gap:5px;flex-shrink:0}
+    .sidebar-badge{font-size:11px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--bg-elevated);border:1px solid var(--border-subtle);color:var(--text-tertiary);padding:0 5px;line-height:1}
+    .sidebar-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .sidebar-dot.waiting{background:var(--warning);box-shadow:0 0 6px rgba(245,158,11,.4)}
+    .sidebar-dot.error{background:var(--error);box-shadow:0 0 6px rgba(239,68,68,.35)}
+    /* Mobile repo dropdown (hidden by default) */
+    .repo-select-mobile{display:none;width:100%;padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);font:inherit;font-size:13px;margin-bottom:8px;flex-shrink:0}
+    /* Detail area */
+    .detail-area{flex:1;overflow-y:auto;padding:0 16px 28px 16px;min-width:0}
+    /* Repo header bar */
+    .repo-header-bar{position:sticky;top:0;z-index:10;display:flex;align-items:baseline;gap:12px;padding:10px 0 10px;margin-bottom:4px;border-bottom:1px solid var(--border-subtle);background:var(--bg-root)}
+    .repo-header-name{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em}
+    .repo-header-meta{color:var(--text-secondary);font-size:13px}
+    .repo-header-actions{display:inline-flex;align-items:center;gap:8px;margin-left:auto}
+    .repo-dev-link{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border-radius:999px}
+    .repo-dev-link svg{width:15px;height:15px;display:block}
+    .repo-dev-link-running{color:var(--accent);border:1px solid rgba(59,130,246,.45);background:rgba(59,130,246,.1)}
+    .repo-dev-link-idle{color:var(--text-secondary);border:1px solid var(--border-default);background:transparent}
+    .repo-dev-link-idle:hover{color:var(--text-primary);border-color:var(--accent);background:rgba(59,130,246,.08)}

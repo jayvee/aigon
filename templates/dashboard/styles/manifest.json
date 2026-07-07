@@ -1,0 +1,25 @@
+{
+  "order": [
+    "tokens.css",
+    "base.css",
+    "monitor.css",
+    "kanban.css",
+    "components.css",
+    "settings.css",
+    "drawer.css",
+    "terminal.css",
+    "logs.css",
+    "sessions.css",
+    "stats.css",
+    "notifications.css",
+    "components-shared.css",
+    "budget.css",
+    "settings-version.css",
+    "terminal-theme.css",
+    "stats-matrix.css",
+    "stats-benchmarks.css",
+    "components-overrides.css",
+    "responsive.css",
+    "chrome-upgrade.css"
+  ]
+}
