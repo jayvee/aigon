@@ -517,11 +517,11 @@
       </div>
     </div>
   </aside>
-  <!-- CDN libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  <!-- xterm.js and addons (vendored locally — no CDN cold-fetch) -->
+  <!-- Vendored libraries (no CDN cold-fetch — see js/vendor/VERSIONS.md) -->
+  <script src="/js/vendor/marked/marked.min.js"></script>
+  <script src="/js/vendor/chart.js/chart.umd.min.js"></script>
+  <script src="/js/vendor/chartjs-adapter-date-fns/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- xterm.js and addons -->
   <link rel="stylesheet" href="/js/vendor/xterm/xterm.css">
   <script src="/js/vendor/xterm/xterm.js"></script>
   <script src="/js/vendor/xterm/addon-fit.js"></script>
@@ -533,6 +533,6 @@
     window.__AIGON_BOOTSTRAP__ = ${AIGON_BOOTSTRAP};
   </script>
   <script type="module" src="/js/main.js?v=${AIGON_VERSION}"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script defer src="/js/vendor/alpine/alpine.min.js"></script>
 </body>
 </html>
