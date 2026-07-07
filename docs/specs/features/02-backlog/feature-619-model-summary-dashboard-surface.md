@@ -26,23 +26,26 @@ Depends on `model-summary-registry-contract` for schema, API projection, and exe
 
 - [ ] Under each `matrix-model-label`, render `row.summary.headline` when present (class `matrix-model-summary`, muted secondary text, max 2 lines ellipsis).
 - [ ] When `summary` absent, show nothing (no placeholder — legacy rows unchanged).
-- [ ] Row expand affordance (chevron or click row): reveals `body`, `bestFor` / `avoidFor` chips (role labels from `operationLabels`), `confidence` badge, `researchedAt` formatted date.
+- [ ] Row expand affordance (chevron or click row): reveals `body`, `bestFor` / `avoidFor` chips (role labels from `operationLabels` exposed by `/api/agent-matrix`), `confidence` badge, `researchedAt` formatted as a locale date string (e.g. `2026-07-07`).
 - [ ] `sources` render as compact link list when URLs present; `kind: aigon-bench` with `ref` only shows ref text.
 - [ ] Quarantined rows: headline still visible; strikethrough model label unchanged; quarantine badge takes precedence in agent cell.
+- [ ] Archived rows (no `summary`): render nothing — same fallback as legacy rows. Do not badge archived differently in this feature.
 - [ ] Per-role score cell hover notes (`matrix-notes-tip`) unchanged.
 - [ ] Section intro copy updated to mention summaries (one sentence).
 
 ### Matrix peek (`templates/dashboard/js/matrix-peek.js`)
 
 - [ ] Model column shows label + headline (smaller, tertiary) when `summary.headline` present.
+- [ ] Existing model `<td>` has `white-space:nowrap` — switch to a two-line stack (label on line 1, headline on line 2 in `.matrix-peek-summary`) and drop `nowrap` so the headline can wrap or truncate with ellipsis. Keep agent column nowrap.
 - [ ] No expand panel in peek (keep lightweight); full detail remains in Settings.
 
 ### Model pickers (`templates/dashboard/js/actions-picker.js` and autonomous/schedule pickers if they share model `<select>` builder)
 
 - [ ] When building model `<option>` elements, set `option.title` to `summary.headline` when present (native tooltip).
 - [ ] Below or beside the model `<select>` (start modal + review triplet + autonomous review row): render a one-line `model-summary-hint` div when selected model has `summary.headline`.
-- [ ] **Contextual warn:** when current picker action is review (review agent slot or `feature-code-review` launch path) and selected model's `summary.avoidFor` includes `review`, show `model-summary-warn` with headline + "Not recommended for code review per maintainer summary."
+- [ ] **Contextual warn:** when current picker action is review (review agent slot or `feature-code-review` launch path) and selected model's `summary.avoidFor` includes `review`, show `model-summary-warn` with headline + "Not recommended for code review per maintainer summary." Warn element uses `role="note"` and `aria-live="polite"` so screen readers announce it when the selected model changes.
 - [ ] Hint reads from `window.AIGON_AGENTS[].modelOptions[].summary` (already loaded for pickers) — no new API route.
+- [ ] **Picker role plumbing:** start modal passes `pickerRole: 'implement'`, code-review modal passes `pickerRole: 'review'`, autonomous/schedule pickers default to `pickerRole: null` (no warn). The warn only fires when `pickerRole === 'review'`. Custom model entries (from project/global config) also surface their `summary` in pickers via the merged payload — they render hint/warn identically; custom entries do not appear in the matrix table (F618 keeps matrix projection shipped-registry-only).
 
 ### Styles (`templates/dashboard/styles.css`)
 
@@ -51,8 +54,9 @@ Depends on `model-summary-registry-contract` for schema, API projection, and exe
 
 ### Tests
 
-- [ ] Extend dashboard smoke or add focused unit: matrix row builder includes headline when mock row has `summary` (if no DOM test exists, document manual verify in log).
+- [ ] Extend dashboard smoke or add focused unit: matrix row builder includes headline when mock row has `summary` (target `tests/dashboard-e2e/` smoke subset tagged `@smoke`; if no DOM-level matrix test exists today, add a minimal Playwright @smoke asserting the headline renders on the cc Sonnet exemplar row, and document manual-verify steps in the feature log under `## Validation`).
 - [ ] `npm run test:iterate` passes with dashboard path trigger for smoke subset.
+- [ ] ESLint `no-undef` passes on edited dashboard JS files (F556) — no new top-level globals introduced; reuse existing `AIGON_AGENTS` binding in `actions-picker.js`.
 
 ## Validation
 
@@ -72,7 +76,7 @@ npm run test:iterate
 
 ### Audit: picker model payload
 
-Before coding, grep dashboard agent bootstrap (`/api/status` or settings load) for `modelOptions` shape. If `summary` is stripped, extend server DTO in `lib/agent-registry.js` `mergedModelOptions` export path or dashboard config collector — **must not** read `templates/agents/*.json` from frontend.
+Before coding, grep dashboard agent bootstrap (`/api/status` or settings load) for `modelOptions` shape. The picker payload is built in `lib/agent-registry.js` around the `mergedModelOptions.map(o => { const { notes, score, pricing, lastRefreshAt, ...rest } = o; return rest; })` projection — `summary` already flows through via the `...rest` spread once F618 adds it to `modelOptions`. **Verify** (do not re-add) that `summary` survives the spread; if a future change narrows the projection to an allow-list, extend it to include `summary`. Must not read `templates/agents/*.json` from the frontend.
 
 ### Key files
 
