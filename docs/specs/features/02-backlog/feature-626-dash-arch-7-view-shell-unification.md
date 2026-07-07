@@ -21,16 +21,16 @@ Replace the hand-rolled `render()` dispatch in `js/init.js` with a declarative v
 
 ## Acceptance Criteria
 
-- [ ] `js/view-registry.js`: registry + shell logic. Shell responsibilities: toggle container visibility off `store.view` (single loop, no per-view branches), toggle sidebar/mobile-select/repo-header per view flags (`viewUsesRepoSidebar` logic absorbed), call `unmount(oldView)` → `mount(newView)` on switches, and route data updates (`store.replaceData` events / poll / SSE fetches) to the active view's `update(data)`.
-- [ ] `render()`'s if/else ladder and the per-branch `getElementById(...).style.display` blocks in `init.js` are deleted. View-tab click handling, localStorage view persistence, and legacy view-name migrations move to store mutations (dash-arch-5's `setView`).
+- [ ] `js/view-registry.js`: registry + shell logic. Each registry entry declares `{ id, elementId, usesRepoSidebar, usesRepoHeader, mount, update, unmount }`, and every referenced `elementId` is validated at startup with a console-visible error for missing containers. Shell responsibilities: toggle container visibility off `store.view` (single loop, no per-view branches), toggle sidebar/mobile-select/repo-header per view flags (`viewUsesRepoSidebar` logic absorbed), call `unmount(oldView)` → `mount(newView)` on switches, and route data updates (`store.replaceData` events / poll / SSE fetches) to the active view's `update(data)`.
+- [ ] `render()`'s if/else ladder and the per-branch `getElementById(...).style.display` blocks in `init.js` are deleted. View-tab click handling, localStorage view persistence, unknown-view fallback to `pipeline`, and legacy view-name migrations move to store mutations (dash-arch-5's `setView`).
 - [ ] Monitor and Pipeline register as views whose `mount/update` delegate to the existing Alpine components (their `x-show="$store.dashboard.view === ..."` can remain the visibility mechanism for these two — the registry entry documents that).
-- [ ] Sessions view migrated fully: fetch-on-mount with cached data, `update()` refreshes on status changes (debounced — `/api/sessions` shells out to tmux), repo-filter re-render without refetch (existing `_sessionsFilterFn` mechanism replaced by the lifecycle), `unmount` cancels in-flight work. Module-level mutable singletons (`_sessionsFilterFn`) removed.
+- [ ] Sessions view migrated fully: fetch-on-mount with cached data, `update()` refreshes on status changes (debounced — `/api/sessions` shells out to tmux), repo-filter re-render without refetch (existing `_sessionsFilterFn` mechanism replaced by the lifecycle), and `unmount` aborts in-flight requests and ignores any stale async completion from an inactive view. Module-level mutable singletons (`_sessionsFilterFn`) removed.
 - [ ] Logs, All-Items, and Insights views migrated to the same lifecycle (they are small-to-medium innerHTML views; internals may stay string-built — the *lifecycle and dispatch* is what unifies).
-- [ ] Settings and Statistics/Reports register in the registry with thin adapters around their existing `renderSettings()` / `renderStatistics()` internals — full internal refactor of these two (2,136 and 1,102 lines) is explicitly out of scope, but their mount/update/unmount contract must be honest (e.g. the `settingsNeedsRerender` repo-list check becomes their `update()` guard).
+- [ ] Settings and Statistics/Reports register in the registry with thin adapters around their existing `renderSettings()` / `renderStatistics()` internals — full internal refactor of these two (2,136 and 1,102 lines) is explicitly out of scope, but their mount/update/unmount contract must be honest (e.g. the `settingsNeedsRerender` repo-list check becomes their `update()` guard, and one-shot section navigation such as `settingsInitialSectionId` is consumed during mount/update rather than in global shell code).
 - [ ] View switching preserves per-view scroll positions where views stay mounted (monitor/pipeline), matching today's behaviour.
 - [ ] Keyboard/deep-link behaviours preserved: initial view from localStorage, `settingsInitialSectionId` legacy remap, toast "Logs" action buttons that jump views.
-- [ ] Playwright e2e: full suite green; add a view-switch round-trip test (all 8 tabs, assert each container visible/hidden correctly and no console errors) — this becomes the regression net the old ladder never had.
-- [ ] MCP `browser_snapshot` per migrated view.
+- [ ] Playwright e2e: full suite green; add a view-switch round-trip test (all 8 tabs, assert each container visible/hidden correctly, sidebar/header/mobile-select flags match the registry entry, localStorage restores the last valid view, invalid stored views fall back to `pipeline`, and no console errors occur) — this becomes the regression net the old ladder never had.
+- [ ] MCP `browser_snapshot` per migrated view, with screenshots stored under `./tmp/` and not committed.
 
 ## Validation
 
@@ -43,6 +43,7 @@ npm run test:iterate
 - Land in two commits: (1) registry + shell with *all* views as thin adapters (pure mechanical move of the ladder, behaviour identical); (2) real lifecycle migration for sessions/logs/all-items/insights. Keeps bisectability.
 - The registry is ~80 lines, not a framework: no routing library, no components, no virtual DOM. It is the same "single entry point" discipline dash-arch-5 applies to data, applied to views.
 - `update(data)` should be cheap-by-default: views receive the already-version-gated snapshot (dash-arch-1 means `update` only fires on real changes), and each view may keep its own finer guard (settings repo-list check).
+- Keep registry state client-local. The registry must derive from the dashboard store and existing DOM containers; it must not add server state, workflow events, or dashboard API fields.
 - Audit for orphaned view containers (`backup-sync-view`, `scheduled-features-view` divs in index.html look legacy post-F236) — delete them and their references if truly dead; that's exactly the kind of cruft the registry migration should flush out.
 - Coordinate with dash-arch-6 on the pipeline column subscription teardown noted there.
 - MCP `browser_snapshot` after each view migration (hot rule #4); screenshots to `./tmp/` only.
@@ -58,6 +59,7 @@ npm run test:iterate
 - Converting string-built HTML in leaf views to Alpine templates.
 - URL-hash routing / shareable deep links (worth a future feature; the registry makes it easy later).
 - New views or view redesigns.
+- Reworking dashboard server routes, workflow-core state, or status DTO shapes for view lifecycle purposes.
 
 ## Open Questions
 
