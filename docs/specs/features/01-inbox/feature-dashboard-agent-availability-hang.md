@@ -37,23 +37,35 @@ This is separate from F637 (the status-poll perf fix), which is done and works.
   `userPreference`/`disabled` early-return (line ~195). So the loop is reached
   regardless of the agent's disabled state.
 
-### Prime suspect
-`readQuotaAnnotation` → `require('./quota-probe').isPairDepleted(repoPath, agentId,
-modelValue)`. The repeated `command -v <cli>` probes point at CLI/binary
-availability resolution inside the quota-probe (or a helper it calls) that
-re-enters without terminating — likely a memoization/cache miss causing repeated
-rebuilds, or a circular resolution across agents/providers. **Confirm by
-profiling `quota-probe.isPairDepleted` in isolation** (it was not fully isolated
-before because the debugging environment was under heavy load — see caveat).
+### ✅ CONFIRMED ROOT CAUSE (verified 2026-07-07 on a clean, freshly-rebooted machine)
+It is a **genuine unbounded mutual recursion**, not environmental slowness.
+Measured **4,870 `command -v` spawns in 12s** (~400/sec) from a single
+`getAgentAvailability('cc')` call with the probe enabled — a real infinite loop.
 
-### Caveat on the investigation environment
-Diagnosis happened on a machine under heavy load (26-day uptime, load avg ~4.7,
-plus runaway debug processes from the investigation, since cleaned up). That
-load muddied timing signal. A **clean-environment reproduction is the first
-step** — confirm `getDashboardAgents` / `getAgentAvailability` / `isPairDepleted`
-genuinely infinite-loop (vs. merely slow) before fixing. The busy-loop trace
-(hundreds of identical `command -v` in seconds) strongly indicates a real loop,
-but verify deterministically.
+The cycle (no re-entrancy guard anywhere in it):
+```
+getAgentAvailability(agentId)                       lib/agent-availability.js
+  → readQuotaAnnotation(agentId)                    (line ~179, runs BEFORE the disabled early-return)
+    → quota-probe.isPairDepleted(agentId)           lib/quota-probe.js:196
+      → readQuotaState()                            lib/quota-probe.js  (= projectQuotaApi(readAgentQuotaState()))
+        → agentQuotaRead.projectQuotaApi(state)     lib/agent-quota-read.js  — loops over EVERY agent in state
+          → isAgentQuotaPanelVisible(agentId)       lib/agent-availability.js
+            → getAgentAvailability(agentId)          ← RE-ENTERS. loop never terminates.
+```
+Every re-entry runs `isAgentCliInstalled → isBinaryAvailable → execSync("command -v <cli>")`
+for cc/cx/cu, which is the `command -v claude/codex/agent` flood.
+
+**Regression introduced by:** `efd665a13` — *"feat: unify agent quota state under
+single poller and cache"* (2026-07-07). That commit made `projectQuotaApi`
+availability-aware (it now filters agents via `isAgentQuotaPanelVisible →
+getAgentAvailability`), closing the loop with `getAgentAvailability`'s existing
+quota annotation. Before it, the quota projection didn't call back into
+availability.
+
+**Why the whole server wedges:** the `/` route (`buildDashboardHtml →
+getDashboardAgents`) calls `getAgentAvailability` synchronously on the server's
+event loop; one `/` request enters the loop and never returns → hard wedge until
+restart. `/api/health` / `/api/status` don't call it, so they stay responsive.
 
 ## User Stories
 - [ ] As an operator, opening `http://localhost:4100/` loads the dashboard shell
@@ -82,24 +94,49 @@ but verify deterministically.
 npm run test:iterate
 ```
 
-## Technical Approach
-1. **Reproduce cleanly.** Timed harness around `agent-availability.getAgentAvailability`
-   and `agent-registry.getDashboardAgents`; assert bounded return. Trace
-   `child_process` to capture the exact repeated command and its caller stack.
-2. **Locate the loop.** Start at `readQuotaAnnotation → quota-probe.isPairDepleted`.
-   Inspect any per-agent/per-provider CLI-presence resolution (the `command -v`
-   source — likely `getAgentBinMap` / `isBinaryAvailable` / a provider→agent
-   crosswalk) for a missing memo or circular re-entry.
-3. **Fix the loop** at its source (terminate the recursion / add the missing
-   cache), and **memoize CLI-presence detection** so `command -v <cli>` runs at
-   most once per binary per collect pass (thread a small cache like F637 did for
-   `git rev-parse HEAD`).
-4. **Add a hard safety bound** in the availability path so it cannot spin
-   indefinitely even if a future change reintroduces a cycle — this is what keeps
-   a bug here from hard-wedging the whole dashboard.
+## Technical Approach (root cause now known — break the cycle)
+
+**Primary fix — Option A (recommended): stop `isPairDepleted` from reading the
+availability-filtered projection.** `isPairDepleted` only needs one agent's model
+verdict: `state.agents[agentId].models[modelKey]`. It currently goes through
+`readQuotaState()` = `projectQuotaApi(readAgentQuotaState())`, and `projectQuotaApi`
+is the availability-aware VIEW that calls `isAgentQuotaPanelVisible →
+getAgentAvailability`. Change `isPairDepleted` (and any other internal, non-API
+consumer) to read the **raw** `agentQuotaRead.readAgentQuotaState(repoPath)`
+instead of the projected `readQuotaState`. The projection filter is for
+API/dashboard responses, not for the internal depletion lookup. This removes
+`getAgentAvailability` from the `isPairDepleted` path entirely → no recursion.
+
+**Complementary fix — Option B: make `isAgentQuotaPanelVisible` quota-free.** It
+only needs `state !== 'disabled' && state !== 'retired'`, which derive from
+`readRegistryPolicy` + `readUserAvailability` + `isAgentLaunchable` — none of which
+read quota. Compute disabled/retired directly instead of calling the full
+`getAgentAvailability`. Breaks the cycle at the other end and is defensive even if
+another quota path re-introduces the annotation.
+
+**Safety net — Option C: re-entrancy guard.** Add a per-repo in-progress `Set` (or
+a synchronous recursion-depth guard) in `getAgentAvailability` so a re-entrant call
+returns a quota-free result immediately instead of looping. Keeps a future
+regression from ever hard-wedging the dashboard again.
+
+**Recommended: do A + C.** A fixes this specific cycle at the correct layer; C is
+cheap insurance. B is worth doing too if `isAgentQuotaPanelVisible` has other
+callers that don't need quota.
+
+**Remove the kill-switch.** Once the recursion is fixed, delete the
+`AIGON_ENABLE_AGENT_AVAILABILITY` guard block at the top of `getAgentAvailability`
+(commit `bf01e59db`) and restore real availability. Verify `GET /` loads (<1s) and
+the agent picker again reflects real install/auth/quota state.
 
 **Invariant:** `getDashboardAgents` output shape must not change — this is a
 correctness/termination fix, not a data change.
+
+**Regression tests to add:**
+- `getAgentAvailability(id)` returns in <50ms and issues `command -v` at most once
+  per binary (spy on `child_process`); no re-entry.
+- `getDashboardAgents()` returns <250ms for all launchable agents.
+- A direct assertion that `isPairDepleted` does NOT call `getAgentAvailability`
+  (guards the layering so the cycle can't come back).
 
 ## Dependencies
 - Independent of F637 (status-poll perf), though both are "dashboard hangs on the
