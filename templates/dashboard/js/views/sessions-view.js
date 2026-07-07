@@ -100,7 +100,7 @@ export function createSessionsView() {
           body: JSON.stringify({ sessionName: s.name })
         });
         showToast('Killed: ' + s.name);
-        mount();
+        mount({ refresh: true });
       };
       group.appendChild(row);
     });
@@ -161,7 +161,7 @@ export function createSessionsView() {
         showToast('Windows tiled');
       } catch (e) { showToast('Tile failed: ' + e.message, null, null, { error: true }); }
     };
-    document.getElementById('sessions-refresh-btn').onclick = () => mount();
+    document.getElementById('sessions-refresh-btn').onclick = () => mount({ refresh: true });
     const killOrphansBtn = document.getElementById('sessions-kill-orphans-btn');
     if (killOrphansBtn) {
       killOrphansBtn.onclick = async () => {
@@ -171,7 +171,7 @@ export function createSessionsView() {
           const d = await r.json();
           showToast('Killed ' + (d.count || 0) + ' orphan' + (d.count === 1 ? '' : 's'));
         } catch (e) { showToast('Cleanup failed: ' + e.message); }
-        mount();
+        mount({ refresh: true });
       };
     }
   }
@@ -216,8 +216,13 @@ export function createSessionsView() {
     renderSessionGroups();
   }
 
-  async function mount() {
+  async function mount(options) {
+    const opts = options || {};
     mounted = true;
+    if (!opts.refresh && cachedAt > 0) {
+      paintSessions();
+      return;
+    }
     const ok = await fetchSessions();
     if (!mounted || !ok) return;
     paintSessions();
@@ -233,7 +238,7 @@ export function createSessionsView() {
       if (updateTimer) clearTimeout(updateTimer);
       updateTimer = setTimeout(() => {
         updateTimer = null;
-        if (mounted) mount();
+        if (mounted) mount({ refresh: true });
       }, SESSIONS_UPDATE_DEBOUNCE_MS);
     }
   }

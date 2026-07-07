@@ -28,7 +28,7 @@ function settingsNeedsRerender(previousData, nextData) {
 
 function validateContainers(registry) {
   for (const entry of registry) {
-    if (!entry.elementId || entry.alpineVisibility) continue;
+    if (!entry.elementId) continue;
     if (!document.getElementById(entry.elementId)) {
       console.error(`[aigon view-registry] missing container #${entry.elementId} for view "${entry.id}"`);
     }
