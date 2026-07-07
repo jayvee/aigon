@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 279
+lines_removed: 7
+lines_changed: 286
+files_touched: 14
+fix_commit_count: 1
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 627 - dash-arch-8-vendor-cdn-deps
 Agent: cu
 
