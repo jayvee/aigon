@@ -593,8 +593,14 @@
       render();
     };
     setInterval(refreshTimestamps, TS_MS);
-    setInterval(poll, POLL_MS);
+    let pollTimer = null;
+    function setPollInterval(ms) {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(poll, ms);
+    }
+    setPollInterval(POLL_MS);
     setTimeout(poll, 400);
+    if (typeof connectLive === 'function') connectLive();
 
     document.querySelectorAll('.view-tab').forEach(tab => {
       tab.onclick = () => {
@@ -719,11 +725,5 @@
     notifCloseBtn.onclick = closeNotifDropdown;
     notifOverlay.onclick = closeNotifDropdown;
 
-    // Poll badge count every 30s without opening the dropdown
-    setInterval(async () => {
-      if (!notifDropdown.classList.contains('open')) {
-        await loadNotifications();
-      }
-    }, 30000);
-    // Initial badge check
+    // Initial badge load (F622: push via SSE notification events replaces 30s poll)
     loadNotifications();

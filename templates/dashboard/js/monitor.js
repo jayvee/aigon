@@ -21,7 +21,7 @@
         // feature 234: if we were showing the restart banner, a successful poll
         // means the new server is up — clear it.
         if (state.serverRestarting) hideServerRestartBanner();
-        text.textContent = 'Connected';
+        text.textContent = state.sseConnected ? 'Connected (live)' : 'Connected';
         return;
       }
       if (state.failures < 3) { dot.style.background = '#f59e0b'; text.textContent = 'Reconnecting...'; return; }
