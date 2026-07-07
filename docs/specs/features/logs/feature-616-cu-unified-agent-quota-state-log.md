@@ -1,3 +1,17 @@
+---
+commit_count: 5
+lines_added: 1220
+lines_removed: 281
+lines_changed: 1501
+files_touched: 19
+fix_commit_count: 2
+fix_commit_ratio: 0.4
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 616 - unified-agent-quota-state
 Agent: cu
 
