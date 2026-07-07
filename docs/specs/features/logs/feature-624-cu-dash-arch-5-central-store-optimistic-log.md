@@ -25,3 +25,20 @@ Central store + optimistic overlay landed. `store.js` owns state, persistence ma
 ## Test Coverage
 - `npm run test:iterate` green (lint + scoped integration + browser @smoke)
 - Grep evidence: no `state.data=`, `state.pendingActions`, `reapplyPendingOptimisticEntityStarts` outside store/shim (aigon-status-pill uses its own local `state`)
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- d525960de fix(review): preserve optimistic startup phase clock
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- FIX_NOW: start overlays were resetting the client startup-phase clock on every poll reapplication; the overlay now captures one optimistic start timestamp and reuses it across replacements.
