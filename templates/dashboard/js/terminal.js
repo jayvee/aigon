@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Terminal panel ────────────────────────────────────────────────────────
 
     // Per-user prefs (localStorage)
@@ -519,7 +520,10 @@
     document.getElementById('panel-zoom-out').onclick = () => zoomTerminal(-1);
     document.getElementById('panel-zoom-in').onclick = () => zoomTerminal(1);
     document.getElementById('panel-fullscreen').onclick = () => toggleTerminalFullscreen();
-    document.getElementById('panel-copy-session').onclick = () => copySessionName();
+    const copySessionBtn = document.getElementById('panel-copy-session');
+    copySessionBtn.onclick = () => copySessionName();
+    copySessionBtn.addEventListener('mouseenter', () => { copySessionBtn.style.color = 'var(--text-secondary)'; });
+    copySessionBtn.addEventListener('mouseleave', () => { copySessionBtn.style.color = 'var(--text-tertiary)'; });
     document.getElementById('panel-view-spec').onclick = () => {
       if (termState.specPath) {
         openDrawer(termState.specPath, termState.specTitle || 'Spec', termState.specStage || 'inbox');
@@ -586,3 +590,6 @@
         container.appendChild(pre);
       }
     }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { getTerminalClickTarget, getTerminalFont, openResearchFindingsPeek, openTerminalPanel, setTerminalClickTarget, setTerminalFont, termState });

@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── All Items view ────────────────────────────────────────────────────────
 
     const allItemsState = {
@@ -1456,17 +1457,20 @@
       renderFeatureList();
 
       // Load pro-reports.js when Pro is active — replaces data-pro-slot placeholders
-      if (_proActive && !window._proReportsLoaded) {
-        const script = document.createElement('script');
-        script.src = '/js/pro-reports.js';
-        script.onload = () => {
-          window._proReportsLoaded = true;
-          if (typeof window.renderProReports === 'function') {
-            window.renderProReports(container, statsState.data);
-          }
-        };
-        document.head.appendChild(script);
-      } else if (_proActive && typeof window.renderProReports === 'function') {
-        window.renderProReports(container, statsState.data);
+      if (_proActive && !globalThis._proReportsLoaded) {
+        import('/js/pro-reports.js')
+          .then((mod) => {
+            globalThis._proReportsLoaded = true;
+            const renderProReports = mod.renderProReports || globalThis.renderProReports;
+            if (typeof renderProReports === 'function') {
+              renderProReports(container, statsState.data);
+            }
+          })
+          .catch(() => {});
+      } else if (_proActive && typeof globalThis.renderProReports === 'function') {
+        globalThis.renderProReports(container, statsState.data);
       }
     }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { allItemsState, buildInsightsMetricsSection, initAmpTokenCharts, loadInsights, renderAllItemsView, renderLogs, renderStatistics });

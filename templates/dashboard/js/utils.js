@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Utilities ─────────────────────────────────────────────────────────────
 
     function relTime(iso) {
@@ -238,3 +239,6 @@
       ].filter(Boolean);
       return '<span class="repo-storage-badge repo-storage-git repo-storage-' + escHtml(healthLabel === 'stale' ? 'behind' : health) + '" title="' + escHtml(titleParts.join(' · ')) + '">' + escHtml(backendLabel) + ' · ' + escHtml(healthLabel) + '</span>';
     }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, logsDateFmt, relTime, showToast, statusRank });

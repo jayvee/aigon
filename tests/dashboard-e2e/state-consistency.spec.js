@@ -102,7 +102,10 @@ test.describe('Dashboard state consistency', () => {
 
     test('lease badge renders when activeLeases present on feature card @smoke', async ({ page }) => {
         await page.route('**/api/status', async (route) => {
-            const upstream = await route.fetch();
+            const headers = { ...route.request().headers() };
+            delete headers['if-none-match'];
+            delete headers['if-modified-since'];
+            const upstream = await route.fetch({ headers });
             const data = await upstream.json();
             const repo = data.repos && data.repos[0];
             if (repo && Array.isArray(repo.features) && repo.features.length > 0) {

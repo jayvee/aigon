@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
 // Feature 499 — three-phase upgrade pill rendered in the dashboard chrome.
 // Phases derived from /api/version-status:
 //   phase-1 — npm has a newer aigon CLI (advisory; user runs npm update).
@@ -385,3 +386,6 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   fetchStatus().then(scheduleNext);
 })();
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { render });

@@ -1,10 +1,6 @@
-(function(root, factory) {
-  if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-    return;
-  }
-  root.AIGON_AUTONOMOUS_PLAN = factory();
-})(typeof globalThis !== 'undefined' ? globalThis : this, function() {
+/* dashboard-esm-processed */
+export const AIGON_AUTONOMOUS_PLAN = (function() {
+
   function escHtml(value) {
     return String(value == null ? '' : value)
       .replace(/&/g, '&amp;')
@@ -96,4 +92,7 @@
   return {
     buildAutonomousPlanHtml: buildAutonomousPlanHtml,
   };
-});
+
+})();
+export const buildAutonomousPlanHtml = AIGON_AUTONOMOUS_PLAN.buildAutonomousPlanHtml;
+Object.assign(globalThis, { AIGON_AUTONOMOUS_PLAN, buildAutonomousPlanHtml });

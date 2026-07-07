@@ -1,3 +1,5 @@
+/* dashboard-esm-processed */
+import { agents, defaultAgent } from './injected.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -103,7 +105,6 @@
     }
 
     function getAgentPromptPrefix(agentId) {
-      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
       const agent = agents.find(entry => entry && entry.id === agentId);
       return (agent && agent.cmdPrefix) || '/aigon:';
     }
@@ -111,7 +112,6 @@
     function renderCreateModalAgents(preferredAgentId) {
       const container = document.getElementById('create-modal-agent');
       if (!container) return;
-      const agents = Array.isArray(window.__AIGON_AGENTS__) ? window.__AIGON_AGENTS__ : [];
       const items = [];
       agents.forEach(agent => {
         if (!agent || !agent.id) return;
@@ -190,7 +190,7 @@
       try {
         // Use agent picked in modal, fall back to sidebar agent
         const agentRadio = document.querySelector('#create-modal-agent input[name="create-agent"]:checked');
-        const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || window.__AIGON_DEFAULT_AGENT__ || 'cc';
+        const agentId = (agentRadio && agentRadio.value) || (typeof getAskAgent === 'function' && getAskAgent()) || defaultAgent || 'cc';
 
         if (!agentId) {
           // "None" selected — create the file via CLI, no agent session
@@ -291,7 +291,7 @@
       setCreateModalBusy(false);
       els.nameInput.value = '';
       if (els.descriptionInput) els.descriptionInput.value = '';
-      const preferredAgent = window.__AIGON_DEFAULT_AGENT__ || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
+      const preferredAgent = defaultAgent || (typeof getAskAgent === 'function' && getAskAgent()) || 'cc';
       renderCreateModalAgents(preferredAgent);
       const agentInputs = document.querySelectorAll('#create-modal-agent input[name="create-agent"]');
       if (![...agentInputs].some(input => input.checked)) {
@@ -1422,7 +1422,7 @@
           const sessionName = btn.getAttribute('data-eval-session');
           // Parse agent from session name: {repo}-r{id}-eval-{agent}
           const evalMatch = sessionName.match(/eval-(\w+)$/);
-          const evalAgentId = evalMatch ? evalMatch[1] : (window.__AIGON_DEFAULT_AGENT__ || 'cc');
+          const evalAgentId = evalMatch ? evalMatch[1] : (defaultAgent || 'cc');
           await requestFeatureOpen(feature.id, evalAgentId, repoPath, btn, pipelineType, 'eval');
         };
       });
@@ -1490,7 +1490,7 @@
                 single: true,
                 title: storedAgentId.toUpperCase() + ' is out of tokens — pick agent to resolve & close',
                 submitLabel: 'Open for close',
-                preselect: window.__AIGON_DEFAULT_AGENT__ || 'cc',
+                preselect: defaultAgent || 'cc',
                 repoPath,
               });
               if (!picked || picked.length === 0) return;
@@ -1970,3 +1970,60 @@
         }
       };
     }
+
+// ── ESM exports (F623) ──
+// Alpine markup in index.html calls several pipeline helpers as bare globals.
+export { handleCloseWithAgent, isCompleteStatus, pipelineView };
+Object.assign(globalThis, {
+  closeAllKcardOverflowMenus,
+  pipelineCommand,
+  pipelineColumnKey,
+  getDoneFolderPath,
+  slugifyFeatureName,
+  getCreateModalElements,
+  setCreateModalError,
+  setCreateModalBusy,
+  hideCreateModal,
+  getAgentPromptPrefix,
+  renderCreateModalAgents,
+  submitCreateModal,
+  createNewSpec,
+  buildAgentBadgesHtml,
+  isSoloDrive,
+  agentDisplayName,
+  buildDevServerLinkHtml,
+  isCompleteStatus,
+  buildAgentStatusHtml,
+  buildLivenessIndicator,
+  buildAgentStatusSpan,
+  formatIdleSeconds,
+  buildIdleLadderChip,
+  buildWorkflowIdleBadgeHtml,
+  buildStartupPhaseHtml,
+  persistPrStatusCache,
+  prStatusFingerprint,
+  prStatusKey,
+  getCachedPrStatus,
+  setCachedPrStatus,
+  shouldWarnCloseByPrStatus,
+  buildPrStatusContent,
+  buildGitHubSectionHtml,
+  buildAgentTripletBadge,
+  buildAgentSectionHtml,
+  buildReadyToCloseHtml,
+  buildAutonomousPlanSectionHtml,
+  buildAutonomousControllerStatusHtml,
+  buildReviewerSectionHtml,
+  buildReviewCycleHistoryHtml,
+  buildCloseFailureHtml,
+  buildSpecAuthorHtml,
+  buildFeatureSetScheduledGlyphHtml,
+  buildKanbanCard,
+  handleCloseWithAgent,
+  renderKanbanColCards,
+  pipelineView,
+  STAGE_ORDER,
+  STAGE_LABELS,
+  PIPELINE_STAGES_BASE,
+  PIPELINE_STAGES,
+});

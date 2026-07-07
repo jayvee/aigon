@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
     function findEntityInDashboardState(entityType, entityId, repoPath) {
@@ -1030,3 +1031,6 @@
         }
       };
     }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { createDrawerDetailTabs });

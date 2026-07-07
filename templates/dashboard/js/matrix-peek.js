@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
 // F519: agent matrix peek panel (extracted from actions.js)
 // ── Matrix peek panel ──────────────────────────────────────────────────────────
 (function () {
@@ -164,3 +165,5 @@
 
   if (panel) panel.addEventListener('click', e => e.stopPropagation());
 }());
+
+

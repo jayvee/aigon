@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
     // ── Settings view ──────────────────────────────────────────────────────────
 
     function showDoctorModal(repoPath, displayPath) {
@@ -2134,3 +2135,6 @@
         requestAnimationFrame(function () { scrollSettingsSection(sid); });
       }
     }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { renderSettings });

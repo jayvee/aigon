@@ -1,10 +1,6 @@
-(function(root, factory) {
-  if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-    return;
-  }
-  root.AIGON_SET_CARDS = factory();
-})(typeof globalThis !== 'undefined' ? globalThis : this, function() {
+/* dashboard-esm-processed */
+export const AIGON_SET_CARDS = (function() {
+
   function escHtml(value) {
     return String(value == null ? '' : value)
       .replace(/&/g, '&amp;')
@@ -107,4 +103,6 @@
     buildSetDepGraphSvg: buildSetDepGraphSvg,
     buildSetCardBodyHtml: buildSetCardBodyHtml,
   };
-});
+
+})();
+Object.assign(globalThis, { AIGON_SET_CARDS });

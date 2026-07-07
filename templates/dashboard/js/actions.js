@@ -1,3 +1,4 @@
+/* dashboard-esm-processed */
 // ── F519: actions.js compatibility shell ─────────────────────────────────────
 // Card-level button rendering + lazy-loaded action modules. Picker/triplet
 // helpers live in actions-picker.js; budget widget in budget-widget.js.
@@ -358,3 +359,6 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
       showToast('Nudge dialog failed to load', null, null, { error: true });
     });
 }
+
+// ── ESM exports (F623) ──
+Object.assign(globalThis, { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal });
