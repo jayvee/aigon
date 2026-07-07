@@ -14,6 +14,7 @@ const LEGACY_PRO_TAB_TO_SETTINGS_SECTION = {
 const DEFAULT_OPTIMISTIC_TTL_MS = 60000;
 const STARTUP_PHASE_LABELS = ['Setting up', 'Preparing worktrees', 'Launching agents'];
 const STARTUP_PHASE_SEGMENT_MS = 5500;
+let _hydratedSettingsInitialSectionId = null;
 
 // ── Persistence map ─────────────────────────────────────────────────────────
 const PERSISTENCE = {
@@ -24,7 +25,7 @@ const PERSISTENCE = {
     deserialize(raw) {
       let stored = raw || 'monitor';
       if (LEGACY_PRO_TAB_TO_SETTINGS_SECTION[stored]) {
-        _rawState.settingsInitialSectionId = LEGACY_PRO_TAB_TO_SETTINGS_SECTION[stored];
+        _hydratedSettingsInitialSectionId = LEGACY_PRO_TAB_TO_SETTINGS_SECTION[stored];
         stored = 'settings';
         localStorage.setItem(lsKey('view'), 'settings');
       }
@@ -130,7 +131,15 @@ function hydratePersisted(key) {
   return cfg.deserialize(raw != null ? raw : null, hydrated);
 }
 
-function writePersisted(key, value) {
+function storeTarget() {
+  if (typeof Alpine !== 'undefined' && typeof Alpine.store === 'function') {
+    const registered = Alpine.store('dashboard');
+    if (registered) return registered;
+  }
+  return _rawState;
+}
+
+function persistWrite(key, value) {
   const cfg = PERSISTENCE[key];
   localStorage.setItem(lsKey(cfg.lsKey), cfg.serialize(value));
 }
@@ -158,7 +167,7 @@ const _rawState = {
   closeFailedFeatures: new Map(),
   serverRestarting: false,
   sseConnected: false,
-  settingsInitialSectionId: null,
+  settingsInitialSectionId: _hydratedSettingsInitialSectionId,
   lastStatusVersion: null,
   _lastRenderedStatusVersion: null,
 };
@@ -194,10 +203,16 @@ export function isProActive() {
   return !!(_rawState.data && _rawState.data.proAvailable);
 }
 
+function normalizeRepoPath(repoPath) {
+  if (!repoPath) return '';
+  return String(repoPath).replace(/^\/private\/var\//, '/var/');
+}
+
 function findRepoInDraft(draft, repoPath, entityKey, entityId) {
   const repos = (draft && draft.repos) || [];
-  if (repoPath) {
-    const match = repos.find(r => r && String(r.path || '') === String(repoPath));
+  const needle = normalizeRepoPath(repoPath);
+  if (needle) {
+    const match = repos.find(r => r && normalizeRepoPath(r.path) === needle);
     if (match) return match;
   }
   return repos.find(r => r && (r[entityKey] || []).some(e => String(e.id) === String(entityId))) || null;
@@ -273,7 +288,7 @@ function assignDataFromRaw(rawNext, { evaluateSettled = true } = {}) {
   for (const overlay of _optimisticOverlays.values()) {
     overlay.patch(draft);
   }
-  _rawState.data = draft;
+  storeTarget().data = draft;
 }
 
 export function replaceData(rawNext, options) {
@@ -372,7 +387,7 @@ export function clearStartupPhaseForEntity(action, args, repoPath) {
   delete entity.startupPhase;
   delete entity.startupPhaseStartedAt;
   bumpEntityListIdentity(draft, repo, entityKey);
-  _rawState.data = draft;
+  storeTarget().data = draft;
 }
 
 // ── Pending / close-failure APIs ────────────────────────────────────────────
@@ -399,102 +414,106 @@ export function getCloseFailure(featureId) {
 
 // ── Preference mutations ────────────────────────────────────────────────────
 export function setView(view) {
-  _rawState.view = view;
-  writePersisted('view', view);
+  storeTarget().view = view;
+  persistWrite('view', view);
 }
 
 export function setFilter(filter) {
-  _rawState.filter = filter;
-  writePersisted('filter', filter);
+  storeTarget().filter = filter;
+  persistWrite('filter', filter);
 }
 
 export function toggleCollapse(path) {
-  const next = { ...(_rawState.collapsed || {}) };
+  const target = storeTarget();
+  const next = { ...(target.collapsed || {}) };
   next[path] = !next[path];
-  _rawState.collapsed = next;
-  writePersisted('collapsed', next);
+  target.collapsed = next;
+  persistWrite('collapsed', next);
 }
 
 export function setSidebarHidden(hidden) {
-  _rawState.sidebarHidden = !!hidden;
-  writePersisted('sidebarHidden', _rawState.sidebarHidden);
+  storeTarget().sidebarHidden = !!hidden;
+  persistWrite('sidebarHidden', storeTarget().sidebarHidden);
 }
 
 export function toggleSidebarHidden() {
-  setSidebarHidden(!_rawState.sidebarHidden);
+  setSidebarHidden(!storeTarget().sidebarHidden);
 }
 
 export function setSelectedRepo(repoPath) {
-  _rawState.selectedRepo = repoPath;
-  writePersisted('selectedRepo', repoPath);
+  storeTarget().selectedRepo = repoPath;
+  persistWrite('selectedRepo', repoPath);
 }
 
 export function isRepoHidden(repoPath) {
-  return (_rawState.hiddenRepos || []).includes(repoPath);
+  return (storeTarget().hiddenRepos || []).includes(repoPath);
 }
 
 export function toggleRepoVisibility(repoPath) {
-  const hidden = [...(_rawState.hiddenRepos || [])];
+  const target = storeTarget();
+  const hidden = [...(target.hiddenRepos || [])];
   const idx = hidden.indexOf(repoPath);
   if (idx >= 0) hidden.splice(idx, 1);
   else hidden.push(repoPath);
-  _rawState.hiddenRepos = hidden;
-  writePersisted('hiddenRepos', hidden);
+  target.hiddenRepos = hidden;
+  persistWrite('hiddenRepos', hidden);
   if (typeof syncDashboardHiddenRepos === 'function') {
-    syncDashboardHiddenRepos(_rawState.hiddenRepos);
+    syncDashboardHiddenRepos(target.hiddenRepos);
   }
 }
 
 export function setPipelineType(pipelineType) {
-  _rawState.pipelineType = pipelineType;
-  writePersisted('pipelineType', pipelineType);
+  storeTarget().pipelineType = pipelineType;
+  persistWrite('pipelineType', pipelineType);
 }
 
 export function setPipelineGroupBySet(enabled) {
-  _rawState.pipelineGroupBySet = !!enabled;
-  writePersisted('pipelineGroupBySet', _rawState.pipelineGroupBySet);
+  const target = storeTarget();
+  target.pipelineGroupBySet = !!enabled;
+  persistWrite('pipelineGroupBySet', target.pipelineGroupBySet);
 }
 
 export function setMonitorType(monitorType) {
-  _rawState.monitorType = monitorType;
-  writePersisted('monitorType', monitorType);
+  storeTarget().monitorType = monitorType;
+  persistWrite('monitorType', monitorType);
 }
 
 export function setExpandedPipelineColumn(columnKey, expanded = true) {
-  const next = { ...(_rawState.expandedPipelineColumns || {}) };
+  const target = storeTarget();
+  const next = { ...(target.expandedPipelineColumns || {}) };
   next[columnKey] = expanded;
-  _rawState.expandedPipelineColumns = next;
-  writePersisted('expandedPipelineColumns', next);
+  target.expandedPipelineColumns = next;
+  persistWrite('expandedPipelineColumns', next);
 }
 
 export function setSettingsModelRepo(repo) {
-  _rawState.settingsModelRepo = repo;
-  writePersisted('settingsModelRepo', repo);
+  storeTarget().settingsModelRepo = repo;
+  persistWrite('settingsModelRepo', repo);
 }
 
 export function setSettingsDefaultsRepo(repo) {
-  _rawState.settingsDefaultsRepo = repo;
-  writePersisted('settingsDefaultsRepo', repo);
+  storeTarget().settingsDefaultsRepo = repo;
+  persistWrite('settingsDefaultsRepo', repo);
 }
 
 export function setFailures(count) {
-  _rawState.failures = count;
+  storeTarget().failures = count;
 }
 
 export function setLastStatusVersion(version) {
-  _rawState.lastStatusVersion = version;
+  storeTarget().lastStatusVersion = version;
 }
 
 export function setLastRenderedStatusVersion(version) {
-  _rawState._lastRenderedStatusVersion = version;
+  storeTarget()._lastRenderedStatusVersion = version;
 }
 
 export function setServerRestarting(restarting) {
-  _rawState.serverRestarting = !!restarting;
+  storeTarget().serverRestarting = !!restarting;
 }
 
 export function setSseConnected(connected) {
-  _rawState.sseConnected = !!connected;
+  storeTarget().sseConnected = !!connected;
 }
 
 // ── Alpine registration ─────────────────────────────────────────────────────
@@ -541,6 +560,11 @@ Object.assign(globalThis, {
   setPipelineGroupBySet,
   setMonitorType,
   setExpandedPipelineColumn,
+  setSettingsModelRepo,
+  setSettingsDefaultsRepo,
+  setFailures,
+  setLastStatusVersion,
+  setLastRenderedStatusVersion,
   createEntityStartOverlay,
   createEntityDeleteOverlay,
   clearStartupPhaseForEntity,
