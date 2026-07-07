@@ -108,6 +108,7 @@ function normalizeProbeResult(outcome) {
         const firstLine = (stderr || stdoutTrim).split('\n')[0];
         return {
             ok: false,
+            exitCode: outcome.status,
             elapsed,
             error: firstLine || `exit ${outcome.status}`,
             stderr,
