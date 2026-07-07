@@ -8,6 +8,7 @@
   "displayName": "OpenCode",
   "shortName": "OP",
   "providerFamily": "router",
+  "quotaProviders": ["openrouter"],
   "portOffset": 5,
   "terminalColor": "cyan",
   "bannerColor": "#06B6D4",
