@@ -21,10 +21,10 @@ This also fixes a real drift bug: `lib/dashboard-server.js` comments (F460) clai
 
 ## Acceptance Criteria
 
-- [ ] `collectDashboardStatusData` / the poll loop in `lib/dashboard-server.js` computes a structural fingerprint of the collected snapshot server-side (port the F454 `statusFingerprint()` semantics from `templates/dashboard/js/init.js` — summary counts, per-repo entity counts, per-entity stage/state/agent-status/idle-ladder/close-failure — plus anything else that currently causes a client re-render).
-- [ ] A monotonic `statusVersion` (integer, process-lifetime; resets on server restart) increments **only** when the fingerprint changes across a collection (interval poll, `pollRepoStatus`, `/api/refresh` — all paths that replace `latestStatus`).
+- [ ] `collectDashboardStatusData` / the poll loop in `lib/dashboard-server.js` computes a structural fingerprint of the collected snapshot server-side (port the F454 `statusFingerprint()` semantics from `templates/dashboard/js/init.js` — summary counts, per-repo entity counts, per-entity stage/state/agent-status/idle-ladder/close-failure — and include `updateCheck` plus any other field that currently causes a client re-render).
+- [ ] A monotonic `statusVersion` (integer, process-lifetime; resets on server restart) increments **only** when the fingerprint changes across a collection (initial load, interval poll, `pollRepoStatus`, `/api/refresh` — all paths that replace `latestStatus`). Implement this through one `replaceLatestStatus(nextStatus, source)`-style helper so later dash-arch-3 has one authoritative place to broadcast version bumps.
 - [ ] `/api/status` response includes `statusVersion` in the JSON body and sends `ETag: "<statusVersion>"`.
-- [ ] `/api/status` with matching `If-None-Match` returns `304` with an empty body. The existing F590 request logging records 304s distinctly.
+- [ ] `/api/status` with matching `If-None-Match` returns `304` with an empty body. Matching handles the normal HTTP forms the browser may send: quoted ETag, optional weak prefix (`W/`), and comma-separated validator lists. The existing F590 request logging records 304s distinctly.
 - [ ] `generatedAt` freshness: the body's `generatedAt` still updates per collection, but a `generatedAt`-only change must NOT bump the version (it is excluded from the fingerprint). The client falls back to "Updated Xs ago" derived from the last full payload — visual behaviour unchanged from today's fingerprint-gate behaviour.
 - [ ] Client (`js/init.js` `poll()` + `js/api.js` `requestRefresh()`) sends `If-None-Match` with the last seen version; on 304 it skips JSON parse, skips fingerprint work, skips render, still calls `setHealth()` and timestamp refresh.
 - [ ] Client-side `statusFingerprint()` and `state.lastFingerprint` are deleted (server is now authoritative). The `window.__aigonSyncStatusFingerprint` hook and its call sites go with them.
@@ -42,6 +42,7 @@ npm run test:iterate
 ## Technical Approach
 
 - Compute the fingerprint once per collection inside the server poll/refresh paths (all of: `pollStatus`, `pollRepoStatus`, `refreshLatestStatus`, and the `/api/refresh` handler), storing `{ latestStatus, statusVersion, fingerprint }` together. Do NOT fingerprint per-request in the `/api/status` handler.
+- Fingerprint from a canonical projection, not the mutable object by reference: exclude `_perf`, `generatedAt`, serialization caches, and any future transport-only fields before hashing/stringifying.
 - Keep the pre-serialized-body optimisation from F590 (`sendJsonSerialized`): serialize once per version bump and cache the serialized body + gzipped body alongside the version, so repeat full-body requests don't re-stringify either.
 - `304` handling must go through the same helper so `cache-control: no-store` + `ETag` headers stay consistent.
 - Leave client `POLL_MS` at 10s — with 304s the extra polls are nearly free and keep worst-case UI latency at server-collect (≤20s) + ≤10s until dash-arch-2/3 land.
@@ -60,7 +61,6 @@ npm run test:iterate
 
 ## Open Questions
 
-- Should the fingerprint intentionally include `updateCheck` state so the update pill refreshes without a manual reload? (Recommendation: yes, it's cheap.)
 - Whether preview servers (`aigon preview`) share the same code path — they run `runDashboardServer` with a `templateRoot`, so they should inherit this for free; verify.
 
 ## Related
