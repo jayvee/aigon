@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-07T12:36:37.148Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: dashboard-agent-availability-hang
