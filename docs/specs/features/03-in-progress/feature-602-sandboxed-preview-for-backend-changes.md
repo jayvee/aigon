@@ -36,6 +36,12 @@ user-facing preview mode rather than a test-only path.
 
 ## Validation
 ```bash
+node -c lib/commands/infra.js
+npm run test:quick
+# Snapshot mtimes/hashes of ~/.aigon and the real repo, run a sandboxed preview,
+# click through a write action (feature-create/prioritise) in the sandbox, stop
+# it — then assert the real ~/.aigon and repo are byte-identical and the temp
+# sandbox home is gone after cleanup/gc.
 ```
 
 ## Technical Approach
