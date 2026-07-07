@@ -99,8 +99,8 @@ test('quota API route exposes providers key in error fallback', () => {
 });
 
 test('quota poller triggers provider poll after agent probes', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/quota-poller.js'), 'utf8');
-    assert.ok(src.includes('providerQuotaPoller.pollAllProviders'), 'quota poller must refresh provider wallets');
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/agent-quota-poller.js'), 'utf8');
+    assert.ok(src.includes('providerQuotaPoller.pollProvider'), 'unified poller must refresh provider wallets');
 });
 
 report();

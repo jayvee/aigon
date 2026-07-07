@@ -4,23 +4,44 @@
 const BUDGET_STALE_MS = 90 * 60 * 1000;
 const BUDGET_WIDGET_HIDDEN_KEY = 'aigon:budget-widget-hidden';
 const BUDGET_WIDGET_COLLAPSED_KEY = 'aigon:budget-widget-collapsed';
+let _agentQuotaCache = null;
+let _agentQuotaFetchPromise = null;
 let _budgetCache = null;
-let _budgetFetchPromise = null;
 let _quotaCache = null;
-let _quotaFetchPromise = null;
 
-function fetchQuota(force) {
-  if (_quotaFetchPromise && !force) return _quotaFetchPromise;
-  _quotaFetchPromise = fetch('/api/quota', { cache: 'no-store' })
+function splitAgentQuotaPayload(data) {
+  const payload = data || { agents: {}, providers: {} };
+  const budget = { cc: null, cx: null, gg: null, km: null, ag: null };
+  const quota = { schemaVersion: 2, agents: {}, providers: payload.providers || {} };
+  for (const [agentId, agentState] of Object.entries(payload.agents || {})) {
+    if (agentState && agentState.budget) budget[agentId] = agentState.budget;
+    quota.agents[agentId] = {
+      models: (agentState && agentState.models) || {},
+      agentEnabled: agentState && agentState.agentEnabled,
+      lastRefreshedAt: agentState && agentState.lastRefreshedAt,
+    };
+  }
+  return { budget, quota };
+}
+
+function fetchAgentQuota(force) {
+  if (_agentQuotaFetchPromise && !force) return _agentQuotaFetchPromise;
+  _agentQuotaFetchPromise = fetch('/api/agent-quota', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : { agents: {}, providers: {} })
     .catch(() => ({ agents: {}, providers: {} }))
     .then(data => {
-      _quotaCache = data || { agents: {}, providers: {} };
-      if (!_quotaCache.providers) _quotaCache.providers = {};
-      _quotaFetchPromise = null;
-      return _quotaCache;
+      _agentQuotaCache = data || { agents: {}, providers: {} };
+      const split = splitAgentQuotaPayload(_agentQuotaCache);
+      _budgetCache = split.budget;
+      _quotaCache = split.quota;
+      _agentQuotaFetchPromise = null;
+      return _agentQuotaCache;
     });
-  return _quotaFetchPromise;
+  return _agentQuotaFetchPromise;
+}
+
+function fetchQuota(force) {
+  return fetchAgentQuota(force).then(() => _quotaCache || { agents: {}, providers: {} });
 }
 
 function linkedProviderIds(agentId) {
@@ -201,12 +222,7 @@ function quotaReasonText(agentId) {
 }
 
 function fetchBudget(force) {
-  if (_budgetFetchPromise && !force) return _budgetFetchPromise;
-  _budgetFetchPromise = fetch('/api/budget', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : { cc: null, cx: null, gg: null, km: null, ag: null })
-    .catch(() => ({ cc: null, cx: null, gg: null, km: null, ag: null }))
-    .then(data => { _budgetCache = data || { cc: null, cx: null, gg: null, km: null, ag: null }; _budgetFetchPromise = null; return _budgetCache; });
-  return _budgetFetchPromise;
+  return fetchAgentQuota(force).then(() => _budgetCache || { cc: null, cx: null, gg: null, km: null, ag: null });
 }
 
 function budgetWidgetCollapsed() {
@@ -847,8 +863,8 @@ function renderBudgetWidget() {
     const headRefresh = createEl('button', { className: 'budget-refresh', text: '↻', attrs: { title: 'Refresh budgets', 'aria-label': 'Refresh budgets' } });
     headRefresh.onclick = () => {
       headRefresh.classList.add('spinning');
-      fetch('/api/budget/refresh', { method: 'POST' }).catch(() => {});
-      setTimeout(() => { fetchBudget(true).then(renderBudgetWidget).finally(() => headRefresh.classList.remove('spinning')); }, 10000);
+      fetch('/api/agent-quota/refresh', { method: 'POST' }).catch(() => {});
+      setTimeout(() => { fetchAgentQuota(true).then(renderBudgetWidget).finally(() => headRefresh.classList.remove('spinning')); }, 10000);
     };
     headMeta.appendChild(headRefresh);
   }
@@ -1048,10 +1064,9 @@ function renderBudgetWidget() {
   const refreshBtn = createEl('button', { className: 'budget-refresh', text: '↻', attrs: { title: 'Refresh budgets', 'aria-label': 'Refresh budgets' } });
   refreshBtn.onclick = () => {
     refreshBtn.classList.add('spinning');
-    fetch('/api/budget/refresh', { method: 'POST' }).catch(() => {});
-    fetch('/api/quota/refresh', { method: 'POST' }).catch(() => {});
+    fetch('/api/agent-quota/refresh', { method: 'POST' }).catch(() => {});
     setTimeout(() => {
-      Promise.all([fetchBudget(true), fetchQuota(true)]).then(renderBudgetWidget).finally(() => refreshBtn.classList.remove('spinning'));
+      fetchAgentQuota(true).then(renderBudgetWidget).finally(() => refreshBtn.classList.remove('spinning'));
     }, 10000);
   };
   meta.appendChild(refreshBtn);
@@ -1144,25 +1159,20 @@ function budgetWarningForAgents(agentIds) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetchBudget().then(renderBudgetWidget);
-  // Re-render the widget once F444 quota data lands so op/cu cards + the
-  // collapsed-state dot strip light up without waiting for the 2-min interval.
-  fetchQuota().then(() => renderBudgetWidget()).catch(() => {});
-  // Refresh widget every 2 minutes to keep "updated Xmin ago" accurate and pick up fresh polls.
+  fetchAgentQuota().then(renderBudgetWidget);
   setInterval(() => {
-    Promise.all([fetchBudget(true), fetchQuota(true)]).then(() => {
+    fetchAgentQuota(true).then(() => {
       renderBudgetWidget();
       updatePickerBudgetNotice();
       updateAutonomousBudgetNotice();
     });
   }, 2 * 60 * 1000);
 
-  // Annotate agent picker rows whenever it is opened.
   const picker = document.getElementById('agent-picker');
   if (picker) {
     const observer = new MutationObserver(() => {
       if (picker.style.display === 'flex') {
-        Promise.all([fetchBudget(), fetchQuota()]).then(() => { updatePickerBudgetNotice(); });
+        fetchAgentQuota().then(() => { updatePickerBudgetNotice(); });
       }
     });
     observer.observe(picker, { attributes: true, attributeFilter: ['style'] });
@@ -1173,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (autonomousModalEl) {
     const autoObs = new MutationObserver(() => {
       if (autonomousModalEl.style.display === 'flex') {
-        Promise.all([fetchBudget(), fetchQuota()]).then(() => { updateAutonomousBudgetNotice(); });
+        fetchAgentQuota().then(() => { updateAutonomousBudgetNotice(); });
       }
     });
     autoObs.observe(autonomousModalEl, { attributes: true, attributeFilter: ['style'] });

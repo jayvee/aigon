@@ -37,12 +37,13 @@ Use **Collapse** / **Expand** on the panel header to reclaim vertical space. Whe
 
 ## Where the data comes from
 
-Roughly every **30 minutes** the Aigon server:
+Roughly every **30 minutes** the Aigon server runs **one coordinated poll** (budget scrape → headless probe → provider wallet when configured):
 
 - Polls **Claude Code**, **Gemini CLI**, and **Kimi Code CLI** via short-lived tmux sessions that drive their usage views.
 - Reads **Codex** limits from the local Codex app-server (`account/rateLimits/read`).
+- Runs headless **quota probes** and provider HTTP checks in the same tick.
 
-Results are written to **`.aigon/budget-cache.json`** in the repo the server runs from; the UI reads **`GET /api/budget`**. If `tmux`, an agent binary, or the Codex stack is missing, that agent’s card shows **usage unavailable** and polling is skipped — no error spam.
+Results are written to **`.aigon/state/agent-quota.json`** in the repo the server runs from; the UI reads **`GET /api/agent-quota`**. Legacy **`GET /api/budget`** and **`GET /api/quota`** still work for one release but project slices from the unified file. If `tmux`, an agent binary, or the Codex stack is missing, that agent’s card shows **usage unavailable** and polling is skipped — no error spam.
 
 Polls older than about **90 minutes** are treated as **stale** (gray) so you are not misled by an old snapshot.
 
