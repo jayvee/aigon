@@ -1,6 +1,5 @@
 ---
 complexity: very-high
-set: quota
 depends_on: [615]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-07T00:47:50.719Z", actor: "cli/feature-prioritise" }
@@ -147,8 +146,7 @@ dashboard-server start
 ## Related
 
 - Research: none
-- Set: `quota`
-- Prior features in set: F444 (agent-quota-awareness), F322 (agent-budget-awareness), F457 (agent-quota-overview-panel), F615 (provider-quota-openrouter)
+- Prior work (standalone — not a set member): F322 (agent-budget-awareness), F444 (agent-quota-awareness), F457 (agent-quota-overview-panel), F615 (provider-quota-openrouter)
 - Incident context: 2026-07-07 Antigravity Chrome login spam from duplicate budget+quota polls on server restart
 
 ## Pre-authorised

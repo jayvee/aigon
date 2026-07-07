@@ -14,6 +14,9 @@ complexity: medium
 #              #   Content is injected into the agent's context at feature-do time and
 #              #   copied into the implementation log at feature-start for durability.
 #              #   Set this whenever you ran plan mode before writing the spec.
+# set: my-slug  # optional — ONLY when creating 2+ inbox peers to ship together.
+#              #   Run `aigon set list` / `aigon set show <slug>` first. NEVER tag into
+#              #   a completed set (all members done). Follow-up work: standalone + depends_on.
 ---
 
 # Feature: {{NAME}}
@@ -67,5 +70,6 @@ complexity: medium
 ## Related
 <!-- Links to research topics, other features, or external docs -->
 - Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Set: <!-- set slug if this feature is part of a set; omit line if standalone -->
-- Prior features in set: <!-- feature IDs that precede this one, e.g. F314, F315; omit if standalone -->
+- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+<!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
+     See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->

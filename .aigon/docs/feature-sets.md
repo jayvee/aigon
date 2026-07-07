@@ -11,6 +11,26 @@ Use a set when you have a small group of features (typically 2–6) that:
 
 Do **not** use a set for unrelated work, for one feature, or to track a long-running theme. A set is a delivery unit, not a product area.
 
+## Completed sets — do not rejoin
+
+A set is **complete** when every tagged member is in `05-done/`. Completed sets are hidden from `aigon set list` (use `aigon set list --all` to see them). There is no separate "close set" command — completion is derived from member stage.
+
+**Before adding `set:` to a new spec**, run:
+
+```bash
+aigon set list              # active (incomplete) sets only
+aigon set show <slug>       # member stages for a slug you are considering
+```
+
+**Rules for agents authoring specs:**
+
+1. **Never tag a new feature into a completed set.** If `aigon set show <slug>` shows every member as `done`, that initiative is closed. Leave the new spec **standalone** (no `set:` frontmatter).
+2. **Follow-up work** after a closed initiative uses `depends_on: [<id>]` (or slug for inbox peers) — not resurrection of the old `set:` slug. Mention prior features under `## Related` in prose only.
+3. **Only use `set:`** when you are creating **two or more inbox specs together** that will ship as one ordered bundle (`aigon set-prioritise <slug>`). A single follow-up feature is almost always standalone.
+4. **Thematic similarity is not enough.** Sharing a product area (e.g. "quota") with done features does **not** justify reusing their set slug.
+
+**Why:** Re-tagging revives dead set cards on the dashboard, confuses autonomous set conductors, and misleads reviewers into treating unrelated work as one delivery unit.
+
 ## Tagging a feature into a set
 
 Add `set:` to the spec frontmatter:

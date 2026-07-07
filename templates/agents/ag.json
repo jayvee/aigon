@@ -50,6 +50,12 @@
   "quota": {
     "errorPatterns": [
       {
+        "id": "antigravity-auth-required",
+        "match": "waiting\\s+for\\s+authentication|sign[\\s-]?in to continue|please\\s+run\\s+/login|not\\s+authenticated|login\\s+required|complete\\s+google\\s+sign-?in",
+        "verdict": "unauthenticated",
+        "confidence": "high"
+      },
+      {
         "id": "antigravity-individual-quota",
         "match": "Individual quota reached|individual quota",
         "verdict": "depleted",

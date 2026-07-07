@@ -107,6 +107,46 @@ test('quota poller awaits probePairAsync instead of blocking the dashboard event
     assert.ok(!src.includes('quotaProbe.probePair({ repoPath'), 'quota poller must not call the synchronous probe path');
 });
 
+test('quota classifier: ag auth-required is unauthenticated', () => {
+    const result = quotaProbe.classifyProbeResult(agentRegistry.getAgent('ag'), {
+        ok: false,
+        stderr: 'Waiting for authentication — complete Google sign-in in your browser',
+        elapsed: 2000,
+    });
+    assert.strictEqual(result.verdict, 'unauthenticated');
+    assert.strictEqual(result.matchedPatternId, 'antigravity-auth-required');
+});
+
+test('quota shouldProbe backs off unauthenticated probes for hours', () => {
+    const cfg = {
+        pollIntervalSeconds: 1800,
+        maxBackoffSeconds: 3600,
+        authFailureBackoffSeconds: 21600,
+    };
+    const recent = {
+        verdict: 'unauthenticated',
+        lastProbedAt: new Date().toISOString(),
+    };
+    assert.strictEqual(quotaProbe.shouldProbe(recent, cfg), false);
+    const stale = {
+        verdict: 'unauthenticated',
+        lastProbedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
+    };
+    assert.strictEqual(quotaProbe.shouldProbe(stale, cfg), true);
+});
+
+test('quota poller background tick probes default model only', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/quota-poller.js'), 'utf8');
+    assert.ok(src.includes('allModels: false'), 'background quota poll must not probe every model');
+    assert.ok(src.includes('STARTUP_DELAY_MS'), 'quota poller must delay the first automated poll');
+});
+
+test('budget poller skips interactive agy unless forced or token present', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/budget-poller.js'), 'utf8');
+    assert.ok(src.includes('ANTIGRAVITY_TOKEN'), 'budget poller must gate interactive agy on headless auth');
+    assert.ok(src.includes('STARTUP_DELAY_MS'), 'budget poller must delay the first automated poll');
+});
+
 test('quota polling defaults to 30 minutes and allows that interval at runtime', () => {
     assert.strictEqual(quotaProbe.DEFAULT_POLL_INTERVAL_SECONDS, 1800);
     const configSrc = fs.readFileSync(path.join(__dirname, '../../lib/config.js'), 'utf8');
