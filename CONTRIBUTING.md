@@ -75,6 +75,8 @@ Verify it loaded:
 
 Once enabled, agents prefer `mcp__playwright__browser_snapshot` (a11y tree, ~10× cheaper than pixels) and only fall back to `browser_take_screenshot` for pixel-fidelity checks. Declining the prompt is harmless — the old Playwright-script flow still works.
 
+**Worktree dashboard changes:** use `aigon preview <feature-id>` for interactive UI checks against `<agent>-<id>.aigon.localhost`. Do not use the primary `aigon.localhost` from a worktree — it serves main's templates. **Automated regression** = `npm run test:browser` / `test:browser:smoke` (mock bootstrap in `tests/dashboard-e2e/`). **Interactive verification** = `aigon preview <id>`.
+
 **Screenshot path rule:** always save screenshots to `./tmp/` (e.g. `./tmp/my-feature-check.png`). Never write image files to the repo root — they accumulate as untracked noise. `tmp/` is gitignored.
 
 ## Submitting a PR
