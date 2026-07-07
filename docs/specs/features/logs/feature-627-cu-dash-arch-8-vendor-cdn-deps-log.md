@@ -24,3 +24,20 @@ None.
 ## Test Coverage
 - `npm run test:iterate` + `npm run test:browser` green.
 - Offline screenshot: `tmp/feature-627-offline-vendor.png` (jsdelivr blocked; Alpine/marked/Chart globals + store OK).
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- b90248e94 fix(review): update Alpine loading comment
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- Reviewed the vendored asset wiring, static serving path, package inclusion via `package.json` `files`, ESLint vendor ignores, and dashboard external URL references. The only fix was a stale Alpine comment that still referred to CDN loading.
