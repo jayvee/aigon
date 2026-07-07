@@ -22,6 +22,8 @@ Consolidate today's split **budget** (F322 subscription-window scrapes → `.aig
 ## Acceptance Criteria
 
 ### Unified state + poller
+- [ ] **Per-phase fault isolation:** a failure in one phase (budget scrape, probe subprocess non-zero exit, provider HTTP timeout ≥10s) must not abort the tick. Successful phases write their slice; failed phases record `probeMethod: 'error'` / `verdict: 'error'` with `lastError` and `erroredAt` on the affected slice and leave prior cached values in place. `lastPollPhases` records per-phase outcome (`ok` | `error` | `skipped`).
+- [ ] **Single-writer lock:** an in-flight refresh is guarded by a process-local boolean (`pollInFlight`) plus a `.aigon/state/agent-quota.json.lock` file (consistent with workflow-core file-locking convention) so a concurrent `POST /api/agent-quota/refresh` while a background tick is running returns 409 instead of spawning duplicate probe subprocesses.
 - [ ] New canonical cache: `.aigon/state/agent-quota.json` with `schemaVersion: 1` (new file — fresh schema, not a continuation of `quota.json`'s lineage; migration handles legacy content). Shape merges:
   - per-agent **budget** windows (today's `budget-cache.json` cc/cx/km/ag tier objects + `polled_at`)
   - per-agent **models** probe verdicts (today's `quota.json` agents.*.models)
@@ -30,12 +32,12 @@ Consolidate today's split **budget** (F322 subscription-window scrapes → `.aig
 - [ ] New module `lib/agent-quota-poller.js` (single file) owns **one** `setInterval` driven by `quota.pollIntervalSeconds` (default 1800). If the implementation naturally exceeds ~400 lines, split into a `lib/agent-quota/` package (≤3 files) but keep `lib/agent-quota-poller.js` as the re-export entry so import paths stay stable. Phases run **in order** per tick: budget scrape → headless probe (default model only in background; all models on manual refresh) → provider HTTP. **One** `MIN_REFRESH_GAP_MS` (300000ms) and **no** duplicate startup timers.
 - [ ] **Cache-age gating on startup:** when the server starts, **do not poll** if `lastPollAt` (or per-phase timestamps) is younger than `pollIntervalSeconds`. Serve existing file via API immediately. Optional env override `AIGON_QUOTA_POLL_ON_START=1` for maintainers.
 - [ ] **Auth-safe Antigravity:** automated ticks never launch interactive `agy` (retain F615-incident guard). Budget scrape for `ag` only when `ANTIGRAVITY_TOKEN` is set or manual `force` refresh; otherwise budget section stays null/stale with explicit `probeMethod: 'skipped-interactive-auth'`.
-- [ ] `aigon doctor --fix` migration merges legacy `budget-cache.json` + `quota.json` into `agent-quota.json` idempotently; legacy files may remain as read-only fallbacks for one release then are ignored.
+- [ ] `aigon doctor --fix` migration merges legacy `budget-cache.json` + `quota.json` into `agent-quota.json` idempotently (re-running is a no-op once `agent-quota.json` exists and is newer than both legacy files); legacy files may remain as read-only fallbacks for one OSS minor release then are ignored.
 
 ### API + consumers
 - [ ] `GET /api/agent-quota` returns the unified document (filtered by `agent-availability` as today).
-- [ ] `POST /api/agent-quota/refresh` triggers one coordinated poll (`force: true`, all models, provider pass). Rate-limited (≥5 min gap unless `?force=1` for maintainer CLI).
-- [ ] **Compatibility shims** for one release: `GET /api/budget` and `GET /api/quota` project slices from unified state (no separate writes). `POST /api/budget/refresh` and `POST /api/quota/refresh` delegate to the unified refresh handler. Deprecation comment in route modules.
+- [ ] `POST /api/agent-quota/refresh` triggers one coordinated poll (`force: true`, all models, provider pass). Rate-limited: a second refresh within `MIN_REFRESH_GAP_MS` (5 min) is rejected with HTTP 429 unless `?force=1` is set; the dashboard's ↻ button never sends `?force=1`, only the maintainer CLI (`aigon agent-quota refresh --force`) does.
+- [ ] **Compatibility shims** for one OSS minor release: `GET /api/budget` and `GET /api/quota` project slices from unified state (no separate writes). `POST /api/budget/refresh` and `POST /api/quota/refresh` delegate to the unified refresh handler. Deprecation comment in route modules; removal tracked in CHANGELOG.
 - [ ] `feature-start`, `quota-mid-run-detector`, `agent-resume`, schedule-after-reset helpers read unified state via a single `lib/agent-quota-read.js` barrel — no direct `budget-cache.json` / `quota.json` reads in command or dashboard paths after cutover.
 - [ ] `quota.refreshed` server events still fire when probe verdicts change (event shape unchanged for dashboard WS clients).
 
@@ -51,14 +53,17 @@ Consolidate today's split **budget** (F322 subscription-window scrapes → `.aig
 
 ### Tests
 - [ ] Integration test: startup with fresh cache → poller does **not** spawn probe subprocess (mock `spawn` / inject clock).
-- [ ] Integration test: manual refresh runs all phases once; second refresh within gap is no-op.
-- [ ] Migration test: fixture legacy files → unified schema round-trip.
+- [ ] Integration test: manual refresh runs all phases once; second refresh within gap is no-op (429).
+- [ ] Integration test: in-flight refresh → concurrent refresh returns 409 and does not spawn a second probe subprocess.
+- [ ] Integration test: probe subprocess exits non-zero → affected slice records `verdict: 'error'` with `lastError`, other phases still write.
+- [ ] Migration test: fixture legacy files → unified schema round-trip; re-run migration is a no-op when `agent-quota.json` is newer.
 - [ ] REGRESSION test: Antigravity automated tick does not call `pollAntigravityBudget` without token/force.
 
 ## Validation
 
 ```bash
 node -c lib/agent-quota-poller.js
+node -c lib/agent-quota-read.js
 npm run test:iterate
 ```
 
@@ -117,7 +122,7 @@ dashboard-server start
 2. Migration in `doctor --fix` copies merged view to `agent-quota.json`.
 3. Switch poller + API + dashboard to unified file.
 4. Delete legacy pollers; keep API shims one release.
-5. Remove shims + legacy file readers in follow-up housekeeping (can be same PR if test coverage is strong).
+5. Remove shims + legacy file readers in follow-up housekeeping (next OSS minor release; can be same PR if test coverage is strong).
 
 ### Non-functional
 
@@ -139,9 +144,8 @@ dashboard-server start
 
 ## Open Questions
 
-- **Schema version number:** bump quota.json `schemaVersion: 2` in place vs new filename `agent-quota.json`? Recommendation: new file + migration for clear break; avoid overloading v2 quota with unrelated budget keys.
-- **Rename dashboard widget file** (`budget-widget.js` → `agent-quota-widget.js`)? Cosmetic; optional if behaviour is unified.
-- **How long to keep `/api/budget` shim?** Recommendation: one OSS release, logged deprecation in CHANGELOG.
+- **Rename dashboard widget file** (`budget-widget.js` → `agent-quota-widget.js`)? Cosmetic; optional if behaviour is unified. Decision deferred to implementer.
+- **How long to keep `/api/budget` shim?** Recommendation: one OSS minor release, logged deprecation in CHANGELOG. (Schema-version question resolved: new file `agent-quota.json` + `schemaVersion: 1`.)
 
 ## Related
 
