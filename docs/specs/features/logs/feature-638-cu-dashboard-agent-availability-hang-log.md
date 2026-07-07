@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 205
+lines_removed: 91
+lines_changed: 296
+files_touched: 4
+fix_commit_count: 2
+fix_commit_ratio: 0.5
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 638 - dashboard-agent-availability-hang
 Agent: cu
 
