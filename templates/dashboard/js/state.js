@@ -43,6 +43,8 @@
       closeFailedFeatures: new Map(),
       // feature 234: true while the backend is restarting after a lib/*.js merge
       serverRestarting: false,
+      // F622: SSE live push connected (EventSource open).
+      sseConnected: false,
       settingsInitialSectionId: settingsInitialSectionId,
       // F620: last server statusVersion for If-None-Match on /api/status polls.
       lastStatusVersion: null,
