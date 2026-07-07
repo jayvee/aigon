@@ -31,11 +31,20 @@
       if (btn) btn.disabled = true;
       try {
         const init = { method: 'POST', cache: 'no-store' };
+        if (state.lastStatusVersion != null) {
+          init.headers = { 'If-None-Match': `"${state.lastStatusVersion}"` };
+        }
         if (repoPath) {
-          init.headers = { 'content-type': 'application/json' };
+          init.headers = { ...(init.headers || {}), 'content-type': 'application/json' };
           init.body = JSON.stringify({ repoPath });
         }
         const res = await fetch('/api/refresh', init);
+        if (res.status === 304) {
+          state.failures = 0;
+          setHealth();
+          if (typeof refreshTimestamps === 'function') refreshTimestamps();
+          return;
+        }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const next = await res.json();
         state.failures = 0;

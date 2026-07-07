@@ -3,7 +3,7 @@
 'use strict';
 
 const assert = require('assert');
-const { test, report } = require('../_helpers');
+const { test, testAsync, report } = require('../_helpers');
 const { createDashboardRouteDispatcher } = require('../../lib/dashboard-routes');
 const {
     computeStatusFingerprint,
@@ -74,6 +74,12 @@ test('F620: computeStatusFingerprint ignores generatedAt', () => {
     assert.strictEqual(computeStatusFingerprint(a), computeStatusFingerprint(b));
 });
 
+test('F620: computeStatusFingerprint includes rendered update-check details', () => {
+    const a = buildStatus({ updateCheck: { state: 'update-available', latestStable: '1.2.3', upgradeCommand: 'aigon update' } });
+    const b = buildStatus({ updateCheck: { state: 'update-available', latestStable: '1.2.4', upgradeCommand: 'aigon update' } });
+    assert.notStrictEqual(computeStatusFingerprint(a), computeStatusFingerprint(b));
+});
+
 test('F620: replaceLatestStatus bumps version only when fingerprint changes', () => {
     const store = createStatusSnapshotStore();
     store.replaceLatestStatus(buildStatus(), 'a');
@@ -128,6 +134,27 @@ test('F620: structural change bumps version and returns full body', () => {
     assert.strictEqual(res.getHeaders().etag, '"2"');
     assert.strictEqual(res.getJson().statusVersion, 2);
     assert.strictEqual(res.getJson().repos[0].features[0].stage, 'done');
+});
+
+testAsync('F620: /api/refresh returns 304 when refreshed status is unchanged', async () => {
+    const store = createStatusSnapshotStore();
+    store.replaceLatestStatus(buildStatus(), 'init');
+    const ctx = buildStatusCtx(store);
+    ctx.helpers.pollStatus = async () => {
+        store.replaceLatestStatus(buildStatus({ generatedAt: '2026-07-07T02:00:00.000Z' }), 'refresh');
+    };
+    const dispatcher = createDashboardRouteDispatcher(ctx);
+
+    const res = buildReqRes({ 'if-none-match': '"1"' });
+    res.req.on = (event, cb) => {
+        if (event === 'end') cb();
+        return res.req;
+    };
+    dispatcher.dispatchOssRoute('POST', '/api/refresh', res.req, res.res);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.strictEqual(res.getStatusCode(), 304);
+    assert.ok(res.getBody() == null || res.getBody() === '');
+    assert.strictEqual(res.getHeaders().etag, '"1"');
 });
 
 report();
