@@ -22,12 +22,12 @@ Consolidate today's split **budget** (F322 subscription-window scrapes → `.aig
 ## Acceptance Criteria
 
 ### Unified state + poller
-- [ ] New canonical cache: `.aigon/state/agent-quota.json` with `schemaVersion: 1` (or `3` if continuing quota.json lineage — pick one and document). Shape merges:
+- [ ] New canonical cache: `.aigon/state/agent-quota.json` with `schemaVersion: 1` (new file — fresh schema, not a continuation of `quota.json`'s lineage; migration handles legacy content). Shape merges:
   - per-agent **budget** windows (today's `budget-cache.json` cc/cx/km/ag tier objects + `polled_at`)
   - per-agent **models** probe verdicts (today's `quota.json` agents.*.models)
   - per-provider **wallet** blocks (today's F615 `providers` subtree when `depends_on` is satisfied)
   - top-level `lastPollAt`, `lastPollPhases` (budget|probe|provider timestamps) for observability
-- [ ] New module `lib/agent-quota-poller.js` (or `lib/agent-quota/` package if split stays ≤3 files) owns **one** `setInterval` driven by `quota.pollIntervalSeconds` (default 1800). Phases run **in order** per tick: budget scrape → headless probe (default model only in background; all models on manual refresh) → provider HTTP. **One** `MIN_REFRESH_GAP_MS` and **no** duplicate startup timers.
+- [ ] New module `lib/agent-quota-poller.js` (single file) owns **one** `setInterval` driven by `quota.pollIntervalSeconds` (default 1800). If the implementation naturally exceeds ~400 lines, split into a `lib/agent-quota/` package (≤3 files) but keep `lib/agent-quota-poller.js` as the re-export entry so import paths stay stable. Phases run **in order** per tick: budget scrape → headless probe (default model only in background; all models on manual refresh) → provider HTTP. **One** `MIN_REFRESH_GAP_MS` (300000ms) and **no** duplicate startup timers.
 - [ ] **Cache-age gating on startup:** when the server starts, **do not poll** if `lastPollAt` (or per-phase timestamps) is younger than `pollIntervalSeconds`. Serve existing file via API immediately. Optional env override `AIGON_QUOTA_POLL_ON_START=1` for maintainers.
 - [ ] **Auth-safe Antigravity:** automated ticks never launch interactive `agy` (retain F615-incident guard). Budget scrape for `ag` only when `ANTIGRAVITY_TOKEN` is set or manual `force` refresh; otherwise budget section stays null/stale with explicit `probeMethod: 'skipped-interactive-auth'`.
 - [ ] `aigon doctor --fix` migration merges legacy `budget-cache.json` + `quota.json` into `agent-quota.json` idempotently; legacy files may remain as read-only fallbacks for one release then are ignored.
