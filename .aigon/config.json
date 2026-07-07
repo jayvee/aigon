@@ -1,6 +1,6 @@
 {
   "tier": "pro",
-  "worktreeSetup": "npm ci",
+  "worktreeSetup": "ln -sfn \"$(dirname \"$(git rev-parse --git-common-dir)\")/node_modules\" node_modules",
   "instructions": {
     "testing": "skip",
     "planMode": "never"
@@ -33,9 +33,17 @@
       "evaluate": {
         "model": ""
       }
+    },
+    "km": {
+      "availability": {
+        "state": "disabled",
+        "reason": "prefer-other-agent",
+        "note": "Disabled for this installation per operator preference",
+        "hidden": true,
+        "updatedAt": "2026-07-06T10:48:28.325Z"
+      }
     }
   },
-  "worktreeSetup": "ln -sfn \"$(dirname \"$(git rev-parse --git-common-dir)\")/node_modules\" node_modules",
   "github": {
     "prCheck": false
   }
