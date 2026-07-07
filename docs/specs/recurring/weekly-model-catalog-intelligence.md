@@ -10,7 +10,9 @@ agent: cc
 
 ## Summary
 
-Keep Aigon's curated agent model registry (`templates/agents/*.json`) honest against live provider catalogs. Each week, diff OpenRouter (for `op`) and Gemini (for `gg`) against what Aigon ships, refresh pricing and availability signals, probe new candidates, benchmark stale or newly discovered pairs, rank models per role (implement / review / spec / research), and **archive or quarantine** models that are gone, broken, or superseded.
+Keep Aigon's curated agent model registry (`templates/agents/*.json`) honest against live provider catalogs. Each week, diff **OpenRouter (`op`)** — the only agent with a public, enumerable model catalog — against what Aigon ships, refresh pricing and availability signals, probe new candidates, benchmark stale or newly discovered pairs, rank models per role (implement / review / spec / research), and **archive or quarantine** models that are gone, broken, or superseded.
+
+> **Provider scope.** `gg` (Gemini CLI) is **deactivated** (`templates/agents/gg.json` → `active: false`, superseded by `ag` since 2026-06-18) — do **not** fetch, probe, or patch it. `ag` (Antigravity) exposes no public model-enumeration API, and `cc`/`cx` never did; those three are the **manual curator lane** (report-only, see Out of Scope). Automated discovery is therefore **`op`-only** until another provider gains an enumerable catalog.
 
 This is the operational layer the project is missing today. F503 (`bench-refresh`) and F537 (maintainer tooling moved to Pro) cover **monthly benchmark sweeps** and **discovery append-only** — but not weekly catalog hygiene, retirement, role-specific ranking, or a single report an operator can triage. This recurring task closes that gap until a dedicated Pro command (`model-catalog-refresh` or similar) exists.
 
@@ -18,23 +20,25 @@ This is the operational layer the project is missing today. F503 (`bench-refresh
 
 ## User Stories
 
-- As the maintainer, I want a weekly report listing **new models on OpenRouter/Gemini that Aigon does not list**, with pricing and a suggested role, so I never discover a Qwen3.6 or Qwen3.7 release weeks late via a user question.
+- As the maintainer, I want a weekly report listing **new models on OpenRouter that Aigon does not list**, with pricing and a suggested role, so I never discover a Qwen3.6 or Qwen3.7 release weeks late via a user question.
 - As the maintainer, I want models that **no longer exist or no longer support tools** on OpenRouter to be flagged for `archived` or `quarantined`, not left as green picker options.
 - As the maintainer, I want **pricing refreshed** on active models so cost/value recommendations in chat and the matrix are not stale.
 - As the maintainer, I want **role-ranked recommendations** (best value implement, best value review, best quality review, etc.) grounded in probe + bench + published benchmarks — not vibes.
 - As an operator picking a review model, I want the dashboard/matrix to surface **yellow/red** when a model passes probe but fails bench (F456 intent), so "available" ≠ "recommended".
 - As an operator, I want a **visible one-line model summary** ("great for code review, weak on deep planning") on the Agent Matrix and in model pickers — maintained weekly from web research + Aigon bench data, not hand-written once and forgotten.
 
-## Model summary contract (registry + UI)
+## Model summary contract — owned by F618 / F619
 
-Each `cli.modelOptions[]` entry gains a **`summary`** object — the operator-facing qualitative view. Per-role `notes` / `score` stay the drill-down; `summary` is the entry point.
+The `summary` object on each `cli.modelOptions[]` entry — its **shape, validation, and matrix projection** — is defined by feature **618 (`model-summary-registry-contract`)**; the **dashboard / matrix UI surfacing** is feature **619 (`model-summary-dashboard-surface`)**. This recurring task does **not** define or re-derive the contract — it **populates and refreshes** summaries at scale via research (§4) and proposes them as human-gated registry patches. If F618 has not merged, defer summary patches and say so in the report.
+
+Canonical shape (authoritative version lives in `docs/model-inclusion-policy.md` §5 per F618):
 
 ```json
 "summary": {
   "headline": "Best-value OpenRouter reviewer; skip for deep spec or research work.",
   "body": "Strong on routine agentic code review and cheap implementation loops. Published SWE-bench is high but Aigon bench shows timeouts on flash-tier variants. Community reports instruction drift in 400K+ contexts.",
-  "bestFor": ["code review", "implement"],
-  "avoidFor": ["spec drafting", "research synthesis"],
+  "bestFor": ["review", "implement"],
+  "avoidFor": ["spec", "research"],
   "confidence": "high",
   "researchedAt": "2026-07-07T12:00:00.000Z",
   "sources": [
@@ -45,18 +49,9 @@ Each `cli.modelOptions[]` entry gains a **`summary`** object — the operator-fa
 }
 ```
 
-**Field rules**
+`bestFor` / `avoidFor` use the Aigon role vocabulary **only** — `implement`, `review`, `spec`, `spec_review`, `research` (no free-form tags like "code review" or "spec drafting"). `validateModelOptions` (F618) enforces shape; every entry this task drafts **must pass it** before it goes into a patch.
 
-| Field | Required | Visible in UI | Max |
-|-------|----------|---------------|-----|
-| `headline` | yes (active models) | always | ~120 chars |
-| `body` | yes when `confidence` ≥ medium | expand / hover | ~500 chars |
-| `bestFor` / `avoidFor` | yes | chips or tooltip | use Aigon role vocabulary: `implement`, `review`, `spec`, `spec_review`, `research` |
-| `confidence` | yes | badge | `high` \| `medium` \| `low` |
-| `researchedAt` | yes | "Researched \<date\>" footnote | ISO |
-| `sources` | ≥2 when confidence is high | "Sources" link list | no URLs in `headline`/`body` without also being in `sources` |
-
-**Confidence ladder**
+**Confidence ladder** (research guidance; policy §5 per F618 is authoritative):
 
 - **high** — Aigon probe (+ bench when agentic) **and** ≥2 independent external sources agree
 - **medium** — strong external benchmarks/community **or** Aigon bench only
@@ -64,35 +59,27 @@ Each `cli.modelOptions[]` entry gains a **`summary`** object — the operator-fa
 
 **Precedence when sources conflict:** Aigon bench result > maintainer probe > practitioner community > provider blog.
 
-**UI surfacing** (requires a small OSS dashboard feature — not this recurring task's code scope):
-
-- **Settings → Agent Matrix:** `headline` as subtitle under model label; full `body` + chips on row expand
-- **Matrix peek + model pickers:** `headline` always; contextual hint when action is review → emphasize `avoidFor` if it contains `review`
-- Per-role hover notes unchanged
-
-Track UI work as follow-up inbox feature `model-summary-dashboard-surface` if not already shipped.
-
 ## Acceptance Criteria
 
 ### 1. Catalog diff (discovery)
 
-- [ ] Fetch live catalogs:
+- [ ] Fetch the live catalog:
   - OpenRouter: `GET https://openrouter.ai/api/v1/models` (no auth)
-  - Gemini: `GET https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY` (skip section with clear note if key missing)
-- [ ] For each agent with an enumerable provider (`op`, `gg`), build `{value, label, pricing, supported_parameters}` candidates filtered per `docs/model-inclusion-policy.md` §1–§3 (modality exclusions, `:free` tier rejection, tools required for `op`).
+  - (No Gemini fetch — `gg` is deactivated; `ag`/`cc`/`cx` have no enumerable catalog. See **Provider scope** in the Summary.)
+- [ ] For the one enumerable provider (`op`), build `{value, label, pricing, supported_parameters}` candidates filtered per `docs/model-inclusion-policy.md` §1–§3 (modality exclusions, `:free` tier rejection, tools required for `op`).
 - [ ] Compare against `templates/agents/<id>.json` `cli.modelOptions` by `value` (and known alias pairs documented in notes, e.g. `qwen3-235b-a22b-07-25` ↔ `qwen3-235b-a22b-2507`).
 - [ ] Emit three buckets in the report: **NEW** (on provider, not in Aigon), **STALE-ID** (in Aigon, not on provider), **ALIAS-ONLY** (same model, different slug).
 
 ### 2. Availability & retirement signals
 
-- [ ] For every **active** (non-quarantined, non-archived) `modelOptions` entry on `op` and `gg`, run `aigon agent-probe <agent> --model <value>` (or Pro equivalent if OSS stubs).
+- [ ] For every **active** (non-quarantined, non-archived) `modelOptions` entry on `op`, run `aigon agent-probe op --model <value>` (falls through to `scripts/probe-agent.js`; `--model` accepts values not yet in the registry).
 - [ ] Mark probe failures as **RETIRE-CANDIDATE** with evidence; do not delete entries — follow `docs/model-inclusion-policy.md` §7 (`quarantined` or `archived` block).
 - [ ] For STALE-ID entries (provider 404 / model removed), prepare an `archived` block with `since`, `reason`, `evidence`, `supersededBy` (if known).
 - [ ] Never silently delete `modelOptions` rows; git history + quarantine/archive blocks are the audit trail.
 
 ### 3. Pricing refresh
 
-- [ ] For models still on the provider catalog, update `pricing: { input, output }` in USD/MTok from the provider response (OpenRouter `pricing.prompt/completion`; Gemini pricing table or documented rates).
+- [ ] For models still on the provider catalog, update `pricing: { input, output }` in USD/MTok from the provider response (OpenRouter `pricing.prompt/completion`).
 - [ ] Flag models whose output price crossed policy thresholds (§2: > $5/MTok) for human review before promotion.
 
 ### 4. Deep web research → `summary` population
@@ -109,9 +96,15 @@ For each model in scope this week, run a structured research pass and **draft or
 | Quarantined / archived | Short pass — headline = why to avoid; skip community trawl |
 | Unchanged + fresh summary | Skip (cite "summary still fresh" in report) |
 
+**Per-run research budget** — deep research is the most expensive step; cap it so a weekly unattended run actually completes:
+
+- **Full-pass cap: ≤6 models per run.** Order: NEW models first, then in-scope actives by **oldest `researchedAt`**. Models over the cap roll to next week (round-robin) — list them under "Deferred to next week" in the report.
+- Short-pass (quarantined / archived) models do **not** count against the cap.
+- **Wall-clock guard:** if the research phase exceeds ~45 min, or web-search tooling errors 3× consecutively, stop, write what you have, and record the unresearched models as deferred. A partial-but-honest report beats a timed-out run.
+
 **Research steps (per model)**
 
-1. **Provider primary** — OpenRouter model page / Gemini model card: pricing, context, tool support, release date.
+1. **Provider primary** — OpenRouter model page: pricing, context, tool support, release date.
 2. **Benchmarks** — evals.report, Hugging Face model card tables, provider blog; capture SWE-bench / LiveCodeBench / Terminal-Bench if published.
 3. **Practitioner signal (deep web)** — web search + HN/Reddit/developer blogs from the **last 30 days** for `"<model name>" coding agent OR code review OR SWE-bench`; note consensus and disagreements.
 4. **Aigon ground truth** — this week's probe/bench/quarantine rows for that `value`; **must** appear in `sources` when present.
@@ -137,7 +130,8 @@ Bad: `Powerful next-gen model with great capabilities.` (marketing, no role guid
 ### 5. Qualification & role ranking
 
 - [ ] **Probe** all NEW models and any active model whose `lastRefreshAt` is older than 14 days.
-- [ ] **Bench** (brewboard or equivalent) NEW models and probe-ok models with `benchVerdict: unknown` or last bench > 30 days (`op`/`gg`) / 60 days (`cc`/`cx`) — use Pro maintainer tooling; if unavailable, document manual bench commands in the report.
+- [ ] **Bench** (brewboard or equivalent) NEW models and probe-ok models with `benchVerdict: unknown` or last bench > 30 days (`op`) / 60 days (`cc`/`cx`) — use Pro maintainer tooling; if unavailable, document manual bench commands in the report.
+- [ ] **OSS-only reality:** `agent-probe --include-bench` is Pro/maintainer-only (removed from OSS), so an OSS-only run **cannot** produce Confidence HIGH — that tier requires an Aigon bench. Expect MED at best and say so in the report rather than inflating confidence off published benchmarks.
 - [ ] Produce a **role ranking table** per agent with columns: model label, value, $/MTok in/out, probe, bench, suggested roles, confidence:
   - **Confidence HIGH** — probe ok + bench passed on Aigon harness
   - **Confidence MED** — probe ok + strong published benchmark (SWE-bench, etc.) but no Aigon bench yet
@@ -150,7 +144,7 @@ Bad: `Powerful next-gen model with great capabilities.` (marketing, no role guid
 
 ### 6. Curated registry updates (human-gated)
 
-- [ ] Prepare JSON patches for `templates/agents/op.json` and/or `gg.json`:
+- [ ] Prepare JSON patches for `templates/agents/op.json` (the only enumerable-provider agent):
   - append NEW models (minimal shape: `value`, `label`, `pricing`, `lastRefreshAt`, `summary`, `score: { implement: null, review: null, ... }`)
   - refresh pricing on existing models
   - add or refresh `summary` per §4 for all in-scope models
@@ -256,7 +250,7 @@ Generated by recurring task `weekly-model-catalog-intelligence`.
 
 ## Technical Approach
 
-1. **Inventory** — load `templates/agents/{op,gg,cc,cx,ag}.json`; extract active `modelOptions`.
+1. **Inventory** — load `templates/agents/{op,cc,cx,ag}.json`; extract active `modelOptions` (skip `gg` — deactivated).
 2. **Fetch** — provider catalogs; normalize IDs to Aigon `value` form (`openrouter/<id>` for op).
 3. **Diff** — set algebra on values; apply known alias map (maintain in report until codified in Pro).
 4. **Probe** — `aigon agent-probe op --model <value>` for each candidate; record latency and verdict.
@@ -304,8 +298,8 @@ Do **not** file features for routine "add this one model" work — that belongs 
 ## Pre-authorised
 
 - Skip eval step — reporting and maintainer-registry hygiene.
-- Read public OpenRouter models API and Gemini models API (with env key).
-- Run `aigon agent-probe` for all active op/gg models (budget: stop after 3 consecutive provider errors and escalate in report).
+- Read public OpenRouter models API (no auth).
+- Run `aigon agent-probe` for all active `op` models (budget: stop after 3 consecutive provider errors and escalate in report).
 - **Deep web research** for in-scope models: provider pages, benchmark aggregators, and practitioner sources (HN/Reddit/blogs) from the last 30 days; no paywalled source scraping.
 - Write `.aigon/reports/model-catalog-intelligence-{{YYYY-WW}}.md`.
 - Run `aigon feature-create` at most once per weekly run for systemic gaps.
@@ -323,11 +317,13 @@ Do **not** file features for routine "add this one model" work — that belongs 
 
 - Should Pro expose a single `aigon model-catalog-refresh --report` that implements sections 1–5, with this recurring task reduced to "run command + triage"? **Recommended yes** — track as follow-up feature.
 - Weekly vs biweekly once catalog drift stabilises?
-- **`summary` contract in `model-inclusion-policy.md` §5** — update policy + `validateModelOptions` in the same PR as first summary rollout (follow-up OSS feature).
+- **`summary` contract — resolved.** Shape, `model-inclusion-policy.md` §5, and `validateModelOptions` are feature **618** (`model-summary-registry-contract`); dashboard surfacing is feature **619** (`model-summary-dashboard-surface`). This task **consumes** those contracts, it does not define them — block summary patches on F618 merging.
 
 ## Related
 
 - `docs/model-inclusion-policy.md`
+- `docs/specs/features/02-backlog/feature-618-model-summary-registry-contract.md` (owns the `summary` shape + `validateModelOptions`)
+- `docs/specs/features/02-backlog/feature-619-model-summary-dashboard-surface.md` (owns UI surfacing)
 - `docs/specs/features/05-done/feature-503-monthly-benchmark-refresh-with-model-discovery.md`
 - `docs/specs/features/05-done/feature-537-split-maintainer-benchmarking-tooling-from-oss-user-surface.md`
 - `docs/specs/features/01-inbox/feature-bench-monitor.md`
