@@ -583,8 +583,7 @@
 
       select.value = currentScope;
       select.onchange = () => {
-        state.settingsDefaultsRepo = select.value;
-        localStorage.setItem(lsKey('settingsDefaultsRepo'), state.settingsDefaultsRepo);
+        setSettingsDefaultsRepo(select.value);
         renderSettings();
       };
       wrap.appendChild(select);
@@ -624,8 +623,7 @@
       });
       select.value = selectedRepo;
       select.onchange = () => {
-        state.settingsModelRepo = select.value;
-        localStorage.setItem(lsKey('settingsModelRepo'), state.settingsModelRepo);
+        setSettingsModelRepo(select.value);
         renderSettings();
       };
       wrap.appendChild(select);

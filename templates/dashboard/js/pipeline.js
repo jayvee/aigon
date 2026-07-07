@@ -681,7 +681,7 @@ import { agents, defaultAgent } from './injected.js';
 
       // Render infra actions from validActions (server-driven eligibility)
       const pokeStateKey = `${repoPath || ''}:${feature.id}:${agent.id}`;
-      const pokePending = state.pendingDevServerPokes && state.pendingDevServerPokes.has(pokeStateKey);
+      const pokePending = isDevServerPokePending(pokeStateKey);
       infraActions.forEach(va => {
         if (va.action === 'dev-server-poke') {
           const pendingLabel = '<span class="run-next-spinner"></span>Starting preview…';
@@ -1304,9 +1304,9 @@ import { agents, defaultAgent } from './injected.js';
       card.querySelectorAll('.kcard-close-resolve-btn').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
-          const info = state.closeFailedFeatures && state.closeFailedFeatures.get(String(feature.id));
+          const info = getCloseFailure(String(feature.id));
           if (!info) return;
-          state.closeFailedFeatures.delete(String(feature.id));
+          clearCloseFailure(String(feature.id));
           await handleCloseWithAgent(feature.id, info.agentId, info.repoPath, btn);
         };
       });
@@ -1774,10 +1774,7 @@ import { agents, defaultAgent } from './injected.js';
             moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
             moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
             moreBtn.onclick = () => {
-              const next = { ...(state.expandedPipelineColumns || {}) };
-              next[columnKey] = true;
-              state.expandedPipelineColumns = next;
-              localStorage.setItem(lsKey('expandedPipelineColumns'), JSON.stringify(next));
+              setExpandedPipelineColumn(columnKey, true);
               render();
             };
             colBody.appendChild(moreBtn);
@@ -1822,10 +1819,7 @@ import { agents, defaultAgent } from './injected.js';
         moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
         moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
         moreBtn.onclick = () => {
-          const next = { ...(state.expandedPipelineColumns || {}) };
-          next[columnKey] = true;
-          state.expandedPipelineColumns = next;
-          localStorage.setItem(lsKey('expandedPipelineColumns'), JSON.stringify(next));
+          setExpandedPipelineColumn(columnKey, true);
           render();
         };
         colBody.appendChild(moreBtn);
@@ -1880,7 +1874,7 @@ import { agents, defaultAgent } from './injected.js';
             ? 'No repos registered. Run: aigon server add'
             : 'No data for selected repo.';
         },
-        setPipelineType(t) { Alpine.store('dashboard').pipelineType = t; localStorage.setItem(lsKey('pipelineType'), t); },
+        setPipelineType(t) { globalThis.setPipelineType(t); },
         get showPaused() { return !!Alpine.store('dashboard')._showPaused; },
         togglePaused() {
           const next = !this.showPaused;
@@ -1889,9 +1883,7 @@ import { agents, defaultAgent } from './injected.js';
         },
         get groupBySet() { return !!Alpine.store('dashboard').pipelineGroupBySet; },
         toggleGroupBySet() {
-          const next = !this.groupBySet;
-          Alpine.store('dashboard').pipelineGroupBySet = next;
-          localStorage.setItem(lsKey('pipelineGroupBySet'), next ? '1' : '0');
+          globalThis.setPipelineGroupBySet(!this.groupBySet);
         },
         getStageDisplayCount(repo, stage) {
           const s = Alpine.store('dashboard');
