@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented `aigon preview <id>` with worktree resolution, isolated `server start --preview`, and agent doc updates for worktree UI verification.
 ## New API Surface
 
 ## Key Decisions
