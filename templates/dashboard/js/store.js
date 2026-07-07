@@ -218,8 +218,18 @@ function findRepoInDraft(draft, repoPath, entityKey, entityId) {
   return repos.find(r => r && (r[entityKey] || []).some(e => String(e.id) === String(entityId))) || null;
 }
 
-export function bumpEntityListIdentity(draft, repo, entityKey) {
-  repo[entityKey] = (repo[entityKey] || []).slice();
+const _dataChangeListeners = new Set();
+
+/** F625: keyed kanban reconciles on data/overlay writes — no array-identity bumps. */
+export function subscribeDataChange(listener) {
+  _dataChangeListeners.add(listener);
+  return () => _dataChangeListeners.delete(listener);
+}
+
+function notifyDataChange() {
+  for (const listener of _dataChangeListeners) {
+    try { listener(); } catch (_) { /* listener owns errors */ }
+  }
 }
 
 function serverStartupPhaseLabel(entity) {
@@ -289,6 +299,7 @@ function assignDataFromRaw(rawNext, { evaluateSettled = true } = {}) {
     overlay.patch(draft);
   }
   storeTarget().data = draft;
+  notifyDataChange();
 }
 
 export function replaceData(rawNext, options) {
@@ -346,7 +357,6 @@ export function createEntityStartOverlay(action, args, repoPath) {
         entity.stage = 'in-progress';
         markEntityStartupPhase(entity, { resetClock: false });
       }
-      bumpEntityListIdentity(draft, repo, entityKey);
     },
     settled(raw) {
       const repo = findRepoInDraft(raw, repoPath, entityKey, entityId);
@@ -374,7 +384,6 @@ export function createEntityDeleteOverlay(action, args, repoPath) {
       if (!repo) return;
       const before = (repo[entityKey] || []).length;
       repo[entityKey] = (repo[entityKey] || []).filter(item => String(item.id) !== entityId);
-      if ((repo[entityKey] || []).length !== before) bumpEntityListIdentity(draft, repo, entityKey);
     },
     settled(raw) {
       const repo = findRepoInDraft(raw, repoPath, entityKey, entityId);
@@ -397,8 +406,8 @@ export function clearStartupPhaseForEntity(action, args, repoPath) {
   if (entity.startupPhase === undefined && entity.startupPhaseStartedAt == null) return;
   delete entity.startupPhase;
   delete entity.startupPhaseStartedAt;
-  bumpEntityListIdentity(draft, repo, entityKey);
   storeTarget().data = draft;
+  notifyDataChange();
 }
 
 // ── Pending / close-failure APIs ────────────────────────────────────────────
@@ -425,8 +434,10 @@ export function getCloseFailure(featureId) {
 
 // ── Preference mutations ────────────────────────────────────────────────────
 export function setView(view) {
+  const prev = storeTarget().view;
   storeTarget().view = view;
   persistWrite('view', view);
+  if (view === 'pipeline' && prev !== 'pipeline') notifyDataChange();
 }
 
 export function setFilter(filter) {
@@ -476,12 +487,14 @@ export function toggleRepoVisibility(repoPath) {
 export function setPipelineType(pipelineType) {
   storeTarget().pipelineType = pipelineType;
   persistWrite('pipelineType', pipelineType);
+  notifyDataChange();
 }
 
 export function setPipelineGroupBySet(enabled) {
   const target = storeTarget();
   target.pipelineGroupBySet = !!enabled;
   persistWrite('pipelineGroupBySet', target.pipelineGroupBySet);
+  notifyDataChange();
 }
 
 export function setMonitorType(monitorType) {
@@ -495,6 +508,7 @@ export function setExpandedPipelineColumn(columnKey, expanded = true) {
   next[columnKey] = expanded;
   target.expandedPipelineColumns = next;
   persistWrite('expandedPipelineColumns', next);
+  notifyDataChange();
 }
 
 export function setSettingsModelRepo(repo) {
@@ -549,6 +563,7 @@ Object.assign(globalThis, {
   replaceData,
   addOptimistic,
   dropOptimistic,
+  subscribeDataChange,
   applyForceProOverride,
   isProActive,
   markActionPending,
@@ -579,5 +594,5 @@ Object.assign(globalThis, {
   createEntityStartOverlay,
   createEntityDeleteOverlay,
   clearStartupPhaseForEntity,
-  bumpEntityListIdentity,
+  subscribeDataChange,
 });

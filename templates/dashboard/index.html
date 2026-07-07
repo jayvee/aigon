@@ -227,7 +227,10 @@
                                 x-on:click.stop="createNewSpec(repo.path, 'research')">+ New Research</button>
                       </span>
                     </div>
-                    <div class="col-body" x-effect="renderKanbanColCards($el, repo, stage)"></div>
+                    <div class="col-body"
+                         :data-repo-path="repo.path"
+                         :data-stage="stage"
+                         x-init="renderKanbanColCards($el, repo, stage)"></div>
                   </div>
                 </template>
               </div>

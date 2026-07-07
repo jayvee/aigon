@@ -1,5 +1,6 @@
 /* dashboard-esm-processed */
 import { agents, defaultAgent } from './injected.js';
+import { subscribeDataChange } from './store.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -1506,46 +1507,426 @@ import { agents, defaultAgent } from './injected.js';
 
     // ── Pipeline view — Alpine component ─────────────────────────────────────
 
-    // Renders kanban cards into a col-body element (called via x-effect for reactivity)
-    function renderKanbanColCards(colBody, repo, stage) {
+    const DONE_CAP = 6;
+    const OVERFLOW_CAP = 8;
+    let _pipelineReconcileQueued = false;
+    let _pipelineDataSubscribed = false;
+    const _lastKanbanReconcileStats = { created: 0, updated: 0, removed: 0 };
+
+    function kanbanEntityTypeKey(pipelineType) {
+      if (pipelineType === 'research') return 'research';
+      if (pipelineType === 'feedback') return 'feedback';
+      return 'feature';
+    }
+
+    function kanbanCardKey(pipelineType, entity) {
+      const stable = entity.displayKey || entity.id || entity.slug || entity.name || '';
+      return kanbanEntityTypeKey(pipelineType) + ':' + String(stable);
+    }
+
+  /** Fields consumed by buildKanbanCard — per-card fingerprint for surgical updates. */
+    function cardFingerprint(feature, repo, pipelineType) {
+      const setRoll = feature.set && Array.isArray(repo.sets)
+        ? repo.sets.find(s => s && s.slug === feature.set)
+        : null;
+      return JSON.stringify({
+        stage: feature.stage,
+        name: feature.name,
+        id: feature.id,
+        displayKey: feature.displayKey,
+        slug: feature.slug,
+        set: feature.set,
+        agents: feature.agents,
+        validActions: feature.validActions,
+        lastCloseFailure: feature.lastCloseFailure,
+        evalStatus: feature.evalStatus,
+        evalSession: feature.evalSession,
+        winnerAgent: feature.winnerAgent,
+        blockedBy: feature.blockedBy,
+        nudges: feature.nudges,
+        reviewSessionSummary: feature.reviewSessionSummary,
+        reviewSessions: feature.reviewSessions,
+        reviewCycles: feature.reviewCycles,
+        autonomousSession: feature.autonomousSession,
+        specAuthor: feature.specAuthor,
+        specDrift: feature.specDrift,
+        lease: feature.lease,
+        scheduledRunAt: feature.scheduledRunAt,
+        startupPhase: feature.startupPhase,
+        startupReadiness: feature.startupReadiness,
+        cardHeadline: feature.cardHeadline,
+        stateRenderMeta: feature.stateRenderMeta,
+        specReviewSessions: feature.specReviewSessions,
+        specRevisionSessions: feature.specRevisionSessions,
+        specCheckSessions: feature.specCheckSessions,
+        driveToolAgentId: feature.driveToolAgentId,
+        evalPath: feature.evalPath,
+        detailFingerprint: feature.detailFingerprint,
+        prStatus: feature.prStatus,
+        setRollup: setRoll ? {
+          slug: setRoll.slug,
+          completed: setRoll.completed,
+          memberCount: setRoll.memberCount,
+          scheduledRunAt: setRoll.scheduledRunAt,
+          validActions: setRoll.validActions,
+          autonomous: setRoll.autonomous,
+        } : null,
+      });
+    }
+
+    function setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused) {
+      return JSON.stringify({
+        setSlug,
+        isSetPaused,
+        roll: roll ? {
+          completed: roll.completed,
+          memberCount: roll.memberCount,
+          scheduledRunAt: roll.scheduledRunAt,
+          validActions: roll.validActions,
+          autonomous: roll.autonomous,
+        } : null,
+        memberKeys: members.map(m => kanbanCardKey('features', m)),
+      });
+    }
+
+    function sortColumnCards(unsorted, stage) {
+      if (stage === 'done') {
+        return unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      }
+      return unsorted.slice().sort((a, b) => {
+        const aHasNumericId = /^\d+$/.test(String(a.id || ''));
+        const bHasNumericId = /^\d+$/.test(String(b.id || ''));
+        const aNum = aHasNumericId ? parseInt(a.id, 10) : null;
+        const bNum = bHasNumericId ? parseInt(b.id, 10) : null;
+        if (aHasNumericId && bHasNumericId) {
+          return aNum - bNum || (a.name || '').localeCompare(b.name || '');
+        }
+        if (!aHasNumericId && !bHasNumericId) {
+          return (b.createdAt || b.updatedAt || '').localeCompare(a.createdAt || a.updatedAt || '')
+            || (a.name || '').localeCompare(b.name || '');
+        }
+        return aHasNumericId ? -1 : 1;
+      });
+    }
+
+    function columnDragActive(colBody) {
+      return !!dragState && !!colBody.querySelector('.kcard.dragging');
+    }
+
+    function getKeyedMap(parent) {
+      if (!parent._kanbanKeyedMap) parent._kanbanKeyedMap = new Map();
+      return parent._kanbanKeyedMap;
+    }
+
+    function replaceKeyedCard(parent, key, feature, repo, pType, stats) {
+      const map = getKeyedMap(parent);
+      const fp = cardFingerprint(feature, repo, pType);
+      let node = map.get(key);
+      const fresh = buildKanbanCard(feature, repo.path, pType, repo);
+      fresh.dataset.kanbanKey = key;
+      fresh.dataset.kanbanFp = fp;
+      if (feature.set) fresh.classList.add('kcard-in-set');
+      if (!node) {
+        map.set(key, fresh);
+        if (stats) stats.created++;
+        return fresh;
+      }
+      if (node.dataset.kanbanFp !== fp) {
+        if (node.parentNode) node.remove();
+        map.set(key, fresh);
+        if (stats) stats.updated++;
+        return fresh;
+      }
+      return node;
+    }
+
+    function insertKanbanNode(parent, node, insertBefore) {
+      if (node.parentNode === parent) {
+        if (node.nextSibling !== insertBefore) parent.insertBefore(node, insertBefore);
+      } else {
+        parent.insertBefore(node, insertBefore);
+      }
+    }
+
+    function reconcileKeyedCards(parent, orderedFeatures, repo, pType, stats) {
+      const map = getKeyedMap(parent);
+      const seen = new Set();
+      let insertBefore = null;
+      for (let i = orderedFeatures.length - 1; i >= 0; i--) {
+        const feature = orderedFeatures[i];
+        const key = kanbanCardKey(pType, feature);
+        seen.add(key);
+        const node = replaceKeyedCard(parent, key, feature, repo, pType, stats);
+        insertKanbanNode(parent, node, insertBefore);
+        insertBefore = node;
+      }
+      for (const [key, node] of [...map.entries()]) {
+        if (!seen.has(key)) {
+          node.remove();
+          map.delete(key);
+          if (stats) stats.removed++;
+        }
+      }
+    }
+
+    function buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota) {
+      const header = document.createElement('div');
+      header.className = 'kanban-set-header kanban-set-bundle-head' + (isSetPaused ? ' kanban-set-bundle-head--paused' : '');
+      const row = document.createElement('div');
+      row.className = 'kanban-set-header-row';
+      const title = document.createElement('span');
+      title.className = 'kanban-set-title';
+      title.textContent = (isSetPaused ? '⚠ ' : '◉ ') + setSlug;
+      const setScheduledGlyphHtml = roll && roll.scheduledRunAt ? buildScheduledGlyphHtml(roll, 'Set scheduled') : '';
+      row.appendChild(title);
+      if (setScheduledGlyphHtml) {
+        const scheduleWrap = document.createElement('span');
+        scheduleWrap.innerHTML = setScheduledGlyphHtml;
+        const scheduleGlyph = scheduleWrap.firstElementChild;
+        if (scheduleGlyph) {
+          const scheduleTitle = scheduleGlyph.getAttribute('title') || '';
+          if (scheduleTitle) {
+            row.title = scheduleTitle;
+            row.setAttribute('aria-label', setSlug + ' · ' + scheduleTitle);
+          }
+          row.appendChild(scheduleGlyph);
+        }
+      }
+      if (isSetPaused) {
+        const pausedId = roll.autonomous.pausedFeature || roll.autonomous.failedFeature || roll.autonomous.currentFeature
+          || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
+        const pauseLabel = isPausedOnQuota
+          ? (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} reviewer quota` : 'reviewer quota')
+          : (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} failed` : 'review failed');
+        const badge = document.createElement('span');
+        badge.className = 'kanban-set-paused-badge';
+        badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
+        badge.textContent = isPausedOnQuota ? 'QUOTA PAUSE' : 'PAUSED';
+        badge.title = isPausedOnQuota
+          ? `Set paused on quota — ${pauseLabel}. Cancel/re-run review or resume with new agents: aigon set-autonomous-resume ${setSlug}`
+          : `Set paused on failure — ${pauseLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
+        row.appendChild(badge);
+      }
+      const countEl = document.createElement('span');
+      countEl.className = 'kanban-set-count';
+      countEl.style.opacity = '0.7';
+      const doneN = roll ? (Number(roll.completed) || 0) : 0;
+      const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
+      countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
+      row.appendChild(countEl);
+      let setConductorSession = '';
+      if (roll && roll.autonomous) {
+        const a = roll.autonomous;
+        if (a.sessionName) setConductorSession = a.sessionName;
+        else {
+          const st = a.status || '';
+          const base = repo && repo.name ? String(repo.name) : '';
+          if (base && (st === 'running' || a.running || st === 'paused-on-failure' || st === 'paused-on-quota')) {
+            setConductorSession = base + '-s' + setSlug + '-auto';
+          }
+        }
+      }
+      if (setConductorSession) {
+        const viewBtn = document.createElement('button');
+        viewBtn.type = 'button';
+        viewBtn.className = 'kcard-peek-btn';
+        viewBtn.setAttribute('data-conductor-session', setConductorSession);
+        viewBtn.title = 'View set autonomous conductor output';
+        viewBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
+        viewBtn.onclick = (e) => {
+          e.stopPropagation();
+          openTerminalPanel(setConductorSession, null, setConductorSession, null, null);
+        };
+        row.appendChild(viewBtn);
+      }
+      const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
+      const appendSetHeaderAction = (va) => {
+        if (!va || !roll) return;
+        const setBtn = document.createElement('button');
+        setBtn.type = 'button';
+        setBtn.className = va.action === 'set-autonomous-start'
+          ? 'btn btn-sm btn-secondary kanban-set-start-autonomous'
+          : 'btn btn-sm btn-secondary';
+        setBtn.textContent = va.label || va.action;
+        if (va.disabled) {
+          setBtn.disabled = true;
+          setBtn.title = va.disabledReason || '';
+          setBtn.style.opacity = '0.55';
+        }
+        setBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (typeof handleSetAction === 'function') handleSetAction(va, roll, repo.path, setBtn);
+        };
+        row.appendChild(setBtn);
+      };
+      const setSpecReviewVa = setValid.find(a => a.action === 'feature-set-spec-review');
+      if (setSpecReviewVa) appendSetHeaderAction(setSpecReviewVa);
+      const setSpecReviseVa = setValid.find(a => a.action === 'feature-set-spec-revise');
+      if (setSpecReviseVa) appendSetHeaderAction(setSpecReviseVa);
+      const SET_HEADER_ACTION_IDS = [
+        'set-autonomous-start', 'set-autonomous-schedule', 'set-autonomous-resume',
+        'set-autonomous-reset', 'set-autonomous-stop',
+      ];
+      for (const actionId of SET_HEADER_ACTION_IDS) {
+        const va = setValid.find(a => a.action === actionId);
+        if (!va) continue;
+        if (isPausedOnFailure && (actionId === 'set-autonomous-start' || actionId === 'set-autonomous-schedule')) continue;
+        appendSetHeaderAction(va);
+      }
+      header.appendChild(row);
+      if (totalN > 0) {
+        const barWrap = document.createElement('div');
+        barWrap.className = 'kanban-set-progress';
+        const bar = document.createElement('div');
+        const pct = Math.min(100, Math.round((100 * doneN) / totalN));
+        bar.className = 'kanban-set-progress-fill';
+        bar.style.width = pct + '%';
+        barWrap.appendChild(bar);
+        header.appendChild(barWrap);
+      }
+      return header;
+    }
+
+    function upsertSetBundle(bundle, setSlug, members, roll, repo, pType, stats) {
+      const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
+      const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
+      const isSetPaused = isPausedOnFailure || isPausedOnQuota;
+      bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
+      const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused);
+      let header = bundle.querySelector(':scope > .kanban-set-bundle-head, :scope > .kanban-set-header');
+      if (!header || header.dataset.kanbanFp !== headerFp) {
+        const freshHeader = buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota);
+        freshHeader.dataset.kanbanFp = headerFp;
+        if (header) header.replaceWith(freshHeader);
+        else bundle.insertBefore(freshHeader, bundle.firstChild);
+        header = freshHeader;
+        if (stats) stats.updated++;
+      }
+      let strip = bundle.querySelector(':scope > .kanban-set-prioritise-strip');
+      const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
+      const prioVa = setValid.find(a => a.action === 'set-prioritise');
+      if (prioVa && roll) {
+        if (!strip) {
+          strip = document.createElement('div');
+          strip.className = 'kanban-set-prioritise-strip';
+          bundle.insertBefore(strip, header.nextSibling);
+        }
+        strip.replaceChildren();
+        const pBtn = document.createElement('button');
+        pBtn.type = 'button';
+        pBtn.className = 'btn btn-primary kanban-set-prioritise-banner';
+        pBtn.textContent = prioVa.label || 'Prioritise set';
+        if (prioVa.disabled) {
+          pBtn.disabled = true;
+          pBtn.title = prioVa.disabledReason || '';
+          pBtn.style.opacity = '0.55';
+        }
+        pBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (typeof handleSetAction === 'function') handleSetAction(prioVa, roll, repo.path, pBtn);
+        };
+        strip.appendChild(pBtn);
+      } else if (strip) {
+        strip.remove();
+      }
+      let stack = bundle.querySelector(':scope > .kanban-set-stack');
+      if (!stack) {
+        stack = document.createElement('div');
+        stack.className = 'kanban-set-stack';
+        bundle.appendChild(stack);
+      }
+      reconcileKeyedCards(stack, members, repo, pType, stats);
+    }
+
+    function buildUngroupedHeader(count) {
+      const header = document.createElement('div');
+      header.className = 'kanban-set-header kanban-set-header-ungrouped';
+      header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 8px;margin:8px 0 2px';
+      const uTitle = document.createElement('span');
+      uTitle.textContent = 'Ungrouped';
+      const uCount = document.createElement('span');
+      uCount.style.opacity = '0.7';
+      uCount.textContent = String(count);
+      header.appendChild(uTitle);
+      header.appendChild(uCount);
+      return header;
+    }
+
+    function buildOverflowMoreBtn(hiddenCount, columnKey) {
+      const moreBtn = document.createElement('button');
+      moreBtn.className = 'btn';
+      moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+      moreBtn.textContent = hiddenCount + ' more …';
+      moreBtn.dataset.kanbanUi = 'overflow-more';
+      moreBtn.onclick = () => {
+        setExpandedPipelineColumn(columnKey, true);
+        schedulePipelineReconcile();
+      };
+      return moreBtn;
+    }
+
+    function buildDoneMoreBtn(totalDone, repo, pType) {
+      const moreBtn = document.createElement('button');
+      moreBtn.className = 'btn';
+      moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
+      moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
+      moreBtn.dataset.kanbanUi = 'done-more';
+      moreBtn.onclick = async () => {
+        const donePath = getDoneFolderPath(repo.path, pType);
+        try {
+          const res = await fetch('/api/open-folder', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const msg = payload && payload.error && payload.error.message
+              ? payload.error.message
+              : (payload && payload.error) || ('HTTP ' + res.status);
+            throw new Error(String(msg));
+          }
+        } catch (e) {
+          showToast('Could not open folder: ' + e.message, null, null, { error: true });
+        }
+      };
+      return moreBtn;
+    }
+
+    function reconcileRootChildren(colBody, desiredKeys, builders, stats) {
+      const map = getKeyedMap(colBody);
+      const seen = new Set();
+      let insertBefore = null;
+      for (let i = desiredKeys.length - 1; i >= 0; i--) {
+        const key = desiredKeys[i];
+        seen.add(key);
+        let node = map.get(key);
+        const built = builders[key](node);
+        if (!node) {
+          node = built;
+          map.set(key, node);
+          if (stats) stats.created++;
+        } else if (built !== node) {
+          if (node.parentNode) node.remove();
+          map.set(key, built);
+          node = built;
+          if (stats) stats.updated++;
+        }
+        insertKanbanNode(colBody, node, insertBefore);
+        insertBefore = node;
+      }
+      for (const [key, node] of [...map.entries()]) {
+        if (!seen.has(key)) {
+          node.remove();
+          map.delete(key);
+          if (stats) stats.removed++;
+        }
+      }
+    }
+
+    function reconcileKanbanColumn(colBody, repo, stage, stats) {
+      if (columnDragActive(colBody)) return;
+      const scrollTop = colBody.scrollTop;
       const s = Alpine.store('dashboard');
       const pType = s.pipelineType || 'features';
       const items = repo[pType] || [];
-      const byStage = {};
-      items.forEach(f => { if (!byStage[f.stage]) byStage[f.stage] = []; byStage[f.stage].push(f); });
-      const unsorted = byStage[stage] || [];
-      // Sort: done = most recently updated first; all others = by ID ascending
-      const cards = stage === 'done'
-        ? unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-        : unsorted.slice().sort((a, b) => {
-            const aHasNumericId = /^\d+$/.test(String(a.id || ''));
-            const bHasNumericId = /^\d+$/.test(String(b.id || ''));
-            const aNum = aHasNumericId ? parseInt(a.id, 10) : null;
-            const bNum = bHasNumericId ? parseInt(b.id, 10) : null;
-
-            if (aHasNumericId && bHasNumericId) {
-              return aNum - bNum || (a.name || '').localeCompare(b.name || '');
-            }
-
-            if (!aHasNumericId && !bHasNumericId) {
-              return (b.createdAt || b.updatedAt || '').localeCompare(a.createdAt || a.updatedAt || '')
-                || (a.name || '').localeCompare(b.name || '');
-            }
-
-            return aHasNumericId ? -1 : 1;
-          });
-
-      colBody.innerHTML = '';
-      if (cards.length === 0) {
-        const emp = document.createElement('div');
-        emp.className = 'col-empty';
-        emp.textContent = 'Empty';
-        colBody.appendChild(emp);
-        return;
-      }
-
-      const DONE_CAP = 6;
-      const OVERFLOW_CAP = 8;
+      const cards = sortColumnCards(items.filter(f => f.stage === stage), stage);
       const expandedColumns = state.expandedPipelineColumns || {};
       const columnKey = pipelineColumnKey(repo.path, pType, stage);
       const isExpanded = !!expandedColumns[columnKey];
@@ -1553,10 +1934,23 @@ import { agents, defaultAgent } from './injected.js';
       const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
         : (shouldCapOverflow && !isExpanded) ? cards.slice(0, OVERFLOW_CAP) : cards;
 
-      const setsRollup = Array.isArray(repo.sets) ? repo.sets : [];
+      if (cards.length === 0) {
+        reconcileRootChildren(colBody, ['__empty__'], {
+          '__empty__': () => {
+            const emp = document.createElement('div');
+            emp.className = 'col-empty';
+            emp.textContent = 'Empty';
+            return emp;
+          },
+        }, stats);
+        colBody.scrollTop = scrollTop;
+        return;
+      }
 
-      // Group-by-set: partition the *visible* cards (same caps as ungrouped) so
-      // done/overflow limits still apply when grouping is enabled.
+      const setsRollup = Array.isArray(repo.sets) ? repo.sets : [];
+      const desired = [];
+      const builders = {};
+
       if (pType === 'features' && s.pipelineGroupBySet) {
         const orderedSetSlugs = [];
         const bySet = new Map();
@@ -1576,285 +1970,134 @@ import { agents, defaultAgent } from './injected.js';
           for (const setSlug of orderedSetSlugs) {
             const members = bySet.get(setSlug);
             const roll = setsRollup.find(x => x.slug === setSlug);
-            const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
-            const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
-            const isSetPaused = isPausedOnFailure || isPausedOnQuota;
-
-            const bundle = document.createElement('div');
-            bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
-
-            const header = document.createElement('div');
-            header.className = 'kanban-set-header kanban-set-bundle-head' + (isSetPaused ? ' kanban-set-bundle-head--paused' : '');
-
-            const row = document.createElement('div');
-            row.className = 'kanban-set-header-row';
-            const title = document.createElement('span');
-            title.className = 'kanban-set-title';
-            const titlePrefix = isSetPaused ? '⚠ ' : '◉ ';
-            title.textContent = titlePrefix + setSlug;
-            const setScheduledGlyphHtml = roll && roll.scheduledRunAt ? buildScheduledGlyphHtml(roll, 'Set scheduled') : '';
-            row.appendChild(title);
-            if (setScheduledGlyphHtml) {
-              const scheduleWrap = document.createElement('span');
-              scheduleWrap.innerHTML = setScheduledGlyphHtml;
-              const scheduleGlyph = scheduleWrap.firstElementChild;
-              if (scheduleGlyph) {
-                const scheduleTitle = scheduleGlyph.getAttribute('title') || '';
-                if (scheduleTitle) {
-                  row.title = scheduleTitle;
-                  row.setAttribute('aria-label', setSlug + ' · ' + scheduleTitle);
-                }
-                row.appendChild(scheduleGlyph);
-              }
-            }
-            if (isSetPaused) {
-              const pausedId = roll.autonomous.pausedFeature || roll.autonomous.failedFeature || roll.autonomous.currentFeature
-                || (Array.isArray(roll.autonomous.failed) && roll.autonomous.failed[0]);
-              const pauseLabel = isPausedOnQuota
-                ? (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} reviewer quota` : 'reviewer quota')
-                : (pausedId ? `feature #${parseInt(pausedId, 10) || pausedId} failed` : 'review failed');
-              const badge = document.createElement('span');
-              badge.className = 'kanban-set-paused-badge';
-              badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#e57c2a22;color:#e57c2a;border:1px solid #e57c2a55;border-radius:3px;padding:1px 5px;cursor:default;white-space:nowrap';
-              badge.textContent = isPausedOnQuota ? 'QUOTA PAUSE' : 'PAUSED';
-              badge.title = isPausedOnQuota
-                ? `Set paused on quota — ${pauseLabel}. Cancel/re-run review or resume with new agents: aigon set-autonomous-resume ${setSlug}`
-                : `Set paused on failure — ${pauseLabel}. Run: aigon set-autonomous-resume ${setSlug}`;
-              row.appendChild(badge);
-            }
-            const countEl = document.createElement('span');
-            countEl.className = 'kanban-set-count';
-            countEl.style.opacity = '0.7';
-            const doneN = roll ? (Number(roll.completed) || 0) : 0;
-            const totalN = roll ? (Number(roll.memberCount) || members.length) : members.length;
-            countEl.textContent = totalN ? (doneN + '/' + totalN) : String(members.length);
-            row.appendChild(countEl);
-            // View SetConductor tmux session in the dashboard terminal panel
-            let setConductorSession = '';
-            if (roll && roll.autonomous) {
-              const a = roll.autonomous;
-              if (a.sessionName) {
-                setConductorSession = a.sessionName;
-              } else {
-                const st = a.status || '';
-                const base = repo && repo.name ? String(repo.name) : '';
-                if (base && (st === 'running' || a.running || st === 'paused-on-failure' || st === 'paused-on-quota')) {
-                  setConductorSession = base + '-s' + setSlug + '-auto';
-                }
-              }
-            }
-            if (setConductorSession) {
-              const viewBtn = document.createElement('button');
-              viewBtn.type = 'button';
-              viewBtn.className = 'kcard-peek-btn';
-              viewBtn.setAttribute('data-conductor-session', setConductorSession);
-              viewBtn.title = 'View set autonomous conductor output';
-              viewBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
-              viewBtn.onclick = (e) => {
-                e.stopPropagation();
-                openTerminalPanel(setConductorSession, null, setConductorSession, null, null);
-              };
-              row.appendChild(viewBtn);
-            }
-            const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
-            const appendSetHeaderAction = (va) => {
-              if (!va || !roll) return;
-              const setBtn = document.createElement('button');
-              setBtn.type = 'button';
-              if (va.action === 'set-autonomous-start') {
-                setBtn.className = 'btn btn-sm btn-secondary kanban-set-start-autonomous';
-              } else {
-                setBtn.className = 'btn btn-sm btn-secondary';
-              }
-              setBtn.textContent = va.label || va.action;
-              if (va.disabled) {
-                setBtn.disabled = true;
-                setBtn.title = va.disabledReason || '';
-                setBtn.style.opacity = '0.55';
-              }
-              setBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (typeof handleSetAction === 'function') {
-                  handleSetAction(va, roll, repo.path, setBtn);
-                }
-              };
-              row.appendChild(setBtn);
+            const bundleKey = 'bundle:' + setSlug;
+            desired.push(bundleKey);
+            builders[bundleKey] = (existing) => {
+              const bundle = existing || document.createElement('div');
+              bundle.dataset.kanbanKey = bundleKey;
+              upsertSetBundle(bundle, setSlug, members, roll, repo, pType, stats);
+              return bundle;
             };
-            const setSpecReviewVa = setValid.find(a => a.action === 'feature-set-spec-review');
-            if (setSpecReviewVa) {
-              appendSetHeaderAction(setSpecReviewVa);
-            }
-            const setSpecReviseVa = setValid.find(a => a.action === 'feature-set-spec-revise');
-            if (setSpecReviseVa) {
-              appendSetHeaderAction(setSpecReviseVa);
-            }
-            const SET_HEADER_ACTION_IDS = [
-              'set-autonomous-start',
-              'set-autonomous-schedule',
-              'set-autonomous-resume',
-              'set-autonomous-reset',
-              'set-autonomous-stop',
-            ];
-            for (const actionId of SET_HEADER_ACTION_IDS) {
-              const va = setValid.find(a => a.action === actionId);
-              if (!va) continue;
-              if (isPausedOnFailure && (actionId === 'set-autonomous-start' || actionId === 'set-autonomous-schedule')) continue;
-              appendSetHeaderAction(va);
-            }
-            header.appendChild(row);
-
-            if (totalN > 0) {
-              const barWrap = document.createElement('div');
-              barWrap.className = 'kanban-set-progress';
-              const bar = document.createElement('div');
-              const pct = Math.min(100, Math.round((100 * doneN) / totalN));
-              bar.className = 'kanban-set-progress-fill';
-              bar.style.width = pct + '%';
-              barWrap.appendChild(bar);
-              header.appendChild(barWrap);
-            }
-
-            bundle.appendChild(header);
-
-            const prioVa = setValid.find(a => a.action === 'set-prioritise');
-            if (prioVa && roll) {
-              const strip = document.createElement('div');
-              strip.className = 'kanban-set-prioritise-strip';
-              const pBtn = document.createElement('button');
-              pBtn.type = 'button';
-              pBtn.className = 'btn btn-primary kanban-set-prioritise-banner';
-              pBtn.textContent = prioVa.label || 'Prioritise set';
-              if (prioVa.disabled) {
-                pBtn.disabled = true;
-                pBtn.title = prioVa.disabledReason || '';
-                pBtn.style.opacity = '0.55';
-              }
-              pBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (typeof handleSetAction === 'function') {
-                  handleSetAction(prioVa, roll, repo.path, pBtn);
-                }
-              };
-              strip.appendChild(pBtn);
-              bundle.appendChild(strip);
-            }
-
-            const stack = document.createElement('div');
-            stack.className = 'kanban-set-stack';
-            members.forEach(feature => {
-              const card = buildKanbanCard(feature, repo.path, pType, repo);
-              card.classList.add('kcard-in-set');
-              stack.appendChild(card);
-            });
-            bundle.appendChild(stack);
-            colBody.appendChild(bundle);
           }
           if (ungrouped.length > 0) {
-            const header = document.createElement('div');
-            header.className = 'kanban-set-header kanban-set-header-ungrouped';
-            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 8px;margin:8px 0 2px';
-            const uTitle = document.createElement('span');
-            uTitle.textContent = 'Ungrouped';
-            const uCount = document.createElement('span');
-            uCount.style.opacity = '0.7';
-            uCount.textContent = String(ungrouped.length);
-            header.appendChild(uTitle);
-            header.appendChild(uCount);
-            colBody.appendChild(header);
-            ungrouped.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
-          }
-          if (shouldCapOverflow && !isExpanded) {
-            const hiddenCards = cards.slice(OVERFLOW_CAP);
-            const hiddenContainer = document.createElement('div');
-            hiddenContainer.style.display = 'none';
-            hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
-            colBody.appendChild(hiddenContainer);
-            const moreBtn = document.createElement('button');
-            moreBtn.className = 'btn';
-            moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
-            moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
-            moreBtn.onclick = () => {
-              setExpandedPipelineColumn(columnKey, true);
-              render();
+            desired.push('__ungrouped_header__');
+            builders['__ungrouped_header__'] = () => buildUngroupedHeader(ungrouped.length);
+            for (const feature of ungrouped) {
+              const key = kanbanCardKey(pType, feature);
+              desired.push(key);
+            builders[key] = (existing) => {
+              const fp = cardFingerprint(feature, repo, pType);
+              if (existing && existing.dataset.kanbanFp === fp) return existing;
+              return replaceKeyedCard(colBody, key, feature, repo, pType, stats);
             };
-            colBody.appendChild(moreBtn);
+            }
           }
-          if (stage === 'done' && cards.length > DONE_CAP) {
-            const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
-            const totalDone = repo[doneTotalKey] || cards.length;
-            const moreBtn = document.createElement('button');
-            moreBtn.className = 'btn';
-            moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
-            moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
-            moreBtn.onclick = async () => {
-              const donePath = getDoneFolderPath(repo.path, pType);
-              try {
-                const res = await fetch('/api/open-folder', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
-                const payload = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                  const msg = payload && payload.error && payload.error.message
-                    ? payload.error.message
-                    : (payload && payload.error) || ('HTTP ' + res.status);
-                  throw new Error(String(msg));
-                }
-              } catch (e) {
-                showToast('Could not open folder: ' + e.message, null, null, { error: true });
-              }
-            };
-            colBody.appendChild(moreBtn);
+        } else {
+          for (const feature of displayCards) {
+            const key = kanbanCardKey(pType, feature);
+            desired.push(key);
+            builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, stats);
           }
-          return;
+        }
+      } else {
+        for (const feature of displayCards) {
+          const key = kanbanCardKey(pType, feature);
+          desired.push(key);
+          builders[key] = () => replaceKeyedCard(colBody, key, feature, repo, pType, stats);
         }
       }
 
-      displayCards.forEach(feature => colBody.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
       if (shouldCapOverflow && !isExpanded) {
         const hiddenCards = cards.slice(OVERFLOW_CAP);
-        const hiddenContainer = document.createElement('div');
-        hiddenContainer.style.display = 'none';
-        hiddenCards.forEach(feature => hiddenContainer.appendChild(buildKanbanCard(feature, repo.path, pType, repo)));
-        colBody.appendChild(hiddenContainer);
-        const moreBtn = document.createElement('button');
-        moreBtn.className = 'btn';
-        moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
-        moreBtn.textContent = (cards.length - OVERFLOW_CAP) + ' more …';
-        moreBtn.onclick = () => {
-          setExpandedPipelineColumn(columnKey, true);
-          render();
+        desired.push('__hidden_overflow__');
+        builders['__hidden_overflow__'] = (existing) => {
+          const hiddenContainer = existing || document.createElement('div');
+          hiddenContainer.style.display = 'none';
+          hiddenContainer.dataset.kanbanUi = 'hidden-overflow';
+          reconcileKeyedCards(hiddenContainer, hiddenCards, repo, pType, stats);
+          return hiddenContainer;
         };
-        colBody.appendChild(moreBtn);
+        desired.push('__overflow_more__');
+        builders['__overflow_more__'] = () => buildOverflowMoreBtn(cards.length - OVERFLOW_CAP, columnKey);
       }
+
       if (stage === 'done' && cards.length > DONE_CAP) {
         const doneTotalKey = pType === 'research' ? 'researchDoneTotal' : pType === 'feedback' ? 'feedbackDoneTotal' : 'doneTotal';
         const totalDone = repo[doneTotalKey] || cards.length;
-        const moreBtn = document.createElement('button');
-        moreBtn.className = 'btn';
-        moreBtn.style.cssText = 'width:100%;margin-top:4px;font-size:11px;padding:6px';
-        moreBtn.textContent = (totalDone - DONE_CAP) + ' more — open in Finder';
-        moreBtn.onclick = async () => {
-          const donePath = getDoneFolderPath(repo.path, pType);
-          try {
-            const res = await fetch('/api/open-folder', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: donePath }) });
-            const payload = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              const msg = payload && payload.error && payload.error.message
-                ? payload.error.message
-                : (payload && payload.error) || ('HTTP ' + res.status);
-              throw new Error(String(msg));
-            }
-          } catch (e) {
-            showToast('Could not open folder: ' + e.message, null, null, { error: true });
-          }
-        };
-        colBody.appendChild(moreBtn);
+        desired.push('__done_more__');
+        builders['__done_more__'] = () => buildDoneMoreBtn(totalDone, repo, pType);
       }
-      // Note: valid-action button clicks are wired per-card inside buildKanbanCard()
-      // via closure over the correct feature object. Do NOT re-wire here — that
-      // overwrites the closure and breaks items without IDs (e.g. inbox cards).
+
+      reconcileRootChildren(colBody, desired, builders, stats);
+      colBody.scrollTop = scrollTop;
+    }
+
+    function normalizeKanbanRepoPath(repoPath) {
+      if (!repoPath) return '';
+      return String(repoPath).replace(/^\/private\/var\//, '/var/');
+    }
+
+    function reconcileAllKanbanColumns() {
+      if (typeof Alpine === 'undefined') return;
+      const dashboard = Alpine.store('dashboard');
+      if ((dashboard.view || state.view) !== 'pipeline') return;
+      const stats = { created: 0, updated: 0, removed: 0 };
+      const pType = dashboard.pipelineType || 'features';
+      const repos = getVisibleRepos(dashboard.data || { repos: [] });
+      document.querySelectorAll('#pipeline-view .col-body[data-repo-path][data-stage]').forEach(colBody => {
+        const repoPath = colBody.getAttribute('data-repo-path');
+        const stage = colBody.getAttribute('data-stage');
+        const needle = normalizeKanbanRepoPath(repoPath);
+        const repo = repos.find(r => r && normalizeKanbanRepoPath(r.path) === needle);
+        if (!repo) return;
+        reconcileKanbanColumn(colBody, repo, stage, stats);
+      });
+      _lastKanbanReconcileStats.created += stats.created;
+      _lastKanbanReconcileStats.updated += stats.updated;
+      _lastKanbanReconcileStats.removed += stats.removed;
+      if (typeof globalThis.__aigonKanbanReconcileHook === 'function') {
+        globalThis.__aigonKanbanReconcileHook(stats);
+      }
+    }
+
+    function schedulePipelineReconcile() {
+      if (_pipelineReconcileQueued) return;
+      _pipelineReconcileQueued = true;
+      requestAnimationFrame(() => {
+        _pipelineReconcileQueued = false;
+        _lastKanbanReconcileStats.created = 0;
+        _lastKanbanReconcileStats.updated = 0;
+        _lastKanbanReconcileStats.removed = 0;
+        reconcileAllKanbanColumns();
+      });
+    }
+
+    function ensurePipelineDataSubscription() {
+      if (_pipelineDataSubscribed) return;
+      _pipelineDataSubscribed = true;
+      subscribeDataChange(schedulePipelineReconcile);
+    }
+
+    function getLastKanbanReconcileStats() {
+      return { ..._lastKanbanReconcileStats };
+    }
+
+    // Keyed kanban column reconcile (F625) — explicit store subscription, not x-effect.
+    function renderKanbanColCards(colBody, repo, stage) {
+      ensurePipelineDataSubscription();
+      if (colBody) {
+        colBody.setAttribute('data-repo-path', repo.path || '');
+        colBody.setAttribute('data-stage', stage || '');
+      }
+      schedulePipelineReconcile();
     }
 
     function pipelineView() {
       return {
+        init() {
+          ensurePipelineDataSubscription();
+          this.$nextTick(() => schedulePipelineReconcile());
+        },
         pipelineTypeOpts: [
           { key: 'features', label: 'Features' },
           { key: 'research', label: 'Research' }
@@ -1880,6 +2123,7 @@ import { agents, defaultAgent } from './injected.js';
           const next = !this.showPaused;
           Alpine.store('dashboard')._showPaused = next;
           localStorage.setItem(lsKey('showPaused'), next ? '1' : '0');
+          schedulePipelineReconcile();
         },
         get groupBySet() { return !!Alpine.store('dashboard').pipelineGroupBySet; },
         toggleGroupBySet() {
@@ -2013,6 +2257,10 @@ Object.assign(globalThis, {
   buildKanbanCard,
   handleCloseWithAgent,
   renderKanbanColCards,
+  schedulePipelineReconcile,
+  getLastKanbanReconcileStats,
+  kanbanCardKey,
+  cardFingerprint,
   pipelineView,
   STAGE_ORDER,
   STAGE_LABELS,
