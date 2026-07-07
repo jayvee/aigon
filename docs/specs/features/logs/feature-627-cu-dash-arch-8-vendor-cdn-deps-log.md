@@ -2,15 +2,25 @@
 Agent: cu
 
 ## Status
+Complete. Four CDN scripts vendored locally; zero `cdn.jsdelivr.net` in dashboard HTML.
 
 ## New API Surface
+None.
 
 ## Key Decisions
+- Pinned marked at **15.0.12** (what jsdelivr `marked/marked.min.js` resolves today — not npm latest 18.x).
+- Alpine 3.15.12, Chart.js 4.5.1, chartjs-adapter-date-fns 3.0.0 — jsdelivr `@3`/`@4` tag resolution.
+- New vendor payload ~345KB minified; `npm pack --dry-run` reports package 1.4 MB / unpacked 5.8 MB (templates already shipped in `files`).
 
 ## Gotchas / Known Issues
+- `https://www.aigon.build/docs` docs-link href remains (user navigation, not a runtime script fetch).
 
 ## Explicitly Deferred
+None.
 
 ## For the Next Feature in This Set
+- dash-arch-9+ can assume all dashboard runtime JS is same-origin under `/js/vendor/`.
 
 ## Test Coverage
+- `npm run test:iterate` + `npm run test:browser` green.
+- Offline screenshot: `tmp/feature-627-offline-vendor.png` (jsdelivr blocked; Alpine/marked/Chart globals + store OK).
