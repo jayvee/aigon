@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: high
 set: dash-arch
 depends_on: [624]
 transitions:
@@ -21,13 +21,13 @@ Replace wholesale kanban column rebuilds with keyed, per-card reconciliation. To
 
 ## Acceptance Criteria
 
-- [ ] A reconciler renders each kanban column: cards keyed by `pipelineType + ':' + entity id` (mind the slug-keyed inbox → numeric re-key at prioritise, F296 — a card whose key changes is a remove+add; acceptable). For each incoming render: new keys → create card node; departed keys → remove; surviving keys → update **only if** the card's content fingerprint changed (per-card fingerprint: the fields `buildKanbanCard` consumes — stage, name, agents/status/idle, badges, validActions, close-failure, set membership, schedule glyph…). Card DOM order matches sort order (move nodes, don't rebuild).
+- [ ] A reconciler renders each kanban column: cards keyed by `entity type + ':' + stable entity key` (feature/research plus `displayKey || id || slug`; mind the slug-keyed inbox → numeric re-key at prioritise, F296 — a card whose key changes is a remove+add; acceptable). For each incoming render: new keys → create card node; departed keys → remove; surviving keys → update **only if** the card's content fingerprint changed (per-card fingerprint: the fields `buildKanbanCard` consumes — stage, name, agents/status/idle, badges, validActions, close-failure, set membership, schedule glyph…). Card DOM order matches sort order (move nodes, don't rebuild).
 - [ ] Surviving-card update replaces the card's children (or the card node itself) — but never touches sibling cards, and preserves the column scroll position. An *open overflow menu on the updated card itself* may close (its data changed) — that's acceptable and should be noted in code.
 - [ ] Set bundles (`pipelineGroupBySet` grouping, `kanban-set-bundle` wrappers) participate: bundle headers are keyed by set slug; members reconcile within bundles by the same card keys.
 - [ ] The `x-effect` + array-identity-bump trigger mechanism is replaced by an explicit subscription: columns re-reconcile when `store.replaceData` lands or an overlay is applied (dash-arch-5's single entry point makes this clean). No `.slice()` identity bumps remain in the codebase (grep proves it).
 - [ ] Monitor view: keep Alpine `x-for` (already keyed) but audit its `:key` expressions (`'f-' + feature.id + '-' + feature.name`) and heavy `x-html` spans; where a whole-card `x-html` rebuild happens on unrelated changes, apply the same per-card fingerprint short-circuit. (If the audit shows monitor is already well-behaved, record that in the feature log and leave it.)
 - [ ] Drag & drop, click delegation, dev-server links, PR-status async fill-ins (`prStatusByFeature` cache), and expand/collapse ("Show more" overflow caps) all keep working — these currently rely on rebuild-time closures; convert to delegated handlers where the rebuild removal breaks them.
-- [ ] Playwright e2e: existing suite green; add a test that opens an overflow menu, mutates unrelated status server-side (or via injected data), asserts the menu stays open; and a card-level update test asserting the changed card repaints while another card's DOM node is identical (`===`) before/after.
+- [ ] Playwright e2e: existing suite green; add a test that opens an overflow menu, mutates unrelated status server-side (or via injected data), asserts the menu stays open; and a card-level update test asserting the changed card repaints while another card's DOM node is identical (`===`) before/after. Include at least one set-bundled card case so the bundle wrapper reconciliation is covered.
 - [ ] MCP `browser_snapshot` of the pipeline before/after shows identical structure.
 
 ## Validation
@@ -41,7 +41,7 @@ npm run test:iterate
 - Hand-rolled keyed reconcile, not a library: ~100 lines — map of key→node on the column, walk sorted incoming cards, create/move/update/remove. `buildKanbanCard` already returns a detached card element; reuse it as the "create/update" renderer and add a cheap `cardFingerprint(entity)` alongside it.
 - Per-card fingerprint replaces the *global* F454 fingerprint's UI-preservation role at finer grain (the global fingerprint was removed by dash-arch-1; the server-side version gate means renders only happen on real changes, and this feature makes those renders surgical).
 - Preserve the DONE/OVERFLOW display caps (`DONE_CAP`, `OVERFLOW_CAP`, `expandedPipelineColumns`) — cap slicing happens before reconciliation, so a card scrolling out of the cap window is a keyed remove.
-- Watch Alpine interplay: columns move from `x-effect` to imperative subscription, so make sure the component teardown (view switch away from pipeline) unsubscribes — the dash-arch-7 view registry will formalise this; until then, guard against duplicate subscriptions on re-entry.
+- Watch Alpine interplay: columns move from `x-effect` to imperative subscription, so make sure the component teardown (view switch away from pipeline) unsubscribes — the dash-arch-7 view registry will formalise this; until then, guard against duplicate subscriptions on re-entry and document the temporary subscription owner in code.
 - Verify with `aigon preview` + snapshot if implemented in a worktree (CLAUDE.md hot rule #4); use `Skill(frontend-design)` only if any visual change sneaks in (there should be none).
 
 ## Dependencies
