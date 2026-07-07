@@ -536,7 +536,11 @@
         if (perfOn) {
           const totalMs = Math.round((performance.now() - perf.t0) * 100) / 100;
           const kb = perf.bytes ? ` wire=${Math.round(perf.bytes / 1024)}KB` : '';
-          console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kb}`);
+          const kStats = typeof getLastKanbanReconcileStats === 'function' ? getLastKanbanReconcileStats() : null;
+          const kanbanPart = kStats && perf.rendered
+            ? ` kanban=+${kStats.created}/~${kStats.updated}/-${kStats.removed}`
+            : '';
+          console.log(`[aigon perf] poll total=${totalMs}ms fetch=${perf.fetchMs}ms parse=${perf.parseMs}ms render=${perf.rendered ? perf.renderMs + 'ms' : 'skipped'}${kanbanPart}${kb}`);
         }
       } catch (e) {
         setFailures(state.failures + 1);
