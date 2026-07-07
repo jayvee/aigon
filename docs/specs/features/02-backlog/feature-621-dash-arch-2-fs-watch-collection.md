@@ -22,15 +22,15 @@ Combined with dash-arch-1 (versioning) and dash-arch-3 (SSE push), this closes t
 
 ## Acceptance Criteria
 
-- [ ] A watcher module (e.g. `lib/dashboard-fs-watch.js`) sets up watchers per registered repo covering: the repo's `.aigon/` state directories that feed the status collector (workflow snapshots, agent status, autonomous plan state — derive the exact list from what `collectDashboardStatusData`/`dashboard-status-collector.js` reads), and the spec tree (`docs/specs/features/**`, `docs/specs/research/**`, `docs/specs/feedback/**` stage folders).
+- [ ] A watcher module (e.g. `lib/dashboard-fs-watch.js`) sets up watchers per registered repo covering: the repo's `.aigon/` state directories that feed the status collector (workflow snapshots, agent status, autonomous plan state — derive the exact list from what `collectDashboardStatusData`/`dashboard-status-collector.js` reads), and the spec trees that the collector indexes (`docs/specs/features/**`, `docs/specs/research-topics/**`, `docs/specs/feedback/**` stage folders).
 - [ ] Worktree agent-status paths: identify where per-agent status files that the collector reads actually live (primary repo `.aigon` vs worktree checkouts) and watch whichever locations the collector reads. If worktree paths are impractical to watch (created/destroyed dynamically), document that in code and rely on the safety-net poll for those — but state-in-primary-repo must be watched.
 - [ ] Events are debounced/coalesced per repo (~300–500ms trailing) into a single `pollRepoStatus(repoPath)` call; a burst of file writes (e.g. `feature-start` creating worktrees) triggers one collection, not dozens.
 - [ ] Collections triggered by watchers reuse the existing `pollRepoStatus` path so F590 perf logging, notification side effects (`afterPollSideEffects`), and dash-arch-1 version bumps all fire exactly as they do for interval polls.
-- [ ] The full interval poll remains as a fallback (single interval, e.g. 60s regardless of active/idle) because tmux session liveness and pane-derived signals do not produce file events. The active/idle 20s/60s split can be removed.
+- [ ] The full interval poll remains as a fallback (single interval, e.g. 60s regardless of active/idle) because tmux session liveness, pane-derived signals, and failed/unsupported watchers do not produce reliable file events. The active/idle 20s/60s split can be removed.
 - [ ] Watcher lifecycle: created at server start for every registered repo, added when a repo is registered (`aigon server add`), torn down on repo deregistration and on server shutdown. No watcher leaks across `aigon server restart`.
 - [ ] Robustness: watcher `error` events are caught and logged, never crash the daemon; a failed watcher for one repo degrades that repo to interval-poll behaviour and logs once (not per-poll). Editor noise (`.swp`, `~`, `.tmp`, `.DS_Store`) is filtered before scheduling a collection.
 - [ ] Platform: use `fs.watch` with `recursive: true` on darwin; on Linux (no recursive support on older Node/kernels) fall back to watching the known fixed-depth stage/state directories individually. No new npm dependency (no chokidar) unless the hand-rolled fallback proves genuinely insufficient — if you do add one, justify it in the feature log.
-- [ ] A config escape hatch (`dashboard.fsWatch: false` in `.aigon/config.json` or global config — follow existing config key conventions in `lib/config.js`) disables watchers and restores pure interval polling.
+- [ ] A config escape hatch (`dashboard.fsWatch: false` in project `.aigon/config.json`, with the same key accepted from the global config if dashboard settings already merge global defaults) disables watchers and restores pure interval polling. The startup log states whether fs-watch is enabled, disabled by config, or unavailable on the platform.
 - [ ] Integration test: start the server against a fixture repo, write/move a spec file, assert `latestStatus` reflects it within ~2s without waiting for an interval poll.
 
 ## Validation
@@ -44,7 +44,7 @@ npm run test:iterate
 - Keep the watcher layer thin: its ONLY job is `fs event → debounce → pollRepoStatus(repoPath)`. All collection, fingerprinting (dash-arch-1), and notification logic stays where it is. This preserves the write-path contract (AGENTS.md § Write-Path Contract): no new state is produced, only existing read paths are triggered sooner.
 - Watch descriptor budget: watching 5–10 directories per repo across ~6 repos is well within macOS/Linux limits; avoid watching `node_modules`, `.git`, or whole worktree checkouts.
 - `aigon doctor` awareness is NOT required; a `[fs-watch]` log line at startup listing watched repos (and any that failed) is enough for diagnosis.
-- Beware feedback loops: collections must not write into watched paths. Audit `afterPollSideEffects` for writes into `.aigon` (e.g. notification/event files) and exclude those specific paths from the watch set if they are inside it.
+- Beware feedback loops: collections must not write into watched paths. Audit `afterPollSideEffects` and notification persistence for writes into `.aigon`; explicitly exclude those files/directories from scheduling, or prove they are outside the watch set in the feature log.
 - Restart the dashboard server after `lib/*.js` edits (CLAUDE.md hot rule #3).
 
 ## Dependencies
