@@ -4,6 +4,7 @@ export default {
   board: "board",
   storage: "storage",
   server: "server",
+  preview: "preview",
   config: "config",
   set: "set",
   nudge: "nudge",

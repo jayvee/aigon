@@ -52,7 +52,8 @@ test('dashboard e2e mock bootstrap strips model overrides and forces mock agent 
 test('server start/restart gates Caddy proxy writes for ephemeral dashboard instances', () => {
     const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
     assert.ok(infra.includes('resolveServerIdentity'));
-    assert.ok(infra.includes('proxyAvailable: !identity.isEphemeral && isProxyAvailable()'));
+    assert.ok(infra.includes('sandboxPreview'));
+    assert.ok(infra.includes('proxyAvailable: (!identity.isEphemeral || sandboxPreview) && isProxyAvailable()'));
     assert.ok(!infra.includes("const isE2eServer = process.env.AIGON_E2E_SERVER === '1';"));
 });
 // REGRESSION: F286 mode-conditional implementation logs (fleet-only + skip copy).
