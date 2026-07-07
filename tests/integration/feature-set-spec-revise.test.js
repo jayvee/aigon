@@ -249,4 +249,54 @@ test('assessMemberRevisionCandidate skips in-progress members', () => {
     assert.match(assessment.skipReason, /implementation/i);
 });
 
+// F637: collectPendingSpecReviewsFromGit ran `git log --follow` per member every
+// poll and dominated dashboard poll time. It is now cached per (repo,spec,entity)
+// keyed on HEAD. This locks: (1) a repeated call at the same HEAD does NOT re-run
+// the git-log scans, (2) the cached result is identical to the uncached one, and
+// (3) a new HEAD invalidates the cache so a freshly-committed review is seen.
+test('collectPendingSpecReviewsFromGit caches by HEAD and invalidates on new commits', () => withTempDir('aigon-set-spec-revise-cache-', (root) => {
+    initRepo(root);
+    const p = mkFeaturePaths(root);
+    spec(path.join(p.root, '02-backlog'), 'feature-01-a.md', 'pair');
+    const specPath = path.join(p.root, '02-backlog', 'feature-01-a.md');
+    execSync('git add . && git commit -qm "chore: spec"', { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV } });
+    commitSpecReview(root, specPath, '01', 'gg');
+
+    // The module destructures execFileSync at import time, so install a spy that
+    // counts `git log --follow` scans, then require a FRESH copy of the module so
+    // its captured reference is the spy.
+    const cp = require('child_process');
+    const orig = cp.execFileSync;
+    let followScans = 0;
+    cp.execFileSync = function (cmd, args, opts) {
+        if (cmd === 'git' && Array.isArray(args) && args.includes('--follow')) followScans++;
+        return orig.call(cp, cmd, args, opts);
+    };
+    try {
+        const modPath = require.resolve('../../lib/spec-review-state');
+        delete require.cache[modPath];
+        const fresh = require('../../lib/spec-review-state');
+        const collect = fresh.collectPendingSpecReviewsFromGit;
+
+        const first = collect(root, specPath, 'feature', '01');
+        const afterFirst = followScans;
+        assert.ok(afterFirst > 0, 'cold call must run at least one --follow scan');
+        assert.strictEqual(first.length, 1, 'one pending review found');
+
+        const second = collect(root, specPath, 'feature', '01');
+        assert.strictEqual(followScans, afterFirst, 'warm call at same HEAD must run NO new --follow scans');
+        assert.deepStrictEqual(second, first, 'cached result must be identical to the uncached one');
+
+        // A new commit (new HEAD) must invalidate the cache and be re-scanned.
+        commitSpecReview(root, specPath, '01', 'cx');
+        const third = collect(root, specPath, 'feature', '01');
+        assert.ok(followScans > afterFirst, 'new HEAD must trigger a fresh --follow scan');
+        assert.strictEqual(third.length, 2, 'both pending reviews visible after new commit');
+
+        delete require.cache[modPath]; // don't leak the fresh copy to other tests
+    } finally {
+        cp.execFileSync = orig;
+    }
+}));
+
 report();
