@@ -17,7 +17,7 @@ function showCloseModal(feature, repoPath, pipelineType) {
   // Populate winner radio buttons
   const winnerContainer = document.getElementById('close-modal-winners');
   H.replaceNodeChildren(winnerContainer, agents.map(a => {
-    const displayName = (window.AGENT_DISPLAY_NAMES || {})[a.id] || a.id;
+    const displayName = H.getAgentDisplayNames()[a.id] || a.id;
     const statusLabel = a.status || 'idle';
     return H.buildAgentCheckRow({
       type: 'radio',
@@ -69,7 +69,7 @@ function updateAdoptionCheckboxes() {
     }));
   }
   losers.forEach(a => {
-    const displayName = (window.AGENT_DISPLAY_NAMES || {})[a.id] || a.id;
+    const displayName = H.getAgentDisplayNames()[a.id] || a.id;
     adoptRows.push(H.buildAgentCheckRow({
       value: a.id,
       inputClassName: 'close-adopt-agent',

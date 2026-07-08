@@ -105,4 +105,3 @@ export const AIGON_SET_CARDS = (function() {
   };
 
 })();
-Object.assign(globalThis, { AIGON_SET_CARDS });

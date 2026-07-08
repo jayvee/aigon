@@ -4,9 +4,10 @@ import { complexityBadgeHtml } from './actions-picker.js';
 import { handleFeatureAction, renderActionButtons } from './actions.js';
 import { requestAction, requestAttach } from './api.js';
 import { isCompleteStatus } from './utils.js';
-import { runAskAgent, setAskAgent } from './sidebar.js';
+import { runAskAgent, setAskAgent, buildAskAgentHtml, buildMainDevServerHtml } from './sidebar.js';
 import { openDrawer } from './spec-drawer.js';
 import { state } from './state.js';
+import { setFilter as applyFilter, setMonitorType as applyMonitorType, toggleCollapse as applyToggleCollapse } from './store.js';
 import { openTerminalPanel } from './terminal.js';
 import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showToast, statusRank } from './utils.js';
     // ── Shared render helpers ─────────────────────────────────────────────────
@@ -176,10 +177,10 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
         },
         isCollapsed(path) { return !!(Alpine.store('dashboard').collapsed || {})[path]; },
         toggleCollapse(path) {
-          globalThis.toggleCollapse(path);
+          applyToggleCollapse(path);
         },
-        setFilter(f) { globalThis.setFilter(f); },
-        setMonitorType(t) { globalThis.setMonitorType(t); },
+        setFilter(f) { applyFilter(f); },
+        setMonitorType(t) { applyMonitorType(t); },
         getFeatures(repo) {
           const s = Alpine.store('dashboard');
           const mt = s.monitorType || 'all';
@@ -377,16 +378,3 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
 
 // ── ESM exports (F623) ──
 export { getVisibleRepos, monitorView, renderUpdateBadge, setHealth, showServerRestartBanner, updateTitleAndFavicon, updateViewTabs };
-Object.assign(globalThis, {
-  updateTitleAndFavicon,
-  setHealth,
-  renderUpdateBadge,
-  showServerRestartBanner,
-  hideServerRestartBanner,
-  updateViewTabs,
-  getVisibleRepos,
-  buildMonitorActionHtml,
-  buildAwaitingBadgeHtml,
-  buildWorkflowIdleBadgeHtml,
-  monitorView,
-});

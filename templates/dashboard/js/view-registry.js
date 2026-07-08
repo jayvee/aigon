@@ -1,8 +1,9 @@
 /* dashboard-esm-processed */
 
 import { renderAllItemsView, renderLogs, renderStatistics } from './logs.js';
-import { renderUpdateBadge, updateTitleAndFavicon, updateViewTabs } from './monitor.js';
+import { renderUpdateBadge, setHealth, updateTitleAndFavicon, updateViewTabs } from './monitor.js';
 import { renderRepoHeader, renderSidebar } from './sidebar.js';
+import { renderSettings } from './settings.js';
 import { setView, state } from './store.js';
 import { relTime } from './utils.js';
 import { createInsightsView } from './views/insights-view.js';
@@ -77,14 +78,12 @@ function applyChromeVisibility(viewId) {
 
 function renderRepoChrome(data) {
   const allRepos = ((data || {}).repos || []);
-  if (typeof renderSidebar === 'function') renderSidebar(allRepos);
+  renderSidebar(allRepos);
   const selectedRepoData = state.selectedRepo !== 'all' ? allRepos.find(r => r.path === state.selectedRepo) : null;
-  if (typeof renderRepoHeader === 'function') renderRepoHeader(selectedRepoData);
-  if (typeof setHealth === 'function') setHealth();
-  if (typeof renderUpdateBadge === 'function') renderUpdateBadge();
-  if (typeof updateTitleAndFavicon === 'function') {
-    updateTitleAndFavicon(((data || {}).summary || {}).waiting || 0);
-  }
+  renderRepoHeader(selectedRepoData);
+  setHealth();
+  renderUpdateBadge();
+  updateTitleAndFavicon(((data || {}).summary || {}).waiting || 0);
   const updatedText = document.getElementById('updated-text');
   if (updatedText) {
     updatedText.textContent = 'Updated ' + relTime((data || {}).generatedAt || new Date().toISOString());
@@ -192,7 +191,7 @@ function switchViewLifecycle(nextId) {
   activeViewId = nextId;
   applyChromeVisibility(nextId);
   updateSidebarToggle(nextId);
-  if (typeof updateViewTabs === 'function') updateViewTabs();
+  updateViewTabs();
   if (nextEntry && typeof nextEntry.mount === 'function') nextEntry.mount();
   return true;
 }
@@ -238,16 +237,9 @@ export function initViewShell() {
 
   document.querySelectorAll('.view-tab').forEach(tab => {
     tab.onclick = () => {
-      if (typeof setView === 'function') setView(tab.getAttribute('data-view'));
+      setView(tab.getAttribute('data-view'));
     };
   });
 }
 
 export { settingsNeedsRerender };
-Object.assign(globalThis, {
-  applyView,
-  updateActiveView,
-  initViewShell,
-  VALID_VIEW_IDS,
-  settingsNeedsRerender,
-});

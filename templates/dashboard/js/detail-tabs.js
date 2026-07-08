@@ -3,11 +3,12 @@
 import { handleFeatureAction, renderActionButtons } from './actions.js';
 import { isCompleteStatus } from './utils.js';
 import { drawerState } from './spec-drawer.js';
+import { state } from './state.js';
 import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js';
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
     function findEntityInDashboardState(entityType, entityId, repoPath) {
-      const pollState = (typeof state !== 'undefined' && state && state.data) ? state : null;
+      const pollState = (state && state.data) ? state : null;
       if (!pollState || !pollState.data) return null;
       const repos = pollState.data.repos || [];
       for (const repo of repos) {
@@ -1039,4 +1040,3 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
 
 // ── ESM exports (F623) ──
 export { createDrawerDetailTabs };
-Object.assign(globalThis, { createDrawerDetailTabs });

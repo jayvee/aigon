@@ -1,5 +1,6 @@
 /* dashboard-esm-processed */
 
+import { handleCloseWithAgent } from './pipeline.js';
 import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
 import { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildProGatedChart, buildProGatedStatCard, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon } from './statistics.js';
@@ -1473,4 +1474,3 @@ import { escHtml, logsDateFmt } from './utils.js';
 
 // ── ESM exports (F623) ──
 export { allItemsState, buildInsightsMetricsSection, initAmpTokenCharts, loadInsights, renderAllItemsView, renderLogs, renderStatistics };
-Object.assign(globalThis, { allItemsState, buildInsightsMetricsSection, initAmpTokenCharts, loadInsights, renderAllItemsView, renderLogs, renderStatistics });

@@ -1196,4 +1196,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── ESM exports (F623) ──
 export { benchTooltip, budgetWarningForAgents, fetchBudget, quotaEntryForModel, quotaTooltip, updatePickerBudgetNotice };
-Object.assign(globalThis, { benchTooltip, budgetWarningForAgents, fetchBudget, quotaEntryForModel, quotaTooltip, updatePickerBudgetNotice });

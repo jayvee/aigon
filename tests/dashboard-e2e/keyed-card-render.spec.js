@@ -23,7 +23,7 @@ test.describe('F625 keyed kanban card render', () => {
   test('overflow menu stays open when another card updates @smoke', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="in-progress"][data-repo-path="${ctx.tmpDir}"]`).first();
-    await page.evaluate(({ repoPath, target, other }) => {
+    await page.evaluate(async ({ repoPath, target, other }) => {
       const store = window.Alpine.store('dashboard');
       const data = JSON.parse(JSON.stringify(store.data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
@@ -42,7 +42,7 @@ test.describe('F625 keyed kanban card render', () => {
           },
         );
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir, target: TARGET, other: OTHER });
     await page.waitForTimeout(100);
 
@@ -56,7 +56,7 @@ test.describe('F625 keyed kanban card render', () => {
     await toggle.click();
     await expect(targetCard.locator('.kcard-overflow-menu.open')).toBeVisible();
 
-    await page.evaluate(({ repoPath, other }) => {
+    await page.evaluate(async ({ repoPath, other }) => {
       const store = window.Alpine.store('dashboard');
       const data = JSON.parse(JSON.stringify(store.data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
@@ -65,7 +65,7 @@ test.describe('F625 keyed kanban card render', () => {
         feature.agents[0].status = 'waiting';
         feature.agents[0].updatedAt = new Date().toISOString();
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir, other: OTHER });
     await page.waitForTimeout(100);
 
@@ -80,7 +80,7 @@ test.describe('F625 keyed kanban card render', () => {
   test('unchanged card keeps DOM identity across unrelated update', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="in-progress"][data-repo-path="${ctx.tmpDir}"]`).first();
-    await page.evaluate(({ repoPath, target, other }) => {
+    await page.evaluate(async ({ repoPath, target, other }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
       (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
@@ -98,7 +98,7 @@ test.describe('F625 keyed kanban card render', () => {
           },
         );
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir, target: TARGET, other: OTHER });
     await page.waitForTimeout(100);
 
@@ -106,14 +106,14 @@ test.describe('F625 keyed kanban card render', () => {
     await expect(stableCard).toBeVisible();
     await stableCard.evaluate(el => { window.__stableCardRef = el; });
 
-    await page.evaluate(({ repoPath, other }) => {
+    await page.evaluate(async ({ repoPath, other }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
       (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
         const feature = (repo.features || []).find(f => f.name === other);
         feature.agents[0].status = 'waiting';
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir, other: OTHER });
     await page.waitForTimeout(100);
 
@@ -127,7 +127,7 @@ test.describe('F625 keyed kanban card render', () => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
-    await page.evaluate(({ repoPath }) => {
+    await page.evaluate(async ({ repoPath }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
       (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
@@ -143,7 +143,7 @@ test.describe('F625 keyed kanban card render', () => {
           },
         ];
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir });
     await page.waitForTimeout(100);
 
@@ -153,14 +153,14 @@ test.describe('F625 keyed kanban card render', () => {
     const cardTwo = bundle.locator('.kcard').filter({ hasText: 'e2e set two' });
     await cardTwo.evaluate(el => { window.__cardTwoRef = el; });
 
-    await page.evaluate(({ repoPath }) => {
+    await page.evaluate(async ({ repoPath }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
       (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
         const feature = (repo.features || []).find(f => f.name === 'e2e-set-two');
         feature.name = 'e2e-set-two-renamed';
       });
-      window.replaceData(data);
+      (await import('/js/store.js')).replaceData(data);
     }, { repoPath: ctx.tmpDir });
     await page.waitForTimeout(100);
 

@@ -90,86 +90,6 @@ const dashboardVendorGlobals = {
     WebLinksAddon: 'readonly',
 };
 
-// Application globals the dashboard's classic scripts intentionally share across
-// files. The dashboard's *.js files load as ordered <script> tags into one
-// shared global scope: a top-level `function escHtml(){}` / `const state = …` in
-// one file is read bare in others. ESLint lints each file in isolation and
-// cannot see another file's top-level declarations, so these cross-file globals
-// must be declared here or no-undef false-positives on every shared reference.
-//
-// This list was derived empirically: it is exactly the set of identifiers that
-// are (a) referenced bare in some classic script and (b) declared at top level
-// in some *other* classic script (or provided by a Pro-tier script that is
-// absent from OSS — fmtSyncTime / renderBackupSync / renderScheduledFeatures,
-// guarded with `typeof … === 'function'`). `module` is the CommonJS dual-use
-// guard. CRITICAL: an undeclared global used bare within its own file — the
-// F556 `AUTONOMOUS_AGENT_IDS` incident — is NOT on this list and therefore stays
-// caught by no-undef. Do not add a name here to silence an error without first
-// confirming it is genuinely defined somewhere; that is how the incident shipped.
-const dashboardAppGlobals = {
-    AGENT_DISPLAY_NAMES: 'writable', AGENT_SHORT_NAMES: 'readonly', AIGON_AGENTS: 'writable',
-    aigon: 'readonly',
-    INITIAL_DATA: 'readonly', INSTANCE_NAME: 'readonly', POLL_MS: 'readonly',
-    TS_MS: 'readonly', _formatHeadlineAge: 'readonly', alignAllSeries: 'readonly',
-    applyCommitWindow: 'readonly', applyCpfWindow: 'readonly',
-    applyCycleTimeWindow: 'readonly', applyForceProOverride: 'readonly',
-    applyReworkWindow: 'readonly', applyTokenWindow: 'readonly', applyVolumeWindow: 'readonly',
-    benchTooltip: 'readonly', budgetWarningForAgents: 'readonly',
-    buildAskAgentHtml: 'readonly', buildCardHeadlineHtml: 'readonly',
-    buildCommitSeries: 'readonly', buildCommitsPerFeatureSeries: 'readonly',
-    buildCycleTimeSeries: 'readonly', buildInsightsMetricsSection: 'readonly',
-    buildKvLabel: 'readonly', buildMainDevServerHtml: 'readonly',
-    buildProGatedChart: 'readonly', buildProGatedStatCard: 'readonly',
-    buildReworkRatioSeries: 'readonly', buildScheduledGlyphHtml: 'readonly',
-    buildSparklineSvg: 'readonly', buildSpecDriftBadgeHtml: 'readonly',
-    buildLeaseBadgeHtml: 'readonly', buildStorageStatusBadgeHtml: 'readonly',
-    formatLeaseHolderLabel: 'readonly',
-    buildStatCard: 'readonly', buildTokenSeries: 'readonly', buildVolumeSeries: 'readonly',
-    closeDrawer: 'readonly', complexityBadgeHtml: 'readonly', connectLive: 'readonly', copyText: 'readonly',
-    createDrawerDetailTabs: 'readonly', createEl: 'readonly', drawerState: 'writable',
-    escHtml: 'readonly', featureRank: 'readonly', fetchAgentModels: 'readonly',
-    fetchBudget: 'readonly', fetchPrStatus: 'readonly', fetchSpecRecommendation: 'readonly',
-    filterCommitsByPeriodAndRepo: 'readonly', filterFeaturesByPeriodAndRepo: 'readonly',
-    fmtHours: 'readonly', fmtNum: 'readonly', fmtPct: 'readonly', fmtSyncTime: 'readonly',
-    formatFeatureIdForDisplay: 'readonly', getAskAgent: 'readonly',
-    getTerminalClickTarget: 'readonly', getTerminalFont: 'readonly',
-    getVisibleRepos: 'readonly', handleCloseWithAgent: 'readonly',
-    handleFeatureAction: 'readonly', handleSetAction: 'readonly',
-    initAmpTokenCharts: 'readonly', isCompleteStatus: 'readonly', isProActive: 'readonly',
-    isRepoHidden: 'readonly', loadAnalytics: 'readonly', loadCommits: 'readonly',
-    loadInsights: 'readonly', loadNotifications: 'readonly', logsDateFmt: 'readonly', lsKey: 'readonly', module: 'readonly',
-    openDrawer: 'readonly', openResearchFindingsPeek: 'readonly',
-    openTerminalPanel: 'readonly', panCycleTimeChart: 'readonly', panVolumeChart: 'readonly',
-    poll: 'readonly',
-    applyView: 'readonly', updateActiveView: 'readonly', initViewShell: 'readonly',
-    settingsNeedsRerender: 'readonly',
-    postMarkComplete: 'readonly', quotaEntryForModel: 'readonly', quotaTooltip: 'readonly',
-    reapplyPendingOptimisticEntityStarts: 'readonly', relTime: 'readonly', render: 'readonly',
-    renderActionButtons: 'readonly', renderAgentPickerRows: 'readonly',
-    renderAllItemsView: 'readonly', renderBackupSync: 'readonly',
-    renderCommitChart: 'readonly', renderCpfChart: 'readonly',
-    renderCycleTimeChart: 'readonly', renderLogs: 'readonly',
-    renderPickerRecommendationBanner: 'readonly', renderRepoHeader: 'readonly',
-    renderReworkChart: 'readonly', renderScheduledFeatures: 'readonly',
-    renderSettings: 'readonly', renderSidebar: 'readonly', renderStatistics: 'readonly',
-    renderTokenChart: 'readonly', renderUpdateBadge: 'readonly', renderVolumeChart: 'readonly',
-    replaceNodeChildren: 'readonly', requestAction: 'readonly',
-    requestAgentDevServerPoke: 'readonly', requestAgentFlagAction: 'readonly',
-    requestAttach: 'readonly', requestFeatureOpen: 'readonly', requestRefresh: 'readonly',
-    requestRepoMainDevServerStart: 'readonly', requestSpecReconcile: 'readonly',
-    requestSpecReviewLaunch: 'readonly', refreshTimestamps: 'readonly', runAskAgent: 'readonly', saveStatsPrefs: 'readonly',
-    setAskAgent: 'readonly', setHealth: 'readonly', setPickerRecommendation: 'readonly',
-    setPollInterval: 'writable',
-    setTerminalClickTarget: 'readonly', setTerminalFont: 'readonly',
-    showAgentPicker: 'readonly', showConfirm: 'readonly', showDangerConfirm: 'readonly',
-    showNudgeModal: 'readonly', showServerRestartBanner: 'readonly', showToast: 'readonly',
-    syncDashboardHiddenRepos: 'readonly',
-    state: 'writable', statsState: 'writable', statusRank: 'readonly', termState: 'writable',
-    toggleRepoVisibility: 'readonly', trendIcon: 'readonly', tripletsToCliArgs: 'readonly',
-    updatePickerBudgetNotice: 'readonly', updateTitleAndFavicon: 'readonly',
-    updateViewTabs: 'readonly',
-};
-
 module.exports = [
     // Third-party bundled libraries shipped under the dashboard — never lint.
     {
@@ -202,8 +122,7 @@ module.exports = [
             }],
         },
     },
-    // F623: dashboard ES modules. Transitional globalThis bridges (wave 1) keep a
-    // reduced allowlist until cross-file imports replace bare globals (wave 2/3).
+    // F623/F641: dashboard ES modules — only vendor + browser environment globals.
     {
         files: ['templates/dashboard/js/**/*.js'],
         ignores: ['templates/dashboard/js/vendor/**'],
@@ -213,7 +132,6 @@ module.exports = [
             globals: {
                 ...browserGlobals,
                 ...dashboardVendorGlobals,
-                ...dashboardAppGlobals,
                 __AIGON_BOOTSTRAP__: 'readonly',
             },
         },

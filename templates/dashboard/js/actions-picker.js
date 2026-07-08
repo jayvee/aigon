@@ -1,5 +1,7 @@
 /* dashboard-esm-processed */
 import { agents, defaultAgent } from './injected.js';
+import { fetchAgentModels } from './agent-models.js';
+import { benchTooltip, quotaEntryForModel, quotaTooltip } from './budget-widget.js';
 // F519: triplet picker + shared DOM helpers
 // ── Unified action renderer + dispatcher ────────────────────────────────────
 // Single source of truth for feature/research/feedback action buttons.
@@ -593,39 +595,12 @@ function populateSetAgentPickerReviewerSection(repoPath, implementerIds) {
     updateReviewerTripletSelects('', 'picker-set');
     autonomousModalModels = prev;
   };
-  if (typeof fetchAgentModels === 'function') {
-    return fetchAgentModels(repoPath).then(setup).catch(function() { setup({}); });
-  }
-  setup({});
-  return Promise.resolve();
+  return fetchAgentModels(repoPath).then(setup).catch(function() { setup({}); });
 }
-if (typeof window !== 'undefined') window.populateSetAgentPickerReviewerSection = populateSetAgentPickerReviewerSection;
-
-// Expose globals for sidebar.js and action modules
-if (typeof window !== 'undefined') {
-  window.setPickerRecommendation = setPickerRecommendation;
-  window.renderPickerRecommendationBanner = renderPickerRecommendationBanner;
-  window.renderAgentPickerRows = renderAgentPickerRows;
-  window.populateSetAgentPickerReviewerSection = populateSetAgentPickerReviewerSection;
-  window.appendTripletSelects = appendTripletSelects;
-  window.updateReviewerTripletSelects = updateReviewerTripletSelects;
-  window.tripletsToCliArgs = tripletsToCliArgs;
-  window.fetchSpecRecommendation = fetchSpecRecommendation;
-  window.showConfirm = showConfirm;
-  window.showDangerConfirm = showDangerConfirm;
-  window.replaceNodeChildren = replaceNodeChildren;
-  window.replaceSelectOptions = replaceSelectOptions;
-  window.createEl = createEl;
-  window.buildAgentCheckRow = buildAgentCheckRow;
-  window.buildTripletPickerHeaderRow = buildTripletPickerHeaderRow;
-  window.getAutonomousAgentIds = getAutonomousAgentIds;
-  window.AIGON_AGENTS = AIGON_AGENTS;
-  window.AGENT_DISPLAY_NAMES = AGENT_DISPLAY_NAMES;
-  window.AUTONOMOUS_AGENT_IDS = AUTONOMOUS_AGENT_IDS;
-}
+export { populateSetAgentPickerReviewerSection };
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof renderAgentPickerRows === 'function') renderAgentPickerRows();
+  renderAgentPickerRows();
 });
 
 // ── ESM exports (F623) ──
@@ -633,16 +608,21 @@ export {
   AGENT_DISPLAY_NAMES,
   AGENT_SHORT_NAMES,
   AIGON_AGENTS,
+  appendTripletSelects,
   AUTONOMOUS_AGENT_IDS,
+  buildAgentCheckRow,
+  buildTripletPickerHeaderRow,
   complexityBadgeHtml,
   createEl,
   fetchSpecRecommendation,
+  getAutonomousAgentIds,
   renderAgentPickerRows,
   renderPickerRecommendationBanner,
   replaceNodeChildren,
+  replaceSelectOptions,
   setPickerRecommendation,
   showConfirm,
   showDangerConfirm,
   tripletsToCliArgs,
+  updateReviewerTripletSelects,
 };
-Object.assign(globalThis, { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, AIGON_AGENTS, AUTONOMOUS_AGENT_IDS, complexityBadgeHtml, createEl, fetchSpecRecommendation, renderAgentPickerRows, renderPickerRecommendationBanner, replaceNodeChildren, setPickerRecommendation, showConfirm, showDangerConfirm, tripletsToCliArgs });

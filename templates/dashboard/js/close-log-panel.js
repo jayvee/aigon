@@ -1,4 +1,4 @@
-/* dashboard-esm-processed */
+import { handleCloseWithAgent } from './pipeline.js';
 // ── Close-log panel (feature 428) ─────────────────────────────────────────
 // Live-streaming log panel for feature-close actions. Opens immediately on
 // click, polls /api/action-log/:actionId every 800ms, auto-dismisses on
@@ -100,9 +100,7 @@ function drainAndFinalize(actionId, success, result) {
             agentBtn.className = 'btn btn-warn';
             agentBtn.textContent = 'Close with agent';
             agentBtn.addEventListener('click', () => {
-              if (typeof handleCloseWithAgent === 'function') {
-                handleCloseWithAgent(featureId, agentId, repoPath || '');
-              }
+              handleCloseWithAgent(featureId, agentId, repoPath || '');
               dismissCloseLogPanel();
             });
             f.appendChild(agentBtn);
@@ -175,4 +173,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── ESM exports (F623) ──
 export { dismissCloseLogPanel, finalizeCloseLogPanel, openCloseLogPanel };
-Object.assign(globalThis, { dismissCloseLogPanel, finalizeCloseLogPanel, openCloseLogPanel });

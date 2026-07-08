@@ -1,6 +1,8 @@
 /* dashboard-esm-processed */
 
 import { INITIAL_DATA, INSTANCE_NAME } from './injected.js';
+import { notifyDataRefreshComplete } from './poll-hooks.js';
+import { syncDashboardHiddenRepos } from './preferences-sync.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 export const POLL_MS = 10000;
@@ -449,7 +451,7 @@ export function setView(view) {
   storeTarget().view = view;
   persistWrite('view', view);
   if (view === 'pipeline' && prev !== 'pipeline') notifyDataChange();
-  if (typeof globalThis.applyView === 'function') globalThis.applyView();
+  notifyDataRefreshComplete();
 }
 
 export function setFilter(filter) {
@@ -491,9 +493,7 @@ export function toggleRepoVisibility(repoPath) {
   else hidden.push(repoPath);
   target.hiddenRepos = hidden;
   persistWrite('hiddenRepos', hidden);
-  if (typeof syncDashboardHiddenRepos === 'function') {
-    syncDashboardHiddenRepos(target.hiddenRepos);
-  }
+  syncDashboardHiddenRepos(target.hiddenRepos);
 }
 
 export function setPipelineType(pipelineType) {
@@ -559,52 +559,9 @@ export let state = _rawState;
 document.addEventListener('alpine:init', () => {
   Alpine.store('dashboard', _rawState);
   state = Alpine.store('dashboard');
+  // Alpine $store.dashboard alias for legacy inline expressions (F640 boundary).
   globalThis.state = state;
 });
 
 _lastRawData = applyForceProOverride(INITIAL_DATA);
 assignDataFromRaw(_lastRawData, { evaluateSettled: false });
-
-Object.assign(globalThis, {
-  POLL_MS,
-  TS_MS,
-  lsKey,
-  state,
-  isRepoHidden,
-  toggleRepoVisibility,
-  replaceData,
-  addOptimistic,
-  dropOptimistic,
-  subscribeDataChange,
-  applyForceProOverride,
-  isProActive,
-  markActionPending,
-  clearActionPending,
-  isActionPending,
-  markDevServerPokePending,
-  clearDevServerPokePending,
-  isDevServerPokePending,
-  recordCloseFailure,
-  clearCloseFailure,
-  hasCloseFailure,
-  getCloseFailure,
-  setView,
-  setFilter,
-  toggleCollapse,
-  setSidebarHidden,
-  toggleSidebarHidden,
-  setSelectedRepo,
-  setPipelineType,
-  setPipelineGroupBySet,
-  setMonitorType,
-  setExpandedPipelineColumn,
-  setSettingsModelRepo,
-  setSettingsDefaultsRepo,
-  setFailures,
-  setLastStatusVersion,
-  setLastRenderedStatusVersion,
-  createEntityStartOverlay,
-  createEntityDeleteOverlay,
-  clearStartupPhaseForEntity,
-  subscribeDataChange,
-});

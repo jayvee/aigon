@@ -1,9 +1,17 @@
 /* dashboard-esm-processed */
 
+import { setHealth } from './monitor.js';
+import { notifyDataRefreshComplete, triggerDashboardRefresh } from './poll-hooks.js';
 import { isRepoHidden, state, toggleRepoVisibility } from './state.js';
 import { setSettingsDefaultsRepo, setSettingsModelRepo } from './store.js';
 import { getTerminalClickTarget, getTerminalFont, setTerminalClickTarget, setTerminalFont } from './terminal.js';
 import { escHtml, relTime, showToast } from './utils.js';
+    function formatSyncTime(iso) {
+      // Pro-only: fmtSyncTime from backup-sync stub or @aigon/pro when installed.
+      if (typeof globalThis.fmtSyncTime === 'function') return globalThis.fmtSyncTime(iso);
+      return iso ? relTime(iso) : '—';
+    }
+
     // ── Settings view ──────────────────────────────────────────────────────────
 
     function showDoctorModal(repoPath, displayPath) {
@@ -137,7 +145,7 @@ import { escHtml, relTime, showToast } from './utils.js';
           const text = [data.stdout, data.stderr, data.error].filter(Boolean).join('\n').trim() || '(no output)';
           output.textContent = text;
           output.className = 'doctor-output' + ((data.exitCode && data.exitCode !== 0) ? ' doctor-has-issues' : '');
-          if (typeof requestRefresh === 'function') requestRefresh();
+          triggerDashboardRefresh();
         })
         .catch((e) => {
           output.textContent = 'Error: ' + e.message;
@@ -289,8 +297,8 @@ import { escHtml, relTime, showToast } from './utils.js';
             '<span class="sync-panel-value sync-panel-remote-val">' + escHtml(s.remote || '') + '</span>' +
             '<button class="btn btn-secondary sync-panel-edit-btn" type="button">Edit</button>' +
           '</div>' +
-          '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPushAt)) + '</span></div>' +
-          '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(fmtSyncTime(s.lastPullAt)) + '</span></div>' +
+          '<div class="sync-panel-row"><span class="sync-panel-label">Last backed up</span><span class="sync-panel-value">' + escHtml(formatSyncTime(s.lastPushAt)) + '</span></div>' +
+          '<div class="sync-panel-row"><span class="sync-panel-label">Last restored</span><span class="sync-panel-value">' + escHtml(formatSyncTime(s.lastPullAt)) + '</span></div>' +
           projRow +
           scheduleRow;
         meta.querySelector('.sync-panel-edit-btn').onclick = () => renderRemoteInput(s.remote || '');
@@ -963,8 +971,8 @@ import { escHtml, relTime, showToast } from './utils.js';
             await updateDashboardSetting(scope, def.key, input.value, repoPathForUpdate);
             delete settingsUiState.drafts[draftKey];
             showToast('Updated ' + def.label);
-            render();
-          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+            notifyDataRefreshComplete();
+          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); notifyDataRefreshComplete(); }
         };
         return input;
       }
@@ -984,8 +992,8 @@ import { escHtml, relTime, showToast } from './utils.js';
                 settingsUiState.drafts[draftKey] = nextValue;
                 await updateDashboardSetting(scope, def.key, nextValue, repoPathForUpdate);
                 delete settingsUiState.drafts[draftKey];
-                showToast('Updated ' + def.label); render();
-              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+                showToast('Updated ' + def.label); notifyDataRefreshComplete();
+              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); notifyDataRefreshComplete(); }
             };
             const track = document.createElement('span'); track.className = 'toggle-track';
             sw.appendChild(input); sw.appendChild(track); return sw;
@@ -1003,8 +1011,8 @@ import { escHtml, relTime, showToast } from './utils.js';
                 settingsUiState.drafts[draftKey] = input.value;
                 await updateDashboardSetting(scope, def.key, input.value, repoPathForUpdate);
                 delete settingsUiState.drafts[draftKey];
-                showToast('Updated ' + def.label); render();
-              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+                showToast('Updated ' + def.label); notifyDataRefreshComplete();
+              } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); notifyDataRefreshComplete(); }
             };
             return input;
           } else {
@@ -1177,8 +1185,8 @@ import { escHtml, relTime, showToast } from './utils.js';
             await updateDashboardSetting(scope, def.key, input.value, repoPath);
             delete settingsUiState.drafts[draftKey];
             showToast('Updated ' + def.label.toLowerCase() + ' model');
-            render();
-          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); render(); }
+            notifyDataRefreshComplete();
+          } catch (e) { showToast('Update failed: ' + e.message, null, null, { error: true }); notifyDataRefreshComplete(); }
         };
         return input;
       }
@@ -1342,8 +1350,8 @@ import { escHtml, relTime, showToast } from './utils.js';
           visBtn.onclick = () => {
             toggleRepoVisibility(repoPath);
             renderSettings();
-            render();
-            if (typeof requestRefresh === 'function') requestRefresh();
+            notifyDataRefreshComplete();
+            triggerDashboardRefresh();
           };
 
           item.innerHTML = '<span class="repo-list-path" title="' + escHtml(repoPath) + '">' + escHtml(displayPath) + '</span>';
@@ -1363,7 +1371,7 @@ import { escHtml, relTime, showToast } from './utils.js';
               const payload = await res.json().catch(() => ({}));
               if (!res.ok) throw new Error(payload.error || 'Failed');
               showToast('Removed: ' + displayPath);
-              await requestRefresh();
+              await triggerDashboardRefresh();
             } catch (e) {
               showToast('Remove failed: ' + e.message, null, null, {error:true});
               removeBtn.disabled = false;
@@ -1409,7 +1417,7 @@ import { escHtml, relTime, showToast } from './utils.js';
           if (!res.ok) throw new Error(payload.error || 'Failed');
           input.value = '';
           showToast('Added: ' + val);
-          await requestRefresh();
+          await triggerDashboardRefresh();
         } catch (e) {
           showToast('Add failed: ' + e.message, null, null, {error:true});
         } finally {
@@ -1536,7 +1544,7 @@ import { escHtml, relTime, showToast } from './utils.js';
                   if (!cr.ok) throw new Error(cd.error || cr.statusText);
                   showToast('Cancelled job');
                   await loadScheduleJobsTable();
-                  if (typeof requestRefresh === 'function') requestRefresh();
+                  triggerDashboardRefresh();
                 } catch (e) {
                   showToast('Cancel failed: ' + e.message, null, null, { error: true });
                   b.disabled = false;
@@ -2114,8 +2122,9 @@ import { escHtml, relTime, showToast } from './utils.js';
       restoreSettingsUiState(reposRoot);
 
       (function finalizeProSettingsPanels() {
-        if (typeof renderBackupSync === 'function') {
-          renderBackupSync();
+        // Pro-only: renderBackupSync from backup-sync stub or @aigon/pro when installed.
+        if (typeof globalThis.renderBackupSync === 'function') {
+          globalThis.renderBackupSync();
         } else if (detachedProViews['backup-sync-view']) {
           detachedProViews['backup-sync-view'].innerHTML =
             '<div class="amp-empty" style="padding:28px 0;text-align:center">' +
@@ -2123,8 +2132,9 @@ import { escHtml, relTime, showToast } from './utils.js';
             '<div style="color:var(--text-secondary);font-size:12px">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
             '</div>';
         }
-        if (typeof renderScheduledFeatures === 'function') {
-          renderScheduledFeatures();
+        // Pro-only: renderScheduledFeatures from scheduled-features stub or @aigon/pro.
+        if (typeof globalThis.renderScheduledFeatures === 'function') {
+          globalThis.renderScheduledFeatures();
         } else if (detachedProViews['scheduled-features-view']) {
           detachedProViews['scheduled-features-view'].innerHTML =
             '<p class="settings-empty" style="margin-top:4px;font-size:12px;color:var(--text-tertiary)">' +
@@ -2141,4 +2151,3 @@ import { escHtml, relTime, showToast } from './utils.js';
 
 // ── ESM exports (F623) ──
 export { renderSettings };
-Object.assign(globalThis, { renderSettings });

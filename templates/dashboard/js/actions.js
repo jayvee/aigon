@@ -2,7 +2,7 @@
 
 import { fetchSpecRecommendation, showConfirm, showDangerConfirm, tripletsToCliArgs } from './actions-picker.js';
 import { showAgentPicker } from './sidebar.js';
-import { requestAction, requestFeatureOpen, requestSpecReviewLaunch } from './api.js';
+import { requestAction, requestFeatureOpen, requestRefresh, requestSpecReviewLaunch } from './api.js';
 import { budgetWarningForAgents, fetchBudget } from './budget-widget.js';
 import { hasCloseFailure } from './store.js';
 import { escHtml, formatFeatureIdForDisplay, showToast } from './utils.js';
@@ -56,17 +56,17 @@ function buildActionContext(va, feature, repoPath, btn, pipelineType, extras) {
     helpers: {
       escHtml,
       showToast,
-      showConfirm: typeof window.showConfirm === 'function' ? window.showConfirm.bind(window) : showConfirm,
-      showDangerConfirm: typeof window.showDangerConfirm === 'function' ? window.showDangerConfirm.bind(window) : showDangerConfirm,
+      showConfirm,
+      showDangerConfirm,
       requestAction,
       requestFeatureOpen,
       requestSpecReviewLaunch,
       requestRefresh,
       showAgentPicker,
-      fetchSpecRecommendation: typeof window.fetchSpecRecommendation === 'function' ? window.fetchSpecRecommendation.bind(window) : null,
-      tripletsToCliArgs: typeof window.tripletsToCliArgs === 'function' ? window.tripletsToCliArgs.bind(window) : null,
-      fetchBudget: typeof fetchBudget === 'function' ? fetchBudget : null,
-      budgetWarningForAgents: typeof budgetWarningForAgents === 'function' ? budgetWarningForAgents : null,
+      fetchSpecRecommendation,
+      tripletsToCliArgs,
+      fetchBudget,
+      budgetWarningForAgents,
     },
     api: { requestAction, requestFeatureOpen, requestRefresh },
   }, extras || {});
@@ -369,4 +369,3 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
 
 // ── ESM exports (F623) ──
 export { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal };
-Object.assign(globalThis, { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal });
