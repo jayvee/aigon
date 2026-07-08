@@ -184,6 +184,8 @@ Current shared modules:
   `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`, `isAgentDisabled`
 - `lib/config-core.js`: leaf config file I/O and default config primitives used by lower layers that must not import the config facade
   `loadGlobalConfig`, `loadProjectConfig`, `saveGlobalConfig`, `saveProjectConfig`, `buildDefaultGlobalConfigBase`
+- `lib/config-agent-layer.js` (~65 lines): agent-aware config composition above config-core + agent-registry; `lib/config.js` imports this instead of agent-registry directly, breaking the facade↔registry require cycle
+  `buildDefaultGlobalConfig`, `getAgent`
 - `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
   `registerGlobalConfigMigration`, `runPendingGlobalConfigMigrations`, `migrateLegacyTerminalSettings`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
@@ -655,7 +657,7 @@ If a future contribution to aigon needs to make a coordinated change with the Pr
 - Keep `aigon-cli.js` free of business logic.
 - Prefer explicit CommonJS exports.
 - Keep command handlers grouped by domain, not one file per command.
-- Avoid circular dependencies between `lib/*.js` modules.
+- Avoid circular dependencies between `lib/*.js` modules. Enforced mechanically by `scripts/check-module-graph.js` (runs in `test:core`): require-cycle detection plus declarative boundary rules (agent-sessions purity, workflow-core barrel-only with `paths.js` sanctioned as a constants leaf, dashboard read-only owners, commands one-way), ratcheted against `scripts/module-graph-baseline.json`. The baseline only shrinks — `--write-baseline` refuses growth unless `--allow-growth "<reason>"` records the justification in the baseline's `growthLog`; remaining boundary violations are individually justified in `violationJustifications`. Run `node scripts/check-module-graph.js --report` for cycle/violation summaries.
 - Treat `templates/` as source-of-truth for generated agent docs and prompts.
 - Project-specific agent instructions belong in `AGENTS.md` and/or `CLAUDE.md` (user-owned, never written by aigon — F420). Per-agent context is delivered via skills and rule files under `.claude/`, `.cursor/`, etc.
 - The AIGON server is the foreground HTTP process. It serves the dashboard UI at `localhost:4100`. Named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) are provided by the optional Caddy reverse proxy.

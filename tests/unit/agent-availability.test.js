@@ -259,7 +259,12 @@ function agentRegistryReset() {
         if (typeof agentRegistry._resetCache === 'function') agentRegistry._resetCache();
     } catch (_) { /* ignore */ }
     for (const key of Object.keys(require.cache)) {
-        if (key.includes(`${path.sep}lib${path.sep}config.js`) || key.includes(`${path.sep}lib${path.sep}agent-availability.js`)) {
+        // config-core.js freezes GLOBAL_CONFIG_PATH at module load (F643 moved
+        // agent-availability's config reads there) — evict it too, or the
+        // temp-HOME override in these tests never takes effect.
+        if (key.includes(`${path.sep}lib${path.sep}config.js`)
+            || key.includes(`${path.sep}lib${path.sep}config-core.js`)
+            || key.includes(`${path.sep}lib${path.sep}agent-availability.js`)) {
             delete require.cache[key];
         }
     }
