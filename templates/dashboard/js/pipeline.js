@@ -706,6 +706,11 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
             ' data-flag-repo="' + escHtml(repoPath || '') + '"';
           actionsHtml += '<button class="btn btn-primary kcard-flag-btn" data-flag-action="' + escHtml(flagAction) + '"' + attrs + '>' + escHtml(va.label) + '</button>';
         } else if (va.action === 'reopen-agent' || va.action === 'view-work') {
+          // REGRESSION: when mark-submitted collapses workflow open-session into overflow,
+          // view-work is a second "Open Terminal" for the same dead session.
+          if (va.action === 'view-work' && primaryActions.some((row) => row.action === 'open-session')) {
+            return;
+          }
           const flagAction = (va.metadata && va.metadata.flagAction) || va.action;
           const attrs = ' data-flag-entity="' + escHtml(entityType) + '"' +
             ' data-flag-id="' + escHtml(feature.id) + '"' +

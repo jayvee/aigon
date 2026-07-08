@@ -215,7 +215,7 @@ test('profile templates derive ports from basePort plus registry offsets', () =>
 });
 test('cursor agent project slug and trust marker match Cursor CLI layout', () => withTempDir('aigon-cu-trust-', tmpDir => {
     // REGRESSION: Cursor Agent ignores security.workspace.trust.* and gates on ~/.cursor/projects/<slug>/.workspace-trusted.
-    const { cursorAgentProjectSlug, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
+    const { cursorAgentProjectSlug, listCursorProjectSlugVariants, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
     const wt = '/Users/jviner/.aigon/worktrees/aigon/feature-425-cc-planning-context-injection-via-spec-frontmatter';
     assert.strictEqual(
         cursorAgentProjectSlug(wt),
@@ -230,6 +230,23 @@ test('cursor agent project slug and trust marker match Cursor CLI layout', () =>
     const marker = fs.readFileSync(path.join(projectsRoot, slug, '.workspace-trusted'), 'utf8');
     assert.ok(marker.includes(`"workspacePath": ${JSON.stringify(absWt)}`), 'marker must record absolute workspace path');
     assert.ok(!ensureCursorAgentWorkspaceTrustedMarkers(projectsRoot, [absWt]), 'idempotent second call');
+}));
+
+test('cursor trust markers cover truncated Cursor project slug siblings', () => withTempDir('aigon-cu-trust-trunc-', tmpDir => {
+    // REGRESSION: Cursor truncates long ~/.cursor/projects/<slug> dirs (worker.sock path) while
+    // aigon only wrote .workspace-trusted to the full slug — F617 cu session died during indexing.
+    const { cursorAgentProjectSlug, listCursorProjectSlugVariants, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
+    const projectsRoot = path.join(tmpDir, 'cursor-projects');
+    const absWt = '/Users/jviner/.aigon/worktrees/aigon/feature-617-cu-model-catalog-intelligence-2026-w28';
+    const fullSlug = cursorAgentProjectSlug(absWt);
+    const truncatedSlug = 'Users-jviner-aigon-worktrees-aigon-feature-617-cu-mod-069e368';
+    fs.mkdirSync(path.join(projectsRoot, truncatedSlug), { recursive: true });
+    const variants = listCursorProjectSlugVariants(absWt, projectsRoot);
+    assert.ok(variants.includes(fullSlug), 'full slug variant');
+    assert.ok(variants.includes(truncatedSlug), 'truncated sibling slug variant');
+    assert.ok(ensureCursorAgentWorkspaceTrustedMarkers(projectsRoot, [absWt]));
+    assert.ok(fs.existsSync(path.join(projectsRoot, fullSlug, '.workspace-trusted')));
+    assert.ok(fs.existsSync(path.join(projectsRoot, truncatedSlug, '.workspace-trusted')));
 }));
 
 test('codex trust writes exact worktree sections and cleans them up', () => withTempDir('aigon-cx-trust-', tmpDir => {
