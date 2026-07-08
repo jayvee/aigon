@@ -39,6 +39,9 @@ const ACTION_MODULE_BY_ACTION = {
   'research-delete': 'delete',
   'feature-reset': 'reset',
   'research-reset': 'reset',
+  'feature-escalation-accept': 'escalation',
+  'feature-escalation-follow-up': 'escalation',
+  'feature-escalation-reopen': 'escalation',
 };
 
 const SET_ACTION_PREFIX = 'set-';
