@@ -58,7 +58,7 @@
     ['Agent','Model'].concat(ops.map(op => opLabels[op] || op), ['Pricing']).forEach((h, i) => {
       const th = document.createElement('th');
       th.textContent = h;
-      th.style.cssText = 'padding:6px 8px;text-align:' + (i < 2 ? 'left' : 'center') + ';color:var(--text-secondary);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap';
+      th.style.cssText = 'padding:6px 8px;text-align:' + (i < 2 ? 'left' : 'center') + ';color:var(--text-secondary);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;' + (i === 0 ? 'white-space:nowrap' : '');
       hrow.appendChild(th);
     });
     thead.appendChild(hrow);
@@ -86,8 +86,21 @@
       tr.appendChild(agentTd);
 
       const modelTd = document.createElement('td');
-      modelTd.style.cssText = 'padding:5px 8px;color:' + (row.modelValue === null ? 'var(--text-tertiary)' : 'var(--text-primary)') + ';white-space:nowrap';
-      modelTd.textContent = row.modelLabel || (row.modelValue === null ? 'Default' : row.modelValue);
+      modelTd.style.cssText = 'padding:5px 8px;color:' + (row.modelValue === null ? 'var(--text-tertiary)' : 'var(--text-primary)');
+      const stack = document.createElement('div');
+      stack.className = 'matrix-peek-model-stack';
+      const labelEl = document.createElement('div');
+      labelEl.className = 'matrix-peek-model-label';
+      labelEl.textContent = row.modelLabel || (row.modelValue === null ? 'Default' : row.modelValue);
+      stack.appendChild(labelEl);
+      const peekHeadline = row.summary && row.summary.headline ? String(row.summary.headline) : '';
+      if (peekHeadline) {
+        const sumEl = document.createElement('div');
+        sumEl.className = 'matrix-peek-summary';
+        sumEl.textContent = peekHeadline;
+        stack.appendChild(sumEl);
+      }
+      modelTd.appendChild(stack);
       tr.appendChild(modelTd);
 
       ops.forEach(op => tr.appendChild(scoreCell(row.score && row.score[op] != null ? row.score[op] : null)));

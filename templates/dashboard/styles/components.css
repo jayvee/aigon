@@ -78,6 +78,9 @@
     .agent-check-row-triplet .agent-check-badge{margin-left:0;margin-top:1px}
     .agent-triplet-cell{display:flex;align-items:center;min-width:0;min-height:30px}
     .agent-triplet-cell .agent-triplet-model,.agent-triplet-cell .agent-triplet-effort{font:11px var(--mono);padding:6px 28px 6px 8px;background:var(--bg-root);color:var(--text-secondary);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:32px;line-height:1.25}
+    .agent-triplet-cell-model{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+    .model-summary-hint{font-size:11px;line-height:1.35;color:var(--text-tertiary);padding:2px 0 0}
+    .model-summary-warn{font-size:11px;line-height:1.35;color:#fca5a5;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.28);border-radius:6px;padding:6px 8px;margin-top:2px}
     .agent-triplet-cell select:hover{border-color:var(--border-default);color:var(--text-primary)}
     .agent-triplet-cell select:focus{outline:none;border-color:var(--accent)}
     .agent-triplet-placeholder{display:inline-flex;align-items:center;justify-content:center;font:11px var(--mono);color:var(--text-tertiary);opacity:.55;border:1px dashed var(--border-subtle);border-radius:6px;min-height:30px;box-sizing:border-box;width:100%;min-width:0;padding:0 6px}
