@@ -2,6 +2,7 @@
 
 // REGRESSION: module-graph guard must detect cycles, boundary violations, and ratchet baseline semantics.
 const path = require('path');
+const fs = require('fs');
 const ROOT = path.resolve(__dirname, '../..');
 const {
     buildGraph,
@@ -76,12 +77,25 @@ function testLoadOrderIsolation() {
     }
 }
 
+function testWorktreeTmuxContainment() {
+    // REGRESSION: F632 — worktree.js must not spawn tmux; only tmux-exec owns the binary.
+    const worktreeSrc = fs.readFileSync(path.join(ROOT, 'lib/worktree.js'), 'utf8');
+    if (/spawnSync\(\s*['"]tmux['"]/.test(worktreeSrc) || /execSync\(\s*[`'"]tmux/.test(worktreeSrc)) {
+        throw new Error('lib/worktree.js must not invoke tmux directly after F632');
+    }
+    const execSrc = fs.readFileSync(path.join(ROOT, 'lib/agent-sessions/hosts/tmux-exec.js'), 'utf8');
+    if (!/function runTmux/.test(execSrc)) {
+        throw new Error('tmux-exec.js must own runTmux');
+    }
+}
+
 function main() {
     testCanonicalCycleRotation();
     testFixtureCycleAndViolation();
     testBaselineRatchet();
     testRulesTableExists();
     testLoadOrderIsolation();
+    testWorktreeTmuxContainment();
     console.log('module-graph guard tests passed');
 }
 
