@@ -102,6 +102,25 @@ const RULES = [
         },
     },
     {
+        id: 'dashboard-collect-boundary',
+        description: 'dashboard-collect package must not import dashboard server shell or commands (F633)',
+        check(fromFile, toFile) {
+            if (!fromFile.startsWith('lib/dashboard-collect/')) return null;
+            const forbidden = [
+                'lib/dashboard-server.js',
+                'lib/dashboard-routes/',
+                'lib/dashboard-actions/',
+                'lib/commands/',
+            ];
+            for (const prefix of forbidden) {
+                if (prefix.endsWith('/') ? toFile.startsWith(prefix) : toFile === prefix) {
+                    return `${fromFile}->${toFile}`;
+                }
+            }
+            return null;
+        },
+    },
+    {
         id: 'telemetry-boundary',
         description: 'telemetry providers must not import agent-registry or sibling providers (F634)',
         check(fromFile, toFile) {
