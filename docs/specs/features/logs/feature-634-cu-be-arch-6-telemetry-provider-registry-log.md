@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 2050
+lines_removed: 1935
+lines_changed: 3985
+files_touched: 18
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 634 - be-arch-6-telemetry-provider-registry
 Agent: cu
 
