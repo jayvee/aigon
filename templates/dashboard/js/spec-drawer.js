@@ -285,4 +285,3 @@ import { copyText, escHtml, showToast } from './utils.js';
 
 // ── ESM exports (F623) ──
 export { closeDrawer, drawerState, openDrawer };
-Object.assign(globalThis, { closeDrawer, drawerState, openDrawer });

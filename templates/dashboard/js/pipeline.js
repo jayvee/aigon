@@ -1,14 +1,16 @@
 /* dashboard-esm-processed */
 
+import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
 import { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal } from './actions.js';
-import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestSpecReconcile } from './api.js';
+import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestRefresh, requestSpecReconcile } from './api.js';
+import { applyView } from './view-registry.js';
 import { agents, defaultAgent } from './injected.js';
 import { getVisibleRepos } from './monitor.js';
 import { getAskAgent, showAgentPicker } from './sidebar.js';
 import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
-import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, subscribeDataChange } from './store.js';
+import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, setPipelineGroupBySet as applyPipelineGroupBySet, setPipelineType as applyPipelineType, subscribeDataChange } from './store.js';
 import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
 import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
@@ -834,7 +836,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
     }
 
     function buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn) {
-      const planRenderer = window.AIGON_AUTONOMOUS_PLAN;
+      const planRenderer = AIGON_AUTONOMOUS_PLAN;
       if (!planRenderer || typeof planRenderer.buildAutonomousPlanHtml !== 'function') return '';
       return planRenderer.buildAutonomousPlanHtml(feature.autonomousPlan, {
         agentDisplayNames: AGENT_SHORT_NAMES,
@@ -1413,7 +1415,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
             }, targetFeature);
           } finally {
             prStatusLoading.delete(key);
-            render();
+            applyView();
           }
         };
       });
@@ -1505,8 +1507,6 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
       }
       await requestFeatureOpen(featureId, resolveAgent, repoPath, btn || null, 'features', 'close-resolve');
     }
-    window.handleCloseWithAgent = handleCloseWithAgent;
-
     // ── Pipeline view — Alpine component ─────────────────────────────────────
 
     const DONE_CAP = 6;
@@ -2127,7 +2127,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
             ? 'No repos registered. Run: aigon server add'
             : 'No data for selected repo.';
         },
-        setPipelineType(t) { globalThis.setPipelineType(t); },
+        setPipelineType(t) { applyPipelineType(t); },
         get showPaused() { return !!Alpine.store('dashboard')._showPaused; },
         togglePaused() {
           const next = !this.showPaused;
@@ -2137,7 +2137,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         },
         get groupBySet() { return !!Alpine.store('dashboard').pipelineGroupBySet; },
         toggleGroupBySet() {
-          globalThis.setPipelineGroupBySet(!this.groupBySet);
+          applyPipelineGroupBySet(!this.groupBySet);
         },
         getStageDisplayCount(repo, stage) {
           const s = Alpine.store('dashboard');
@@ -2228,60 +2228,3 @@ export {
   pipelineView,
   STAGE_LABELS,
 };
-Object.assign(globalThis, {
-  closeAllKcardOverflowMenus,
-  pipelineCommand,
-  pipelineColumnKey,
-  getDoneFolderPath,
-  slugifyFeatureName,
-  getCreateModalElements,
-  setCreateModalError,
-  setCreateModalBusy,
-  hideCreateModal,
-  getAgentPromptPrefix,
-  renderCreateModalAgents,
-  submitCreateModal,
-  createNewSpec,
-  buildAgentBadgesHtml,
-  isSoloDrive,
-  agentDisplayName,
-  buildDevServerLinkHtml,
-  isCompleteStatus,
-  buildAgentStatusHtml,
-  buildLivenessIndicator,
-  buildAgentStatusSpan,
-  formatIdleSeconds,
-  buildIdleLadderChip,
-  buildWorkflowIdleBadgeHtml,
-  buildStartupPhaseHtml,
-  persistPrStatusCache,
-  prStatusFingerprint,
-  prStatusKey,
-  getCachedPrStatus,
-  setCachedPrStatus,
-  shouldWarnCloseByPrStatus,
-  buildPrStatusContent,
-  buildGitHubSectionHtml,
-  buildAgentTripletBadge,
-  buildAgentSectionHtml,
-  buildReadyToCloseHtml,
-  buildAutonomousPlanSectionHtml,
-  buildAutonomousControllerStatusHtml,
-  buildReviewerSectionHtml,
-  buildReviewCycleHistoryHtml,
-  buildCloseFailureHtml,
-  buildSpecAuthorHtml,
-  buildFeatureSetScheduledGlyphHtml,
-  buildKanbanCard,
-  handleCloseWithAgent,
-  renderKanbanColCards,
-  schedulePipelineReconcile,
-  getLastKanbanReconcileStats,
-  kanbanCardKey,
-  cardFingerprint,
-  pipelineView,
-  STAGE_ORDER,
-  STAGE_LABELS,
-  PIPELINE_STAGES_BASE,
-  PIPELINE_STAGES,
-});

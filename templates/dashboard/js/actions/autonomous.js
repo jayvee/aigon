@@ -60,9 +60,9 @@ async function showAutonomousModal(feature, repoPath, btn) {
     hint.textContent = 'Set "' + String(feature.set) + '": this workflow runs this feature only. To run every set member in order, use "Start set autonomously" on the set card (Monitor) or the set row in Pipeline (Group by Set).';
     desc.appendChild(hint);
   }
-  const autoRows = window.AUTONOMOUS_AGENT_IDS.map(agentId => {
-    const displayName = window.AGENT_DISPLAY_NAMES[agentId] || agentId;
-    const agent = window.AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
+  const autoRows = H.getAutonomousAgentIdsList().map((agentId) => {
+    const displayName = H.getAgentDisplayNames()[agentId] || agentId;
+    const agent = H.getAgents().find((a) => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
     const modelName = agent.defaultImplementModel || '';
     const row = H.buildAgentCheckRow({
       value: agentId,
@@ -265,8 +265,8 @@ function buildAutonomousAgentOptions(taskType, options) {
   const selectedAgents = Array.isArray(opts.selectedAgents) ? opts.selectedAgents : [];
   const rows = [];
   if (includeNone) rows.push({ value: '', label: noneLabel });
-  window.AUTONOMOUS_AGENT_IDS.forEach(agentId => {
-    const displayName = window.AGENT_DISPLAY_NAMES[agentId] || agentId;
+  H.getAutonomousAgentIdsList().forEach((agentId) => {
+    const displayName = H.getAgentDisplayNames()[agentId] || agentId;
     const modelName = (autonomousModalModels && autonomousModalModels[agentId] && autonomousModalModels[agentId][taskType]) || '';
     const sameAsImplementer = selectedAgents.includes(agentId);
     const suffix = sameAsImplementer ? ' · implementing' : '';
@@ -312,7 +312,7 @@ function updateAutonomousEvalOptions() {
 
   H.replaceSelectOptions(evalSelect, buildAutonomousAgentOptions('evaluate'));
 
-  if (previousValue && window.AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+  if (previousValue && H.getAutonomousAgentIdsList().includes(previousValue)) {
     evalSelect.value = previousValue;
   }
 }
@@ -330,12 +330,12 @@ function updateAutonomousReviewOptions() {
     selectedAgents
   }));
 
-  if (previousValue && window.AUTONOMOUS_AGENT_IDS.includes(previousValue)) {
+  if (previousValue && H.getAutonomousAgentIdsList().includes(previousValue)) {
     reviewSelect.value = previousValue;
     H.updateReviewerTripletSelects(reviewSelect.value);
     return;
   }
-  reviewSelect.value = window.AUTONOMOUS_AGENT_IDS.find(agentId => !selectedAgents.includes(agentId)) || '';
+  reviewSelect.value = H.getAutonomousAgentIdsList().find((agentId) => !selectedAgents.includes(agentId)) || '';
   H.updateReviewerTripletSelects(reviewSelect.value);
 }
 

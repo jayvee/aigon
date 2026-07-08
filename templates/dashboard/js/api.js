@@ -1,9 +1,12 @@
 /* dashboard-esm-processed */
 
+import { setHealth, showServerRestartBanner } from './monitor.js';
 import { defaultAgent } from './injected.js';
+import { notifyDataRefreshComplete } from './poll-hooks.js';
+import { syncDashboardHiddenRepos } from './preferences-sync.js';
 import { addOptimistic, clearActionPending, clearCloseFailure, clearDevServerPokePending, clearStartupPhaseForEntity, createEntityDeleteOverlay, createEntityStartOverlay, dropOptimistic, isActionPending, lsKey, markActionPending, markDevServerPokePending, recordCloseFailure, replaceData, setFailures, setLastRenderedStatusVersion, setLastStatusVersion, setView, state } from './store.js';
 import { openTerminalPanel } from './terminal.js';
-import { escHtml, showToast } from './utils.js';
+import { escHtml, refreshTimestamps, showToast } from './utils.js';
 
     async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
@@ -18,17 +21,6 @@ import { escHtml, showToast } from './utils.js';
       } catch (e) {
         showToast('View failed: ' + e.message, null, null, {error:true});
       }
-    }
-
-    async function syncDashboardHiddenRepos(hiddenRepos) {
-      try {
-        await fetch('/api/dashboard-preferences', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ hiddenRepos: hiddenRepos || [] }),
-          cache: 'no-store',
-        });
-      } catch (_) { /* non-fatal — next toggle or reload will retry */ }
     }
 
     async function requestRefresh(repoPath) {
@@ -47,7 +39,7 @@ import { escHtml, showToast } from './utils.js';
         if (res.status === 304) {
           setFailures(0);
           setHealth();
-          if (typeof refreshTimestamps === 'function') refreshTimestamps();
+          refreshTimestamps();
           return;
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -58,7 +50,7 @@ import { escHtml, showToast } from './utils.js';
           setLastStatusVersion(next.statusVersion);
           setLastRenderedStatusVersion(next.statusVersion);
         }
-        render();
+        notifyDataRefreshComplete();
       } catch (e) {
         setFailures(state.failures + 1);
         setHealth();
@@ -102,7 +94,7 @@ import { escHtml, showToast } from './utils.js';
         if (overlay) {
           optimisticKey = overlay.key;
           addOptimistic(overlay);
-          render();
+          notifyDataRefreshComplete();
         }
       }
       const label = (action || '').replace(/^(feature|research)-/, '');
@@ -141,18 +133,18 @@ import { escHtml, showToast } from './utils.js';
         const stderrStr = String(payload.stderr || '');
         const stderrError = !exitFailed && stderrStr && /^fatal:|❌/m.test(stderrStr) && !/failed to push some refs/i.test(stderrStr);
         if (exitFailed) {
-          if (optimisticKey) { dropOptimistic(optimisticKey); render(); }
-          showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { setView('logs'); render(); }, { error: true });
+          if (optimisticKey) { dropOptimistic(optimisticKey); notifyDataRefreshComplete(); }
+          showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); }, { error: true });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: payload.error || 'exit ' + payload.exitCode });
           }
         } else if (payload.agentWarning) {
-          showToast('Warning: ' + payload.agentWarning, 'Logs', () => { setView('logs'); render(); }, { error: true });
+          showToast('Warning: ' + payload.agentWarning, 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); }, { error: true });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: true });
           }
         } else if (stderrError) {
-          showToast('Done with warnings — check Logs', 'Logs', () => { setView('logs'); render(); });
+          showToast('Done with warnings — check Logs', 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); });
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: true });
           }
@@ -176,7 +168,7 @@ import { escHtml, showToast } from './utils.js';
           const deleteOverlay = createEntityDeleteOverlay(action, args, repoPath);
           if (deleteOverlay) {
             addOptimistic(deleteOverlay);
-            render();
+            notifyDataRefreshComplete();
           }
         }
         await requestRefresh(repoPath);
@@ -211,9 +203,9 @@ import { escHtml, showToast } from './utils.js';
             null, null,
             { error: true, persistent: true }
           );
-          render();
+          notifyDataRefreshComplete();
         } else {
-          if (optimisticKey) { dropOptimistic(optimisticKey); render(); }
+          if (optimisticKey) { dropOptimistic(optimisticKey); notifyDataRefreshComplete(); }
           showToast('Action failed: ' + e.message, null, null, {error:true});
           if (isClose && actionId && window.finalizeCloseLogPanel) {
             window.finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
@@ -225,7 +217,7 @@ import { escHtml, showToast } from './utils.js';
         clearActionPending(key);
         if (action !== 'feature-start' && action !== 'research-start') {
           clearStartupPhaseForEntity(action, args, repoPath);
-          render();
+          notifyDataRefreshComplete();
         }
         if (startingCard) startingCard.classList.remove('card-starting');
       }
@@ -454,7 +446,7 @@ import { escHtml, showToast } from './utils.js';
       markActionPending(pendingKey);
       const uiKey = `${repoPath}:${featureId}:${agentId}`;
       markDevServerPokePending(uiKey);
-      render();
+      notifyDataRefreshComplete();
 
       const origText = btn ? btn.textContent : '';
       if (btn) {
@@ -479,7 +471,7 @@ import { escHtml, showToast } from './utils.js';
       } finally {
         clearActionPending(pendingKey);
         clearDevServerPokePending(uiKey);
-        render();
+        notifyDataRefreshComplete();
         if (btn) {
           btn.disabled = false;
           btn.textContent = origText || 'Start preview';
@@ -619,5 +611,20 @@ import { escHtml, showToast } from './utils.js';
     });
 
 // ── ESM exports (F623) ──
-export { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos };
-Object.assign(globalThis, { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos });
+export {
+  fetchPrStatus,
+  postMarkComplete,
+  requestAction,
+  requestAgentDevServerPoke,
+  requestAgentFlagAction,
+  requestAttach,
+  requestFeatureAutonomousRun,
+  requestFeatureNudge,
+  requestFeatureOpen,
+  requestRefresh,
+  requestRepoMainDevServerStart,
+  requestResearchNudge,
+  requestSpecReconcile,
+  requestSpecReviewLaunch,
+  syncDashboardHiddenRepos,
+};

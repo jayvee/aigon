@@ -1,10 +1,12 @@
 /* dashboard-esm-processed */
 
 import { renderAgentPickerRows, renderPickerRecommendationBanner, setPickerRecommendation } from './actions-picker.js';
+import { fetchAgentModels } from './agent-models.js';
 import { requestRepoMainDevServerStart } from './api.js';
 import { updatePickerBudgetNotice } from './budget-widget.js';
 import { agents, defaultAgent } from './injected.js';
 import { isRepoHidden, lsKey, state } from './state.js';
+import { notifyDataRefreshComplete } from './poll-hooks.js';
 import { setSelectedRepo } from './store.js';
 import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
     // ── AI session picker ──────────────────────────────────────────────────────
@@ -15,18 +17,6 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       id: agent.id,
       name: agent.displayName || agent.id
     }));
-
-    function isSidebarKnownAgentModelValue(agentId, value) {
-      const modelValue = value == null ? '' : String(value);
-      if (!modelValue) return false;
-      const agentsList = agents;
-      const agent = agentsList.find(a => a.id === agentId);
-      const modelOptions = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
-      const concreteValues = modelOptions
-        .map(opt => (!opt || opt.value == null) ? null : String(opt.value))
-        .filter(Boolean);
-      return concreteValues.length === 0 || concreteValues.includes(modelValue);
-    }
 
     function getAskAgent() {
       const preferred = localStorage.getItem(lsKey('askAgent'));
@@ -125,31 +115,6 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
     let pickerSingleMode = false;
     let pickerCollectTriplet = false;
     let pickerIncludeSetReviewer = false;
-
-    function fetchAgentModels(repoPath) {
-      const params = new URLSearchParams();
-      if (repoPath) params.set('repoPath', repoPath);
-      else params.set('globalOnly', '1');
-      const query = params.toString();
-      return fetch('/api/settings?' + query, { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => {
-          const agentModelMap = {};
-          const settings = (data && data.settings) || [];
-          settings.forEach(def => {
-            const m = String(def.key || '').match(/^agents\.(\w+)\.(research|implement|evaluate|review)\.model$/);
-            if (!m) return;
-            const agentId = m[1];
-            const taskType = m[2];
-            if (!agentModelMap[agentId]) agentModelMap[agentId] = {};
-            if (def.effectiveValue && isSidebarKnownAgentModelValue(agentId, def.effectiveValue)) {
-              agentModelMap[agentId][taskType] = def.effectiveValue;
-            }
-          });
-          return agentModelMap;
-        })
-        .catch(() => ({}));
-    }
 
     function pickerTaskType(opts) {
       if (opts.taskType === 'research' || opts.taskType === 'implement' || opts.taskType === 'evaluate' || opts.taskType === 'review') return opts.taskType;
@@ -358,7 +323,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       // Sync mobile dropdown
       const mobile = document.getElementById('repo-select-mobile');
       if (mobile) mobile.value = repoPath;
-      render();
+      notifyDataRefreshComplete();
     }
 
     function getRepoStats(repo) {
@@ -532,5 +497,4 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
     });
 
 // ── ESM exports (F623) ──
-export { buildAskAgentHtml, buildMainDevServerHtml, fetchAgentModels, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker };
-Object.assign(globalThis, { buildAskAgentHtml, buildMainDevServerHtml, fetchAgentModels, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker });
+export { buildAskAgentHtml, buildMainDevServerHtml, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker };

@@ -74,8 +74,8 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     const selectedAgents = Array.isArray(o.selectedAgents) ? o.selectedAgents : [];
     const rows = [];
     if (includeNone) rows.push({ value: '', label: noneLabel });
-    window.AUTONOMOUS_AGENT_IDS.forEach((agentId) => {
-      const displayName = window.AGENT_DISPLAY_NAMES[agentId] || agentId;
+    H.getAutonomousAgentIdsList().forEach((agentId) => {
+      const displayName = H.getAgentDisplayNames()[agentId] || agentId;
       const modelName = (models && models[agentId] && models[agentId][taskType]) || '';
       const sameAsImplementer = selectedAgents.includes(agentId);
       const suffix = sameAsImplementer ? ' · implementing' : '';
@@ -109,8 +109,8 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     skSetupRunAt(box);
 
     const checks = box.querySelector('#schedule-kickoff-research-agent-checks');
-    const rows = window.AUTONOMOUS_AGENT_IDS.map((agentId) => {
-      const displayName = window.AGENT_DISPLAY_NAMES[agentId] || agentId;
+    const rows = H.getAutonomousAgentIdsList().map((agentId) => {
+      const displayName = H.getAgentDisplayNames()[agentId] || agentId;
       return H.buildAgentCheckRow({
         value: agentId,
         checked: false,
@@ -231,10 +231,10 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
   } catch (_) { /* ignore */ }
 
   const checks = box.querySelector('#schedule-kickoff-agent-checks');
-  const autoRows = window.AUTONOMOUS_AGENT_IDS.map((agentId) => {
-    const displayName = window.AGENT_DISPLAY_NAMES[agentId] || agentId;
+  const autoRows = H.getAutonomousAgentIdsList().map((agentId) => {
+    const displayName = H.getAgentDisplayNames()[agentId] || agentId;
     const modelName = (models && models[agentId] && models[agentId].implement) || '';
-    const agent = window.AIGON_AGENTS.find(a => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
+    const agent = H.getAgents().find((a) => a.id === agentId) || { id: agentId, modelOptions: [], effortOptions: [] };
     const row = H.buildAgentCheckRow({
       value: agentId,
       checked: agentId === (defaultAgent || 'cc'),
@@ -270,7 +270,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
 
     const prevEval = String(evalSelect.value || '').trim();
     H.replaceSelectOptions(evalSelect, skBuildAgentOptions('evaluate'));
-    if (prevEval && window.AUTONOMOUS_AGENT_IDS.includes(prevEval)) evalSelect.value = prevEval;
+    if (prevEval && H.getAutonomousAgentIdsList().includes(prevEval)) evalSelect.value = prevEval;
 
     const prevReview = String(reviewSelect.value || '').trim();
     H.replaceSelectOptions(reviewSelect, skBuildAgentOptions('review', {
@@ -278,11 +278,11 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       noneLabel: 'none',
       selectedAgents,
     }));
-    if (prevReview && window.AUTONOMOUS_AGENT_IDS.includes(prevReview)) {
+    if (prevReview && H.getAutonomousAgentIdsList().includes(prevReview)) {
       reviewSelect.value = prevReview;
       H.updateReviewerTripletSelects(reviewSelect.value, 'schedule-kickoff');
     } else {
-      reviewSelect.value = window.AUTONOMOUS_AGENT_IDS.find((agentId) => !selectedAgents.includes(agentId)) || '';
+      reviewSelect.value = H.getAutonomousAgentIdsList().find((agentId) => !selectedAgents.includes(agentId)) || '';
       H.updateReviewerTripletSelects(reviewSelect.value, 'schedule-kickoff');
     }
 

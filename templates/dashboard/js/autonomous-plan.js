@@ -95,4 +95,3 @@ export const AIGON_AUTONOMOUS_PLAN = (function() {
 
 })();
 export const buildAutonomousPlanHtml = AIGON_AUTONOMOUS_PLAN.buildAutonomousPlanHtml;
-Object.assign(globalThis, { AIGON_AUTONOMOUS_PLAN, buildAutonomousPlanHtml });

@@ -61,7 +61,7 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
   const messageInput = document.getElementById('nudge-modal-message');
   if (!modal || !desc || !agentSelect || !roleSelect || !messageInput) return;
 
-  const names = window.AGENT_DISPLAY_NAMES || {};
+  const names = H.getAgentDisplayNames();
   desc.textContent = '#' + feature.id + ' ' + feature.name;
   const candidates = getNudgeCandidates(feature);
   H.replaceSelectOptions(agentSelect, candidates.map(agent => ({

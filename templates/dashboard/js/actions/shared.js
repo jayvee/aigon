@@ -1,51 +1,81 @@
-// F519: ESM shared bridge
-/** ESM bridge to classic-script picker + utils globals. */
-function g(name) {
-  const fn = typeof window !== 'undefined' ? window[name] : undefined;
-  if (typeof fn !== 'function' && name !== 'AIGON_AGENTS' && name !== 'AGENT_DISPLAY_NAMES' && name !== 'AUTONOMOUS_AGENT_IDS') {
-    return undefined;
-  }
-  return fn;
-}
+// F519/F641: ESM shared imports for lazy action modules (no window bridges).
+import {
+  AGENT_DISPLAY_NAMES,
+  AIGON_AGENTS,
+  AUTONOMOUS_AGENT_IDS,
+  appendTripletSelects,
+  buildAgentCheckRow,
+  buildTripletPickerHeaderRow,
+  createEl,
+  fetchSpecRecommendation,
+  getAutonomousAgentIds,
+  renderAgentPickerRows,
+  renderPickerRecommendationBanner,
+  replaceNodeChildren,
+  replaceSelectOptions,
+  setPickerRecommendation,
+  showConfirm,
+  showDangerConfirm,
+  tripletsToCliArgs,
+  updateReviewerTripletSelects,
+} from '../actions-picker.js';
+import {
+  requestAction,
+  requestFeatureAutonomousRun,
+  requestFeatureNudge,
+  requestFeatureOpen,
+  requestRefresh,
+  requestResearchNudge,
+  requestSpecReviewLaunch,
+} from '../api.js';
+import { fetchBudget, budgetWarningForAgents } from '../budget-widget.js';
+import { fetchAgentModels } from '../agent-models.js';
+import { showAgentPicker } from '../sidebar.js';
+import { escHtml, formatFeatureIdForDisplay, showToast } from '../utils.js';
 
-export const escHtml = (...args) => window.escHtml(...args);
-export const showToast = (...args) => window.showToast(...args);
-export const requestAction = (...args) => window.requestAction(...args);
-export const requestFeatureOpen = (...args) => window.requestFeatureOpen(...args);
-export const requestSpecReviewLaunch = (...args) => window.requestSpecReviewLaunch(...args);
-export const requestRefresh = (...args) => window.requestRefresh(...args);
-export const requestFeatureAutonomousRun = (...args) => window.requestFeatureAutonomousRun(...args);
-export const requestFeatureNudge = (...args) => window.requestFeatureNudge(...args);
-export const requestResearchNudge = (...args) => window.requestResearchNudge(...args);
-export const fetchAgentModels = (...args) => window.fetchAgentModels(...args);
-export const formatFeatureIdForDisplay = (...args) => window.formatFeatureIdForDisplay(...args);
-export const showAgentPicker = (...args) => window.showAgentPicker(...args);
-export const fetchBudget = (...args) => window.fetchBudget(...args);
-export const budgetWarningForAgents = (...args) => window.budgetWarningForAgents(...args);
-
-export const setPickerRecommendation = (...args) => g('setPickerRecommendation')(...args);
-export const renderPickerRecommendationBanner = (...args) => g('renderPickerRecommendationBanner')(...args);
-export const renderAgentPickerRows = (...args) => g('renderAgentPickerRows')(...args);
-export const appendTripletSelects = (...args) => g('appendTripletSelects')(...args);
-export const updateReviewerTripletSelects = (...args) => g('updateReviewerTripletSelects')(...args);
-export const tripletsToCliArgs = (...args) => g('tripletsToCliArgs')(...args);
-export const fetchSpecRecommendation = (...args) => g('fetchSpecRecommendation')(...args);
-export const showConfirm = (...args) => g('showConfirm')(...args);
-export const showDangerConfirm = (...args) => g('showDangerConfirm')(...args);
-export const replaceNodeChildren = (...args) => g('replaceNodeChildren')(...args);
-export const replaceSelectOptions = (...args) => g('replaceSelectOptions')(...args);
-export const createEl = (...args) => g('createEl')(...args);
-export const buildAgentCheckRow = (...args) => g('buildAgentCheckRow')(...args);
-export const buildTripletPickerHeaderRow = (...args) => g('buildTripletPickerHeaderRow')(...args);
-export const getAutonomousAgentIds = (...args) => g('getAutonomousAgentIds')(...args);
+export {
+  AGENT_DISPLAY_NAMES,
+  AIGON_AGENTS,
+  AUTONOMOUS_AGENT_IDS,
+  appendTripletSelects,
+  budgetWarningForAgents,
+  buildAgentCheckRow,
+  buildTripletPickerHeaderRow,
+  createEl,
+  escHtml,
+  fetchAgentModels,
+  fetchBudget,
+  fetchSpecRecommendation,
+  formatFeatureIdForDisplay,
+  getAutonomousAgentIds,
+  renderAgentPickerRows,
+  renderPickerRecommendationBanner,
+  replaceNodeChildren,
+  replaceSelectOptions,
+  requestAction,
+  requestFeatureAutonomousRun,
+  requestFeatureNudge,
+  requestFeatureOpen,
+  requestRefresh,
+  requestResearchNudge,
+  requestSpecReviewLaunch,
+  setPickerRecommendation,
+  showAgentPicker,
+  showConfirm,
+  showDangerConfirm,
+  showToast,
+  tripletsToCliArgs,
+  updateReviewerTripletSelects,
+};
 
 export function getAgents() {
-  return window.AIGON_AGENTS || [];
-}
-export function getAgentDisplayNames() {
-  return window.AGENT_DISPLAY_NAMES || {};
-}
-export function getAutonomousAgentIdsList() {
-  return window.AUTONOMOUS_AGENT_IDS || [];
+  return AIGON_AGENTS;
 }
 
+export function getAgentDisplayNames() {
+  return AGENT_DISPLAY_NAMES;
+}
+
+export function getAutonomousAgentIdsList() {
+  return AUTONOMOUS_AGENT_IDS;
+}

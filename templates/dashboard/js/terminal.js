@@ -597,4 +597,3 @@ import { showToast } from './utils.js';
 
 // ── ESM exports (F623) ──
 export { getTerminalClickTarget, getTerminalFont, openResearchFindingsPeek, openTerminalPanel, setTerminalClickTarget, setTerminalFont, termState };
-Object.assign(globalThis, { getTerminalClickTarget, getTerminalFont, openResearchFindingsPeek, openTerminalPanel, setTerminalClickTarget, setTerminalFont, termState });

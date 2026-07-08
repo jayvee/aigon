@@ -1,7 +1,9 @@
 /* dashboard-esm-processed */
 
 import { POLL_MS, state } from './state.js';
-// F622: SSE live push — status version pings, notifications, server-restart signal.
+import { setHealth, showServerRestartBanner } from './monitor.js';
+import { loadNotifications, poll, setPollInterval } from './poll.js';
+
 const POLL_SLOW_MS = 60000;
 let warnedUnavailable = false;
 let es = null;
@@ -20,14 +22,11 @@ function setSseConnected(next) {
   if (connected === next) return;
   connected = next;
   state.sseConnected = next;
-  if (typeof setHealth === 'function') setHealth();
-  if (typeof setPollInterval === 'function') {
-    setPollInterval(next ? POLL_SLOW_MS : POLL_MS);
-  }
+  setHealth();
+  setPollInterval(next ? POLL_SLOW_MS : POLL_MS);
 }
 
 function scheduleStatusFetch() {
-  if (typeof poll !== 'function') return;
   if (fetchInFlight) {
     needsFollowUp = true;
     return;
@@ -42,7 +41,7 @@ function scheduleStatusFetch() {
   });
 }
 
-function connectLive() {
+export function connectLive() {
   if (typeof EventSource === 'undefined') {
     warnOnce('[aigon] EventSource unavailable — using poll fallback');
     return;
@@ -73,19 +72,11 @@ function connectLive() {
   });
 
   es.addEventListener('notification', () => {
-    if (typeof loadNotifications === 'function') loadNotifications();
+    loadNotifications();
   });
 
   es.addEventListener('server-restarting', () => {
-    if (typeof showServerRestartBanner === 'function') showServerRestartBanner();
+    showServerRestartBanner();
     setSseConnected(false);
   });
 }
-
-function isSseConnected() {
-  return connected;
-}
-
-// ── ESM exports (F623) ──
-export { connectLive };
-Object.assign(globalThis, { connectLive });

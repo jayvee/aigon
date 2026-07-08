@@ -12,6 +12,17 @@ import { state } from './state.js';
       return Math.floor(diff / 3600) + 'h ago';
     }
 
+    function refreshTimestamps() {
+      document.querySelectorAll('[data-updated]').forEach((n) => {
+        n.textContent = relTime(n.getAttribute('data-updated'));
+      });
+      const generatedAt = (state.data && state.data.generatedAt)
+        ? state.data.generatedAt
+        : new Date().toISOString();
+      const updatedText = document.getElementById('updated-text');
+      if (updatedText) updatedText.textContent = `Updated ${relTime(generatedAt)}`;
+    }
+
     function logsDateFmt(iso) {
       if (!iso) return '—';
       const d = new Date(iso);
@@ -253,5 +264,4 @@ import { state } from './state.js';
     }
 
 // ── ESM exports (F623) ──
-export { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, relTime, showToast, statusRank };
-Object.assign(globalThis, { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, relTime, showToast, statusRank });
+export { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };
