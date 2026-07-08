@@ -928,13 +928,15 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         'security-scan': 'Security scan failed',
         'push-failed': 'Push failed',
         'test-failed': 'Tests failed',
+        'post-merge-gate': 'Post-merge gate failed',
         'other': 'Close failed',
       };
       const kindLabel = kindLabels[lcf.kind] || 'Close failed';
       const filesText = Array.isArray(lcf.conflictFiles) && lcf.conflictFiles.length > 0
         ? lcf.conflictFiles.join(', ')
         : '';
-      const summaryText = filesText ? kindLabel + ' in ' + filesText : kindLabel;
+      const gateHint = lcf.kind === 'post-merge-gate' && lcf.logPath ? ` (${lcf.logPath})` : '';
+      const summaryText = filesText ? kindLabel + ' in ' + filesText : kindLabel + gateHint;
       const stderrAttr = lcf.stderrTail ? ' title="' + escHtml(lcf.stderrTail.slice(0, 500)) + '"' : '';
       return '<div class="kcard-close-failure"' + stderrAttr + '>' +
         '<span class="kcard-close-failure-icon">⚠</span>' +

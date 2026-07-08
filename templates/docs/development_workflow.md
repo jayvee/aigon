@@ -160,3 +160,26 @@ Before running `feature-close`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+
+### Post-merge verification gate
+
+After the feature branch merges into your default branch, `feature-close` can run a **post-merge gate** on merged main before marking the feature done. This catches cross-feature interactions that per-worktree checks miss.
+
+Configure in `.aigon/config.json`:
+
+```json
+{
+  "featureClose": {
+    "postMergeGate": "your-verify-command"
+  }
+}
+```
+
+- **String** — shell command run from the repo root on merged main (e.g. your project's verify script).
+- **Array** — argv form: `["tool", "arg1", "arg2"]`.
+- **`true`** — reuse the deploy command from `commands.deploy` or your package manifest when configured.
+- **`false`** — opt out (close prints a loud skip notice).
+
+When the gate fails, the merge is **not** reverted; the feature enters **close recovery** with gate output in `.aigon/state/close-gates/`. Fix merged main, then re-run `aigon feature-close <ID>`.
+
+The worktree security scan before merge still runs (fail fast before merging). The post-merge gate is the final authority for "done".
