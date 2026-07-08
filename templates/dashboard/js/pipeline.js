@@ -922,6 +922,9 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
       const mode = options && options.mode ? options.mode : 'implementation';
       const reviewerName = AGENT_DISPLAY_NAMES[reviewer.agent] || reviewer.agent;
       const isRunning = reviewer.running === true;
+      const sessionLive = typeof reviewer.sessionRunning === 'boolean'
+        ? reviewer.sessionRunning
+        : isRunning;
       const statusIcon = isRunning ? '●' : '✓';
       const statusLabel = isRunning
         ? (mode === 'spec-revise' ? 'Revising' : mode === 'spec-check' ? 'Checking' : 'Reviewing')
@@ -940,8 +943,50 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
         '<div class="kcard-agent-header"><span class="kcard-agent-name">' + escHtml(title) + '</span>' + peekBtn + '</div>' +
         '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + statusCls + '">' + statusIcon + ' ' + escHtml(reviewerName) + ' — ' + statusLabel + '</span></div>' +
         verdictHtml +
-        (isRunning && reviewer.session ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(reviewer.session) + '">Open</button></div>' : '') +
+        (sessionLive && reviewer.session ? '<div class="kcard-agent-actions"><button class="btn btn-secondary kcard-review-open" data-review-session="' + escHtml(reviewer.session) + '">Open</button></div>' : '') +
         '</div>';
+    }
+
+    function buildSpecReviewSectionsHtml(feature) {
+      const specReviews = feature.specReviewSessions || [];
+      const specRevisions = Array.isArray(feature.specRevisionSessions) && feature.specRevisionSessions.length > 0
+        ? feature.specRevisionSessions
+        : (feature.specCheckSessions || []);
+      let html = '';
+      specReviews.forEach(r => { html += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
+      specRevisions.forEach(r => { html += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
+      return html;
+    }
+
+    function buildPendingSpecReviewCalloutHtml(feature, validActions, pipelineType) {
+      const specReviews = feature.specReviewSessions || [];
+      const pendingReviews = specReviews.filter(r => r && r.status === 'pending');
+      if (pendingReviews.length === 0) return '';
+      const reviseAction = pipelineType === 'research' ? 'research-spec-revise' : 'feature-spec-revise';
+      const reviseVa = (validActions || []).find(va => va.action === reviseAction);
+      if (!reviseVa) return '';
+
+      const headline = pendingReviews.length === 1
+        ? '1 spec review pending'
+        : pendingReviews.length + ' spec reviews pending';
+      const reviewWithMaterial = pendingReviews.find(r => r.commitSha || r.summary);
+      const alivePending = pendingReviews.find(r => r.sessionRunning && r.session);
+      const secondaryHtml = (!alivePending && reviewWithMaterial)
+        ? '<button class="btn btn-secondary btn-xs kcard-va-btn" data-view-spec-review-log data-agent="' + escHtml(reviewWithMaterial.agent) + '">View review</button>'
+        : '';
+
+      return '<div class="kcard-spec-review-pending" role="note">' +
+        '<div class="kcard-spec-review-pending-title">' + escHtml(headline) + '</div>' +
+        '<div class="kcard-spec-review-pending-detail">Address the review before starting implementation.</div>' +
+        '<div class="kcard-spec-review-pending-actions">' +
+          '<button class="btn btn-primary btn-xs kcard-va-btn" data-va-action="' + escHtml(reviseVa.action) + '">Revise spec</button>' +
+          secondaryHtml +
+        '</div>' +
+      '</div>';
+    }
+
+    function buildSpecReviewBlockHtml(feature, validActions, pipelineType) {
+      return buildSpecReviewSectionsHtml(feature) + buildPendingSpecReviewCalloutHtml(feature, validActions, pipelineType);
     }
 
     function buildReviewCycleHistoryHtml(feature) {
@@ -1136,6 +1181,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
+        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
         innerHtml += buildReviewCycleHistoryHtml(feature);
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
@@ -1165,6 +1211,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
+        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
         innerHtml += buildReviewCycleHistoryHtml(feature);
         innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
@@ -1191,11 +1238,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
               evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
             }
           }
-          const specReviews = feature.specReviewSessions || [];
-          const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
-          let specReviewHtml = '';
-          specReviews.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
-          specRevisions.forEach(r => { specReviewHtml += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
+          const specReviewHtml = buildSpecReviewBlockHtml(feature, validActions, pipelineType);
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
             evalStatusHtml +
@@ -1281,6 +1324,21 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
           } catch (err) {
             showToast('Could not open session: ' + err.message, null, null, { error: true });
           }
+        };
+      });
+
+      card.querySelectorAll('[data-view-spec-review-log]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          if (!feature.specPath) return;
+          const agentId = btn.getAttribute('data-agent');
+          const displayName = feature.name.replace(/-/g, ' ');
+          openDrawer(feature.specPath, displayName, feature.stage, repoPath, {
+            entityId: feature.id,
+            initialTab: 'log',
+            initialLogAgent: agentId || null,
+            detailFingerprint: feature.detailFingerprint || null,
+          });
         };
       });
 
