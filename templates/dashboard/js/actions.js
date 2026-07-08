@@ -135,6 +135,10 @@ function renderActionButtons(feature, repoPath, pipelineType) {
 
   const evalRunning = feature.evalSession && feature.evalSession.running;
   const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
+  const pendingSpecReviews = (feature.specReviewSessions || []).filter(r => r && r.status === 'pending');
+  const reviseActionName = pipelineType === 'research' ? 'research-spec-revise' : 'feature-spec-revise';
+  const demoteStartForSpecReview = pendingSpecReviews.length > 0
+    && validActions.some(va => va.action === reviseActionName);
   const buttonsToRender = validActions.filter(va => {
     if (va.action === 'select-winner') return false;
     if (va.agentId) return false;
@@ -177,6 +181,10 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   const overflow = [];
 
   deduped.forEach((va) => {
+    if (demoteStartForSpecReview && (va.action === 'feature-start' || va.action === 'research-start')) {
+      secondary.push(va);
+      return;
+    }
     if (evalPickWinner) {
       if (va.action === 'feature-close') { primary.push(va); return; }
       if (va.action === 'feature-eval') { overflow.push(va); return; }

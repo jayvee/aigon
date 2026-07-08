@@ -199,8 +199,8 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
     await engine.recordSpecReviewStarted(repo, 'feature', '50', { reviewerId: 'cx' });
     let state = wrm.getFeatureDashboardState(repo, '50', 'backlog', []);
     assert.deepStrictEqual(
-        state.specReviewSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status })),
-        [{ agent: 'cx', running: true, status: 'reviewing' }],
+        state.specReviewSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status, sessionRunning: s.sessionRunning })),
+        [{ agent: 'cx', running: true, status: 'reviewing', sessionRunning: false }],
     );
     assert.strictEqual(state.specCheckSessions.length, 0);
     await engine.recordSpecReviewSubmitted(repo, 'feature', '50', {
@@ -208,8 +208,8 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
     });
     state = wrm.getFeatureDashboardState(repo, '50', 'backlog', []);
     assert.deepStrictEqual(
-        state.specReviewSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status })),
-        [{ agent: 'cx', running: false, status: 'pending' }],
+        state.specReviewSessions.map(s => ({ agent: s.agent, running: s.running, status: s.status, sessionRunning: s.sessionRunning })),
+        [{ agent: 'cx', running: false, status: 'pending', sessionRunning: false }],
     );
     await engine.recordSpecReviewCheckStarted(repo, 'feature', '50', { checkerId: 'cc' });
     state = wrm.getFeatureDashboardState(repo, '50', 'backlog', []);
@@ -226,6 +226,31 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
     assert.strictEqual(state.specReviewSessions.length, 0);
     assert.strictEqual(state.specCheckSessions.length, 0);
 }));
+
+// REGRESSION F651: spec-review tmux session lookup uses role-prefixed names for peek/open.
+test('findSpecReviewTmuxSession resolves spec-review role sessions from tmux list', () => {
+    const helpersPath = require.resolve('../../lib/dashboard-status-helpers');
+    const wrmPath = require.resolve('../../lib/workflow-read-model');
+    const helpers = require(helpersPath);
+    const origFind = helpers.findTmuxSessionsByPrefix;
+    const featureSession = 'aigon-repo-f649-spec-review-cx-nudge-confirm';
+    helpers.findTmuxSessionsByPrefix = (prefix, mapSession) => [featureSession]
+        .filter(session => session.startsWith(prefix))
+        .map(session => mapSession(session))
+        .filter(Boolean);
+    delete require.cache[wrmPath];
+    const wrmFresh = require(wrmPath);
+    try {
+        assert.strictEqual(
+            wrmFresh.findSpecReviewTmuxSession('/tmp/aigon-repo', 'feature', '649', 'spec-review', 'cx'),
+            featureSession,
+        );
+    } finally {
+        helpers.findTmuxSessionsByPrefix = origFind;
+        delete require.cache[wrmPath];
+    }
+});
+
 test('dashboard status helpers preserve revision-complete state', () => {
     assert.strictEqual(normalizeDashboardStatus('revision-complete'), 'revision-complete');
     assert.strictEqual(
