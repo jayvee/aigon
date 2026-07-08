@@ -5,7 +5,7 @@ Agent: cu
 Phase A: `feature.js` 2228→1363 lines; extracted close/lifecycle/now/open/backfill; dissolved `misc.js` into `agent-signals.js`, `ops.js`, `insights.js`. Phase B: removed `/api/budget` + `/api/quota` shims, deleted `quota-poller.js`, trimmed `budget-poller.js` to scrape primitives; AGENTS.md refresh + `check-module-graph.js` path-existence guard.
 
 ## New API Surface
-Removed: `GET/POST /api/budget`, `GET/POST /api/quota`. Surviving: `GET/POST /api/agent-quota`.
+Removed: `GET /api/budget`, `POST /api/budget/refresh`, `GET /api/quota`, `POST /api/quota/refresh`. Surviving: `GET /api/agent-quota`, `POST /api/agent-quota/refresh`.
 
 ## Key Decisions
 - Kept `lib/budget-poller.js` name (scrape-only) to limit import churn.
@@ -25,3 +25,20 @@ Removed: `GET/POST /api/budget`, `GET/POST /api/quota`. Surviving: `GET/POST /ap
 ## Test Coverage
 - `npm run test:iterate` green (lint + 45 scoped integration tests + browser smoke).
 - `node scripts/check-module-graph.js` green with updated baseline.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- `fb0bdc260 fix(review): repair shim sunset docs and guards`
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- Fixed an extraction typo in `branchIsMerged`, strengthened the AGENTS.md module-map guard to inspect every backticked path in multi-module rows, and refreshed stale architecture/changelog route documentation.
