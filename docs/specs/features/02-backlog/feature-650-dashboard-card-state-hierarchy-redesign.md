@@ -115,8 +115,8 @@ Exact wording may vary, but the visual priority must match: one red current-stat
 - [ ] Agent/session controls are compact by default and do not create nested-card clutter. Terminal/debug controls are either inline compact controls, overflow items, or hidden until relevant.
 - [ ] Research cards receive the same treatment as feature cards, including review/evaluation/ready states and research-specific labels.
 - [ ] Feature-set card/group rendering does not reintroduce the same conflict for member feature/research status. If set cards keep a distinct visual system, any embedded member state summaries follow the same current-vs-history hierarchy.
-- [ ] Internal agent guidance is added to the aigon repo's own docs (`docs/dashboard-card-design.md`), referenced from CLAUDE.md and `docs/architecture.md` § Dashboard Frontend. It explains the dashboard card hierarchy, color rules, action priority, and "one dominant state" rule. Nothing is added to `templates/docs/` (target-repo boundary).
-- [ ] `docs/card-design-wireframe.html` is updated (or explicitly superseded, with the CLAUDE.md pointer updated) so the canonical card reference and the shipped cards do not disagree.
+- [ ] Internal agent guidance is added to the aigon repo's own docs (`docs/dashboard-card-design.md`), referenced from `AGENTS.md`, `CLAUDE.md`, and `docs/architecture.md` "Dashboard Frontend". It explains the dashboard card hierarchy, color rules, action priority, and "one dominant state" rule. Nothing is added to `templates/docs/` (target-repo boundary).
+- [ ] `docs/card-design-wireframe.html` is updated (or explicitly superseded, with the `AGENTS.md` / `CLAUDE.md` pointers updated) so the canonical card reference and the shipped cards do not disagree.
 - [ ] Visual QA screenshots are captured for at least these scenarios: normal running feature, failed close/recovery feature, completed review waiting for close, research ready to evaluate, research running/reviewing, and a feature-set group containing a failed member. Screenshots are saved under `./tmp/` (never the repo root) and referenced from the implementation log.
 - [ ] Responsive QA covers at least 390px mobile width, 1280px desktop width, and a wide desktop layout. Cards must not clip text, overlap buttons, or grow from repeated nested panels.
 
@@ -128,10 +128,10 @@ node --check templates/dashboard/js/monitor.js
 node --check templates/dashboard/js/pipeline.js
 node --check templates/dashboard/js/set-cards.js
 npm run test:iterate    # mid-iteration gate (auto-runs Playwright @smoke when dashboard files change)
-npm run test:deploy     # once, before feature-close — full core + browser + budget gate
+npm run test:deploy     # once, before feature-close - full core + browser + budget gate
 ```
 
-Do not run `test:browser` / `test:ui` / `test:deploy` mid-iteration; `npm run test:iterate` is the iteration gate. Interactive UI verification from the worktree uses `aigon preview 650` and snapshots that preview URL — never the primary `aigon.localhost` and never `aigon server start` from the worktree.
+Do not run `test:browser` / `test:ui` / `test:deploy` mid-iteration; `npm run test:iterate` is the iteration gate. Interactive UI verification from the worktree uses `aigon preview 650` and snapshots that preview URL - never the primary `aigon.localhost` and never `aigon server start` from the worktree.
 
 ## Pre-authorised
 
@@ -159,7 +159,7 @@ Start by mapping the fields currently available to feature and research cards:
 
 Specifically audit `cardHeadline`, `stateRenderMeta`, `lastCloseFailure`, `autonomousSession`, `autonomousPlan`, `reviewStatus`, `reviewSessionSummary`, `reviewSessions`, `reviewCycles`, `evalSession`, `validActions`, `agents`, `currentSpecState`, and research equivalents.
 
-Also read `docs/card-design-wireframe.html` before designing: it is the canonical card reference design (vocabulary, layout, all states) that CLAUDE.md directs agents to for pipeline card changes. This feature must either update that wireframe to reflect the new hierarchy or replace it and update the CLAUDE.md pointer — the wireframe and the shipped cards must not disagree after this feature.
+Also read `docs/card-design-wireframe.html` before designing: it is the canonical card reference design (vocabulary, layout, all states) that `AGENTS.md` and `CLAUDE.md` direct agents to for pipeline card changes. This feature must either update that wireframe to reflect the new hierarchy or replace it and update the corresponding pointers - the wireframe and the shipped cards must not disagree after this feature.
 
 Do not add new workflow engine states for this feature. This is a read/render/design-system cleanup unless the audit finds missing read-model data that prevents correct hierarchy.
 
@@ -186,10 +186,10 @@ Possible locations:
 
 Pick the least invasive location, but avoid duplicating state-priority rules independently in `monitor.js` and `pipeline.js`.
 
-Architecture constraints (dash-arch F620–F628):
+Architecture constraints (dash-arch F620-F628):
 
 - If the server-side option adds new `/api/status` fields, add them to `computeStatusFingerprint` in `lib/dashboard-status-version.js`, or the ETag/SSE pipeline will not repaint cards when they change.
-- If the client-side option is chosen, the helper must be a pure derivation over data that entered via `store.js replaceData` — no hand-mutation of store state.
+- If the client-side option is chosen, the helper must be a pure derivation over data that entered via `store.js replaceData` - no hand-mutation of store state.
 
 State priority should be explicit and tested. Draft priority:
 
@@ -237,11 +237,11 @@ Any new stylesheet must be added to `templates/dashboard/styles/manifest.json` (
 
 ### 6. Internal design guidance for agents
 
-Add the guidance to the aigon repo's own maintainer docs, **not** `templates/docs/` — templates install into target repos, target-repo agents never edit the dashboard renderer, and the target-repo boundary (CLAUDE.md rule 10, `scripts/check-template-leaks.js`) forbids Aigon-internal content there. Recommended shape:
+Add the guidance to the aigon repo's own maintainer docs, **not** `templates/docs/` - templates install into target repos, target-repo agents never edit the dashboard renderer, and the target-repo boundary (`CLAUDE.md` rule 10, `AGENTS.md` target-repo boundary, `scripts/check-template-leaks.js`) forbids Aigon-internal content there. Recommended shape:
 
 - Add `docs/dashboard-card-design.md` with the card hierarchy, state priority, color rules, action priority, and examples.
 - Update `docs/card-design-wireframe.html` (the canonical card reference design) so the wireframe reflects the new hierarchy; the new doc and the wireframe must agree, with the wireframe as the visual reference and the markdown as the rules.
-- Update the CLAUDE.md rule-7 pointer and `docs/architecture.md` § Dashboard Frontend so future agents find the rules before editing the renderer.
+- Update the `AGENTS.md` dashboard frontend/card reference section, the `CLAUDE.md` rule-7 pointer, and `docs/architecture.md` "Dashboard Frontend" so future agents find the rules before editing the renderer.
 
 The guidance must explicitly say:
 
@@ -284,7 +284,7 @@ Existing test names may differ; use the repo's current dashboard test harness ra
 ## Related
 
 - User-provided screenshot: failed close-integrity feature card with competing red/green status surfaces (two filled red `Close failed` surfaces plus an `Autonomous failed` panel, a green `Ready to close` line directly above a red failure chip, nested agent panels, and a disabled `Open Terminal` button all at similar weight).
-- Canonical card reference design: `docs/card-design-wireframe.html` (CLAUDE.md rule 7) — must be updated in step with this feature.
+- Canonical card reference design: `docs/card-design-wireframe.html` (`AGENTS.md` dashboard frontend section, `CLAUDE.md` rule 7) - must be updated in step with this feature.
 - Prior feature: F297 autonomous mode stage status.
 - Prior feature: F432 close-recovery state.
 - Prior feature: F527 startup phase UI.
