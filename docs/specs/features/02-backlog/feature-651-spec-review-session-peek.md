@@ -5,10 +5,6 @@ complexity: high
 #              #   does not pick one explicitly. Precedence at revision time:
 #              #     event payload nextReviewerId > frontmatter agent:
 #              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
 # planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
 #              #   generated during an interactive planning session (e.g. EnterPlanMode).
 #              #   Content is injected into the agent's context at feature-do time and
@@ -32,7 +28,7 @@ transitions:
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-When a feature or research item is in a spec-review or spec-revision cycle, the dashboard must expose the live tmux session with the same peek/open controls used for implementation, evaluation, and code-review sessions. Today the backend can create and discover `spec-review` tmux sessions, but the main card renderer only shows spec-review session blocks in the fallback layout for cards without active agent sections. The result is a card that can display "Spec Review / <agent> - Reviewing" while offering no way to peek at or open the tmux pane.
+When a feature or research item is in a spec-review, spec-revision, or spec-check cycle, the dashboard must expose the live tmux session with the same peek/open controls used for implementation, evaluation, and code-review sessions. Today the backend can create and discover `spec-review` tmux sessions, but the main card renderer only shows spec-review session blocks in the fallback layout for cards without active agent sections. The result is a card that can display "Spec Review / <agent> - Reviewing" while offering no way to peek at or open the tmux pane in the primary card layout.
 
 ## User Stories
 - [ ] As an operator, I can peek at a live spec-review session directly from the dashboard card while the review is running.
@@ -42,7 +38,8 @@ When a feature or research item is in a spec-review or spec-revision cycle, the 
 - [ ] As an operator, after a spec review is submitted, the dashboard clearly nudges me to run spec revision before starting implementation.
 
 ## Acceptance Criteria
-- [ ] `feature.specReviewSessions`, `feature.specRevisionSessions`, and `feature.specCheckSessions` render on dashboard cards in every relevant layout branch, including cards that also have active agent sections.
+- [ ] `feature.specReviewSessions` render on dashboard cards in every relevant layout branch, including cards that also have active agent sections.
+- [ ] `feature.specRevisionSessions` or `feature.specCheckSessions` render once, with whichever populated collection is available, on dashboard cards in every relevant layout branch, including cards that also have active agent sections.
 - [ ] The existing reviewer-section UI renders a peek button whenever a spec-review/spec-revision DTO has a session name.
 - [ ] The existing reviewer-section UI renders an "Open" action when the underlying spec-review/spec-revision tmux session is alive, even if the workflow state says the review has been submitted or is pending revision.
 - [ ] `/api/peek/:id/:agent` can resolve live `spec-review`, `spec-revise`, and `spec-check` sessions for both feature and research entities, in addition to the existing implementation/eval/code-review fallbacks.
@@ -50,7 +47,7 @@ When a feature or research item is in a spec-review or spec-revision cycle, the 
 - [ ] When one or more spec reviews are pending and the server-provided `validActions` includes `feature-spec-revise` or `research-spec-revise`, the card renders a compact pending-review callout under the spec-review section.
 - [ ] The pending-review callout includes a primary "Revise spec" action that uses the existing validAction handling path, including the existing agent picker behavior when a reviewer/checker must be selected.
 - [ ] The pending-review callout includes secondary review access, either via the existing peek control when a session is alive or a "View review" affordance when a review commit/log path is available.
-- [ ] While a spec review is pending, "Start" is not the visually primary next action on the card; it is demoted, hidden behind overflow, or otherwise lower priority than "Revise spec" without changing backend transition validity.
+- [ ] While a spec review is pending, "Revise spec" is visually primary relative to "Start" on the card without changing backend transition validity.
 - [ ] Research spec-review cards receive the same peek/open behavior as feature spec-review cards.
 - [ ] Existing implementation, evaluation, code-review, set-level spec-review, and autonomous peek controls continue to work.
 - [ ] Tests or focused assertions cover the dashboard render helper/read-model behavior and the `/api/peek` session resolution path for `spec-review`.
@@ -83,14 +80,11 @@ Relevant current behavior:
 
 Implementation plan:
 
-1. Extract a small `buildSpecReviewSectionsHtml(feature)` helper in `templates/dashboard/js/pipeline.js` that renders:
-   - `feature.specReviewSessions` as `buildReviewerSectionHtml('Spec Review', row, { mode: 'spec' })`
-   - `feature.specRevisionSessions || feature.specCheckSessions` as `buildReviewerSectionHtml('Spec Revision', row, { mode: 'spec-revise' })`
-2. Append that helper in all card branches that can render a non-done item, especially the active-agent branch near the existing code-review section.
-3. Update `buildReviewerSectionHtml()` so the Open button keys off live session state rather than strictly `reviewer.running === true`. Keep the visible status text driven by workflow status so submitted/pending reviews still read correctly.
-4. Update `readSpecReviewSessions()` and `readSpecCheckSessions()` in `lib/workflow-read-model.js` to include live tmux information, for example `sessionRunning: Boolean(session && tmuxSessionExists(session))`. Preserve `status`, `source`, and `running` meanings unless the current code already treats `running` as tmux liveness for that row.
-5. Extend `/api/peek/:id/:agent` in `lib/dashboard-routes/sessions.js` to search `spec-review`, `spec-revise`, and `spec-check` roles for both `f` and `r`. Prefer using existing session-name parsing/helpers rather than hardcoding one fragile exact name.
-6. Add a server-driven pending spec-review nudge to the card UI:
+1. Render spec-review and spec-revision/spec-check sections in every card branch that can already show live agent, eval, or code-review sections, including the active-agent layout.
+2. Keep the reviewer-section UI generic, but make the Open action depend on live tmux existence rather than workflow status alone so submitted reviews stay peekable while the session is still alive.
+3. Update `readSpecReviewSessions()` and `readSpecCheckSessions()` in `lib/workflow-read-model.js` to include live tmux information, for example `sessionRunning: Boolean(session && tmuxSessionExists(session))`. Preserve `status`, `source`, and `running` meanings unless the current code already treats `running` as tmux liveness for that row.
+4. Extend `/api/peek/:id/:agent` in `lib/dashboard-routes/sessions.js` to search `spec-review`, `spec-revise`, and `spec-check` roles for both `f` and `r`. Prefer using existing session-name parsing/helpers rather than hardcoding one fragile exact name.
+5. Add a server-driven pending spec-review nudge to the card UI:
    - Render only when pending spec-review state exists and the appropriate `*-spec-revise` validAction is present.
    - Place the callout directly under the spec-review row so the sequence is visible: review submitted -> revise spec.
    - Suggested copy:
@@ -99,8 +93,8 @@ Implementation plan:
      - For multiple reviews, use `N spec reviews pending`.
    - Primary action: `Revise spec`, wired through the existing validAction button machinery.
    - Secondary action: `View review` when review material is available; otherwise keep the row-level peek button as the review access point.
-   - Demote `Start` while the callout is active so the dashboard does not visually encourage implementation before review feedback is addressed. Do not remove backend start validity unless the state machine already disallows it.
-7. Add focused tests around the changed helper/read-model/route behavior if the local test structure has existing dashboard tests. If no suitable harness exists, add the narrowest test that exercises the exported/readable logic without requiring a real dashboard browser.
+   - Visually prioritize `Revise spec` relative to `Start` without changing backend start validity.
+6. Add focused tests around the changed helper/read-model/route behavior if the local test structure has existing dashboard tests. If no suitable harness exists, add the narrowest test that exercises the exported/readable logic without requiring a real dashboard browser.
 
 Known reproduction from local diagnosis:
 
