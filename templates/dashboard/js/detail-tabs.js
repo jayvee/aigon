@@ -1,4 +1,9 @@
 /* dashboard-esm-processed */
+
+import { handleFeatureAction, renderActionButtons } from './actions.js';
+import { isCompleteStatus } from './utils.js';
+import { drawerState } from './spec-drawer.js';
+import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js';
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
     function findEntityInDashboardState(entityType, entityId, repoPath) {
@@ -1033,4 +1038,5 @@
     }
 
 // ── ESM exports (F623) ──
+export { createDrawerDetailTabs };
 Object.assign(globalThis, { createDrawerDetailTabs });

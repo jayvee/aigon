@@ -1,26 +1,9 @@
 /* dashboard-esm-processed */
+
 import { defaultAgent } from './injected.js';
-import {
-  state,
-  lsKey,
-  replaceData,
-  addOptimistic,
-  dropOptimistic,
-  createEntityStartOverlay,
-  createEntityDeleteOverlay,
-  clearStartupPhaseForEntity,
-  markActionPending,
-  clearActionPending,
-  isActionPending,
-  markDevServerPokePending,
-  clearDevServerPokePending,
-  recordCloseFailure,
-  clearCloseFailure,
-  setView,
-  setFailures,
-  setLastStatusVersion,
-  setLastRenderedStatusVersion,
-} from './store.js';
+import { addOptimistic, clearActionPending, clearCloseFailure, clearDevServerPokePending, clearStartupPhaseForEntity, createEntityDeleteOverlay, createEntityStartOverlay, dropOptimistic, isActionPending, lsKey, markActionPending, markDevServerPokePending, recordCloseFailure, replaceData, setFailures, setLastRenderedStatusVersion, setLastStatusVersion, setView, state } from './store.js';
+import { openTerminalPanel } from './terminal.js';
+import { escHtml, showToast } from './utils.js';
 
     async function requestAttach(repoPath, featureId, agentId, tmuxSession){
       try {
@@ -636,4 +619,5 @@ import {
     });
 
 // ── ESM exports (F623) ──
+export { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos };
 Object.assign(globalThis, { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestAttach, requestFeatureOpen, requestRefresh, requestRepoMainDevServerStart, requestSpecReconcile, requestSpecReviewLaunch, syncDashboardHiddenRepos });

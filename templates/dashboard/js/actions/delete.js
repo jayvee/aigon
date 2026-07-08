@@ -1,5 +1,7 @@
-/** F519 action module: delete */
+
+import { state } from '../state.js';
 import * as H from './shared.js';
+/** F519 action module: delete */
 
 export async function open(ctx) {
   const { va, feature, repoPath, btn, pipelineType } = ctx;

@@ -1,5 +1,6 @@
-/** F519 action module: nudge */
+
 import * as H from './shared.js';
+/** F519 action module: nudge */
 
 let nudgeModalFeature = null;
 let nudgeModalRepoPath = null;

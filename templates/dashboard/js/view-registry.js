@@ -1,7 +1,12 @@
 /* dashboard-esm-processed */
-import { state } from './store.js';
-import { createSessionsView } from './views/sessions-view.js';
+
+import { renderAllItemsView, renderLogs, renderStatistics } from './logs.js';
+import { renderUpdateBadge, updateTitleAndFavicon, updateViewTabs } from './monitor.js';
+import { renderRepoHeader, renderSidebar } from './sidebar.js';
+import { setView, state } from './store.js';
+import { relTime } from './utils.js';
 import { createInsightsView } from './views/insights-view.js';
+import { createSessionsView } from './views/sessions-view.js';
 
 export const VALID_VIEW_IDS = [
   'monitor', 'pipeline', 'sessions', 'statistics', 'insights', 'logs', 'all-items', 'settings',
@@ -238,6 +243,7 @@ export function initViewShell() {
   });
 }
 
+export { settingsNeedsRerender };
 Object.assign(globalThis, {
   applyView,
   updateActiveView,

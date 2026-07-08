@@ -1,4 +1,9 @@
 /* dashboard-esm-processed */
+
+import { isRepoHidden, state, toggleRepoVisibility } from './state.js';
+import { setSettingsDefaultsRepo, setSettingsModelRepo } from './store.js';
+import { getTerminalClickTarget, getTerminalFont, setTerminalClickTarget, setTerminalFont } from './terminal.js';
+import { escHtml, relTime, showToast } from './utils.js';
     // ── Settings view ──────────────────────────────────────────────────────────
 
     function showDoctorModal(repoPath, displayPath) {
@@ -2135,4 +2140,5 @@
     }
 
 // ── ESM exports (F623) ──
+export { renderSettings };
 Object.assign(globalThis, { renderSettings });

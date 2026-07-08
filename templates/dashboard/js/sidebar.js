@@ -1,5 +1,12 @@
 /* dashboard-esm-processed */
+
+import { renderAgentPickerRows, renderPickerRecommendationBanner, setPickerRecommendation } from './actions-picker.js';
+import { requestRepoMainDevServerStart } from './api.js';
+import { updatePickerBudgetNotice } from './budget-widget.js';
 import { agents, defaultAgent } from './injected.js';
+import { isRepoHidden, lsKey, state } from './state.js';
+import { setSelectedRepo } from './store.js';
+import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
     // ── AI session picker ──────────────────────────────────────────────────────
 
     // ── Ask-agent helpers ─────────────────────────────────────────────────────
@@ -525,4 +532,5 @@ import { agents, defaultAgent } from './injected.js';
     });
 
 // ── ESM exports (F623) ──
+export { buildAskAgentHtml, buildMainDevServerHtml, fetchAgentModels, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker };
 Object.assign(globalThis, { buildAskAgentHtml, buildMainDevServerHtml, fetchAgentModels, getAskAgent, renderRepoHeader, renderSidebar, runAskAgent, setAskAgent, showAgentPicker });

@@ -1,4 +1,10 @@
 /* dashboard-esm-processed */
+
+import { getLastKanbanReconcileStats } from './pipeline.js';
+import { renderUpdateBadge, updateTitleAndFavicon } from './monitor.js';
+import { POLL_MS, TS_MS, state } from './state.js';
+import { replaceData, setFailures, setLastRenderedStatusVersion, setLastStatusVersion, toggleSidebarHidden } from './store.js';
+import { copyText, escHtml, relTime, showToast } from './utils.js';
     function flattenStatuses(data) {
       const map = new Map();
       (data.repos || []).forEach(repo => {
@@ -267,4 +273,5 @@
     loadNotifications();
 
 // ── ESM exports (F623) ──
+export { loadNotifications, poll, refreshTimestamps, render, setPollInterval };
 Object.assign(globalThis, { loadNotifications, poll, refreshTimestamps, render, setPollInterval });

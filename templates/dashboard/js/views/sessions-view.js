@@ -1,4 +1,8 @@
 /* dashboard-esm-processed */
+
+import { state } from '../state.js';
+import { getTerminalClickTarget, openTerminalPanel } from '../terminal.js';
+import { escHtml, relTime, showToast } from '../utils.js';
 const SESSIONS_UPDATE_DEBOUNCE_MS = 500;
 
 export function createSessionsView() {

@@ -1,4 +1,7 @@
 /* dashboard-esm-processed */
+
+import { AGENT_DISPLAY_NAMES } from './actions-picker.js';
+import { state } from './state.js';
     // ── Utilities ─────────────────────────────────────────────────────────────
 
     function relTime(iso) {
@@ -32,6 +35,15 @@
     }
     function statusRank(s){ return s === 'waiting' ? 0 : s === 'implementing' ? 1 : s === 'error' ? 2 : 3; }
     function featureRank(feature){ return feature.agents && feature.agents.length > 0 ? Math.min(...feature.agents.map(a => statusRank(a.status))) : 99; }
+
+    const COMPLETION_STATUSES = new Set([
+      'implementation-complete',
+      'revision-complete',
+      'research-complete',
+      'review-complete',
+      'spec-review-complete',
+    ]);
+    function isCompleteStatus(s) { return COMPLETION_STATUSES.has(s); }
 
     function showToast(text, actionLabel, actionFn, opts){
       const wrap = document.getElementById('toasts');
@@ -115,7 +127,7 @@
      * display name client-side at render time so both stay in sync.
      */
     function _resolveAgentIdsInHeadlineText(text) {
-      const map = (typeof AGENT_DISPLAY_NAMES === 'object' && AGENT_DISPLAY_NAMES) || {};
+      const map = AGENT_DISPLAY_NAMES || {};
       const ids = Object.keys(map).filter(id => id && id !== 'solo');
       if (ids.length === 0) return text;
       // Match each id as a whole word so 'cc' inside 'cuisine' isn't replaced.
@@ -241,4 +253,5 @@
     }
 
 // ── ESM exports (F623) ──
-Object.assign(globalThis, { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, logsDateFmt, relTime, showToast, statusRank });
+export { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, relTime, showToast, statusRank };
+Object.assign(globalThis, { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, relTime, showToast, statusRank });

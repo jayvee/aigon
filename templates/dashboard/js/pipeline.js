@@ -1,6 +1,16 @@
 /* dashboard-esm-processed */
+
+import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
+import { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal } from './actions.js';
+import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestSpecReconcile } from './api.js';
 import { agents, defaultAgent } from './injected.js';
-import { subscribeDataChange } from './store.js';
+import { getVisibleRepos } from './monitor.js';
+import { getAskAgent, showAgentPicker } from './sidebar.js';
+import { openDrawer } from './spec-drawer.js';
+import { lsKey, state } from './state.js';
+import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, subscribeDataChange } from './store.js';
+import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
+import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -342,15 +352,7 @@ import { subscribeDataChange } from './store.js';
       '</a>';
     }
 
-    // Completion-signal set — single source of truth for all complete-like statuses.
-    const COMPLETION_STATUSES = new Set([
-      'implementation-complete',
-      'revision-complete',
-      'research-complete',
-      'review-complete',
-      'spec-review-complete',
-    ]);
-    function isCompleteStatus(s) { return COMPLETION_STATUSES.has(s); }
+    // Completion-signal set — single source of truth (see utils.js isCompleteStatus).
 
     // Implementer "done" signals — the agent has finished its work and is idling at its prompt.
     // Used to suppress the tmux-alive "Running" override so the card doesn't lie about active work.
@@ -2217,7 +2219,7 @@ import { subscribeDataChange } from './store.js';
 
 // ── ESM exports (F623) ──
 // Alpine markup in index.html calls several pipeline helpers as bare globals.
-export { handleCloseWithAgent, isCompleteStatus, pipelineView };
+export { getLastKanbanReconcileStats, handleCloseWithAgent, isCompleteStatus, pipelineView };
 Object.assign(globalThis, {
   closeAllKcardOverflowMenus,
   pipelineCommand,

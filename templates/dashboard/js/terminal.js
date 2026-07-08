@@ -1,4 +1,8 @@
 /* dashboard-esm-processed */
+
+import { closeDrawer, drawerState, openDrawer } from './spec-drawer.js';
+import { lsKey } from './state.js';
+import { showToast } from './utils.js';
     // ── Terminal panel ────────────────────────────────────────────────────────
 
     // Per-user prefs (localStorage)
@@ -592,4 +596,5 @@
     }
 
 // ── ESM exports (F623) ──
+export { getTerminalClickTarget, getTerminalFont, openResearchFindingsPeek, openTerminalPanel, setTerminalClickTarget, setTerminalFont, termState };
 Object.assign(globalThis, { getTerminalClickTarget, getTerminalFont, openResearchFindingsPeek, openTerminalPanel, setTerminalClickTarget, setTerminalFont, termState });

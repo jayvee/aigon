@@ -1,4 +1,5 @@
 /* dashboard-esm-processed */
+
 import { INITIAL_DATA, INSTANCE_NAME } from './injected.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────

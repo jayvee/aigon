@@ -1,4 +1,10 @@
 /* dashboard-esm-processed */
+
+import { createDrawerDetailTabs } from './detail-tabs.js';
+import { getAskAgent } from './sidebar.js';
+import { lsKey } from './state.js';
+import { openTerminalPanel, termState } from './terminal.js';
+import { copyText, escHtml, showToast } from './utils.js';
     // ── Spec drawer ──────────────────────────────────────────────────────────
 
     const drawerState = {
@@ -278,4 +284,5 @@
     });
 
 // ── ESM exports (F623) ──
+export { closeDrawer, drawerState, openDrawer };
 Object.assign(globalThis, { closeDrawer, drawerState, openDrawer });
