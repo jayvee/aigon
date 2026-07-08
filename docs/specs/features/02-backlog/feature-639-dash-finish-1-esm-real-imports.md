@@ -1,0 +1,44 @@
+---
+complexity: high
+set: dash-finish
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-08T00:14:51.395Z", actor: "cli/feature-prioritise" }
+---
+
+# Feature: dash-finish-1-esm-real-imports
+
+## Summary
+F623 (dash-arch-4) converted the dashboard frontend to native ES modules but stopped at "wave 1": every module still publishes its API via `Object.assign(globalThis, …)` shims (22 files) and cross-file calls are still bare globals. This feature is the deferred **wave 2**: replace bare-global consumption with real `import` statements, file by file, so each module's dependencies are explicit at the top of the file. The `globalThis` shims themselves stay for now (Alpine expressions in `index.html` and the Pro stubs still need them — sunset is dash-finish-3); this feature only changes *consumers* to imports. Also deletes the one-shot codemod helpers `scripts/dashboard-esm-migrate.js` and `scripts/dashboard-esm-fix-exports.js` that F623's log marked safe to remove.
+
+## User Stories
+- [ ] As a maintainer reading any `templates/dashboard/js/` module, I can see its full dependency list in its import block instead of guessing which bare identifiers resolve via `globalThis`.
+- [ ] As a maintainer, renaming or moving an exported function breaks loudly at load time (unresolved import), not silently at click time (undefined global).
+
+## Acceptance Criteria
+- [ ] Every module under `templates/dashboard/js/` (including `js/views/` and `js/actions/`) references cross-module app functions/constants via `import { … } from './x.js'` — no reads of app identifiers off implicit globals remain in converted files.
+- [ ] Import graph mirrors the `main.js` order without introducing top-level-await or execution-order regressions; `main.js`'s side-effect import list shrinks to only modules that genuinely need boot-time side effects (registration, init).
+- [ ] Cycles that block a clean conversion (`state↔api↔init` family) are documented in the implementation log with the chosen interim shape (late-bound accessor, callback parameter, or `subscribeDataChange`) — breaking them structurally is dash-finish-3's job, not this one's.
+- [ ] `scripts/dashboard-esm-migrate.js` and `scripts/dashboard-esm-fix-exports.js` are deleted.
+- [ ] Vendored libraries, Pro stubs (`templates/dashboard/stubs/`), and the `/js/*.js` Pro asset swap URLs in `main.js` keep working exactly as before (stub vs `@aigon/pro` resolution untouched).
+- [ ] `npm run test:browser` passes; interactive smoke via `aigon preview <id>` shows all eight tabs render and actions fire.
+
+## Validation
+```bash
+```
+
+## Technical Approach
+Mechanical but judgment-heavy: convert leaf modules first (no dependents), then work up the graph. Where module A needs a function that lives in a cycle with A, prefer passing it as a parameter or subscribing via `store.js subscribeDataChange` over adding a new global. Do NOT delete the `Object.assign(globalThis, …)` export lines in this feature — `index.html` Alpine expressions and the eslint config still assume them; removal is sequenced in dash-finish-2/3. Keep each file's conversion an isolated commit so bisection works.
+
+## Dependencies
+-
+
+## Out of Scope
+- Deleting `globalThis` shims, the eslint `dashboardAppGlobals` allowlist (`eslint.config.js:109`), or the 66 `typeof fn === 'function'` guards — dash-finish-3.
+- Alpine expression boundary in `index.html` — dash-finish-2.
+- Any behaviour, layout, or CSS change.
+
+## Open Questions
+- Whether `js/actions/` lazy `import()` modules (F519) should switch their `ctx.helpers` indirection to direct imports now or stay as-is until dash-finish-3.
+
+## Related
+- Prior work: F623 (dash-arch-4-es-modules) — wave 1; its implementation log lists the deferred waves this set completes.
