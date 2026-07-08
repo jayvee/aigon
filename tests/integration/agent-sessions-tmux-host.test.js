@@ -4,6 +4,12 @@ const assert = require('assert');
 const { test, report } = require('../_helpers');
 const { createTmuxSessionHost } = require('../../lib/agent-sessions/hosts');
 const {
+    normalizeForMessageCompare,
+    paneContainsMessage,
+    extractComposerText,
+    promptStillContainsMessage,
+} = require('../../lib/agent-sessions/hosts/tmux');
+const {
     VALID_TMUX_ROLES,
     buildTmuxSessionName,
     parseTmuxSessionName,
@@ -151,6 +157,114 @@ test('openConsole builds a tmux attach command', () => {
     assert.strictEqual(sessionName, 'aigon-f42-do-cx');
     assert.match(command, /^tmux attach -t /);
     assert.ok(command.includes('aigon-f42-do-cx'));
+});
+
+// --- 5. Codex wrapped-composer nudge confirmation (F649) ---------------------
+
+const CODEX_LONG_NUDGE = 'Please continue with the review and finish the remaining acceptance criteria for this feature';
+
+// REGRESSION: Codex reflows long nudges across bordered composer lines — verbatim includes() fails.
+const CODEX_WRAPPED_COMPOSER_PANE = [
+    'some prior output',
+    '┌──────────────────────────────────────────────┐',
+    '│ › Please continue with the review and finish │',
+    '│   the remaining acceptance criteria for this │',
+    '│   feature                                    │',
+    '└──────────────────────────────────────────────┘',
+].join('\n');
+
+test('paneContainsMessage matches Codex bordered composer with wrapped text', () => {
+    assert.strictEqual(paneContainsMessage(CODEX_WRAPPED_COMPOSER_PANE, CODEX_LONG_NUDGE), true);
+    assert.strictEqual(
+        CODEX_WRAPPED_COMPOSER_PANE.includes(CODEX_LONG_NUDGE),
+        false,
+        'verbatim contiguous match must fail — this is the bug class'
+    );
+});
+
+test('extractComposerText and promptStillContainsMessage tolerate wrapped Codex composer', () => {
+    const composer = extractComposerText(CODEX_WRAPPED_COMPOSER_PANE);
+    assert.ok(composer.includes('›'), 'composer region should include the prompt marker');
+    assert.strictEqual(promptStillContainsMessage(CODEX_WRAPPED_COMPOSER_PANE, CODEX_LONG_NUDGE), true);
+    const afterSubmit = '⠼ Thinking...\n› ';
+    assert.strictEqual(promptStillContainsMessage(afterSubmit, CODEX_LONG_NUDGE), false);
+});
+
+test('normalizeForMessageCompare strips borders and collapses whitespace', () => {
+    const norm = normalizeForMessageCompare('│ › hello   world │');
+    assert.strictEqual(norm, 'hello world');
+});
+
+test('deliverOperatorMessage submits Enter for Codex wrapped composer and succeeds', () => {
+    let captureCount = 0;
+    const { ops, runTmux } = recordingTmux((args) => {
+        if (args[0] === 'capture-pane') {
+            captureCount += 1;
+            if (captureCount === 1) {
+                return { status: 0, stdout: CODEX_WRAPPED_COMPOSER_PANE, stderr: '' };
+            }
+            return { status: 0, stdout: '⠼ Thinking...\n› ', stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+    });
+    const host = createTmuxSessionHost({ runTmux });
+    const transport = { submitKey: 'Enter', submitAttempts: 2, retryDelayMs: 0, successPatterns: [], promptPlaceholder: '' };
+    const result = host.deliverOperatorMessage(
+        { sessionName: 'aigon-f633-review-cx', tmuxId: null },
+        CODEX_LONG_NUDGE,
+        { transport }
+    );
+    assert.strictEqual(result.ok, true);
+    const sendKeys = ops.filter(op => op.args[0] === 'send-keys');
+    assert.ok(sendKeys.length >= 1, 'submit key must be sent after paste');
+    assert.strictEqual(sendKeys[0].args[sendKeys[0].args.indexOf('-t') + 1], 'aigon-f633-review-cx');
+    assert.strictEqual(sendKeys[0].args[sendKeys[0].args.length - 1], 'C-m');
+});
+
+test('deliverOperatorMessage still submits when paste echo is uncertain but submit clears composer', () => {
+    let captureCount = 0;
+    const garbledPane = '┌──────┐\n│ › ?? │\n└──────┘';
+    const { ops, runTmux } = recordingTmux((args) => {
+        if (args[0] === 'capture-pane') {
+            captureCount += 1;
+            if (captureCount === 1) return { status: 0, stdout: garbledPane, stderr: '' };
+            return { status: 0, stdout: '⠼ Working...\n› ', stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+    });
+    const host = createTmuxSessionHost({ runTmux });
+    const result = host.deliverOperatorMessage(
+        { sessionName: 'aigon-f42-do-cx', tmuxId: null },
+        'hello',
+        { transport: { submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: [], promptPlaceholder: '' } }
+    );
+    assert.strictEqual(result.ok, true);
+    assert.ok(ops.some(op => op.args[0] === 'send-keys'), 'submit must run even when echo match is uncertain');
+});
+
+test('deliverOperatorMessage throws with paneTail only after submit attempts fail', () => {
+    let captureCount = 0;
+    const { runTmux } = recordingTmux((args) => {
+        if (args[0] === 'capture-pane') {
+            captureCount += 1;
+            return { status: 0, stdout: CODEX_WRAPPED_COMPOSER_PANE, stderr: '' };
+        }
+        return { status: 0, stdout: '', stderr: '' };
+    });
+    const host = createTmuxSessionHost({ runTmux });
+    let thrown = null;
+    try {
+        host.deliverOperatorMessage(
+            { sessionName: 'aigon-f633-review-cx', tmuxId: null },
+            CODEX_LONG_NUDGE,
+            { transport: { submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: [], promptPlaceholder: '' } }
+        );
+    } catch (err) {
+        thrown = err;
+    }
+    assert.ok(thrown, 'expected delivery to fail when submit cannot clear composer');
+    assert.ok(thrown.paneTail, 'error must include pane context for telemetry');
+    assert.ok(captureCount >= 2, 'submit path must capture pane after Enter');
 });
 
 report();
