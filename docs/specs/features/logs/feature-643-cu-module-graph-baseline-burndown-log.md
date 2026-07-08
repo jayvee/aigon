@@ -26,3 +26,21 @@ Baseline 86→16 cycles (−70); config-cluster paths 39→0; F633 utils→dashb
 ## Test Coverage
 - `module-graph-guard.test.js`: growth refusal + shrink allow paths
 - `npm run test:iterate` green; preview `/api/health` + `/api/status` verified on :4179
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- 09e615394 fix(review): preserve config facade compatibility
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- Restored the existing `config.isAgentDisabled()` facade export so this decoupling-only feature does not remove a reachable API.
+- Updated `docs/architecture.md` for `safe-write`, `binary-check`, `config-core`, and the narrower `utils` facade responsibilities.
