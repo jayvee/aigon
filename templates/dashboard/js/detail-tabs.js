@@ -770,6 +770,25 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
           ['Log path', sp.logPath ? '<span class="mono">' + escHtml(sp.logPath) + '</span>' : 'n/a'],
         ]);
 
+        let criteriaAttestationHtml = '';
+        const attestationRows = Array.isArray(sp.criteriaAttestation) ? sp.criteriaAttestation : [];
+        if (attestationRows.length > 0) {
+          const badge = (status) => {
+            if (!status) return '<span class="criteria-attest-pending">pending</span>';
+            const cls = 'criteria-attest-' + escHtml(status);
+            return '<span class="criteria-attest-badge ' + cls + '">' + escHtml(status) + '</span>';
+          };
+          const rows = attestationRows.map((row) => {
+            const preview = row.text && row.text.length > 72 ? row.text.slice(0, 69) + '…' : (row.text || '');
+            const evidence = row.evidence ? ' <span class="criteria-attest-evidence mono">' + escHtml(row.evidence) + '</span>' : '';
+            return [
+              '#' + String(row.index),
+              badge(row.status) + evidence + (preview ? ' <span class="criteria-attest-text">' + escHtml(preview) + '</span>' : ''),
+            ];
+          });
+          criteriaAttestationHtml = statusSection('Criteria attestation', rows);
+        }
+
         // Multi-agent sessions
         let agentSessionsHtml = '';
         const agentSessions = data.agentSessions || {};
@@ -797,7 +816,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         detailEl.innerHTML =
           (parsed.id ? renderDrawerRecoveryActions(parsed.type, parsed.id, getDrawerState().repoPath) : '') +
           '<div class="deep-status-grid">' +
-            sessionHtml + progressHtml + costHtml + specHtml + agentSessionsHtml + metaHtml +
+            sessionHtml + progressHtml + costHtml + specHtml + criteriaAttestationHtml + agentSessionsHtml + metaHtml +
           '</div>' +
           '<div class="deep-status-footer">Collected ' + escHtml(formatIso(data.collectedAt)) + '</div>';
         wireDrawerRecoveryActions(detailEl, parsed.type, parsed.id, getDrawerState().repoPath);
