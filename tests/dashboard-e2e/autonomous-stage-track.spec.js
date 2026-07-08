@@ -198,11 +198,9 @@ test.describe('F492 autonomous stage track', () => {
         const card = page.locator('.kcard[data-feature-id="903"]');
         await expect(card.locator('.kcard-headline-verb')).toHaveText('Autonomous failed');
         await expect(card.locator('.kcard-headline-verb')).not.toHaveText('Review failed');
-        await expect(card.locator('.kcard-controller-status')).toHaveAttribute('data-controller-status', 'failed');
-        await expect(card.locator('.kcard-controller-title')).toHaveText('Autonomous failed');
-        await expect(card.locator('.kcard-controller-reason')).toHaveText('Reviewer exited without signaling');
-        await expect(card.locator('.kcard-controller-meta')).toContainText('Last update');
-        await expect(card.locator('.kcard-controller-meta')).toContainText('session exited');
+        await expect(card.locator('.kcard-headline-detail')).toContainText('Reviewer exited without signaling');
+        await expect(card.locator('.kcard-headline-detail')).toContainText('session exited');
+        await expect(card.locator('.kcard-controller-status')).toHaveCount(0);
     });
 
     test('running controller surfaces live workflow state instead of unknown', async ({ page }) => {

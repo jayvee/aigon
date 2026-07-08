@@ -215,7 +215,7 @@ test('profile templates derive ports from basePort plus registry offsets', () =>
 });
 test('cursor agent project slug and trust marker match Cursor CLI layout', () => withTempDir('aigon-cu-trust-', tmpDir => {
     // REGRESSION: Cursor Agent ignores security.workspace.trust.* and gates on ~/.cursor/projects/<slug>/.workspace-trusted.
-    const { cursorAgentProjectSlug, listCursorProjectSlugVariants, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
+    const { cursorAgentProjectSlug, ensureCursorAgentWorkspaceTrustedMarkers } = agentRegistry._test;
     const wt = '/Users/jviner/.aigon/worktrees/aigon/feature-425-cc-planning-context-injection-via-spec-frontmatter';
     assert.strictEqual(
         cursorAgentProjectSlug(wt),

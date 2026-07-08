@@ -17,8 +17,6 @@ const {
     recordPostMergeGateFailure,
     isPostMergeGateRetry,
 } = require('../../lib/feature-close');
-const { resolveDeployCommand } = require('../../lib/deploy');
-
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
     'docs/specs/features/logs',

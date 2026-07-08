@@ -44,6 +44,32 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
       document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
     }
 
+    /** Anchor a fixed overflow menu to its toggle — prefer below, flip above when clipped. */
+    function positionKcardOverflowMenu(menu, toggle) {
+      const gap = 4;
+      const rect = toggle.getBoundingClientRect();
+      menu.style.left = '';
+      menu.style.right = '';
+      menu.style.top = '';
+      menu.style.bottom = '';
+      menu.classList.add('open');
+      requestAnimationFrame(() => {
+        const mRect = menu.getBoundingClientRect();
+        const menuW = mRect.width;
+        const menuH = mRect.height;
+        const spaceBelow = window.innerHeight - rect.bottom - gap;
+        const spaceAbove = rect.top - gap;
+        const openBelow = spaceBelow >= menuH || spaceBelow >= spaceAbove;
+        const top = openBelow
+          ? rect.bottom + gap
+          : Math.max(gap, rect.top - menuH - gap);
+        let left = rect.right - menuW;
+        left = Math.max(gap, Math.min(left, window.innerWidth - menuW - gap));
+        menu.style.top = top + 'px';
+        menu.style.left = left + 'px';
+      });
+    }
+
     // Global outside-click dismiss for card popovers. Bound once on script load
     // so a click anywhere on the page (not just on the originating card) closes
     // an open overflow menu or drift-detail popover.
@@ -857,6 +883,9 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
       if (feature.stage === 'done' && controller.status === 'completed') return '';
 
       const status = String(controller.status);
+      const headline = feature && feature.cardHeadline;
+      // Headline already surfaces failed-controller verb, reason, age, and session exit.
+      if (headline && headline.verb === 'Autonomous failed' && status === 'failed') return '';
       const isStoppedByUser = controller.reasonCategory === 'stopped-by-user' || controller.reason === 'stopped-by-user';
       const statusMeta = {
         failed: { tone: 'warn', label: 'Autonomous failed' },
@@ -1193,19 +1222,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
           const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
           const isOpen = menu && menu.classList.contains('open');
           closeAllKcardOverflowMenus();
-          if (!isOpen && menu) {
-            // Position fixed menu relative to toggle button
-            const rect = toggle.getBoundingClientRect();
-            menu.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
-            menu.style.left = '';
-            menu.style.bottom = (window.innerHeight - rect.top + 3) + 'px';
-            menu.classList.add('open');
-            // Clamp left overflow after browser renders the menu width
-            requestAnimationFrame(() => {
-              const mRect = menu.getBoundingClientRect();
-              if (mRect.left < 4) { menu.style.right = ''; menu.style.left = '4px'; }
-            });
-          }
+          if (!isOpen && menu) positionKcardOverflowMenu(menu, toggle);
         };
       });
 
