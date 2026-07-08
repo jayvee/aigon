@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 227
+lines_removed: 275
+lines_changed: 502
+files_touched: 38
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 639 - dash-finish-1-esm-real-imports
 Agent: cu
 
