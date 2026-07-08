@@ -1,5 +1,7 @@
 ---
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-08T04:41:52.360Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: module-graph-baseline-burndown
