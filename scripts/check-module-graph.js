@@ -371,20 +371,24 @@ function findMissingAgentsMdModulePaths() {
     const text = fs.readFileSync(agentsPath, 'utf8');
     const tableStart = text.indexOf('## Module Map');
     if (tableStart === -1) return [];
-    const tableSection = text.slice(tableStart);
+    const afterHeader = text.slice(tableStart);
+    const nextHeader = afterHeader.slice(1).search(/^##\s+/m);
+    const tableSection = nextHeader === -1 ? afterHeader : afterHeader.slice(0, nextHeader + 1);
     const missing = [];
-    const rowRe = /^\|\s*`((?:lib|aigon-cli\.js)[^`]+)`\s*\|/gm;
+    const rowRe = /^\|\s*(.*?)\s*\|/gm;
     let match;
     while ((match = rowRe.exec(tableSection)) !== null) {
-        let raw = match[1].trim();
-        // Skip directory-only rows (e.g. lib/dashboard-collect/)
-        if (raw.endsWith('/')) continue;
-        // Expand "a / b" dual-module rows — take each backtick path segment
-        const paths = raw.includes(' / ')
-            ? raw.split(' / ').map(p => p.trim())
-            : [raw];
+        const cell = match[1];
+        const paths = [];
+        const codeRe = /`((?:lib|aigon-cli\.js)[^`]+)`/g;
+        let codeMatch;
+        while ((codeMatch = codeRe.exec(cell)) !== null) {
+            paths.push(codeMatch[1].trim());
+        }
         for (const modPath of paths) {
             const normalized = modPath.replace(/\\/g, '/');
+            // Skip directory-only rows (e.g. lib/dashboard-collect/)
+            if (normalized.endsWith('/')) continue;
             const abs = path.join(ROOT, normalized);
             if (!fs.existsSync(abs)) {
                 missing.push(normalized);

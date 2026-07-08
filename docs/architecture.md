@@ -31,15 +31,19 @@ Current command families:
 
 | File | Commands |
 |------|----------|
-| `lib/commands/feature.js` | Thin dispatcher for `feature-*` handlers + `sessions-close`. Fat handlers (`feature-start`, `feature-eval`, `feature-do`, `feature-autonomous-start`) delegate to sibling `lib/feature-*.js` modules via a shared `handlerDeps` bundle. Uses `withActionDelegate` from `action-scope` for the main-repo delegation guard. Parallel-with-research handlers (create, prioritise, spec-review quartet, reset base) come from `./entity-commands` via factory spread |
-| `lib/feature-start.js`, `lib/feature-eval.js`, `lib/feature-do.js`, `lib/feature-autonomous.js` | Extracted handler modules. Each exports `run(args, deps)` — `deps.ctx` gives access to utils/git/hooks/specCrud; `deps` also surfaces the local closures still owned by the parent dispatcher (`persistAndRunEffects`, `resolveFeatureMode`, `resolveMainRepoPath`, etc.) |
-| `lib/feature-command-helpers.js` | Shared helpers for feature handlers: `parseLogFrontmatterForBackfill`, `estimateExpectedScopeFiles`, `upsertLogFrontmatterScalars` |
+| `lib/commands/feature.js` | Thin dispatcher for `feature-*` handlers + `sessions-close`. Fat handlers delegate to sibling `lib/feature-*.js` modules via a shared `handlerDeps` bundle. Uses `withActionDelegate` from `action-scope` for the main-repo delegation guard. Parallel-with-research handlers (create, prioritise, spec-review quartet, reset base) come from `./entity-commands` via factory spread |
+| `lib/feature-start.js`, `lib/feature-eval.js`, `lib/feature-do.js`, `lib/feature-autonomous.js` | Extracted implementation/eval/autonomous handler modules. Each exports `run(args, deps)` — `deps.ctx` gives access to utils/git/hooks/specCrud; `deps` also surfaces the local closures still owned by the parent dispatcher (`persistAndRunEffects`, `resolveFeatureMode`, `resolveMainRepoPath`, etc.) |
+| `lib/feature-close.js` | Feature-close target resolution, merge, telemetry, engine close, cleanup, and close command orchestration |
+| `lib/feature-lifecycle.js`, `lib/feature-now.js`, `lib/feature-open.js`, `lib/feature-backfill-timestamps.js` | Extracted feature pause/resume/unprioritise, fast-track create, worktree open, and timestamp backfill handlers |
+| `lib/feature-command-helpers.js` | Shared helpers for feature handlers: log frontmatter helpers, scope estimation, and submission evidence (`getFeatureSubmissionEvidence`) |
 | `lib/commands/research.js` | All `research-*` handlers. Parallel-with-feature handlers come from `./entity-commands` via factory spread |
 | `lib/commands/entity-commands.js` | Shared factory for parallel feature/research lifecycle commands parameterised by `FEATURE_DEF` / `RESEARCH_DEF` from `lib/entity.js`. Exposes `createEntityCommands(def, ctx)` (create, prioritise, spec-review quartet) and `entityResetBase(def, id, ctx, hooks)` for reset plumbing. New parallel commands are added here — not in feature.js/research.js — so both entities pick them up by construction, eliminating the "defined but not whitelisted" drift class |
 | `lib/commands/feedback.js` | `feedback-create`, `feedback-list`, `feedback-triage` |
 | `lib/commands/infra.js` | `server`, `terminal-focus`, `board`, `proxy`, `proxy-setup`, `dev-server`, `config`, `hooks`, `profile`, `vault`, and the Pro-delegating `sync` / `backup` stubs |
 | `lib/commands/setup.js` + `lib/commands/setup/*.js` | Setup dispatcher and per-command entry modules for `init`, `install-agent`, `remove`, `check-version`, `apply`, `update` (deprecated alias), `project-context`, `doctor`, seed commands, and setup checks. Shared helpers live under `lib/commands/setup/` (`init-bootstrap.js`, `seed-reset.js`, `gitignore-and-hooks.js`, etc.). |
-| `lib/commands/misc.js` | `agent-status`, `agent-context`, `nudge`, `status`, `deploy`, `next`, `help` |
+| `lib/commands/agent-signals.js` | Agent lifecycle and operator signals: `agent-status`, `agent-context`, `agent-resume`, `nudge`, `check-agent-signal`, `check-agent-submitted`, `force-agent-ready`, `drop-agent` |
+| `lib/commands/ops.js` | Operational commands: `repair`, `status`, `deploy`, `session-list`, `agent-probe`, `agent-quota`, `next`, `help`, `rollout`, `workflow-rules` |
+| `lib/commands/insights.js` | Analytics and telemetry commands: `insights`, `stats`, `commits`, telemetry capture, and `token-window` |
 | `lib/commands/workflow.js` | `workflow` definition CRUD and reporting |
 | `lib/commands/set.js` | `set-*` feature-set actions and derived set operations |
 | `lib/commands/signal-health.js` | `signal-health` diagnostics over signal telemetry |
@@ -125,8 +129,12 @@ Current shared modules:
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,115 lines): Iterate (Autopilot) loop and smart validation helpers
   `runRalphCommand`, `runSmartValidation`, `parseAcceptanceCriteria`, `runFeatureValidateCommand`
-- `lib/quota-probe.js` / `lib/quota-poller.js` (~340/~95 lines): agent quota availability layer. Wraps `scripts/probe-agent.js`, classifies probe output via per-agent JSON regex packs, caches `.aigon/state/quota.json`, gates `feature-start`, and exposes dashboard/server refreshes without touching workflow-core state.
-  `classifyProbeResult`, `probePair`, `readQuotaState`, `startQuotaPoller`
+- `lib/agent-quota-read.js` / `lib/agent-quota-poller.js`: unified agent-quota state and poller. Reads/writes `.aigon/state/agent-quota.json`, merges legacy budget/quota state during doctor migration, coordinates budget scrapes, headless probes, and provider HTTP polling, and exposes the surviving dashboard API at `GET /api/agent-quota` / `POST /api/agent-quota/refresh`.
+  `readAgentQuotaState`, `readFilteredAgentQuotaState`, `patchAgentQuotaState`, `startAgentQuotaPoller`, `triggerRefresh`
+- `lib/quota-probe.js`: probe classifier and `scripts/probe-agent.js` integration for model availability verdicts consumed by the unified poller.
+  `classifyProbeResult`, `probePair`, `probePairAsync`, `listTargets`
+- `lib/budget-poller.js`: scrape primitives for agent budget surfaces consumed by `lib/agent-quota-poller.js`; no standalone poller or cache writer.
+  `pollClaudeBudget`, `pollCodexBudget`, `pollKimiBudget`, budget parsers
 
 **Domain modules** (logic lives in the module itself):
 
