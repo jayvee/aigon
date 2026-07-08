@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: high
 set: close-integrity
 depends_on: [644, 646]
 transitions:
@@ -19,12 +19,12 @@ Every feature spec carries testable `## Acceptance Criteria` checkboxes — and 
 ## Acceptance Criteria
 - [ ] Criteria parsing: reuse the existing acceptance-criteria parser (`lib/validation.js parseAcceptanceCriteria` — extend, don't duplicate) to enumerate criteria from the spec with stable indices.
 - [ ] Attestation format: a `## Criteria Attestation` section in the implementation log (the 7-section log is the existing artefact — no sidecar files), one line per criterion: `1. met — integration test close-gate-merge.test.js` / `2. deferred — <reason>` / `3. dropped — spec revised, see <sha>`. Format documented in the log template and the feature-do/iterate prompt templates so agents produce it as they work, not as a close-time scramble.
-- [ ] `feature-close` blocks (non-zero, actionable message listing unattested indices + the expected format) until every criterion has an attestation line. `deferred` entries raise a `spec-shortfall` escalation through close-integrity-3's event path — operator dispositions accept/follow-up/reopen before close completes.
-- [ ] `met` attestations are recorded in a `feature.criteria_attested` workflow event (counts + per-criterion status, evidence strings capped) and shown in the dashboard spec drawer (criteria list with met/deferred/dropped markers — `Skill(frontend-design)` + wireframe check before UI work).
+- [ ] `feature-close` blocks (non-zero, actionable message listing unattested indices + the expected format) until every criterion has an attestation line. `deferred` entries raise a `spec-shortfall` escalation through close-integrity-3's `review.escalation_raised`/`openEscalations[]` event path with `source: 'criteria-attestation'` — operator dispositions accept/follow-up/reopen before close completes.
+- [ ] `met`, `deferred`, and `dropped` attestations are recorded in a `feature.criteria_attested` workflow event (counts + per-criterion status, evidence strings capped) and shown in the dashboard spec drawer (criteria list with met/deferred/dropped markers — consult the existing drawer patterns and `docs/card-design-wireframe.html` before UI work).
 - [ ] Spec-revision interplay: criteria added by spec-revise cycles are included (parse the spec as-at-close, not as-at-start); the attestation section is append-updated, never rewritten (provenance).
 - [ ] Autonomous flow: the feature-do/iterate prompt templates instruct agents to update the attestation section as each criterion lands (template changes stay target-repo-generic — rule 10; the attestation contract is aigon-lifecycle, which templates legitimately describe).
-- [ ] Escape hatch mirrors close-integrity-2's: `--no-verify-criteria` exists for emergencies, warns loudly, records an event.
-- [ ] Tests: fully-attested close passes; missing attestation blocks with the actionable message; `deferred` raises the escalation and blocks until dispositioned; spec-revised criteria included (`// REGRESSION:` per T2 citing the F630 incident).
+- [ ] Escape hatch mirrors close-integrity-2's: `--no-verify-criteria` exists for emergencies, warns loudly, and records a `feature.criteria_attestation_bypassed` event.
+- [ ] Tests: fully-attested close passes; missing attestation blocks with the actionable message; `deferred` raises the escalation exactly once and blocks until dispositioned; spec-revised criteria included; `--no-verify-criteria` records the bypass event (`// REGRESSION:` per T2 citing the F630 incident).
 - [ ] Docs: development_workflow.md close checklist, log template (`templates/` source, never installed copies), AGENTS.md testing/close discipline sections.
 
 ## Validation
@@ -33,7 +33,7 @@ npm run test:iterate
 ```
 
 ## Technical Approach
-Three seams, all existing: `parseAcceptanceCriteria` (spec side), the implementation-log template + its section conventions (log side), and the close-phase guard ordering from close-integrity-1/-3 (attestation check runs pre-merge, beside the escalation check — cheapest first). Keep matching between criteria and attestation lines by index, not text-similarity (criteria text may be long; indices are stable within a close since the spec is parsed once). The v1 deliberately does NOT verify evidence truthfulness — the design bet, consistent with the review layer's job, is that forcing a specific falsifiable claim per criterion changes agent behaviour and gives reviewers a checkable surface; measure against the next set retro before adding heavier verification.
+Three seams, all existing: `parseAcceptanceCriteria` (spec side), the implementation-log template + its section conventions (log side), and the close-phase guard ordering from close-integrity-1/-3 (attestation check runs pre-merge, beside the escalation check — cheapest first). Keep matching between criteria and attestation lines by index, not text-similarity (criteria text may be long; indices are stable within a close since the spec is parsed once). If the spec has zero acceptance criteria, close should skip this guard and record no attestation event. The v1 deliberately does NOT verify evidence truthfulness — the design bet, consistent with the review layer's job, is that forcing a specific falsifiable claim per criterion changes agent behaviour and gives reviewers a checkable surface; measure against the next set retro before adding heavier verification.
 
 ## Dependencies
 - depends_on: close-integrity-1-post-merge-gate
