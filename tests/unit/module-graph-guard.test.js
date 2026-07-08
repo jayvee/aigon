@@ -11,6 +11,7 @@ const {
     canonicalCycle,
     diffBaseline,
     RULES,
+    assertBaselineWriteAllowed,
 } = require('../../scripts/check-module-graph');
 
 function testCanonicalCycleRotation() {
@@ -101,6 +102,39 @@ function testAgentsMdPathCheckHandlesGlobs() {
     }
 }
 
+function testWriteBaselineGrowthGate() {
+    // REGRESSION: --write-baseline must refuse growth unless --allow-growth records a reason.
+    const baseline = {
+        cycles: ['lib/a.js -> lib/b.js -> lib/a.js'],
+        violations: [],
+    };
+    const currentWorse = {
+        cycles: [...baseline.cycles, 'lib/x.js -> lib/y.js -> lib/x.js'],
+        violations: baseline.violations,
+    };
+    let refused = false;
+    try {
+        assertBaselineWriteAllowed(currentWorse, baseline, null);
+    } catch (err) {
+        if (err.code !== 'BASELINE_GROWTH_REFUSED') throw err;
+        refused = true;
+    }
+    if (!refused) throw new Error('expected growth refusal');
+
+    const diff = assertBaselineWriteAllowed(currentWorse, baseline, 'test fixture');
+    if (diff.newCycles.length !== 1) throw new Error('expected one new cycle in growth diff');
+}
+
+function testWriteBaselineShrinkAllowed() {
+    const baseline = {
+        cycles: ['lib/a.js -> lib/b.js -> lib/a.js', 'lib/old.js -> lib/old.js -> lib/old.js'],
+        violations: [],
+    };
+    const current = { cycles: baseline.cycles.slice(0, 1), violations: [] };
+    const diff = assertBaselineWriteAllowed(current, baseline, null);
+    if (diff.staleCycles.length !== 1) throw new Error('expected shrink without allow-growth');
+}
+
 function main() {
     testCanonicalCycleRotation();
     testFixtureCycleAndViolation();
@@ -109,6 +143,8 @@ function main() {
     testLoadOrderIsolation();
     testWorktreeTmuxContainment();
     testAgentsMdPathCheckHandlesGlobs();
+    testWriteBaselineShrinkAllowed();
+    testWriteBaselineGrowthGate();
     console.log('module-graph guard tests passed');
 }
 
