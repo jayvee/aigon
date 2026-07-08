@@ -1,9 +1,8 @@
 'use strict';
 
 // REGRESSION: module-graph guard must detect cycles, boundary violations, and ratchet baseline semantics.
-const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const ROOT = path.resolve(__dirname, '../..');
 const {
     buildGraph,
     findCycles,
@@ -61,11 +60,28 @@ function testRulesTableExists() {
     }
 }
 
+function testLoadOrderIsolation() {
+    const modules = [
+        'config-core',
+        'config',
+        'instance-identity',
+        'proxy-dns',
+        'proxy',
+        'global-config-migration',
+        'agent-registry',
+        'profile-placeholders',
+    ];
+    for (const mod of modules) {
+        require(path.join(ROOT, 'lib', mod));
+    }
+}
+
 function main() {
     testCanonicalCycleRotation();
     testFixtureCycleAndViolation();
     testBaselineRatchet();
     testRulesTableExists();
+    testLoadOrderIsolation();
     console.log('module-graph guard tests passed');
 }
 
