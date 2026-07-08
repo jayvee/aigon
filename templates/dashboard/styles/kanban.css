@@ -29,6 +29,13 @@
     .kanban-set-prioritise-banner{width:100%;justify-content:center;font-size:12px;font-weight:600;padding:8px 12px}
     .kanban-set-header-row .kanban-set-paused-badge{flex-shrink:0}
     .kanban-set-header-row .kcard-peek-btn{flex-shrink:0}
+    .kanban-set-session-activity,.set-session-activity{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:4px}
+    .set-session-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.02em;padding:2px 6px;border-radius:4px;border:1px solid var(--border-subtle);color:var(--text-tertiary);white-space:nowrap}
+    .set-session-pill.is-active{border-color:color-mix(in srgb,var(--accent) 55%,var(--border-subtle));color:var(--accent);background:rgba(59,130,246,.08)}
+    .set-session-pill.is-paused{border-color:rgba(229,124,42,.55);color:#e57c2a;background:rgba(229,124,42,.08)}
+    .set-session-pill.is-inactive{opacity:.85}
+    .set-session-pill .kcard-peek-btn{margin-left:2px;padding:0 2px}
+    .set-card-stack .set-session-activity{margin:0 0 8px}
     /* Group-by-set: one visual “bundle” so members read as a single unit */
     .kanban-set-bundle{
     display:flex;flex-direction:column;gap:0;

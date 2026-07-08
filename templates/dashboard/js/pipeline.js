@@ -1,5 +1,6 @@
 /* dashboard-esm-processed */
 
+import { AIGON_SET_CARDS } from './set-cards.js';
 import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
 import { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal } from './actions.js';
@@ -1588,6 +1589,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
           scheduledRunAt: setRoll.scheduledRunAt,
           validActions: setRoll.validActions,
           autonomous: setRoll.autonomous,
+          specReview: setRoll.specReview,
         } : null,
       });
     }
@@ -1602,6 +1604,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
           scheduledRunAt: roll.scheduledRunAt,
           validActions: roll.validActions,
           autonomous: roll.autonomous,
+          specReview: roll.specReview,
         } : null,
         memberKeys: members.map(m => kanbanCardKey('features', m)),
       });
@@ -1757,6 +1760,20 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         };
         row.appendChild(viewBtn);
       }
+      const specReview = roll && roll.specReview;
+      if (specReview && specReview.running && specReview.sessionName) {
+        const reviewPeek = document.createElement('button');
+        reviewPeek.type = 'button';
+        reviewPeek.className = 'kcard-peek-btn';
+        reviewPeek.setAttribute('data-spec-review-session', specReview.sessionName);
+        reviewPeek.title = 'View set spec review session';
+        reviewPeek.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
+        reviewPeek.onclick = (e) => {
+          e.stopPropagation();
+          openTerminalPanel(specReview.sessionName, null, specReview.sessionName, null, null);
+        };
+        row.appendChild(reviewPeek);
+      }
       const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
       const appendSetHeaderAction = (va) => {
         if (!va || !roll) return;
@@ -1792,6 +1809,28 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         appendSetHeaderAction(va);
       }
       header.appendChild(row);
+      if (roll && AIGON_SET_CARDS && typeof AIGON_SET_CARDS.buildSetSessionActivityHtml === 'function') {
+        const activity = document.createElement('div');
+        activity.className = 'kanban-set-session-activity';
+        activity.innerHTML = AIGON_SET_CARDS.buildSetSessionActivityHtml(roll, {
+          onPeek: true,
+        });
+        activity.querySelectorAll('[data-set-spec-review-session]').forEach((btn) => {
+          const sessionName = btn.getAttribute('data-set-spec-review-session');
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            openTerminalPanel(sessionName, null, sessionName, null, null);
+          };
+        });
+        activity.querySelectorAll('[data-set-conductor-session]').forEach((btn) => {
+          const sessionName = btn.getAttribute('data-set-conductor-session');
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            openTerminalPanel(sessionName, null, sessionName, null, null);
+          };
+        });
+        header.appendChild(activity);
+      }
       if (totalN > 0) {
         const barWrap = document.createElement('div');
         barWrap.className = 'kanban-set-progress';
