@@ -2,6 +2,7 @@
   "cycles": [
     "lib/agent-availability.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/agent-availability.js",
+    "lib/agent-availability.js -> lib/config.js -> lib/global-config-migration.js -> lib/terminal-adapters.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/instance-identity.js -> lib/global-config-migration.js -> lib/terminal-adapters.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/profile-placeholders.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/dashboard-server.js -> lib/agent-quota-poller.js -> lib/budget-poller.js -> lib/agent-availability.js",
@@ -21,7 +22,6 @@
     "lib/agent-prompt-resolver.js -> lib/templates.js -> lib/utils.js -> lib/worktree.js -> lib/agent-prompt-resolver.js",
     "lib/agent-quota-poller.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/dashboard-server.js -> lib/agent-quota-poller.js",
     "lib/agent-quota-poller.js -> lib/provider-quota-poller.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/dashboard-server.js -> lib/agent-quota-poller.js",
-    "lib/agent-registry.js -> lib/config-core.js -> lib/global-config-migration.js -> lib/terminal-adapters.js -> lib/agent-registry.js",
     "lib/agent-sessions/hosts/index.js -> lib/agent-sessions/hosts/tmux.js -> lib/tmux-inject.js -> lib/worktree.js -> lib/agent-sessions/hosts/index.js",
     "lib/agent-sessions/hosts/index.js -> lib/agent-sessions/hosts/tmux.js -> lib/worktree.js -> lib/agent-sessions/hosts/index.js",
     "lib/agent-sessions/hosts/index.js -> lib/agent-sessions/hosts/tmux.js -> lib/worktree.js -> lib/feature-status.js -> lib/read-model/entity-view.js -> lib/agent-sessions/index.js -> lib/agent-sessions/hosts/index.js",
