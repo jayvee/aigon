@@ -30,3 +30,20 @@ worktree.js 2280→467 LOC; tmux spawn consolidated in `hosts/tmux-exec.js`; lau
 ## Test Coverage
 - `tests/unit/module-graph-guard.test.js` — worktree must not spawn tmux (F632 regression).
 - Existing session/launch/worktree integration tests pass via facade.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-08
+
+### Fixes Applied
+- 0e4a97f06 fix(review): preserve launch home hygiene exports
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None.
+
+### Notes
+- FIX_NOW: The launch extraction dropped the safe-home helper exports from the `worktree.js` compatibility facade and used raw `process.env.HOME` in the moved wrapper env builder; patched in the launch producer so existing callers keep the hygiene contract.
