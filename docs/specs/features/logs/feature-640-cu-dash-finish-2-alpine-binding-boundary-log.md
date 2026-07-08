@@ -1,14 +1,14 @@
 ---
-commit_count: 2
-lines_added: 135
+commit_count: 3
+lines_added: 177
 lines_removed: 23
-lines_changed: 158
-files_touched: 6
+lines_changed: 200
+files_touched: 7
 fix_commit_count: 0
 fix_commit_ratio: 0
 rework_thrashing: false
 rework_fix_cascade: false
-rework_scope_creep: false
+rework_scope_creep: true
 model: "cursor"
 source: "no-telemetry-cursor"
 ---
