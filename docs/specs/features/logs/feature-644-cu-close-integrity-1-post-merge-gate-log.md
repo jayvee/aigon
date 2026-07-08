@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 477
+lines_removed: 14
+lines_changed: 491
+files_touched: 11
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 644 - close-integrity-1-post-merge-gate
 Agent: cu
 
