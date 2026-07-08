@@ -66,6 +66,7 @@ Research may recommend zero or more features via its `## Output` section. The ol
 | `aigon feature-code-review <ID>` | Post-implementation code review with fixes by a different agent |
 | `aigon feature-cancel-code-review <ID>` | Cancel an in-progress code review, stop the reviewer session, and return the feature to `ready` |
 | `aigon feature-code-revise [ID]` | Implementer-side follow-up after a code review |
+| `aigon feature-escalation <accept\|follow-up\|reopen> <ID> <n>` | Disposition an open review escalation before close (`--reason` required; follow-up needs `--name`) |
 | `aigon feature-autonomous-stop <ID>` | Stop the AutoConductor and take over manually from the current workflow state |
 | `aigon feature-push [ID] [agent]` | Push the feature branch to `origin` for PR review |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
@@ -100,6 +101,22 @@ Typical recovery flow:
 1. Stop autonomy if the feature is still under autonomous orchestration.
 2. Cancel the bad review.
 3. Re-run `aigon feature-code-review <ID>` with a different reviewer or model.
+
+## Review escalations
+
+When a code reviewer finds an issue beyond a safe in-pass fix, they record it in the implementation log under `## Code Review` using:
+
+`ESCALATE:<category> — <reason>`
+
+Categories include at minimum `architectural`, `security`, `scope`, and `spec-shortfall`. List prefixes and bold markers are tolerated.
+
+On `review-complete`, each marker becomes a `review.escalation_raised` workflow event and appears as `openEscalations[]` on the snapshot. **`aigon feature-close` blocks** until the operator dispositions every open escalation:
+
+- `aigon feature-escalation accept <ID> <n> --reason "…"`
+- `aigon feature-escalation follow-up <ID> <n> --name <slug>` (creates an inbox follow-up spec)
+- `aigon feature-escalation reopen <ID> <n> --reason "…"` (returns to code revision)
+
+Autonomous flows pause on open escalations — they never auto-accept.
 
 ## Solo Mode Workflow
 

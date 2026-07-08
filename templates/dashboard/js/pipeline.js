@@ -13,7 +13,7 @@ import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
 import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, setPipelineGroupBySet as applyPipelineGroupBySet, setPipelineType as applyPipelineType, subscribeDataChange } from './store.js';
 import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
-import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
+import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -1053,7 +1053,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         : '';
       let innerHtml =
         (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildLeaseBadgeHtml(feature, repoMeta && repoMeta.storage) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
+        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildEscalationBadgeHtml(feature) + buildLeaseBadgeHtml(feature, repoMeta && repoMeta.storage) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
         blockedByHtml +

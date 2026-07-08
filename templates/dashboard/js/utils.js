@@ -115,6 +115,16 @@ import { state } from './state.js';
       '</span>';
     }
 
+    function buildEscalationBadgeHtml(item) {
+      const open = item && Array.isArray(item.openEscalations) ? item.openEscalations : [];
+      if (!open.length) return '';
+      const count = open.length;
+      const title = open.map(function (entry, index) {
+        return (index + 1) + '. [' + (entry.category || 'escalation') + '] ' + (entry.reason || '');
+      }).join('\n');
+      return '<span class="kcard-escalation-badge" title="' + escHtml(title) + '">⚠ ' + count + ' escalation' + (count === 1 ? '' : 's') + '</span>';
+    }
+
     function buildStateRenderBadgeHtml(item) {
       const meta = item && item.stateRenderMeta;
       if (!meta || !meta.badge) return '';
@@ -264,4 +274,4 @@ import { state } from './state.js';
     }
 
 // ── ESM exports (F623) ──
-export { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };
+export { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };
