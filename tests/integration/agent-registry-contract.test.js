@@ -96,6 +96,95 @@ test('every modelOptions entry satisfies the inclusion-policy contract (docs/mod
     }
     assert.deepStrictEqual(allErrors, [], `modelOptions contract violations:\n  ${allErrors.join('\n  ')}`);
 });
+
+const VALID_SUMMARY = {
+    headline: 'Strong implementer with solid review chops.',
+    body: 'Evidence-backed body within limits.',
+    bestFor: ['implement', 'review'],
+    avoidFor: ['research'],
+    confidence: 'medium',
+    researchedAt: '2026-07-08T07:42:00.000Z',
+    sources: [{ kind: 'aigon-bench', title: 'brewboard sweep' }],
+};
+
+function modelOptWithSummary(summary) {
+    return {
+        id: 'test',
+        cli: {
+            modelOptions: [{
+                value: 'test-model',
+                label: 'Test Model',
+                lastRefreshAt: '2026-07-08T07:42:00.000Z',
+                score: { implement: 4 },
+                summary,
+            }],
+        },
+    };
+}
+
+test('validateModelOptions accepts a valid summary block', () => {
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(VALID_SUMMARY));
+    assert.deepStrictEqual(errors, []);
+});
+
+test('validateModelOptions rejects summary missing headline', () => {
+    const bad = { ...VALID_SUMMARY };
+    delete bad.headline;
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('summary.headline')));
+});
+
+test('validateModelOptions rejects invalid role in bestFor', () => {
+    const bad = { ...VALID_SUMMARY, bestFor: ['implement', 'not-a-role'] };
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('invalid role')));
+});
+
+test('validateModelOptions rejects free-form role like code review in bestFor', () => {
+    const bad = { ...VALID_SUMMARY, bestFor: ['code review', 'implement'] };
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('invalid role "code review"')));
+});
+
+test('validateModelOptions rejects headline duplicating label', () => {
+    const bad = { ...VALID_SUMMARY, headline: 'Test Model' };
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('must not duplicate label')));
+});
+
+test('validateModelOptions rejects body exceeding 500 chars', () => {
+    const bad = { ...VALID_SUMMARY, body: 'x'.repeat(501) };
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('summary.body exceeds 500 chars')));
+});
+
+test('validateModelOptions rejects invalid sources kind', () => {
+    const bad = { ...VALID_SUMMARY, sources: [{ kind: 'blog-post', title: 'nope' }] };
+    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
+    assert.ok(errors.some(e => e.includes('sources[0].kind')));
+});
+
+test('cc and op exemplar entries pass validateModelOptions with zero errors', () => {
+    // REGRESSION: hand-written summary exemplars must not drift from the contract.
+    for (const id of ['cc', 'op']) {
+        const { errors } = agentRegistry.validateModelOptions(agentRegistry.getAgent(id));
+        assert.deepStrictEqual(errors, [], `${id} exemplar summary drift: ${errors.join('; ')}`);
+    }
+});
+
+test('validateCustomModelOptions drops custom entry with invalid summary role', () => {
+    // REGRESSION: bad custom summary warns and is dropped, not blocking startup.
+    const custom = [{
+        value: 'local/custom-model',
+        label: 'Custom Model',
+        summary: { ...VALID_SUMMARY, bestFor: ['code review'] },
+    }];
+    const { valid, warnings } = agentRegistry.validateCustomModelOptions(custom, 'op');
+    assert.deepStrictEqual(valid, []);
+    assert.ok(warnings.some(w => w.includes('invalid role "code review"')));
+    assert.ok(warnings.some(w => w.includes('dropped from picker')));
+});
+
 test('Amp registry contract exposes modes and quarantines large mode from picker', () => {
     const amp = agentRegistry.getAgent('am');
     assert.strictEqual(amp.cli.command, 'amp');

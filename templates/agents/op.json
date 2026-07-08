@@ -188,6 +188,15 @@
           "implement": "Alibaba flagship MoE; 262K ctx; excellent cost/perf at sub-cent input. ID note: '-07-25' is a date-encoded alias for '-2507' (July 2025); both resolve to the same model on OR — NOT a stale ID. 11 providers, 7.8x speed spread. Timeouts on 2026-05-11 traced to seed clone failures before run start, not model degradation. No deprecation or EOL notices as of May 2026."
         },
         "score": { "implement": 4 },
+        "summary": {
+          "headline": "Excellent value for implementation loops; not suitable for spec or research work.",
+          "body": "Sub-cent input pricing with strong implement scores on Aigon bench. MoE flagship via OpenRouter with 262K context. Lacks curated notes for spec/research roles — use a dedicated spec/research model instead.",
+          "bestFor": ["implement", "review"],
+          "avoidFor": ["spec", "research"],
+          "confidence": "medium",
+          "researchedAt": "2026-07-08T07:42:00.000Z",
+          "sources": []
+        },
         "lastRefreshAt": "2026-05-11T00:00:00.000Z"
       },
       {

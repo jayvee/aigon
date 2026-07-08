@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `summary` object on `cli.modelOptions` entries — operator-facing headline, `bestFor`/`avoidFor` role verdicts, confidence, and sources. Validated by `validateModelOptions` when present; projected through `/api/agent-matrix`. Exemplars on `cc` Sonnet 4.6 and `op` Qwen3 235B (F618).
+
 ### Changed
 
 - **Breaking:** Removed the `git-ref` SpecStore backend. Repos with `storage.backend: "git-ref"` must run `aigon storage convert --backend=git-branch --remote=origin` before any storage-touching command succeeds. `refPrefix` is no longer a config surface.
