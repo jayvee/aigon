@@ -233,7 +233,6 @@ function appendTripletSelects(rowEl, agent, options) {
       e.stopPropagation();
       sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { model: sel.value || null });
-      syncModelSummaryHint(sel, agent, pickerRole);
     });
     cellModel.appendChild(sel);
     wireModelSummarySelect(sel, agent, pickerRole);
@@ -329,7 +328,6 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
       e.stopPropagation();
       sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { model: sel.value || null });
-      syncModelSummaryHint(sel, agent, pickerRole);
     });
     modelCell.appendChild(sel);
     wireModelSummarySelect(sel, agent, pickerRole);
