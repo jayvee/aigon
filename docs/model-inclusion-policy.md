@@ -79,6 +79,14 @@ Every entry in `cli.modelOptions` must have:
 - `score: { <role>: number | null }` — one entry per role this model is eligible for. `null` is acceptable for a new model; *missing* is not.
 - `pricing: { input, output }` in USD per MTok — required for paid SKUs. Omitted for plan-bundled SKUs (cc, gg with Google AI Pro).
 - `notes: { <role>: string }` — one paragraph per role. **Required** for any model promoted into a `cli.complexityDefaults` slot. Optional otherwise — but encouraged at addition time so the next reviewer doesn't have to re-derive the rationale.
+- `summary: { headline, body?, bestFor?, avoidFor?, confidence, researchedAt, sources? }` — operator-facing qualitative verdict distinct from per-role `notes` / `score`. **Optional on legacy rows** until the weekly catalog task backfills them; **required on any new model added after F618 ships** — enforced at PR review, not by `validateModelOptions` (the validator only checks shape when `summary` is present). Shape:
+  - `headline` — string, ≤120 chars, role-opinionated; must not duplicate `label` (case-insensitive, trimmed).
+  - `body` — string, ≤500 chars, evidence-backed (optional).
+  - `bestFor` / `avoidFor` — arrays of Aigon role keys only: `implement`, `review`, `spec`, `spec_review`, `research` (no free-form tags like "code review" or "spec drafting").
+  - `confidence` — `high` | `medium` | `low`. Confidence ladder guidance lives in `docs/specs/recurring/weekly-model-catalog-intelligence.md`.
+  - `researchedAt` — ISO-8601 timestamp of when the summary was last researched.
+  - `sources` — optional array of `{ kind: "aigon-bench"|"benchmark"|"community"|"provider", title: string, url?: string, ref?: string }`.
+  - When quarantined, `body` must not contradict `quarantined.reason` — maintainer-review note, not machine-checkable.
 - `quarantined: { since, reason, evidence, supersededBy }` — added when a probe / sweep reveals the model is broken. **Never delete a quarantined entry** — the record is the audit trail. Un-quarantine only when a clean re-probe passes.
 
 ## 6. Approval flow

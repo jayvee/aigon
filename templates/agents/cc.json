@@ -117,6 +117,15 @@
           "spec": 4,
           "research": 3.5
         },
+        "summary": {
+          "headline": "Best all-round choice for implementation and code review on most features.",
+          "body": "Scores 4–4.5 on implement and review with solid spec and research coverage. Primary complexityDefaults workhorse; cost–quality balance beats Opus for routine agentic loops unless maximum depth is required.",
+          "bestFor": ["implement", "review", "spec", "spec_review"],
+          "avoidFor": [],
+          "confidence": "medium",
+          "researchedAt": "2026-07-08T07:42:00.000Z",
+          "sources": []
+        },
         "lastRefreshAt": "2026-04-26T06:38:18.583Z"
       },
       {
