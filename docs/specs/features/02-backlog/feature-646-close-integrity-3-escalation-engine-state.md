@@ -47,7 +47,7 @@ Engine-first, per the F432 precedent: append events before any UI affordance exi
 - Retro-parsing old logs.
 
 ## Open Questions
-- Should `accept` require a reason string? Recommend yes — the reason is the audit trail that distinguishes a decision from a dismissal.
+- ~~Should `accept` require a reason string?~~ — resolved: yes; all three disposition commands carry `--reason` in their acceptance-criteria shapes (accept/reopen explicitly; follow-up derives its reason from the escalation it spins off). The reason is the audit trail distinguishing a decision from a dismissal.
 - Multiple escalations in one review: disposition individually or as a batch? Recommend individually (they may have different answers), with a `--all` convenience.
 
 ## Related
