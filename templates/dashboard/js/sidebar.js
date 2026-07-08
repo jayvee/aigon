@@ -141,7 +141,8 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       const input = document.getElementById('agent-picker-run-at');
       const hint = document.getElementById('agent-picker-run-at-hint');
       if (!wrap || !input) return;
-      wrap.style.display = enabled ? 'block' : 'none';
+      if (enabled) wrap.removeAttribute('data-hidden');
+      else wrap.setAttribute('data-hidden', '');
       if (!enabled) {
         input.value = '';
         if (hint) hint.textContent = '';
@@ -230,7 +231,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
         document.getElementById('agent-picker-submit').textContent = opts.submitLabel || 'Start';
         const revWrap = document.getElementById('agent-picker-reviewer-wrap');
         const checksEl = document.getElementById('agent-picker-checks');
-        if (revWrap) revWrap.style.display = pickerIncludeSetReviewer ? 'block' : 'none';
+        if (revWrap) revWrap.toggleAttribute('data-hidden', !pickerIncludeSetReviewer);
         if (pickerIncludeSetReviewer && checksEl) {
           const refreshReviewerOptions = function() {
             if (typeof window.populateSetAgentPickerReviewerSection === 'function') {
@@ -244,7 +245,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
           checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
           checksEl._aigonSetReviewerRefresh = null;
         }
-        document.getElementById('agent-picker').style.display = 'flex';
+        document.getElementById('agent-picker').removeAttribute('data-hidden');
         const afterOpen = function() {
           if (typeof updatePickerBudgetNotice === 'function') updatePickerBudgetNotice();
           const submitEl = document.getElementById('agent-picker-submit');
@@ -260,7 +261,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
 
     function hideAgentPicker(result) {
       const revWrap = document.getElementById('agent-picker-reviewer-wrap');
-      if (revWrap) revWrap.style.display = 'none';
+      if (revWrap) revWrap.setAttribute('data-hidden', '');
       setupPickerRunAt(false);
       const checksEl = document.getElementById('agent-picker-checks');
       if (checksEl && checksEl._aigonSetReviewerRefresh) {
@@ -268,7 +269,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
         checksEl._aigonSetReviewerRefresh = null;
       }
       pickerIncludeSetReviewer = false;
-      document.getElementById('agent-picker').style.display = 'none';
+      document.getElementById('agent-picker').setAttribute('data-hidden', '');
       if (pickerResolve) { pickerResolve(result); pickerResolve = null; }
     }
 
@@ -279,7 +280,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       const checkedInputs = [...document.querySelectorAll('#agent-picker input[type=' + inputType + ']:checked')];
       if (checkedInputs.length === 0) { showToast('Select at least one agent'); return; }
       const runAtWrap = document.getElementById('agent-picker-run-at-wrap');
-      const collectRunAt = runAtWrap && runAtWrap.style.display !== 'none';
+      const collectRunAt = runAtWrap && !runAtWrap.hasAttribute('data-hidden');
       const runAt = collectRunAt ? getPickerRunAt() : '';
       if (collectRunAt && !runAt) { showToast('Select a date and time'); return; }
       if (pickerCollectTriplet) {

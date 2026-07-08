@@ -29,14 +29,14 @@
       <button class="view-tab" id="tab-pipeline" data-view="pipeline">Pipeline</button>
       <button class="view-tab" id="tab-sessions" data-view="sessions">Sessions</button>
       <button class="view-tab" id="tab-statistics" data-view="statistics">Reports</button>
-      <button class="view-tab" id="tab-insights" data-view="insights">Insights<sup style="font-size:8px;opacity:0.6;margin-left:2px;vertical-align:super">PRO</sup></button>
+      <button class="view-tab" id="tab-insights" data-view="insights">Insights<sup class="pro-tab-badge">PRO</sup></button>
       <button class="view-tab" id="tab-logs" data-view="logs">Logs</button>
       <button class="view-tab" id="tab-all-items" data-view="all-items">All Items</button>
       <button class="view-tab" id="tab-settings" data-view="settings">Settings</button>
     </nav>
     <div id="aigon-status-pill-host" class="aigon-status-pill-host" data-hidden></div>
     <select id="repo-select-mobile" class="repo-select-mobile" aria-label="Select repository"></select>
-    <div id="budget-widget" class="budget-widget" x-ignore style="display:none" aria-label="Agent budget"></div>
+    <div id="budget-widget" class="budget-widget" x-ignore data-hidden aria-label="Agent budget"></div>
     <div class="dashboard-body">
       <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Hide sidebar" aria-label="Hide sidebar">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -47,7 +47,7 @@
       </button>
       <nav id="repo-sidebar" class="repo-sidebar" role="listbox" aria-label="Repository selector"><div class="sidebar-resize" id="sidebar-resize"></div></nav>
       <div class="detail-area" id="detail-area">
-        <div id="repo-header" class="repo-header-bar" x-ignore style="display:none"></div>
+        <div id="repo-header" class="repo-header-bar" x-ignore data-hidden></div>
 
         <!-- ── Monitor view — Alpine component ──────────────────────────────── -->
         <div id="monitor-view" x-data="monitorView" x-cloak x-show="$store.dashboard.view === 'monitor'" x-on:click.passive="handleMonitorClick($event)">
@@ -82,8 +82,7 @@
                   <!-- Feature cards -->
                   <template x-for="feature in getFeatures(repo)" :key="'f-' + feature.id + '-' + feature.name">
                     <article class="card feature-card"
-                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation', 'awaiting-input': feature.anyAwaitingInput || feature.anyIdleAtPrompt }"
-                             :style="feature.specPath ? 'cursor:pointer' : ''"
+                             :class="{ 'waiting': feature.agents.some(a => a.status === 'waiting'), 'evaluating': feature.stage === 'in-evaluation', 'awaiting-input': feature.anyAwaitingInput || feature.anyIdleAtPrompt, 'card-clickable': !!feature.specPath }"
                              x-on:click="openFeatureSpec($event, feature)">
                       <div class="card-h">
                         <span class="feature" x-html="featureTitle(feature)"></span>
@@ -118,8 +117,7 @@
                   <!-- Research cards -->
                   <template x-for="item in getResearch(repo)" :key="'r-' + item.id + '-' + item.name">
                     <article class="card research"
-                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput || item.anyIdleAtPrompt }"
-                             :style="item.specPath ? 'cursor:pointer' : ''"
+                             :class="{ 'waiting': item.agents.some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput || item.anyIdleAtPrompt, 'card-clickable': !!item.specPath }"
                              x-on:click="openSpecItem($event, item, 'R#')">
                       <div class="card-h">
                         <span class="feature" x-html="researchTitle(item)"></span>
@@ -149,8 +147,7 @@
                   <!-- Feedback cards -->
                   <template x-for="item in getFeedback(repo)" :key="'fb-' + item.id + '-' + item.name">
                     <article class="card"
-                             :class="{ 'waiting': (item.agents || []).some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput }"
-                             :style="item.specPath ? 'cursor:pointer' : ''"
+                             :class="{ 'waiting': (item.agents || []).some(a => a.status === 'waiting'), 'awaiting-input': item.anyAwaitingInput, 'card-clickable': !!item.specPath }"
                              x-on:click="openSpecItem($event, item, 'FB#')">
                       <div class="card-h">
                         <span class="feature" x-html="feedbackTitle(item)"></span>
@@ -186,16 +183,16 @@
                 <button class="toggle-btn" :class="{ active: $store.dashboard.pipelineType === opt.key }" x-on:click="setPipelineType(opt.key)" x-text="opt.label"></button>
               </template>
             </div>
-            <button class="btn btn-sm pipeline-paused-toggle"
+            <button class="btn btn-sm pipeline-paused-toggle pipeline-toggle-dim"
                     x-show="$store.dashboard.pipelineType === 'features'"
                     x-on:click="togglePaused()"
                     x-text="showPaused ? 'Hide Paused' : 'Show Paused'"
-                    :style="showPaused ? 'opacity:1' : 'opacity:0.5'"></button>
-            <button class="btn btn-sm pipeline-group-toggle"
+                    :class="{ 'is-active': showPaused }"></button>
+            <button class="btn btn-sm pipeline-group-toggle pipeline-toggle-dim"
                     x-show="$store.dashboard.pipelineType === 'features'"
                     x-on:click="toggleGroupBySet()"
                     x-text="groupBySet ? 'Ungroup Sets' : 'Group by Set'"
-                    :style="groupBySet ? 'opacity:1' : 'opacity:0.5'"
+                    :class="{ 'is-active': groupBySet }"
                     title="Group features by their `set:` frontmatter tag within each column"></button>
           </div>
           <!-- Empty state -->
@@ -203,11 +200,10 @@
           <!-- Kanban boards per repo -->
           <template x-for="repo in visibleRepos" :key="repo.path">
             <div>
-              <div x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1"
-                   style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600">
+              <div class="kanban-repo-header" x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1">
                 <span x-text="repo.displayPath || repo.name"></span>
-                <span x-html="aigon.buildMainDevServerHtml(repo)" style="text-transform:none;letter-spacing:0;font-weight:400" x-on:click.stop></span>
-                <span x-html="aigon.buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
+                <span class="repo-header-inline" x-html="aigon.buildMainDevServerHtml(repo)" x-on:click.stop></span>
+                <span class="repo-header-inline" x-html="aigon.buildAskAgentHtml(repo.path)"></span>
               </div>
               <div class="kanban" :style="'--kanban-cols:' + currentStages.length">
                 <template x-for="stage in currentStages" :key="stage">
@@ -217,7 +213,7 @@
                        x-on:drop.prevent="onDrop($event, stage, repo.path)">
                     <div class="col-h">
                       <span class="col-title" x-text="aigon.STAGE_LABELS[stage]"></span>
-                      <span style="display:flex;align-items:center;gap:8px">
+                      <span class="col-h-actions">
                         <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
                         <button class="btn btn-primary col-new-feature-btn"
                                 x-show="$store.dashboard.pipelineType === 'features' && stage === 'inbox'"
@@ -239,36 +235,36 @@
         </div>
 
         <!-- Settings view — vanilla JS writes here -->
-        <div id="settings-view" class="repos" x-ignore style="display:none"></div>
-        <div id="empty" class="empty" x-ignore style="display:none"></div>
-        <div id="sessions-view" x-ignore style="display:none;padding:0 0 28px"></div>
-        <div id="statistics-view" x-ignore style="display:none"></div>
-        <div id="insights-view" x-ignore style="display:none;padding:0 0 28px"></div>
-        <div id="backup-sync-view" x-ignore style="display:none;padding:0 0 28px"></div>
-        <div id="scheduled-features-view" x-ignore style="display:none;padding:0 0 28px"></div>
-        <div id="all-items-view" x-ignore style="display:none;padding:0 0 28px"></div>
-        <div id="logs-view" x-ignore style="display:none"></div>
+        <div id="settings-view" class="repos" x-ignore></div>
+        <div id="empty" class="empty" x-ignore></div>
+        <div id="sessions-view" x-ignore></div>
+        <div id="statistics-view" x-ignore></div>
+        <div id="insights-view" x-ignore></div>
+        <div id="backup-sync-view" x-ignore></div>
+        <div id="scheduled-features-view" x-ignore></div>
+        <div id="all-items-view" x-ignore></div>
+        <div id="logs-view" x-ignore></div>
       </div>
     </div>
   </div>
   <div id="toasts" class="toast-wrap" aria-live="polite"></div>
   <!-- Agent picker modal -->
-  <div id="agent-picker" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
+  <div id="agent-picker" class="modal-backdrop" x-ignore data-hidden role="dialog" aria-modal="true" aria-labelledby="agent-picker-title">
     <div class="modal-box agent-picker-modal-box">
       <div class="agent-picker-header-row">
         <h3 id="agent-picker-title">Select Agents</h3>
         <button class="matrix-peek-btn" id="agent-picker-matrix-btn" title="View Agent Capability Matrix" aria-label="View matrix">Matrix ↗</button>
       </div>
       <p class="modal-desc" id="agent-picker-desc"></p>
-      <div id="agent-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
-      <div id="agent-picker-budget-notice" class="budget-notice" style="display:none"></div>
-      <div id="agent-picker-run-at-wrap" class="agent-picker-run-at-wrap" style="display:none">
+      <div id="agent-picker-recommendation" class="agent-picker-recommendation" data-hidden role="status" aria-live="polite"></div>
+      <div id="agent-picker-budget-notice" class="budget-notice" data-hidden></div>
+      <div id="agent-picker-run-at-wrap" class="agent-picker-run-at-wrap" data-hidden>
         <label class="agent-picker-run-at-label" for="agent-picker-run-at">Run at</label>
         <input type="datetime-local" id="agent-picker-run-at" class="create-input" />
         <div class="agent-picker-run-at-hint" id="agent-picker-run-at-hint"></div>
       </div>
       <div class="agent-checks" id="agent-picker-checks"></div>
-      <div id="agent-picker-reviewer-wrap" class="agent-picker-reviewer-wrap" style="display:none" aria-label="Reviewer options for set autonomous">
+      <div id="agent-picker-reviewer-wrap" class="agent-picker-reviewer-wrap" data-hidden aria-label="Reviewer options for set autonomous">
         <div class="agent-picker-reviewer-head">
           <span class="agent-picker-reviewer-title">Reviewer (optional)</span>
         </div>
@@ -287,7 +283,7 @@
   </div>
 
   <!-- Matrix peek panel (appears over the start modal) -->
-  <div id="matrix-peek-backdrop" style="display:none" role="dialog" aria-modal="true" aria-label="Agent Capability Matrix">
+  <div id="matrix-peek-backdrop" data-hidden role="dialog" aria-modal="true" aria-label="Agent Capability Matrix">
     <div id="matrix-peek-panel">
       <button id="matrix-peek-close" class="matrix-peek-close-btn" aria-label="Close matrix">&times;</button>
       <div id="matrix-peek-content">Loading matrix…</div>
@@ -295,16 +291,16 @@
   </div>
 
   <!-- Pick & Close modal (fleet features with winner pick + optional cherry-pick from loser) -->
-  <div id="close-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
+  <div id="close-modal" class="modal-backdrop" x-ignore data-hidden role="dialog" aria-modal="true" aria-labelledby="close-modal-title">
     <div class="modal-box">
       <h3 id="close-modal-title">Pick &amp; Close</h3>
       <p class="modal-desc" id="close-modal-desc"></p>
-      <div style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Winner</label>
+      <div class="form-field">
+        <label class="form-label">Winner</label>
         <div class="agent-checks" id="close-modal-winners"></div>
       </div>
-      <div id="close-modal-adopt-section" style="margin-bottom:12px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Adopt changes from</label>
+      <div id="close-modal-adopt-section" class="form-field">
+        <label class="form-label">Adopt changes from</label>
         <div class="agent-checks" id="close-modal-adopt"></div>
       </div>
       <div class="modal-actions">
@@ -313,18 +309,18 @@
       </div>
     </div>
   </div>
-  <div id="nudge-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="nudge-modal-title">
+  <div id="nudge-modal" class="modal-backdrop" x-ignore data-hidden role="dialog" aria-modal="true" aria-labelledby="nudge-modal-title">
     <div class="modal-box">
       <h3 id="nudge-modal-title">Send Nudge</h3>
       <p class="modal-desc" id="nudge-modal-desc"></p>
       <div class="nudge-agent-role-grid">
         <div>
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Agent</label>
-          <select id="nudge-modal-agent" class="create-input" style="padding:8px 10px"></select>
+          <label class="form-label">Agent</label>
+          <select id="nudge-modal-agent" class="create-input create-input--compact"></select>
         </div>
         <div>
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Role</label>
-          <select id="nudge-modal-role" class="create-input" style="padding:8px 10px">
+          <label class="form-label">Role</label>
+          <select id="nudge-modal-role" class="create-input create-input--compact">
             <option value="do">do</option>
             <option value="review">review</option>
             <option value="spec-review">spec-review</option>
@@ -332,59 +328,59 @@
           </select>
         </div>
       </div>
-      <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Message</label>
+      <label class="form-label">Message</label>
       <textarea id="nudge-modal-message" class="create-input create-textarea" rows="5" placeholder="Redirect, classify the stall, or answer the agent. Ctrl/Cmd+Enter sends."></textarea>
-      <div style="margin-top:10px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Quick nudges</label>
-        <div id="nudge-modal-quick" style="display:grid;gap:3px"></div>
+      <div class="form-field--spaced-top">
+        <label class="form-label">Quick nudges</label>
+        <div id="nudge-modal-quick" class="inline-grid-tight"></div>
       </div>
-      <div style="margin-top:14px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Recent nudges</label>
-        <div id="nudge-modal-history" style="display:grid;gap:8px;max-height:220px;overflow:auto"></div>
+      <div class="form-field--spaced-top-lg">
+        <label class="form-label">Recent nudges</label>
+        <div id="nudge-modal-history" class="inline-grid-loose"></div>
       </div>
-      <div class="modal-actions" style="margin-top:16px">
+      <div class="modal-actions modal-actions--spaced">
         <button class="btn" id="nudge-modal-cancel">Cancel</button>
         <button class="btn btn-primary" id="nudge-modal-submit">Send nudge</button>
       </div>
     </div>
   </div>
   <!-- Start autonomously modal -->
-  <div id="autonomous-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="autonomous-modal-title">
+  <div id="autonomous-modal" class="modal-backdrop" x-ignore data-hidden role="dialog" aria-modal="true" aria-labelledby="autonomous-modal-title">
     <div class="modal-box agent-picker-modal-box">
       <div class="autonomous-modal-header">
         <h3 id="autonomous-modal-title">Start Autonomously</h3>
         <p class="modal-desc" id="autonomous-modal-desc"></p>
-        <div id="autonomous-picker-recommendation" class="agent-picker-recommendation" style="display:none" role="status" aria-live="polite"></div>
-        <div id="autonomous-budget-notice" class="budget-notice" style="display:none" aria-hidden="true"></div>
+        <div id="autonomous-picker-recommendation" class="agent-picker-recommendation" data-hidden role="status" aria-live="polite"></div>
+        <div id="autonomous-budget-notice" class="budget-notice" data-hidden aria-hidden="true"></div>
       </div>
       <div class="modal-scroll-body">
-        <div style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow</label>
-          <select id="autonomous-workflow" class="create-input" style="padding:8px 10px">
+        <div class="form-field">
+          <label class="form-label">Workflow</label>
+          <select id="autonomous-workflow" class="create-input create-input--compact">
             <option value="">(custom — configure below)</option>
           </select>
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="autonomous-workflow-desc"></div>
+          <div class="form-hint-secondary" id="autonomous-workflow-desc"></div>
         </div>
-        <div style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>
+        <div class="form-field">
+          <label class="form-label">Implementation agents</label>
           <div class="agent-checks" id="autonomous-agent-checks"></div>
         </div>
-        <div id="autonomous-eval-wrap" style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>
-          <select id="autonomous-eval-agent" class="create-input" style="padding:8px 10px"></select>
+        <div id="autonomous-eval-wrap" class="form-field">
+          <label class="form-label">Evaluator</label>
+          <select id="autonomous-eval-agent" class="create-input create-input--compact"></select>
         </div>
-        <div id="autonomous-review-wrap" style="margin-bottom:12px;display:none">
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>
+        <div id="autonomous-review-wrap" class="form-field" data-hidden>
+          <label class="form-label">Reviewer</label>
           <p id="autonomous-review-triplet-hint" class="autonomous-review-triplet-hint">Same per-run model and effort rules as the Code review picker: only agents that expose overrides in aigon config show dropdowns; others show —.</p>
           <div class="agent-picker-reviewer-grid">
-            <select id="autonomous-review-agent" class="create-input" style="padding:8px 10px"></select>
+            <select id="autonomous-review-agent" class="create-input create-input--compact"></select>
             <span id="autonomous-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
             <span id="autonomous-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>
           </div>
         </div>
-        <div style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>
-          <select id="autonomous-stop-after" class="create-input" style="padding:8px 10px">
+        <div class="form-field">
+          <label class="form-label">Stop after</label>
+          <select id="autonomous-stop-after" class="create-input create-input--compact">
             <option value="close">close (default)</option>
             <option value="eval">eval</option>
             <option value="review">review</option>
@@ -392,9 +388,9 @@
           </select>
         </div>
       </div>
-      <div class="modal-actions" style="justify-content:space-between">
+      <div class="modal-actions modal-actions--between">
         <button class="btn" id="autonomous-modal-save-workflow" title="Save these settings as a reusable workflow">Save as workflow…</button>
-        <div style="display:flex;gap:8px">
+        <div class="btn-row">
           <button class="btn" id="autonomous-modal-cancel">Cancel</button>
           <button class="btn btn-primary" id="autonomous-modal-submit">Start Autonomously</button>
         </div>
@@ -402,21 +398,21 @@
     </div>
   </div>
   <!-- Create spec modal (features and research) -->
-  <div id="create-modal" class="modal-backdrop" x-ignore style="display:none" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+  <div id="create-modal" class="modal-backdrop" x-ignore data-hidden role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
     <div class="modal-box create-modal-box">
       <h3 id="create-modal-title">New Feature</h3>
-      <div id="create-modal-repo-picker" style="display:none;margin-bottom:14px">
-        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px">Repository</label>
-        <select id="create-modal-repo" class="create-input" style="padding:8px 10px"></select>
+      <div id="create-modal-repo-picker" class="form-field form-field--repo" data-hidden>
+        <label class="form-label">Repository</label>
+        <select id="create-modal-repo" class="create-input create-input--compact"></select>
       </div>
-      <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px">Name</label>
+      <label class="form-label">Name</label>
       <input type="text" id="create-modal-name" class="create-input" placeholder="e.g. dark mode toggle" maxlength="80" autofocus />
-      <label style="display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 6px">Description (optional)</label>
+      <label class="form-label form-label--loose">Description (optional)</label>
       <textarea id="create-modal-description" class="create-input create-textarea" rows="4" placeholder="What should this feature do? Any technical ideas or constraints?"></textarea>
-      <label style="display:block;font-size:12px;color:var(--text-secondary);margin:12px 0 6px">Refine with agent</label>
+      <label class="form-label form-label--loose">Refine with agent</label>
       <div class="create-agent-picks" id="create-modal-agent" aria-label="Refine with agent"></div>
-      <p id="create-modal-error" class="modal-error" style="display:none"></p>
-      <div class="modal-actions" style="margin-top:16px">
+      <p id="create-modal-error" class="modal-error" data-hidden></p>
+      <div class="modal-actions modal-actions--spaced">
         <button class="btn" id="create-modal-cancel">Cancel</button>
         <button class="btn btn-primary" id="create-modal-submit">Create</button>
       </div>
@@ -439,26 +435,26 @@
     <div class="drawer-header">
       <span class="panel-status-dot" id="panel-status-dot"></span>
       <span class="drawer-title" id="panel-title">Terminal</span>
-      <button id="panel-copy-session" title="Copy session name" style="display:none;background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--text-tertiary);flex-shrink:0;line-height:1;border-radius:4px;margin-left:-2px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg></button>
+      <button id="panel-copy-session" title="Copy session name" data-hidden><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="1.5" width="9" height="11" rx="1.5"/><path d="M5.5 4H3a1.5 1.5 0 00-1.5 1.5v9A1.5 1.5 0 003 16h7a1.5 1.5 0 001.5-1.5V13"/></svg></button>
       <div class="drawer-actions" id="panel-actions-normal">
-        <button class="btn" id="panel-back" style="display:none" title="Close both panels and return to dashboard">← Dashboard</button>
-        <button class="btn" id="panel-view-spec" style="display:none" title="View the spec file alongside the terminal">View Spec</button>
-        <button class="btn" id="panel-zoom-out" title="Decrease terminal font size" style="padding:4px 8px;font-size:14px;line-height:1">−</button>
-        <button class="btn" id="panel-zoom-in" title="Increase terminal font size" style="padding:4px 8px;font-size:14px;line-height:1">+</button>
+        <button class="btn" id="panel-back" data-hidden title="Close both panels and return to dashboard">← Dashboard</button>
+        <button class="btn" id="panel-view-spec" data-hidden title="View the spec file alongside the terminal">View Spec</button>
+        <button class="btn panel-zoom-btn" id="panel-zoom-out" title="Decrease terminal font size">−</button>
+        <button class="btn panel-zoom-btn" id="panel-zoom-in" title="Increase terminal font size">+</button>
         <button class="btn" id="panel-fullscreen" title="Toggle fullscreen (Cmd+Shift+F)">⤢</button>
         <button class="btn btn-warn" id="panel-stop">Stop</button>
         <button class="btn" id="panel-close" aria-label="Detach (keep session running)" title="Detach — hides this panel but keeps the tmux session running">Detach</button>
       </div>
-      <div class="drawer-actions" id="panel-actions-confirm" style="display:none">
-        <span style="font-size:12px;color:var(--text-secondary)" id="panel-kill-label">Kill session?</span>
+      <div class="drawer-actions" id="panel-actions-confirm" data-hidden>
+        <span class="text-muted-sm" id="panel-kill-label">Kill session?</span>
         <button class="btn" id="panel-stop-cancel">Cancel</button>
         <button class="btn btn-warn" id="panel-stop-kill">Kill</button>
       </div>
     </div>
     <div id="terminal-container"></div>
     <div class="panel-footer">
-      <span id="panel-session-name" style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)"></span>
-      <span id="panel-elapsed" style="font-size:11px;color:var(--text-tertiary)">0s</span>
+      <span id="panel-session-name" class="mono-muted"></span>
+      <span id="panel-elapsed" class="text-muted-xs">0s</span>
     </div>
   </aside>
   <!-- Close-log panel (feature 428) -->
@@ -468,12 +464,12 @@
       <div class="close-log-state-bar" id="close-log-state-bar"></div>
       <span class="close-log-dot" id="close-log-dot"></span>
       <span class="close-log-title" id="close-log-title">Closing…</span>
-      <button class="close-log-x" id="close-log-x" aria-label="Dismiss" style="display:none">&times;</button>
+      <button class="close-log-x" id="close-log-x" aria-label="Dismiss" data-hidden>&times;</button>
     </div>
     <div class="close-log-body">
       <pre class="close-log-output" id="close-log-output" aria-live="polite"></pre>
     </div>
-    <div class="close-log-footer" id="close-log-footer" style="display:none"></div>
+    <div class="close-log-footer" id="close-log-footer" data-hidden></div>
   </aside>
   <!-- AI session picker modal -->
   <!-- Spec drawer -->
@@ -504,15 +500,15 @@
     </div>
     <div class="drawer-body" id="drawer-body">
       <div class="drawer-preview" id="drawer-preview"></div>
-      <div class="drawer-detail-content" id="drawer-detail-content" style="display:none"></div>
+      <div class="drawer-detail-content" id="drawer-detail-content" data-hidden></div>
     </div>
     <div class="drawer-footer">
       <div class="drawer-footer-left">
-        <span id="drawer-save-status" style="font-size:11px;color:var(--text-tertiary)"></span>
+        <span id="drawer-save-status" class="drawer-save-status"></span>
       </div>
       <div class="drawer-font-controls">
         <button class="btn drawer-font-btn" id="drawer-font-down" title="Decrease font size">A−</button>
-        <span id="drawer-font-size" style="font-size:11px;color:var(--text-secondary);min-width:28px;text-align:center">13</span>
+        <span id="drawer-font-size" class="drawer-font-size-label">13</span>
         <button class="btn drawer-font-btn" id="drawer-font-up" title="Increase font size">A+</button>
       </div>
     </div>

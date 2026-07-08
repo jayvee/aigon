@@ -37,7 +37,7 @@ export function createSessionsView() {
   function repoBadge(s) {
     if (!s.repoPath) return '';
     const name = s.repoPath.split('/').pop();
-    return '<span class="session-entity-badge" style="background:var(--bg-surface);color:var(--text-secondary)">' + escHtml(name) + '</span>';
+    return '<span class="session-entity-badge session-entity-badge--neutral">' + escHtml(name) + '</span>';
   }
 
   function statusBadge(s) {
@@ -72,9 +72,9 @@ export function createSessionsView() {
         ((state.selectedRepo || 'all') === 'all' ? repoBadge(s) : '') +
         statusBadge(s) +
         '<span class="session-meta">' + age + '</span>' +
-        '<span style="display:flex;gap:5px">' +
-          '<button class="btn btn-primary" style="font-size:11px;padding:3px 8px" data-session="' + escHtml(s.name) + '">Open</button>' +
-          '<button class="btn btn-warn" style="font-size:11px;padding:3px 8px" data-kill="' + escHtml(s.name) + '">Kill</button>' +
+        '<span class="session-actions">' +
+          '<button class="btn btn-primary btn-compact" data-session="' + escHtml(s.name) + '">Open</button>' +
+          '<button class="btn btn-warn btn-compact" data-kill="' + escHtml(s.name) + '">Kill</button>' +
         '</span>';
 
       row.querySelector('[data-session]').onclick = async (e) => {
@@ -150,10 +150,10 @@ export function createSessionsView() {
   function buildToolbar(container) {
     const toolbar = document.createElement('div');
     toolbar.className = 'sessions-toolbar';
-    toolbar.innerHTML = '<strong style="font-size:15px;font-weight:600;letter-spacing:-.01em">Tmux Sessions</strong>' +
-      '<span style="font-size:12px;color:var(--text-tertiary)" id="sessions-count-label">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
-      (orphanCount > 0 ? '<button class="btn btn-warn" id="sessions-kill-orphans-btn" style="font-size:11px;padding:4px 10px">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
-      '<button class="btn" id="sessions-tile-btn" style="margin-left:auto" title="Arrange all iTerm2 windows into a grid">⊞ Tile Windows</button>' +
+    toolbar.innerHTML = '<strong class="sessions-title">Tmux Sessions</strong>' +
+      '<span class="sessions-count" id="sessions-count-label">' + sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + '</span>' +
+      (orphanCount > 0 ? '<button class="btn btn-warn btn-compact-md" id="sessions-kill-orphans-btn">Kill ' + orphanCount + ' Orphan' + (orphanCount === 1 ? '' : 's') + '</button>' : '') +
+      '<button class="btn" id="sessions-tile-btn" title="Arrange all iTerm2 windows into a grid">⊞ Tile Windows</button>' +
       '<button class="btn" id="sessions-refresh-btn">↺ Refresh</button>';
     container.appendChild(toolbar);
 
@@ -187,7 +187,7 @@ export function createSessionsView() {
     const container = getContainer();
     if (!container) return false;
 
-    container.innerHTML = '<div style="padding:12px 0;color:var(--text-tertiary);font-size:12px">Loading sessions…</div>';
+    container.innerHTML = '<div class="sessions-loading">Loading sessions…</div>';
 
     try {
       const res = await fetch('/api/sessions', { signal: controller.signal });

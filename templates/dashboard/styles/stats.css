@@ -4,6 +4,9 @@
     .stats-select{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:8px;color:var(--text-primary);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;outline:none}
     .stats-select:focus{border-color:var(--accent)}
     .stats-section-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin:0 0 10px}
+    .stats-section-title--spaced{margin-top:16px}
+    .stats-section-title--spaced-sm{margin-top:4px}
+    .stat-card-trend--muted{color:var(--text-tertiary)}
     .stats-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
     @media(max-width:560px){.stats-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .stats-charts-row{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px}

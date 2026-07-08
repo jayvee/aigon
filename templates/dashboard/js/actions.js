@@ -119,8 +119,8 @@ async function dispatchActionModule(moduleName, ctx) {
     throw err;
   } finally {
     restoreButtonState(ctx.btn);
-    document.querySelectorAll('.modal-backdrop[style*="flex"]').forEach((el) => {
-      if (el.id && el.id.endsWith('-modal') && el.style.display === 'flex') return;
+    document.querySelectorAll('.modal-backdrop').forEach((el) => {
+      if (el.id && el.id.endsWith('-modal') && !el.hasAttribute('data-hidden')) return;
     });
   }
 }

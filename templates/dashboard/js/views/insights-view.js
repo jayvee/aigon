@@ -13,12 +13,12 @@ export function createInsightsView() {
     if (!c) return;
 
     if (!isProActive()) {
-      c.innerHTML = '<div class="amp-empty" style="padding:28px 0;text-align:center"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Insights is a Pro feature — coming later</div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div style="font-size:11px;color:var(--text-tertiary)">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
+      c.innerHTML = '<div class="amp-empty insights-empty"><div class="insights-empty-title">Insights is a Pro feature — coming later</div><div class="insights-empty-body">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div class="insights-empty-body">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
       return;
     }
 
     if (!statsState.data) {
-      c.innerHTML = '<div class="amp-empty" style="padding:20px"><span class="toast-spinner"></span>Loading insights…</div>';
+      c.innerHTML = '<div class="amp-empty insights-loading"><span class="toast-spinner"></span>Loading insights…</div>';
       await loadAnalytics();
     }
 
@@ -82,9 +82,9 @@ export function createInsightsView() {
 
     const meta = payload && payload.generatedAt ? 'Updated ' + escHtml(relTime(payload.generatedAt)) : 'No cached insights yet';
 
-    c.innerHTML = '<div style="padding:0 0 28px">' +
+    c.innerHTML = '<div class="stats-view">' +
       ampHtml +
-      '<div class="stats-section-title" style="margin-top:20px">Observations</div>' +
+      '<div class="stats-section-title stats-section-title--spaced">Observations</div>' +
       '<div class="amp-insights-toolbar">' +
         '<span class="amp-insights-meta">' + meta + '</span>' +
         '<button class="btn" id="amp-insights-refresh-btn">Refresh</button>' +

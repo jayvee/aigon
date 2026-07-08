@@ -84,7 +84,7 @@ function drainAndFinalize(actionId, success, result) {
       if (t) t.textContent = success ? 'Closed' : 'Close failed';
       const f = $id('close-log-footer');
       if (f) {
-        f.style.display = 'flex';
+        f.removeAttribute('data-hidden');
         if (success) {
           f.innerHTML = '<span class="close-log-done-label">Done ✓</span>';
           if (!_dismissed) {
@@ -107,7 +107,7 @@ function drainAndFinalize(actionId, success, result) {
           }
         }
         const x = $id('close-log-x');
-        if (x) x.style.display = '';
+        if (x) x.removeAttribute('data-hidden');
       }
     });
 }
@@ -120,8 +120,8 @@ function openCloseLogPanel(actionId, label) {
   stopPoll();
 
   const pre = $id('close-log-output'); if (pre) pre.innerHTML = '';
-  const f = $id('close-log-footer'); if (f) { f.style.display = 'none'; f.innerHTML = ''; }
-  const x = $id('close-log-x'); if (x) x.style.display = '';
+  const f = $id('close-log-footer'); if (f) { f.setAttribute('data-hidden', ''); f.innerHTML = ''; }
+  const x = $id('close-log-x'); if (x) x.removeAttribute('data-hidden');
   const t = $id('close-log-title'); if (t) t.textContent = 'Closing ' + (label || '…');
   setState('running');
 

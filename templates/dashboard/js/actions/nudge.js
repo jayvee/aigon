@@ -37,15 +37,15 @@ function renderNudgeHistory(feature) {
   if (!box) return;
   const nudges = Array.isArray(feature && feature.nudges) ? feature.nudges.slice().reverse() : [];
   if (nudges.length === 0) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--text-secondary)">No nudges sent yet.</div>';
+    box.innerHTML = '<div class="nudge-empty">No nudges sent yet.</div>';
     return;
   }
   box.innerHTML = nudges.map((nudge) => {
     const when = nudge.atISO ? new Date(nudge.atISO).toLocaleString() : '';
     const role = nudge.role ? ' · ' + H.escHtml(nudge.role) : '';
-    return '<div style="padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg-secondary);display:grid;gap:4px">' +
-      '<div style="font-size:11px;color:var(--text-secondary)">' + H.escHtml((nudge.agentId || 'agent') + role + (when ? ' · ' + when : '')) + '</div>' +
-      '<div style="font-size:12px;white-space:pre-wrap">' + H.escHtml(nudge.message || '') + '</div></div>';
+    return '<div class="nudge-history-card">' +
+      '<div class="nudge-history-meta">' + H.escHtml((nudge.agentId || 'agent') + role + (when ? ' · ' + when : '')) + '</div>' +
+      '<div class="nudge-history-msg">' + H.escHtml(nudge.message || '') + '</div></div>';
   }).join('');
 }
 
@@ -83,7 +83,7 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
   messageInput.value = '';
   renderNudgeQuickItems(nudgeModalEntityType);
   renderNudgeHistory(feature);
-  modal.style.display = 'flex';
+  modal.removeAttribute('data-hidden');
   window.setTimeout(() => messageInput.focus(), 0);
 }
 
@@ -100,11 +100,11 @@ function renderNudgeQuickItems(entityType) {
         { label: 'code review stuck', signal: 'review-complete', message: 'Please complete the code review now. Write up your findings and run: aigon agent-status review-complete' },
         { label: 'revision stuck', signal: 'revision-complete', message: 'Complete the revision addressing all review feedback, then run: aigon agent-status revision-complete' },
       ];
-  const rowStyle = 'display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;transition:border-color .12s';
+  const rowClass = 'nudge-quick-row';
   box.innerHTML = items.map((item, i) =>
-    '<div style="' + rowStyle + '" data-quick-nudge-index="' + i + '">' +
-    '<span style="font-size:11px;color:var(--text-secondary);font-weight:600;flex-shrink:0;min-width:130px">' + H.escHtml(item.label) + '</span>' +
-    '<span style="font-size:11px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:var(--mono)">' + H.escHtml(item.signal) + '</span>' +
+    '<div class="' + rowClass + '" data-quick-nudge-index="' + i + '">' +
+    '<span class="nudge-quick-label">' + H.escHtml(item.label) + '</span>' +
+    '<span class="nudge-quick-signal">' + H.escHtml(item.signal) + '</span>' +
     '</div>'
   ).join('');
   box.querySelectorAll('[data-quick-nudge-index]').forEach(el => {
@@ -120,7 +120,7 @@ function renderNudgeQuickItems(entityType) {
 
 function hideNudgeModal() {
   const modal = document.getElementById('nudge-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) modal.setAttribute('data-hidden', '');
   nudgeModalFeature = null;
   nudgeModalRepoPath = null;
   nudgeModalBtn = null;

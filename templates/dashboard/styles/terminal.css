@@ -16,6 +16,17 @@
     .panel-status-dot.error{background:var(--error)}
     #terminal-container{flex:1;overflow:hidden;background:#0a0a0b;position:relative}
     .panel-footer{display:flex;align-items:center;justify-content:space-between;padding:6px 16px;border-top:1px solid var(--border-subtle);flex-shrink:0;background:#0a0a0b}
+    #panel-copy-session{background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--text-tertiary);flex-shrink:0;line-height:1;border-radius:4px;margin-left:-2px}
+    #panel-copy-session[data-hidden]{display:none}
+    #panel-back[data-hidden],#panel-view-spec[data-hidden]{display:none}
+    .panel-zoom-btn{padding:4px 8px;font-size:14px;line-height:1}
+    #panel-actions-confirm[data-hidden]{display:none}
+    #panel-actions-normal[data-hidden]{display:none}
+    #panel-kill-label{font-size:12px;color:var(--text-secondary)}
+    #panel-session-name{font-family:var(--mono);font-size:11px;color:var(--text-tertiary)}
+    #panel-elapsed{font-size:11px;color:var(--text-tertiary)}
+    #close-log-x[data-hidden]{display:none}
+    #close-log-footer[data-hidden]{display:none}
     /* AI session picker (single-agent selection) */
     .ask-agent-group{position:relative;display:inline-flex;flex-shrink:0;margin-left:8px}
     .ask-agent-primary{font-size:11px;border-radius:8px 0 0 8px;border-right:none!important;padding:3px 8px}

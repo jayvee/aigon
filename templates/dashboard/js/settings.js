@@ -324,7 +324,7 @@ import { escHtml, relTime, showToast } from './utils.js';
         meta.innerHTML =
           '<div class="sync-panel-configure">' +
             (showCreate ?
-              '<div class="sync-panel-url-actions" style="margin-bottom:8px">' +
+              '<div class="sync-panel-url-actions sync-panel-actions">' +
                 '<button class="btn btn-primary sync-panel-create-btn" type="button">Create aigon-vault on GitHub</button>' +
               '</div>' : '') +
             '<label class="sync-panel-url-label">Or paste a git remote URL</label>' +
@@ -2036,8 +2036,8 @@ import { escHtml, relTime, showToast } from './utils.js';
         opts = opts || {};
         const row = document.createElement('div');
         row.className = 'version-row';
-        const valueStyle = opts.muted ? ' style="color:var(--text-tertiary)"' : '';
-        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-value"' + valueStyle + '>' + escHtml(value || '—') + '</span>';
+        const valueCls = opts.muted ? ' version-value--muted' : '';
+        row.innerHTML = '<span class="version-label">' + escHtml(label) + '</span><span class="version-value' + valueCls + '">' + escHtml(value || '—') + '</span>';
         return row;
       }
       function vBadgeRow(label, badgeClass, badgeText) {
@@ -2066,7 +2066,7 @@ import { escHtml, relTime, showToast } from './utils.js';
       } else {
         const checking = document.createElement('div');
         checking.className = 'version-row';
-        checking.innerHTML = '<span class="version-label">Status</span><span class="version-value" style="color:var(--text-tertiary)">Checking…</span>';
+        checking.innerHTML = '<span class="version-label">Status</span><span class="version-value version-value--muted">Checking…</span>';
         vPanel.appendChild(checking);
       }
 
@@ -2127,9 +2127,9 @@ import { escHtml, relTime, showToast } from './utils.js';
           globalThis.renderBackupSync();
         } else if (detachedProViews['backup-sync-view']) {
           detachedProViews['backup-sync-view'].innerHTML =
-            '<div class="amp-empty" style="padding:28px 0;text-align:center">' +
-            '<div style="font-size:15px;font-weight:600;margin-bottom:8px">Aigon Sync <span style="font-size:10px;opacity:0.7">(Pro)</span></div>' +
-            '<div style="color:var(--text-secondary);font-size:12px">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
+            '<div class="amp-empty pro-empty-centered">' +
+            '<div class="pro-empty-title">Aigon Sync <span class="pro-tab-badge">(Pro)</span></div>' +
+            '<div class="pro-empty-body">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
             '</div>';
         }
         // Pro-only: renderScheduledFeatures from scheduled-features stub or @aigon/pro.
@@ -2137,7 +2137,7 @@ import { escHtml, relTime, showToast } from './utils.js';
           globalThis.renderScheduledFeatures();
         } else if (detachedProViews['scheduled-features-view']) {
           detachedProViews['scheduled-features-view'].innerHTML =
-            '<p class="settings-empty" style="margin-top:4px;font-size:12px;color:var(--text-tertiary)">' +
+            '<p class="settings-empty settings-empty-foot">' +
             'Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
         }
       })();

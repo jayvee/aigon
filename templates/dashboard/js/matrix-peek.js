@@ -11,11 +11,11 @@
   let loaded = false;
 
   function closePeek() {
-    backdrop.style.display = 'none';
+    backdrop.setAttribute('data-hidden', '');
   }
 
   async function openPeek() {
-    backdrop.style.display = 'flex';
+    backdrop.removeAttribute('data-hidden');
     if (loaded) return;
     content.textContent = 'Loading matrix…';
     try {
@@ -137,7 +137,7 @@
 
     const dashItem = document.createElement('span');
     dashItem.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)';
-    dashItem.innerHTML = '<span style="color:var(--text-tertiary,#555)">—</span><span>No data</span>';
+    dashItem.innerHTML = '<span class="matrix-no-data">—</span><span>No data</span>';
     legendWrap.appendChild(dashItem);
 
     const pricingNote = document.createElement('span');
@@ -157,7 +157,7 @@
   backdrop.addEventListener('click', e => { if (e.target === backdrop) closePeek(); });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && backdrop.style.display !== 'none') {
+    if (e.key === 'Escape' && !backdrop.hasAttribute('data-hidden')) {
       e.stopPropagation();
       closePeek();
     }

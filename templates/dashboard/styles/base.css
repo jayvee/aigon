@@ -45,3 +45,10 @@
     .repo-dev-link-running{color:var(--accent);border:1px solid rgba(59,130,246,.45);background:rgba(59,130,246,.1)}
     .repo-dev-link-idle{color:var(--text-secondary);border:1px solid var(--border-default);background:transparent}
     .repo-dev-link-idle:hover{color:var(--text-primary);border-color:var(--accent);background:rgba(59,130,246,.08)}
+    /* View shells — initial hidden; view-registry toggles via style.display */
+    #settings-view,#empty,#statistics-view,#logs-view{display:none}
+    #sessions-view,#insights-view,#backup-sync-view,#scheduled-features-view,#all-items-view{display:none;padding:0 0 28px}
+    #budget-widget[data-hidden]{display:none}
+    #repo-header[data-hidden]{display:none}
+    .card-clickable{cursor:pointer}
+    .pipeline-toggle-dim:not(.is-active){opacity:.5}
