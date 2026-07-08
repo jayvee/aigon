@@ -118,6 +118,18 @@ On `review-complete`, each marker becomes a `review.escalation_raised` workflow 
 
 Autonomous flows pause on open escalations — they never auto-accept.
 
+## Criteria attestation
+
+Before close, every `## Acceptance Criteria` checkbox in the spec must have a matching line in the implementation log under `## Criteria Attestation` (indexed, not by text similarity):
+
+- `1. met — <evidence pointer>` (test name, command, or commit sha)
+- `2. deferred — <reason>` (raises a `spec-shortfall` escalation — disposition before close)
+- `3. dropped — <spec revision reference>`
+
+Append lines as criteria land during implementation; do not rewrite the section at close time. Spec-revise may add criteria — attest those too before close.
+
+`aigon feature-close` blocks with the missing indices until the log is complete. Emergency bypass: `--no-verify-criteria` (recorded in the workflow event log).
+
 ## Solo Mode Workflow
 
 1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
@@ -172,7 +184,8 @@ or (faster, when your stack tolerates it):
 
 Before running `feature-close`, always:
 
-1. **Push the branch to origin** to save your work remotely:
+1. **Attest every acceptance criterion** in the implementation log `## Criteria Attestation` section (or confirm the spec has none).
+2. **Push the branch to origin** to save your work remotely:
    ```bash
    git push -u origin <current-branch-name>
    ```

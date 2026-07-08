@@ -3,6 +3,8 @@ Agent: cu
 
 ## Status
 
+Criteria attestation close guard (`lib/criteria-attestation.js`), dashboard Status-tab markers, integration tests — `npm run test:iterate` green.
+
 ## New API Surface
 
 ## Key Decisions

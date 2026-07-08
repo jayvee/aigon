@@ -61,7 +61,11 @@ aigon agent-status implementing
 - Do not move spec files between folders — only the CLI manages spec state transitions.
 - If you must touch a file outside your feature's area, note it explicitly in your implementation log with the reason.
 
-Work through the acceptance criteria in order.
+Work through the acceptance criteria in order. As each criterion is satisfied, append a line under `## Criteria Attestation` in the implementation log (one line per criterion, by index):
+
+`1. met — <test name, command output, or commit sha>` · `2. deferred — <reason>` · `3. dropped — <spec revision reference>`
+
+Do not wait until close — `feature-close` blocks until every criterion is attested.
 
 ## Step 4: Commit your implementation
 
