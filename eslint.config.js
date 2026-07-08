@@ -108,6 +108,7 @@ const dashboardVendorGlobals = {
 // confirming it is genuinely defined somewhere; that is how the incident shipped.
 const dashboardAppGlobals = {
     AGENT_DISPLAY_NAMES: 'writable', AGENT_SHORT_NAMES: 'readonly', AIGON_AGENTS: 'writable',
+    aigon: 'readonly',
     INITIAL_DATA: 'readonly', INSTANCE_NAME: 'readonly', POLL_MS: 'readonly',
     TS_MS: 'readonly', _formatHeadlineAge: 'readonly', alignAllSeries: 'readonly',
     applyCommitWindow: 'readonly', applyCpfWindow: 'readonly',

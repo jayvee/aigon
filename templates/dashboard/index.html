@@ -50,7 +50,7 @@
         <div id="repo-header" class="repo-header-bar" x-ignore style="display:none"></div>
 
         <!-- ── Monitor view — Alpine component ──────────────────────────────── -->
-        <div id="monitor-view" x-data="monitorView()" x-cloak x-show="$store.dashboard.view === 'monitor'" x-on:click.passive="handleMonitorClick($event)">
+        <div id="monitor-view" x-data="monitorView" x-cloak x-show="$store.dashboard.view === 'monitor'" x-on:click.passive="handleMonitorClick($event)">
           <!-- Monitor type toggle -->
           <div class="pipeline-toolbar monitor-toolbar">
             <div class="pipeline-type-toggle">
@@ -75,8 +75,8 @@
                 <div class="repo-h" x-on:click.stop="toggleCollapse(repo.path)">
                   <strong x-text="repo.name || repo.displayPath"></strong>
                   <span x-html="repoSummaryText(repo)"></span>
-                  <span x-html="buildMainDevServerHtml(repo)" x-on:click.stop></span>
-                  <span x-html="buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
+                  <span x-html="aigon.buildMainDevServerHtml(repo)" x-on:click.stop></span>
+                  <span x-html="aigon.buildAskAgentHtml(repo.path)" x-on:click.stop="handleAskClick($event)"></span>
                 </div>
                 <div class="repo-b" x-show="!isCollapsed(repo.path)">
                   <!-- Feature cards -->
@@ -96,8 +96,8 @@
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
-                            <span class="agent" x-text="agentDisplayName(agent)"></span>
-                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
+                            <span class="agent" x-text="aigon.agentDisplayName(agent)"></span>
+                            <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
@@ -109,7 +109,7 @@
                           <div class="row" :class="rs.running ? 'reviewing' : 'submitted'">
                             <span class="agent">Review</span>
                             <span :class="'kcard-agent-status ' + (rs.statusCls || (rs.running ? 'status-reviewing' : 'status-review-done'))"
-                                  x-text="(rs.running ? '● ' : '✓ ') + (AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : 'Review complete')"></span>
+                                  x-text="(rs.running ? '● ' : '✓ ') + (aigon.AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : 'Review complete')"></span>
                           </div>
                         </template>
                       </div>
@@ -132,12 +132,12 @@
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
-                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
-                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
+                            <span class="agent" x-text="aigon.AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
-                              <button x-show="!!agent.findingsPath" class="btn" x-on:click.stop="openResearchFindingsPeek(agent.findingsPath, 'R#' + item.id + ' ' + (AGENT_DISPLAY_NAMES[agent.id] || agent.id) + ' Findings')">View</button>
-                              <button x-show="!!agent.findingsPath" class="kcard-peek-btn" title="Open Agent Log" x-on:click.stop="openDrawer(item.specPath, item.name, item.stage || 'in-progress', item.repoPath || repo.path, { entityId: item.id, initialTab: 'log', initialLogAgent: agent.id })"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h6l4 4v10H4z"/><path d="M10 1v4h4"/><path d="M6 9h6M6 12h4"/></svg></button>
+                              <button x-show="!!agent.findingsPath" class="btn" x-on:click.stop="aigon.openResearchFindingsPeek(agent.findingsPath, 'R#' + item.id + ' ' + (aigon.AGENT_DISPLAY_NAMES[agent.id] || agent.id) + ' Findings')">View</button>
+                              <button x-show="!!agent.findingsPath" class="kcard-peek-btn" title="Open Agent Log" x-on:click.stop="aigon.openDrawer(item.specPath, item.name, item.stage || 'in-progress', item.repoPath || repo.path, { entityId: item.id, initialTab: 'log', initialLogAgent: agent.id })"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h6l4 4v10H4z"/><path d="M10 1v4h4"/><path d="M6 9h6M6 12h4"/></svg></button>
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
                               <span x-html="buildAgentOverflowHtml(agent, item, repo.path)"></span>
                             </span>
@@ -159,8 +159,8 @@
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
-                            <span class="agent" x-text="AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
-                            <span x-html="buildAgentStatusSpan(agent, { showDevLink: true })"></span>
+                            <span class="agent" x-text="aigon.AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
+                            <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
                             <span class="row-actions">
                               <button x-show="!!agent.slashCommand" class="btn" x-on:click.stop="copyCmd(agent.slashCommand)">Copy cmd</button>
@@ -178,7 +178,7 @@
         </div>
 
         <!-- ── Pipeline view — Alpine component ─────────────────────────────── -->
-        <div id="pipeline-view" x-data="pipelineView()" x-cloak x-show="$store.dashboard.view === 'pipeline'">
+        <div id="pipeline-view" x-data="pipelineView" x-cloak x-show="$store.dashboard.view === 'pipeline'">
           <!-- Pipeline type toggle -->
           <div class="pipeline-toolbar">
             <div class="pipeline-type-toggle">
@@ -206,8 +206,8 @@
               <div x-show="$store.dashboard.selectedRepo === 'all' && visibleRepos.length > 1"
                    style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600">
                 <span x-text="repo.displayPath || repo.name"></span>
-                <span x-html="buildMainDevServerHtml(repo)" style="text-transform:none;letter-spacing:0;font-weight:400" x-on:click.stop></span>
-                <span x-html="buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
+                <span x-html="aigon.buildMainDevServerHtml(repo)" style="text-transform:none;letter-spacing:0;font-weight:400" x-on:click.stop></span>
+                <span x-html="aigon.buildAskAgentHtml(repo.path)" style="text-transform:none;letter-spacing:0;font-weight:400"></span>
               </div>
               <div class="kanban" :style="'--kanban-cols:' + currentStages.length">
                 <template x-for="stage in currentStages" :key="stage">
@@ -216,7 +216,7 @@
                        x-on:dragleave="onDragLeave($event)"
                        x-on:drop.prevent="onDrop($event, stage, repo.path)">
                     <div class="col-h">
-                      <span class="col-title" x-text="STAGE_LABELS[stage]"></span>
+                      <span class="col-title" x-text="aigon.STAGE_LABELS[stage]"></span>
                       <span style="display:flex;align-items:center;gap:8px">
                         <span class="col-count" x-text="getStageDisplayCount(repo, stage)"></span>
                         <button class="btn btn-primary col-new-feature-btn"

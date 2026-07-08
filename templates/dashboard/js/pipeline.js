@@ -2219,7 +2219,15 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
 
 // ── ESM exports (F623) ──
 // Alpine markup in index.html calls several pipeline helpers as bare globals.
-export { getLastKanbanReconcileStats, handleCloseWithAgent, isCompleteStatus, pipelineView };
+export {
+  agentDisplayName,
+  buildAgentStatusSpan,
+  getLastKanbanReconcileStats,
+  handleCloseWithAgent,
+  isCompleteStatus,
+  pipelineView,
+  STAGE_LABELS,
+};
 Object.assign(globalThis, {
   closeAllKcardOverflowMenus,
   pipelineCommand,
