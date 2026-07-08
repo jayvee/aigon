@@ -922,7 +922,9 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
       const mode = options && options.mode ? options.mode : 'implementation';
       const reviewerName = AGENT_DISPLAY_NAMES[reviewer.agent] || reviewer.agent;
       const isRunning = reviewer.running === true;
-      const sessionLive = reviewer.sessionRunning === true;
+      const sessionLive = typeof reviewer.sessionRunning === 'boolean'
+        ? reviewer.sessionRunning
+        : isRunning;
       const statusIcon = isRunning ? '●' : '✓';
       const statusLabel = isRunning
         ? (mode === 'spec-revise' ? 'Revising' : mode === 'spec-check' ? 'Checking' : 'Reviewing')
@@ -947,7 +949,9 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
 
     function buildSpecReviewSectionsHtml(feature) {
       const specReviews = feature.specReviewSessions || [];
-      const specRevisions = feature.specRevisionSessions || feature.specCheckSessions || [];
+      const specRevisions = Array.isArray(feature.specRevisionSessions) && feature.specRevisionSessions.length > 0
+        ? feature.specRevisionSessions
+        : (feature.specCheckSessions || []);
       let html = '';
       specReviews.forEach(r => { html += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
       specRevisions.forEach(r => { html += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
