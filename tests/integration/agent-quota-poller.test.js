@@ -16,7 +16,6 @@ function stubBudgetPolls() {
     budgetPoller.pollClaudeBudget = async () => null;
     budgetPoller.pollCodexBudget = async () => null;
     budgetPoller.pollKimiBudget = async () => null;
-    budgetPoller.pollAntigravityBudget = async () => null;
 }
 
 function stubProviderPolls() {
@@ -147,17 +146,14 @@ testAsync('agent-quota poller integration scenarios', async () => {
         await withTempDirAsync(async (dir) => {
             agentQuotaPoller._resetForTests();
             stubProviderPolls();
-            let agCalled = false;
-            const originalAg = budgetPoller.pollAntigravityBudget;
             budgetPoller.pollClaudeBudget = async () => null;
             budgetPoller.pollCodexBudget = async () => null;
             budgetPoller.pollKimiBudget = async () => null;
-            budgetPoller.pollAntigravityBudget = async () => { agCalled = true; return null; };
             process.env.ANTIGRAVITY_TOKEN = 'test-token';
             await agentQuotaPoller.runTick({ repoPath: dir, force: true, skipCacheGate: true });
-            assert.strictEqual(agCalled, false, 'agy budget must never be polled, even forced with a token');
+            const state = agentQuotaRead.readAgentQuotaState(dir);
+            assert.strictEqual(state.agents.ag, undefined, 'agy budget must never be polled, even forced with a token');
             delete process.env.ANTIGRAVITY_TOKEN;
-            budgetPoller.pollAntigravityBudget = originalAg;
             agentQuotaPoller._resetForTests();
         });
 
@@ -174,7 +170,6 @@ testAsync('agent-quota poller integration scenarios', async () => {
             });
             budgetPoller.pollCodexBudget = async () => null;
             budgetPoller.pollKimiBudget = async () => null;
-            budgetPoller.pollAntigravityBudget = async () => null;
             stubProviderPolls();
             const providerQuotaPoller = require('../../lib/provider-quota-poller');
             providerQuotaPoller.pollProvider = async () => {

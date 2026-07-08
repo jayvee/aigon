@@ -364,6 +364,36 @@ function analyze() {
     return { files: files.length, unanalyzable, cycles, violations, graph };
 }
 
+// REGRESSION F636: AGENTS.md module-map paths must exist on disk (path-existence only).
+function findMissingAgentsMdModulePaths() {
+    const agentsPath = path.join(ROOT, 'AGENTS.md');
+    if (!fs.existsSync(agentsPath)) return [];
+    const text = fs.readFileSync(agentsPath, 'utf8');
+    const tableStart = text.indexOf('## Module Map');
+    if (tableStart === -1) return [];
+    const tableSection = text.slice(tableStart);
+    const missing = [];
+    const rowRe = /^\|\s*`((?:lib|aigon-cli\.js)[^`]+)`\s*\|/gm;
+    let match;
+    while ((match = rowRe.exec(tableSection)) !== null) {
+        let raw = match[1].trim();
+        // Skip directory-only rows (e.g. lib/dashboard-collect/)
+        if (raw.endsWith('/')) continue;
+        // Expand "a / b" dual-module rows — take each backtick path segment
+        const paths = raw.includes(' / ')
+            ? raw.split(' / ').map(p => p.trim())
+            : [raw];
+        for (const modPath of paths) {
+            const normalized = modPath.replace(/\\/g, '/');
+            const abs = path.join(ROOT, normalized);
+            if (!fs.existsSync(abs)) {
+                missing.push(normalized);
+            }
+        }
+    }
+    return [...new Set(missing)];
+}
+
 function printReport(result) {
     const { files, unanalyzable, cycles, violations } = result;
     console.log(`Module graph: ${files} files, ${unanalyzable} dynamic require() sites`);
@@ -419,6 +449,11 @@ function main() {
     const diff = diffBaseline(result, baseline);
     const failures = [];
 
+    const missingAgentsPaths = findMissingAgentsMdModulePaths();
+    for (const p of missingAgentsPaths) {
+        failures.push(`AGENTS.md module map path missing: ${p}`);
+    }
+
     for (const c of diff.newCycles) failures.push(`NEW CYCLE: ${c}`);
     for (const c of diff.staleCycles) failures.push(`STALE BASELINE CYCLE (fixed — update baseline): ${c}`);
     for (const v of diff.newViol) failures.push(`NEW VIOLATION: ${v}`);
@@ -447,4 +482,5 @@ module.exports = {
     canonicalCycle,
     diffBaseline,
     analyze,
+    findMissingAgentsMdModulePaths,
 };

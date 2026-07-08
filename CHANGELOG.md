@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `lib/spec-store/git-ref-backend.js` and git-ref-only doctor/report/dashboard paths. Legacy ref reading for conversion lives import-only in `lib/spec-store/convert.js`.
+- Deprecated dashboard API shims `GET/POST /api/budget`, `GET/POST /api/budget/refresh`, `GET/POST /api/quota`, and `GET/POST /api/quota/refresh`. Use `GET/POST /api/agent-quota` instead.
+- `lib/quota-poller.js` compatibility re-export (consumers use `lib/agent-quota-poller.js`).
 
 ## [2.67.0-beta.1] — 2026-06-17
 

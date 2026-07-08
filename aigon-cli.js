@@ -51,7 +51,7 @@ try {
     ({ createFeedbackCommands } = require('./lib/commands/feedback'));
     ({ createSetupCommands } = require('./lib/commands/setup'));
     ({ createInfraCommands } = require('./lib/commands/infra'));
-    ({ createMiscCommands } = require('./lib/commands/misc'));
+    ({ createMiscCommands } = require('./lib/commands/misc-compat'));
     ({ createWorkflowCommands } = require('./lib/commands/workflow'));
     ({ createSetCommands } = require('./lib/commands/set'));
     ({ createRecurringCommands } = require('./lib/commands/recurring'));

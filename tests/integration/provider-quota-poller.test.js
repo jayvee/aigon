@@ -93,9 +93,10 @@ testAsync('provider poll balance precedence, credits 403, and depleted', async (
     });
 });
 
-test('quota API route exposes providers key in error fallback', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/analytics.js'), 'utf8');
-    assert.ok(src.includes('providers: {}'), 'GET /api/quota error fallback must include providers');
+test('agent-quota API empty state exposes providers key', () => {
+    const agentQuotaRead = require('../../lib/agent-quota-read');
+    const empty = agentQuotaRead.emptyState();
+    assert.ok(empty.providers && typeof empty.providers === 'object', 'empty agent-quota state must include providers');
 });
 
 test('quota poller triggers provider poll after agent probes', () => {

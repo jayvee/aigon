@@ -149,13 +149,13 @@ test('ag is never probed or polled automatically (no browser sign-in hijack)', (
     assert.ok(!/return \[['"]agy['"]/.test(probeSrc), 'probe-agent must not spawn agy');
     // Budget poller must not include ag in its automated agent set.
     assert.ok(!/budgetAgents = \[[^\]]*['"]ag['"]/.test(pollerSrc), 'unified poller must not list ag as a budget agent');
-    // Budget poller must not call the interactive Antigravity scrape from pollOnce.
-    assert.ok(!/pollAntigravityBudget\(\{\s*repoPath: root/.test(budgetSrc), 'budget poller must not launch interactive agy');
+    // Budget scrape module must not export an interactive Antigravity poll helper.
+    assert.ok(!/pollAntigravityBudget/.test(budgetSrc), 'budget scrape must not launch interactive agy');
 });
 
 test('quota polling defaults to 30 minutes and allows that interval at runtime', () => {
     assert.strictEqual(quotaProbe.DEFAULT_POLL_INTERVAL_SECONDS, 1800);
-    const configSrc = fs.readFileSync(path.join(__dirname, '../../lib/config.js'), 'utf8');
+    const configSrc = fs.readFileSync(path.join(__dirname, '../../lib/config-core.js'), 'utf8');
     const pollerSrc = fs.readFileSync(path.join(__dirname, '../../lib/agent-quota-poller.js'), 'utf8');
     assert.ok(configSrc.includes('pollIntervalSeconds: 1800'), 'global config default should be 30 minutes');
     assert.ok(pollerSrc.includes('60 * 60 * 1000'), 'runtime clamp should allow the 30-minute default');
