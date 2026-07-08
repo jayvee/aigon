@@ -45,11 +45,11 @@ export const AIGON_SET_CARDS = (function() {
     const specRunning = Boolean(specReview && specReview.running);
     const conductorRunning = Boolean(autonomous && (autonomous.running || autonomous.status === 'running'));
     const conductorPaused = Boolean(autonomous && (autonomous.status === 'paused-on-failure' || autonomous.status === 'paused-on-quota'));
-    const peekHandler = options && typeof options.onPeek === 'function' ? options.onPeek : null;
-    const specPeek = specRunning && specReview.sessionName && peekHandler
+    const renderPeek = Boolean(options && options.onPeek);
+    const specPeek = specRunning && specReview.sessionName && renderPeek
       ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-spec-review-session="' + escHtml(specReview.sessionName) + '" title="View set spec review session" aria-label="Peek set spec review session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
       : '';
-    const conductorPeek = autonomous && autonomous.sessionName && peekHandler
+    const conductorPeek = autonomous && autonomous.sessionName && renderPeek
       ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-conductor-session="' + escHtml(autonomous.sessionName) + '" title="View set autonomous conductor output" aria-label="Peek set conductor session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
       : '';
 

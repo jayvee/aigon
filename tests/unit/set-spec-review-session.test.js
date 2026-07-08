@@ -5,6 +5,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const { test, withTempDir, report } = require('../_helpers');
 const {
     safeSetSpecReviewSessionExists,
@@ -12,6 +13,15 @@ const {
     _setTmuxListCacheForTest,
 } = require('../../lib/dashboard-status-helpers');
 const { computeStatusFingerprint } = require('../../lib/dashboard-status-version');
+
+function loadSetCardsModule() {
+    const sourcePath = path.join(__dirname, '..', '..', 'templates', 'dashboard', 'js', 'set-cards.js');
+    const source = fs.readFileSync(sourcePath, 'utf8')
+        .replace(/\bexport\s+const\s+/g, 'const ');
+    const sandbox = {};
+    vm.runInNewContext(`${source}\nglobalThis.moduleResult = { AIGON_SET_CARDS };`, sandbox, { filename: sourcePath });
+    return sandbox.moduleResult;
+}
 
 function writeSidecar(repoPath, sessionName, record) {
     const dir = path.join(repoPath, '.aigon', 'sessions');
@@ -112,7 +122,7 @@ test('computeStatusFingerprint bumps when set specReview changes', () => {
 });
 
 test('set card HTML includes spec review activity label', () => {
-    const { AIGON_SET_CARDS } = require('../../templates/dashboard/js/set-cards.js');
+    const { AIGON_SET_CARDS } = loadSetCardsModule();
     const html = AIGON_SET_CARDS.buildSetCardBodyHtml({
         slug: 'close-integrity',
         status: 'idle',
@@ -129,6 +139,24 @@ test('set card HTML includes spec review activity label', () => {
     assert.match(html, /Spec review: running/);
     assert.match(html, /Conductor: inactive/);
     assert.match(html, /set-session-pill is-active/);
+});
+
+test('set session activity HTML includes peek controls when requested', () => {
+    const { AIGON_SET_CARDS } = loadSetCardsModule();
+    const html = AIGON_SET_CARDS.buildSetSessionActivityHtml({
+        specReview: {
+            running: true,
+            agent: 'cx',
+            sessionName: 'aigon-f644-spec-review-cx-set-close-integrity',
+        },
+        autonomous: {
+            running: true,
+            status: 'running',
+            sessionName: 'aigon-sclose-integrity-auto',
+        },
+    }, { onPeek: true });
+    assert.match(html, /data-set-spec-review-session="aigon-f644-spec-review-cx-set-close-integrity"/);
+    assert.match(html, /data-set-conductor-session="aigon-sclose-integrity-auto"/);
 });
 
 report();
