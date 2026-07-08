@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented normalized pane/message matching in tmux host delivery; submit always runs after paste.
 ## Criteria Attestation
 
 ## New API Surface
