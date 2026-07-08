@@ -1783,7 +1783,7 @@ import { escHtml, relTime, showToast } from './utils.js';
 
       // ── Agent Matrix section ───────────────────────────────────────────────
       const matrixSection = shell.addSection('agent-matrix', 'Agent Matrix', 'Agent Capability Matrix',
-        'Read-only view of all agents and models. Rows: (agent, model). Columns: qualitative score per operation. Pricing is public API equivalent (value-for-money signal, not billing). Scores are curated by maintainers from benchmark and review data; — means no data yet. Quarantined models are greyed.');
+        'Read-only view of all agents and models. Rows: (agent, model). Columns: qualitative score per operation. Maintainer summaries appear under each model name — expand a row for detail. Pricing is public API equivalent (value-for-money signal, not billing). Scores are curated from benchmark and review data; — means no data yet. Quarantined models are greyed.');
 
       const matrixWrap = document.createElement('div');
       matrixWrap.className = 'matrix-section';
@@ -1886,11 +1886,104 @@ import { escHtml, relTime, showToast } from './utils.js';
         return legend;
       }
 
+      function formatSummaryDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+
+      function renderSummarySources(sources) {
+        if (!Array.isArray(sources) || sources.length === 0) return null;
+        const list = document.createElement('ul');
+        list.className = 'matrix-summary-sources';
+        sources.forEach(src => {
+          if (!src || typeof src !== 'object') return;
+          const li = document.createElement('li');
+          if (src.url) {
+            const a = document.createElement('a');
+            a.href = src.url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = src.label || src.url;
+            li.appendChild(a);
+          } else if (src.kind === 'aigon-bench' && src.ref) {
+            li.textContent = src.ref;
+          } else if (src.ref) {
+            li.textContent = src.ref;
+          } else {
+            return;
+          }
+          list.appendChild(li);
+        });
+        return list.childElementCount > 0 ? list : null;
+      }
+
+      function renderSummaryRoleChips(roles, opLabels, variant) {
+        if (!Array.isArray(roles) || roles.length === 0) return null;
+        const wrap = document.createElement('div');
+        wrap.className = 'matrix-summary-chips matrix-summary-chips-' + variant;
+        roles.forEach(role => {
+          const chip = document.createElement('span');
+          chip.className = 'matrix-summary-chip';
+          chip.textContent = opLabels[role] || role;
+          wrap.appendChild(chip);
+        });
+        return wrap;
+      }
+
+      function buildSummaryDetailRow(row, opLabels, colCount) {
+        const summary = row.summary;
+        if (!summary || !summary.headline) return null;
+        const detailTr = document.createElement('tr');
+        detailTr.className = 'matrix-summary-detail';
+        detailTr.hidden = true;
+        const detailTd = document.createElement('td');
+        detailTd.colSpan = colCount;
+        detailTd.className = 'matrix-summary-detail-cell';
+        const panel = document.createElement('div');
+        panel.className = 'matrix-summary-expand-panel';
+        if (summary.body) {
+          const body = document.createElement('p');
+          body.className = 'matrix-summary-body';
+          body.textContent = summary.body;
+          panel.appendChild(body);
+        }
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'matrix-summary-chips-row';
+        const best = renderSummaryRoleChips(summary.bestFor, opLabels, 'best');
+        const avoid = renderSummaryRoleChips(summary.avoidFor, opLabels, 'avoid');
+        if (best) chipsWrap.appendChild(best);
+        if (avoid) chipsWrap.appendChild(avoid);
+        if (chipsWrap.childElementCount > 0) panel.appendChild(chipsWrap);
+        const meta = document.createElement('div');
+        meta.className = 'matrix-summary-meta';
+        if (summary.confidence) {
+          const conf = document.createElement('span');
+          conf.className = 'matrix-summary-confidence matrix-summary-confidence-' + summary.confidence;
+          conf.textContent = summary.confidence;
+          meta.appendChild(conf);
+        }
+        const researched = formatSummaryDate(summary.researchedAt);
+        if (researched) {
+          const date = document.createElement('span');
+          date.className = 'matrix-summary-researched';
+          date.textContent = researched;
+          meta.appendChild(date);
+        }
+        if (meta.childElementCount > 0) panel.appendChild(meta);
+        const sources = renderSummarySources(summary.sources);
+        if (sources) panel.appendChild(sources);
+        detailTd.appendChild(panel);
+        detailTr.appendChild(detailTd);
+        return detailTr;
+      }
+
       function renderMatrixTable(data) {
         matrixWrap.innerHTML = '';
         const rows = data.rows || [];
         const ops = data.operations || ['research', 'spec', 'spec_review', 'implement', 'review'];
         const opLabels = data.operationLabels || {};
+        const colCount = 2 + ops.length + 2;
 
         if (rows.length === 0) {
           const empty = document.createElement('div');
@@ -1958,16 +2051,49 @@ import { escHtml, relTime, showToast } from './utils.js';
 
           // Model cell
           const modelTd = document.createElement('td');
+          let detailTr = null;
           if (row.modelValue === null) {
             const span = document.createElement('span');
             span.className = 'matrix-model-default';
             span.textContent = row.modelLabel;
             modelTd.appendChild(span);
           } else {
-            const span = document.createElement('span');
-            span.className = 'matrix-model-label' + (row.quarantined ? ' matrix-row-quarantined' : '');
-            span.textContent = row.modelLabel;
-            modelTd.appendChild(span);
+            const cellWrap = document.createElement('div');
+            cellWrap.className = 'matrix-model-cell';
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'matrix-model-label' + (row.quarantined ? ' matrix-row-quarantined' : '');
+            labelSpan.textContent = row.modelLabel;
+            cellWrap.appendChild(labelSpan);
+            const headline = row.summary && row.summary.headline ? String(row.summary.headline) : '';
+            if (headline) {
+              const sumSpan = document.createElement('span');
+              sumSpan.className = 'matrix-model-summary';
+              sumSpan.textContent = headline;
+              cellWrap.appendChild(sumSpan);
+              detailTr = buildSummaryDetailRow(row, opLabels, colCount);
+              if (detailTr) {
+                const expandBtn = document.createElement('button');
+                expandBtn.type = 'button';
+                expandBtn.className = 'matrix-summary-expand';
+                expandBtn.setAttribute('aria-expanded', 'false');
+                expandBtn.setAttribute('aria-label', 'Show model summary details for ' + row.modelLabel);
+                expandBtn.textContent = '▸';
+                const toggleExpand = () => {
+                  const open = detailTr.hidden;
+                  detailTr.hidden = !open;
+                  expandBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                  expandBtn.textContent = open ? '▾' : '▸';
+                };
+                expandBtn.addEventListener('click', e => { e.stopPropagation(); toggleExpand(); });
+                cellWrap.addEventListener('click', e => {
+                  if (e.target === expandBtn || e.target.closest('.matrix-summary-expand')) return;
+                  toggleExpand();
+                });
+                cellWrap.appendChild(expandBtn);
+                cellWrap.classList.add('matrix-model-cell-expandable');
+              }
+            }
+            modelTd.appendChild(cellWrap);
           }
           tr.appendChild(modelTd);
 
@@ -1994,6 +2120,7 @@ import { escHtml, relTime, showToast } from './utils.js';
           tr.appendChild(refreshTd);
 
           tbody.appendChild(tr);
+          if (detailTr) tbody.appendChild(detailTr);
         }
         table.appendChild(tbody);
         tableWrap.appendChild(table);

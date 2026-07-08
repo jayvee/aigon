@@ -126,9 +126,73 @@ function getRecommendedValue(agentId, field) {
   return entry[field] == null ? null : String(entry[field]);
 }
 
+function findModelOption(agent, value) {
+  const opts = agent && Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+  const v = value == null ? '' : String(value);
+  return opts.find(o => String(o.value || '') === v) || null;
+}
+
+function buildModelOptionDisplayLabel(opt) {
+  const raw = opt.label || (opt.value == null ? '' : String(opt.value));
+  return opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
+}
+
+function decorateModelSelectOption(el, opt, agent) {
+  el.value = opt.value == null ? '' : String(opt.value);
+  let label = buildModelOptionDisplayLabel(opt);
+  const quotaEntry = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, opt.value) : null;
+  const headline = opt.summary && opt.summary.headline ? String(opt.summary.headline) : '';
+  if (quotaEntry && quotaEntry.verdict === 'depleted') {
+    el.disabled = true;
+    label = '🔒 ' + label;
+    el.title = typeof quotaTooltip === 'function' ? quotaTooltip(quotaEntry) : '';
+  } else {
+    const benchTip = typeof benchTooltip === 'function' ? benchTooltip(quotaEntry) : '';
+    if (benchTip) {
+      label = '⚠ ' + label;
+      el.title = benchTip;
+    } else if (headline) {
+      el.title = headline;
+    }
+  }
+  el.textContent = label;
+}
+
+function syncModelSummaryHint(selectEl, agent, pickerRole) {
+  const container = selectEl.closest('.agent-triplet-cell-model');
+  if (!container) return;
+  container.querySelectorAll('.model-summary-hint, .model-summary-warn').forEach(n => n.remove());
+  const opt = findModelOption(agent, selectEl.value);
+  const headline = opt && opt.summary && opt.summary.headline ? String(opt.summary.headline) : '';
+  if (!headline) return;
+  const summary = opt.summary;
+  const shouldWarn = pickerRole === 'review'
+    && Array.isArray(summary.avoidFor)
+    && summary.avoidFor.includes('review');
+  if (shouldWarn) {
+    const warn = createEl('div', {
+      className: 'model-summary-warn',
+      attrs: { role: 'note', 'aria-live': 'polite' },
+    });
+    warn.textContent = headline + ' — Not recommended for code review per maintainer summary.';
+    container.appendChild(warn);
+  } else {
+    const hint = createEl('div', { className: 'model-summary-hint', text: headline });
+    container.appendChild(hint);
+  }
+}
+
+function wireModelSummarySelect(sel, agent, pickerRole) {
+  const update = () => syncModelSummaryHint(sel, agent, pickerRole);
+  sel.addEventListener('change', update);
+  update();
+}
+
 // Append model + effort controls for triplet-grid rows. Always emits two
 // columns (select or placeholder) so the agent-picker grid stays aligned.
-function appendTripletSelects(rowEl, agent) {
+function appendTripletSelects(rowEl, agent, options) {
+  const opts = options || {};
+  const pickerRole = opts.pickerRole == null ? null : opts.pickerRole;
   if (!agent) return;
   rowEl.querySelectorAll('.agent-triplet-cell').forEach(n => n.remove());
   const modelOpts = Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
@@ -139,22 +203,7 @@ function appendTripletSelects(rowEl, agent) {
     sel.dataset.agentId = agent.id;
     modelOpts.forEach(opt => {
       const el = document.createElement('option');
-      el.value = opt.value == null ? '' : String(opt.value);
-      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
-      const quotaEntry = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, opt.value) : null;
-      if (quotaEntry && quotaEntry.verdict === 'depleted') {
-        el.disabled = true;
-        label = '🔒 ' + label;
-        el.title = typeof quotaTooltip === 'function' ? quotaTooltip(quotaEntry) : '';
-      } else {
-        const benchTip = typeof benchTooltip === 'function' ? benchTooltip(quotaEntry) : '';
-        if (benchTip) {
-          label = '⚠ ' + label;
-          el.title = benchTip;
-        }
-      }
-      el.textContent = label;
+      decorateModelSelectOption(el, opt, agent);
       sel.appendChild(el);
     });
     const recommended = getRecommendedValue(agent.id, 'model');
@@ -184,8 +233,10 @@ function appendTripletSelects(rowEl, agent) {
       e.stopPropagation();
       sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { model: sel.value || null });
+      syncModelSummaryHint(sel, agent, pickerRole);
     });
     cellModel.appendChild(sel);
+    wireModelSummarySelect(sel, agent, pickerRole);
   } else {
     cellModel.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
   }
@@ -237,6 +288,7 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
   const prefix = scope === 'picker-set'
     ? 'agent-picker-review'
     : (scope === 'schedule-kickoff' ? 'schedule-kickoff-review' : 'autonomous-review');
+  const pickerRole = 'review';
   const modelCell = document.getElementById(prefix + '-model-cell');
   const effortCell = document.getElementById(prefix + '-effort-cell');
   if (!modelCell || !effortCell) return;
@@ -253,22 +305,7 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
     sel.dataset.agentId = agent.id;
     modelOpts.forEach(opt => {
       const el = document.createElement('option');
-      el.value = opt.value == null ? '' : String(opt.value);
-      const raw = opt.label || (opt.value == null ? '' : String(opt.value));
-      let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
-      const quotaEntry = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, opt.value) : null;
-      if (quotaEntry && quotaEntry.verdict === 'depleted') {
-        el.disabled = true;
-        label = '🔒 ' + label;
-        el.title = typeof quotaTooltip === 'function' ? quotaTooltip(quotaEntry) : '';
-      } else {
-        const benchTip = typeof benchTooltip === 'function' ? benchTooltip(quotaEntry) : '';
-        if (benchTip) {
-          label = '⚠ ' + label;
-          el.title = benchTip;
-        }
-      }
-      el.textContent = label;
+      decorateModelSelectOption(el, opt, agent);
       sel.appendChild(el);
     });
     const recommended = getRecommendedValue(agent.id, 'model');
@@ -292,8 +329,10 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
       e.stopPropagation();
       sel.classList.remove('agent-triplet-recommended');
       tripletStorage.write(agent.id, { model: sel.value || null });
+      syncModelSummaryHint(sel, agent, pickerRole);
     });
     modelCell.appendChild(sel);
+    wireModelSummarySelect(sel, agent, pickerRole);
   } else {
     modelCell.appendChild(appendTripletPlaceholder('No per-run model override for this agent'));
   }
@@ -530,6 +569,7 @@ function showDangerConfirm(opts) {
 function renderAgentPickerRows(options) {
   const opts = options || {};
   const collectTriplet = !!opts.collectTriplet;
+  const pickerRole = opts.pickerRole == null ? null : opts.pickerRole;
   const checks = document.getElementById('agent-picker-checks');
   if (!checks) return;
   const rows = AIGON_AGENTS.map(agent => {
@@ -542,7 +582,7 @@ function renderAgentPickerRows(options) {
     });
     if (collectTriplet) {
       row.dataset.agentId = agent.id;
-      appendTripletSelects(row, agent);
+      appendTripletSelects(row, agent, { pickerRole });
     }
     return row;
   });

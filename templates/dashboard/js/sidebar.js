@@ -172,8 +172,9 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       // Feature 313: set recommendation before rendering rows so dropdowns pre-select.
       if (typeof setPickerRecommendation === 'function') setPickerRecommendation(opts.recommendation || null);
       renderPickerRecommendationBanner(opts.recommendation || null);
+      const pickerRole = taskType === 'review' ? 'review' : (taskType === 'implement' ? 'implement' : null);
       // Re-render rows to toggle triplet dropdowns on/off for this invocation.
-      renderAgentPickerRows({ collectTriplet: pickerCollectTriplet });
+      renderAgentPickerRows({ collectTriplet: pickerCollectTriplet, pickerRole });
       return fetchAgentModels(opts.repoPath).then(models => new Promise((resolve) => {
         pickerResolve = resolve;
         document.getElementById('agent-picker-title').textContent = opts.title || 'Select Agents';

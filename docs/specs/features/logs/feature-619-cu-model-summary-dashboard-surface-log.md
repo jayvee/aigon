@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented matrix headlines, expand panels, peek summaries, and picker hints/warns; smoke test in `agent-matrix-summary.spec.js`.
 ## New API Surface
 
 ## Key Decisions
