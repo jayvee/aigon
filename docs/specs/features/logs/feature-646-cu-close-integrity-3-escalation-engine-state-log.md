@@ -1,3 +1,17 @@
+---
+commit_count: 0
+lines_added: 0
+lines_removed: 0
+lines_changed: 0
+files_touched: 0
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 646 - close-integrity-3-escalation-engine-state
 Agent: cu
 
