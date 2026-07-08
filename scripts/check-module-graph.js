@@ -102,20 +102,13 @@ const RULES = [
         },
     },
     {
-        id: 'dashboard-collect-boundary',
-        description: 'dashboard-collect package must not import dashboard server shell or commands (F633)',
+        id: 'telemetry-boundary',
+        description: 'telemetry providers must not import agent-registry or sibling providers (F634)',
         check(fromFile, toFile) {
-            if (!fromFile.startsWith('lib/dashboard-collect/')) return null;
-            const forbidden = [
-                'lib/dashboard-server.js',
-                'lib/dashboard-routes/',
-                'lib/dashboard-actions/',
-                'lib/commands/',
-            ];
-            for (const prefix of forbidden) {
-                if (prefix.endsWith('/') ? toFile.startsWith(prefix) : toFile === prefix) {
-                    return `${fromFile}->${toFile}`;
-                }
+            if (!fromFile.startsWith('lib/telemetry/providers/')) return null;
+            if (fromFile.endsWith('/registry.js')) return null;
+            if (toFile === 'lib/agent-registry.js' || toFile.startsWith('lib/telemetry/providers/')) {
+                return `${fromFile}->${toFile}`;
             }
             return null;
         },

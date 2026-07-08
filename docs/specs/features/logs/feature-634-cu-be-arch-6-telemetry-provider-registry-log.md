@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Split `lib/telemetry.js` into `lib/telemetry/` package (core, pricing, sqlite, capture, providers/cc|gg|ag|cx|op + registry); lazy facade preserves module-graph cycle count; session-sidecar path resolution unchanged.
 ## New API Surface
 
 ## Key Decisions
