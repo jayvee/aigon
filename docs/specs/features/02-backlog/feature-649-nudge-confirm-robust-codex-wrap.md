@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-08T22:04:17.250Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: nudge-confirm-robust-codex-wrap
