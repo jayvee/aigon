@@ -442,20 +442,71 @@ function printReport(result) {
     }
 }
 
+function parseWriteBaselineArgs(args) {
+    const writeBaseline = args.includes('--write-baseline');
+    if (!writeBaseline) return { writeBaseline: false, allowGrowthReason: null };
+    const idx = args.indexOf('--allow-growth');
+    const allowGrowthReason = idx !== -1 ? String(args[idx + 1] || '').trim() : null;
+    if (idx !== -1 && !allowGrowthReason) {
+        console.error('--allow-growth requires a non-empty reason string');
+        process.exit(1);
+    }
+    return { writeBaseline: true, allowGrowthReason };
+}
+
+function assertBaselineWriteAllowed(current, baseline, allowGrowthReason) {
+    const diff = diffBaseline(current, baseline);
+    const growth = diff.newCycles.length + diff.newViol.length;
+    if (growth === 0) return diff;
+    if (!allowGrowthReason) {
+        const err = new Error('Refusing to write baseline: graph grew since committed baseline.');
+        err.code = 'BASELINE_GROWTH_REFUSED';
+        err.diff = diff;
+        throw err;
+    }
+    return diff;
+}
+
 function main() {
     const args = process.argv.slice(2);
     const reportMode = args.includes('--report');
-    const writeBaseline = args.includes('--write-baseline');
+    const { writeBaseline, allowGrowthReason } = parseWriteBaselineArgs(args);
 
     const result = analyze();
 
     if (writeBaseline) {
+        const baseline = loadBaseline();
+        let diff;
+        try {
+            diff = assertBaselineWriteAllowed(result, baseline, allowGrowthReason);
+        } catch (err) {
+            if (err.code === 'BASELINE_GROWTH_REFUSED') {
+                console.error(err.message);
+                console.error(`  new cycles: ${err.diff.newCycles.length}`);
+                console.error(`  new violations: ${err.diff.newViol.length}`);
+                console.error('Pass --allow-growth <reason> to record intentional growth in growthLog.');
+                process.exit(1);
+            }
+            throw err;
+        }
         const payload = {
             cycles: result.cycles,
             violations: result.violations,
         };
+        if (allowGrowthReason) {
+            const prior = Array.isArray(baseline.growthLog) ? baseline.growthLog : [];
+            payload.growthLog = [
+                ...prior,
+                { at: new Date().toISOString().slice(0, 10), reason: allowGrowthReason },
+            ];
+        } else if (Array.isArray(baseline.growthLog) && baseline.growthLog.length) {
+            payload.growthLog = baseline.growthLog;
+        }
         fs.writeFileSync(BASELINE_PATH, `${JSON.stringify(payload, null, 2)}\n`);
-        console.log(`Wrote baseline: ${result.cycles.length} cycles, ${result.violations.length} violations`);
+        const shrinkNote = diff.staleCycles.length || diff.staleViol.length
+            ? ` (shrank ${diff.staleCycles.length} cycles, ${diff.staleViol.length} violations)`
+            : '';
+        console.log(`Wrote baseline: ${result.cycles.length} cycles, ${result.violations.length} violations${shrinkNote}`);
         return;
     }
 
@@ -509,4 +560,6 @@ module.exports = {
     diffBaseline,
     analyze,
     findMissingAgentsMdModulePaths,
+    parseWriteBaselineArgs,
+    assertBaselineWriteAllowed,
 };
