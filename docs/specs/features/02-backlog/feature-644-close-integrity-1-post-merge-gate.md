@@ -45,7 +45,7 @@ The seam is `lib/feature-close.js` — the phase list after `mergeFeatureBranch`
 
 ## Open Questions
 - Should consecutive set-member closes skip redundant gate runs when main hasn't changed between them (statusVersion-style fingerprint of HEAD)? Recommend: no caching in v1; correctness first.
-- Where the gate's full output lives long-term (`.aigon/state/close-gates/<id>.log` vs appended to the implementation log) — pick during implementation, document in the log.
+- ~~Where the gate's full output lives long-term~~ — resolved by spec review (cx, 2026-07-08): `.aigon/state/close-gates/feature-<id>-<timestamp>.log`, with a bounded tail in the event payload.
 
 ## Related
 - Prior work: F432 (`close_recovery_in_progress` — the state this reuses), F234 (dashboard-invoked close restart marker), F307 (no blanket staging in close paths).
