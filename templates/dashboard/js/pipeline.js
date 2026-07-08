@@ -935,6 +935,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         'push-failed': 'Push failed',
         'test-failed': 'Tests failed',
         'post-merge-gate': 'Post-merge gate failed',
+        'preauth-validation': 'Pre-auth validation failed',
         'other': 'Close failed',
       };
       const kindLabel = kindLabels[lcf.kind] || 'Close failed';
@@ -942,7 +943,10 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         ? lcf.conflictFiles.join(', ')
         : '';
       const gateHint = lcf.kind === 'post-merge-gate' && lcf.logPath ? ` (${lcf.logPath})` : '';
-      const summaryText = filesText ? kindLabel + ' in ' + filesText : kindLabel + gateHint;
+      const preauthHint = lcf.kind === 'preauth-validation' && Array.isArray(lcf.unmatched) && lcf.unmatched.length > 0
+        ? ' — ' + lcf.unmatched.map(u => u.sha ? u.sha.slice(0, 7) + ':' + u.slug : u.slug).join(', ')
+        : '';
+      const summaryText = filesText ? kindLabel + ' in ' + filesText : kindLabel + gateHint + preauthHint;
       const stderrAttr = lcf.stderrTail ? ' title="' + escHtml(lcf.stderrTail.slice(0, 500)) + '"' : '';
       return '<div class="kcard-close-failure"' + stderrAttr + '>' +
         '<span class="kcard-close-failure-icon">⚠</span>' +

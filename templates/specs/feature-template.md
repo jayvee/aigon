@@ -50,6 +50,13 @@ complexity: medium
 ```bash
 ```
 
+## Pre-authorised
+<!-- Optional: grant specific policy-gate skips for this feature only.
+     Each line is a single bullet authorising one action. When an agent proceeds
+     under a line, the commit footer must be `Pre-authorised-by: <slug>` where
+     `<slug>` is the slugified line text (lowercase, non-alphanumerics → hyphens).
+     Slugs are validated against this section at feature-close — invented footers block close. -->
+
 ## Technical Approach
 <!-- High-level approach, key decisions, constraints, non-functional requirements -->
 
