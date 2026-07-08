@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 407
+lines_removed: 3
+lines_changed: 410
+files_touched: 10
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 648 - set-review-session-visibility
 Agent: cu
 
