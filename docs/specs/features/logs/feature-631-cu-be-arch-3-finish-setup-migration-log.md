@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 5419
+lines_removed: 5558
+lines_changed: 10977
+files_touched: 20
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 631 - be-arch-3-finish-setup-migration
 Agent: cu
 
