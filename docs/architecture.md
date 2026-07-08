@@ -181,12 +181,18 @@ Current shared modules:
 - `lib/terminal-adapters.js` (~200 lines): data-driven terminal detection/dispatch — adapter table with `detect(env)`, `launch(cmd, opts)`, `split(configs, opts)` per terminal. **Registry API** (F350): each macOS adapter carries `id`, `displayName`, `pickerLabel`, `platforms`, `aliases`, `hiddenFromPicker` — all consumer surfaces (dashboard enum, onboarding picker, display-name map, canonicaliser, help text) derive from this single source. Adding a new terminal requires only a new adapter object here. **Background launch (F520)**: `launch(cmd, { background })` threads through every macOS adapter — `background: true` (the default, controlled by `terminal.focusOnLaunch`) drops `activate` lines and wraps the AppleScript with a `wrapBackgroundAppleScript` capture/restore-frontmost frame so the user's focus is preserved. Warp uses `open -g` instead. Linux is unaffected — newly-spawned windows obey the WM's focus-stealing-prevention policy, which aigon does not try to override.
   `findAdapter`, `getAdapter`, `tileITerm2Windows`, `closeWarpWindow`, `getTerminalIds`, `getPickerOptions`, `getDashboardOptions`, `getDisplayName`, `canonicalize`, `isValidId`, `registerAdapter`, `wrapBackgroundAppleScript`
 - `lib/config.js` (~1,395 lines): global/project config, profiles, agent CLI config, editor detection, and runtime compatibility for legacy `terminal`/`tmuxApp` reads while `terminalApp` rolls out
-  `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`
+  `loadGlobalConfig`, `loadProjectConfig`, `getActiveProfile`, `getEffectiveConfig`, `getAgentCliConfig`, `isAgentDisabled`
+- `lib/config-core.js`: leaf config file I/O and default config primitives used by lower layers that must not import the config facade
+  `loadGlobalConfig`, `loadProjectConfig`, `saveGlobalConfig`, `saveProjectConfig`, `buildDefaultGlobalConfigBase`
 - `lib/global-config-migration.js` (~150 lines): machine-wide `~/.aigon/config.json` migration registry and runner; write-once backups + schemaVersion tracking for global config renames
   `registerGlobalConfigMigration`, `runPendingGlobalConfigMigrations`, `migrateLegacyTerminalSettings`
 - `lib/templates.js` (~550 lines): template loading, command registry, scaffolding, content generation
   `readTemplate`, `processTemplate`, `readGenericTemplate`, `formatCommandOutput`, `COMMAND_REGISTRY`
-- `lib/utils.js` (~183 lines): thin re-export hub for config/proxy/dashboard/worktree/templates/git, feedback constants, dev-server URL, safeWrite. Do not add domain logic here — route new code to its domain module instead.
+- `lib/safe-write.js`: leaf atomic file-write helpers shared by template/setup code without importing the utils facade
+  `safeWrite`, `safeWriteWithStatus`
+- `lib/binary-check.js`: leaf PATH probe for CLI availability checks without importing security/config layers
+  `isBinaryAvailable`
+- `lib/utils.js` (~183 lines): thin re-export hub for config/proxy/worktree/templates/git, feedback constants, dev-server URL, and safe-write helpers. Do not add domain logic here — route new code to its domain module instead. It does not re-export dashboard-server.
   `safeWrite`, `safeWriteWithStatus`, `setTerminalTitle`, `resolveDevServerUrl`, `FEEDBACK_STATUS_TO_FOLDER`
 - `lib/hooks.js` (~146 lines): hook lifecycle — parses `.aigon/hooks.json`, executes pre/post hooks
   `parseHooksFile`, `getDefinedHooks`, `executeHook`, `runPreHook`, `runPostHook`
