@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 3090
+lines_removed: 3032
+lines_changed: 6122
+files_touched: 31
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 636 - be-arch-8-deprecated-shim-sunset
 Agent: cu
 
