@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { test, testAsync, withTempDir, report } = require('../_helpers');
-const { getFeatureSubmissionEvidence } = require('../../lib/commands/misc');
+const { getFeatureSubmissionEvidence } = require('../../lib/feature-command-helpers');
 const { sendNudge, resolveSessions } = require('../../lib/nudge');
 
 const git = (cwd, cmd) => execSync(`git ${cmd}`, { cwd, stdio: 'pipe' });

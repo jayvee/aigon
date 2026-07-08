@@ -364,6 +364,40 @@ function analyze() {
     return { files: files.length, unanalyzable, cycles, violations, graph };
 }
 
+// REGRESSION F636: AGENTS.md module-map paths must exist on disk (path-existence only).
+function findMissingAgentsMdModulePaths() {
+    const agentsPath = path.join(ROOT, 'AGENTS.md');
+    if (!fs.existsSync(agentsPath)) return [];
+    const text = fs.readFileSync(agentsPath, 'utf8');
+    const tableStart = text.indexOf('## Module Map');
+    if (tableStart === -1) return [];
+    const afterHeader = text.slice(tableStart);
+    const nextHeader = afterHeader.slice(1).search(/^##\s+/m);
+    const tableSection = nextHeader === -1 ? afterHeader : afterHeader.slice(0, nextHeader + 1);
+    const missing = [];
+    const rowRe = /^\|\s*(.*?)\s*\|/gm;
+    let match;
+    while ((match = rowRe.exec(tableSection)) !== null) {
+        const cell = match[1];
+        const paths = [];
+        const codeRe = /`((?:lib|aigon-cli\.js)[^`]+)`/g;
+        let codeMatch;
+        while ((codeMatch = codeRe.exec(cell)) !== null) {
+            paths.push(codeMatch[1].trim());
+        }
+        for (const modPath of paths) {
+            const normalized = modPath.replace(/\\/g, '/');
+            // Skip directory-only rows (e.g. lib/dashboard-collect/)
+            if (normalized.endsWith('/')) continue;
+            const abs = path.join(ROOT, normalized);
+            if (!fs.existsSync(abs)) {
+                missing.push(normalized);
+            }
+        }
+    }
+    return [...new Set(missing)];
+}
+
 function printReport(result) {
     const { files, unanalyzable, cycles, violations } = result;
     console.log(`Module graph: ${files} files, ${unanalyzable} dynamic require() sites`);
@@ -419,6 +453,11 @@ function main() {
     const diff = diffBaseline(result, baseline);
     const failures = [];
 
+    const missingAgentsPaths = findMissingAgentsMdModulePaths();
+    for (const p of missingAgentsPaths) {
+        failures.push(`AGENTS.md module map path missing: ${p}`);
+    }
+
     for (const c of diff.newCycles) failures.push(`NEW CYCLE: ${c}`);
     for (const c of diff.staleCycles) failures.push(`STALE BASELINE CYCLE (fixed — update baseline): ${c}`);
     for (const v of diff.newViol) failures.push(`NEW VIOLATION: ${v}`);
@@ -447,4 +486,5 @@ module.exports = {
     canonicalCycle,
     diffBaseline,
     analyze,
+    findMissingAgentsMdModulePaths,
 };

@@ -22,16 +22,15 @@ test('token-window config defaults and command registry', () => {
     assert.ok(templates.COMMANDS_DISABLE_MODEL_INVOCATION.has('token-window'), 'token-window must disable model invocation');
 });
 
-// REGRESSION: /api/budget must include lastTokenKickoffAt when state file exists.
-test('budget route includes lastTokenKickoffAt source', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/analytics.js'), 'utf8');
-    assert.ok(src.includes('last-token-kickoff'), 'dashboard-routes analytics must reference last-token-kickoff');
-    assert.ok(src.includes('lastTokenKickoffAt'), 'dashboard-routes analytics must include lastTokenKickoffAt in response');
+// REGRESSION: token-window command writes last-token-kickoff state file.
+test('token-window records kickoff timestamp', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../lib/commands/insights.js'), 'utf8');
+    assert.ok(src.includes('last-token-kickoff'), 'token-window must write last-token-kickoff state file');
 });
 
 // REGRESSION: token-window command handler must exist in misc commands.
 test('token-window command exported from misc commands', () => {
-    const misc = require('../../lib/commands/misc');
+    const insights = require('../../lib/commands/insights');
     const ctx = {
         utils: {
             PATHS: { features: { root: path.join(process.cwd(), 'docs', 'specs', 'features') } },
@@ -60,7 +59,7 @@ test('token-window command exported from misc commands', () => {
             filterWorktreesByFeature: () => [],
         },
     };
-    const cmds = misc(ctx);
+    const cmds = insights(ctx);
     assert.strictEqual(typeof cmds['token-window'], 'function', 'token-window must be a function');
 });
 

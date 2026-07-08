@@ -418,7 +418,7 @@ const entrypoint = [
     "const { createResearchCommands } = require('./lib/commands/research');",
     "const { createFeedbackCommands } = require('./lib/commands/feedback');",
     "const { createSetupCommands } = require('./lib/commands/setup');",
-    "const { createMiscCommands } = require('./lib/commands/misc');",
+    "const { createMiscCommands } = require('./lib/commands/misc-compat');",
     '',
     'const commands = {',
     '    ...createFeatureCommands(),',
