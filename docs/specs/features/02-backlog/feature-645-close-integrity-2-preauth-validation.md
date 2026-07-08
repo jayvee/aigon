@@ -18,11 +18,11 @@ The pre-authorisation mechanism (CLAUDE.md rule 9 / AGENTS.md rule 11) lets an a
 
 ## Acceptance Criteria
 - [ ] A shared helper (natural home: `lib/spec-preauth.js` or an existing spec-parsing module — audit before creating a new file, per no-sidecar discipline) parses `## Pre-authorised` lines from a spec into `{slug, description}` entries, and extracts `Pre-authorised-by:` footers from a commit range. Slug matching is exact, case-insensitive.
-- [ ] `feature-close` (and `feature-submit`, which shares the verification path) scans the feature's commits (`preMergeBaseRef..branch` — the range `getFeatureGitSignals` already computes) for `Pre-authorised-by:` footers and validates each against the spec. Any unmatched slug → close blocked with a message naming the commit sha, the slug, and the fix (add the line to the spec with operator consent, or revert the skipped gate's bypass).
+- [ ] `feature-close` scans the feature's commits (`preMergeBaseRef..branch` — the range `getFeatureGitSignals` already computes) for `Pre-authorised-by:` footers and validates each against the spec. Any unmatched slug → close blocked with a message naming the commit sha, the slug, and the fix (add the line to the spec with operator consent, or revert the skipped gate's bypass). The same shared validator runs from the implementation-complete/submit signal path as a warning only unless `--strict-preauth` is added later; it must not strand an implementer before review.
 - [ ] Matched pre-authorisations are recorded in a `feature.preauthorisations_used` workflow event (slugs + commit shas) at close, and surfaced in the dashboard spec drawer (Events/Status tab) and in the close summary output.
-- [ ] The blocked-close path reuses the close-failure machinery from close-integrity-1 (`close_recovery_in_progress` + event), not a new state.
+- [ ] The blocked-close path reuses the close-failure machinery from close-integrity-1 (`feature.close_gate_failed`, `feature.close_recovery.started`, `lastCloseFailure.kind = 'preauth-validation'`), not a new state. The event payload includes unmatched slugs, commit shas, and whether `--no-verify-preauth` was used.
 - [ ] Template updated: the spec template's `## Pre-authorised` comment block states that slugs are validated at close (so agents reading the spec know invention fails). Rule text in AGENTS.md/CLAUDE.md gains one sentence: "slugs are validated against the spec at close."
-- [ ] Grandfathering: validation applies to features closed after this lands; no retro-scan of history. A `--no-verify-preauth` escape hatch exists for genuine emergencies and prints a loud warning + records an event when used.
+- [ ] Grandfathering: validation applies to features closed after this lands; no retro-scan of history. A `--no-verify-preauth` escape hatch exists for genuine emergencies and prints a loud warning + records a `feature.preauthorisation_validation_bypassed` event when used.
 - [ ] Tests: valid slug passes; invented slug blocks with actionable message; footer-less feature unaffected; escape hatch records its event (`// REGRESSION:` per T2 citing the F631 incident).
 
 ## Validation
@@ -31,7 +31,7 @@ npm run test:iterate
 ```
 
 ## Technical Approach
-Parsing lives beside the existing frontmatter/spec-section readers (`lib/cli-parse.js` / `lib/spec-crud.js` have the conventions — reuse `readSpecSection` if it fits). Commit-footer extraction: `git log --format` over the same range close already walks; no new git plumbing. Keep the check cheap and pure so `feature-submit` can run it early (fail before review, not only at close). Blocking integrates at the same phase as close-integrity-1's gate — run pre-auth validation BEFORE the post-merge gate (it's cheaper and fails faster). Restart the dashboard server after `lib/*.js` edits (hot rule #3).
+Parsing lives beside the existing frontmatter/spec-section readers (`lib/cli-parse.js` / `lib/spec-crud.js` have the conventions — reuse `readSpecSection` if it fits). Commit-footer extraction: `git log --format` over the same range close already walks; no new git plumbing. Keep the check cheap and pure so the implementation-complete signal path can warn early while `feature-close` remains the hard gate. Blocking integrates at the same phase as close-integrity-1's gate — run pre-auth validation BEFORE the post-merge gate (it's cheaper and fails faster). Restart the dashboard server after `lib/*.js` edits (hot rule #3).
 
 ## Dependencies
 - depends_on: close-integrity-1-post-merge-gate
