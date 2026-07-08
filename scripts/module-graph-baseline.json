@@ -2,9 +2,10 @@
   "cycles": [
     "lib/agent-availability.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/agent-availability.js",
+    "lib/agent-availability.js -> lib/config.js -> lib/config-agent-layer.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/global-config-migration.js -> lib/terminal-adapters.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/instance-identity.js -> lib/global-config-migration.js -> lib/terminal-adapters.js -> lib/agent-registry.js -> lib/agent-availability.js",
-    "lib/agent-availability.js -> lib/config.js -> lib/profile-placeholders.js -> lib/agent-registry.js -> lib/agent-availability.js",
+    "lib/agent-availability.js -> lib/config.js -> lib/profile-placeholders.js -> lib/git.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/dashboard-server.js -> lib/agent-quota-poller.js -> lib/budget-poller.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/dashboard-server.js -> lib/workflow-read-model.js -> lib/feature-review-recovery-dashboard-actions.js -> lib/transcript-read.js -> lib/agent-registry.js -> lib/agent-availability.js",
     "lib/agent-availability.js -> lib/config.js -> lib/templates.js -> lib/utils.js -> lib/worktree.js -> lib/agent-launch.js -> lib/agent-registry.js -> lib/agent-availability.js",
