@@ -8,6 +8,9 @@
   "iterate": {
     "validationCommand": "npm run test:iterate"
   },
+  "featureClose": {
+    "postMergeGate": "npm run test:core"
+  },
   "security": {
     "mode": "warn"
   },
