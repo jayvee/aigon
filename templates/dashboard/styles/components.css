@@ -1,5 +1,8 @@
     /* Agent picker modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:flex;align-items:center;justify-content:center}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center}
+    .modal-backdrop:not([data-hidden]){display:flex}
+    #matrix-peek-backdrop[data-hidden]{display:none!important}
+    #matrix-peek-backdrop:not([data-hidden]){display:flex}
     .modal-box{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius);padding:20px 24px;min-width:280px;max-width:400px;width:100%;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}
     .modal-box:has(.agent-checks-triplet){max-width:880px;min-width:460px;width:min(880px,calc(100vw - 24px))}
     .modal-box:has(#nudge-modal-message){max-width:640px}
@@ -90,4 +93,8 @@
     .create-agent-opt input{margin:0}
     .create-agent-opt span{font-family:var(--mono);font-size:11px}
     .modal-error{margin:10px 0 0;color:#fca5a5;font-size:12px}
+    .modal-error[data-hidden]{display:none}
+    .modal-error:not([data-hidden]){display:block}
+    .nudge-agent-role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    @media(max-width:480px){.nudge-agent-role-grid{grid-template-columns:1fr}}
     .modal-actions .btn{padding:6px 16px}

@@ -95,7 +95,7 @@ import { showToast } from './utils.js';
         // xterm hasn't parsed yet — race between user click and script load.
         // Show a loading hint instead of silent blank, then retry shortly.
         if (container) {
-          container.innerHTML = '<div style="color:var(--text-secondary);padding:14px;font-family:var(--mono);font-size:12px">Loading terminal…</div>';
+          container.innerHTML = '<div class="terminal-loading">Loading terminal…</div>';
         }
         setTimeout(() => {
           if (typeof Terminal === 'undefined') return;
@@ -346,9 +346,9 @@ import { showToast } from './utils.js';
       container.innerHTML = '';
 
       const viewSpecBtn = document.getElementById('panel-view-spec');
-      if (viewSpecBtn) viewSpecBtn.style.display = termState.specPath ? '' : 'none';
+      if (viewSpecBtn) viewSpecBtn.toggleAttribute('data-hidden', !termState.specPath);
       const copyBtn = document.getElementById('panel-copy-session');
-      if (copyBtn) copyBtn.style.display = sessionName ? '' : 'none';
+      if (copyBtn) copyBtn.toggleAttribute('data-hidden', !sessionName);
 
       if (termState.specPoller) { clearInterval(termState.specPoller); termState.specPoller = null; }
       termState.specContentHash = null;
@@ -424,11 +424,11 @@ import { showToast } from './utils.js';
             if (roRafHandle) cancelAnimationFrame(roRafHandle);
           };
         } else {
-          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">xterm.js not loaded — check your network connection</div>';
+          container.innerHTML = '<div class="terminal-placeholder">xterm.js not loaded — check your network connection</div>';
         }
       } else {
         // External terminal mode or no session
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:13px;font-family:var(--mono)">Session opened in your terminal</div>';
+        container.innerHTML = '<div class="terminal-placeholder">Session opened in your terminal</div>';
         dot.className = 'panel-status-dot';
       }
 
@@ -459,12 +459,12 @@ import { showToast } from './utils.js';
       if (!sessionName) { closeTerminalPanel(); return; }
       const shortName = sessionName.length > 32 ? '…' + sessionName.slice(-29) : sessionName;
       document.getElementById('panel-kill-label').textContent = 'Kill ' + shortName + '?';
-      document.getElementById('panel-actions-normal').style.display = 'none';
-      document.getElementById('panel-actions-confirm').style.display = '';
+      document.getElementById('panel-actions-normal').setAttribute('data-hidden', '');
+      document.getElementById('panel-actions-confirm').removeAttribute('data-hidden');
     }
     function hideStopConfirm() {
-      document.getElementById('panel-actions-normal').style.display = '';
-      document.getElementById('panel-actions-confirm').style.display = 'none';
+      document.getElementById('panel-actions-normal').removeAttribute('data-hidden');
+      document.getElementById('panel-actions-confirm').setAttribute('data-hidden', '');
     }
 
     async function stopTerminalSession() {

@@ -156,7 +156,7 @@ import { escHtml } from './utils.js';
         <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
         <div class="stat-card-value">${value}</div>
         ${trendHtml ? `<div class="stat-card-trend">${trendHtml}</div>` : ''}
-        ${extra ? `<div class="stat-card-trend" style="color:var(--text-tertiary)">${extra}</div>` : ''}
+        ${extra ? `<div class="stat-card-trend stat-card-trend--muted">${extra}</div>` : ''}
       </div>`;
     }
 
@@ -177,7 +177,7 @@ import { escHtml } from './utils.js';
         <div class="pro-gated-content">
           <div class="stat-card-value">42%</div>
         </div>
-        <div style="font-size:10px;color:var(--text-tertiary);opacity:.7;margin-top:auto">Pro — coming later. Free alternative: aigon board, aigon commits</div>
+        <div class="pro-gated-foot">Pro — coming later. Free alternative: aigon board, aigon commits</div>
       </div>`;
     }
 
@@ -187,7 +187,7 @@ import { escHtml } from './utils.js';
      */
     function buildProGatedChart(title, slotId, tooltipText) {
       const tooltip = tooltipText ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltipText)}">?</span>` : '';
-      const fakeSvg = `<svg viewBox="0 0 400 120" preserveAspectRatio="none" style="width:100%;height:120px">
+      const fakeSvg = `<svg viewBox="0 0 400 120" preserveAspectRatio="none" class="pro-chart-svg">
         <polyline points="10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20" fill="none" stroke="var(--text-tertiary)" stroke-width="2" opacity="0.5"/>
         <polygon points="10,120 10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20 390,120" fill="var(--text-tertiary)" opacity="0.08"/>
       </svg>`;
@@ -195,12 +195,12 @@ import { escHtml } from './utils.js';
         <div class="volume-chart-header">
           <div class="volume-chart-title">${escHtml(title)}${tooltip}</div>
         </div>
-        <div class="pro-gated-content" style="position:relative">
-          <div style="height:160px;position:relative;display:flex;align-items:center;justify-content:center">${fakeSvg}</div>
+        <div class="pro-gated-content pro-gated-relative">
+          <div class="pro-chart-wrap">${fakeSvg}</div>
         </div>
         <div class="pro-chart-overlay">
           <span class="pro-badge">PRO</span>
-          <span style="color:var(--text-tertiary);font-size:12px">Coming later. Free alternative: aigon board, aigon commits</span>
+          <span class="text-muted-sm">Coming later. Free alternative: aigon board, aigon commits</span>
         </div>
       </div>`;
     }

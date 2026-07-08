@@ -139,7 +139,7 @@ import { escHtml, logsDateFmt } from './utils.js';
           html.push(`<div class="logs-entry${errorClass}" data-idx="${idx}">`);
           html.push('<div class="logs-entry-row">');
           html.push(`<span class="logs-ts">[${escHtml(ts)}]</span>`);
-          html.push(`<span class="logs-status" style="color:${ok ? 'var(--success)' : 'var(--error)'}">${statusIcon}</span>`);
+          html.push(`<span class="logs-status logs-status--${ok ? 'ok' : 'err'}">${statusIcon}</span>`);
           if (repo) html.push(`<span class="logs-repo">${repo}</span>`);
           html.push(`<span class="logs-cmd">${cmd}</span>`);
           html.push(`<span class="logs-dur">${escHtml(dur)}</span>`);
@@ -332,7 +332,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       const html = [];
       html.push('<div class="all-items-toolbar">');
       html.push(`<input class="all-items-search" id="all-items-search-input" type="search" placeholder="Search items…" value="${escHtml(allItemsState.search)}">`);
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Repo:</label>');
+      html.push('<label class="form-label--toolbar">Repo:</label>');
       html.push('<select class="stats-select" id="all-items-repo-filter">');
       html.push(`<option value="all"${allItemsState.repoFilter === 'all' ? ' selected' : ''}>All repos</option>`);
       data.repos.forEach(r => {
@@ -340,18 +340,18 @@ import { escHtml, logsDateFmt } from './utils.js';
         html.push(`<option value="${escHtml(r.path)}"${sel}>${escHtml(r.displayPath)}</option>`);
       });
       html.push('</select>');
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Type:</label>');
+      html.push('<label class="form-label--toolbar">Type:</label>');
       html.push('<select class="stats-select" id="all-items-type-filter">');
       html.push(`<option value="all"${allItemsState.typeFilter === 'all' ? ' selected' : ''}>All types</option>`);
       html.push(`<option value="feature"${allItemsState.typeFilter === 'feature' ? ' selected' : ''}>Features</option>`);
       html.push(`<option value="research"${allItemsState.typeFilter === 'research' ? ' selected' : ''}>Research</option>`);
       html.push(`<option value="feedback"${allItemsState.typeFilter === 'feedback' ? ' selected' : ''}>Feedback</option>`);
       html.push('</select>');
-      const loadingHint = allItemsState.allFeaturesLoading ? '<span style="font-size:11px;color:var(--text-tertiary);font-style:italic">loading full history…</span>' : '';
-      html.push(`<span style="margin-left:auto;display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-tertiary)">${loadingHint}<span>${total} item${total !== 1 ? 's' : ''}</span></span>`);
+      const loadingHint = allItemsState.allFeaturesLoading ? '<span class="all-items-meta">loading full history…</span>' : '';
+      html.push(`<span class="all-items-toolbar-end">${loadingHint}<span>${total} item${total !== 1 ? 's' : ''}</span></span>`);
       html.push('</div>');
 
-      html.push('<div style="overflow-x:auto">');
+      html.push('<div class="overflow-x-auto">');
       html.push('<table class="all-items-table">');
       html.push('<thead><tr>');
       html.push(thHtml('id', 'ID'));
@@ -361,7 +361,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push(thHtml('repo', 'Repo'));
       html.push(thHtml('createdAt', 'Created'));
       html.push(thHtml('updatedAt', 'Last Changed'));
-      html.push('<th style="width:70px"></th>');
+      html.push('<th class="all-items-th-actions"></th>');
       html.push('</tr></thead>');
       html.push('<tbody>');
       pageRows.forEach((r, i) => {
@@ -384,7 +384,7 @@ import { escHtml, logsDateFmt } from './utils.js';
         html.push('</tr>');
       });
       if (pageRows.length === 0) {
-        html.push(`<tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:20px 0">${q ? 'No items match your search.' : 'No items found.'}</td></tr>`);
+        html.push(`<tr><td colspan="8" class="text-center-muted">${q ? 'No items match your search.' : 'No items found.'}</td></tr>`);
       }
       html.push('</tbody></table></div>');
 
@@ -497,7 +497,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       const slice = features.slice(start, start + FEAT_LIST_PAGE_SIZE);
 
       if (total === 0) {
-        el.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:12px 0">No features in this period.</div>';
+        el.innerHTML = '<div class="empty-state-sm">No features in this period.</div>';
         return;
       }
 
@@ -666,7 +666,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       // Autonomy score display with derived label pill
       const autonomyScoreDisplay = autonomyScore !== null ? fmtPct(autonomyScore) : '—';
       const autonomyLabelHtml = autonomyDerived.label
-        ? `<span class="amp-autonomy-pill ${autonomyDerived.cls}" style="font-size:10px">${escHtml(autonomyDerived.label)}</span>`
+        ? `<span class="amp-autonomy-pill ${autonomyDerived.cls}">${escHtml(autonomyDerived.label)}</span>`
         : '';
 
       const withTokens = filteredFeatures.filter(f => f.billableTokens !== null && f.billableTokens !== undefined && f.billableTokens > 0);
@@ -743,9 +743,9 @@ import { escHtml, logsDateFmt } from './utils.js';
               const pct = Math.round(f.billableTokens / tokenSum * 100);
               return '<tr>' +
                 '<td>' + escHtml(String(f.featureNum || '')) + '</td>' +
-                '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(f.desc || '') + '">' + escHtml(f.desc || '') + '</td>' +
+                '<td class="col-name" title="' + escHtml(f.desc || '') + '">' + escHtml(f.desc || '') + '</td>' +
                 '<td>' + escHtml(f.winnerAgent || '—') + '</td>' +
-                '<td>' + f.billableTokens.toLocaleString() + ' <span style="color:var(--text-tertiary)">(' + pct + '%)</span></td>' +
+                '<td>' + f.billableTokens.toLocaleString() + ' <span class="token-pct-muted">(' + pct + '%)</span></td>' +
                 '<td>' + fmtUsd(f.costUsd) + '</td>' +
                 '</tr>';
             }).join('');
@@ -753,21 +753,21 @@ import { escHtml, logsDateFmt } from './utils.js';
             // Store data for Chart.js init after DOM render
             window._ampTokenChartData = { withBillableTokens, tokenVals, tokenMedian };
 
-            return '<div class="stats-section-title" style="margin-top:16px">Token Analytics</div>' +
+            return '<div class="stats-section-title stats-section-title--spaced">Token Analytics</div>' +
               '<div class="stats-cards amp-top-cards">' +
                 buildStatCard('Mean', tokenMean.toLocaleString(), null, withBillableTokens.length + ' features', 'Average billable tokens per feature. Compare with median to see skew.') +
                 buildStatCard('Median', tokenMedian.toLocaleString(), null, 'typical feature', 'Half of features use fewer tokens than this.') +
                 buildStatCard('P90', tokenP90.toLocaleString(), null, '90th percentile', '90% of features use fewer tokens than this.') +
                 buildStatCard('Max', tokenMax.toLocaleString(), null, 'single feature', 'Highest token spend in this period.') +
               '</div>' +
-              '<div class="stats-row" style="gap:16px">' +
-                '<div class="stats-block" style="flex:1.2"><div class="stats-block-title">Token Distribution</div>' +
-                  '<div style="position:relative;height:240px"><canvas id="amp-token-histogram"></canvas></div></div>' +
-                '<div class="stats-block" style="flex:1"><div class="stats-block-title">Tokens per Feature Over Time</div>' +
-                  '<div style="position:relative;height:240px"><canvas id="amp-token-timeline"></canvas></div></div>' +
+              '<div class="stats-row stats-row--gap">' +
+                '<div class="stats-block stats-block--wide"><div class="stats-block-title">Token Distribution</div>' +
+                  '<div class="chart-canvas-wrap chart-canvas-wrap--tall"><canvas id="amp-token-histogram"></canvas></div></div>' +
+                '<div class="stats-block stats-block--narrow"><div class="stats-block-title">Tokens per Feature Over Time</div>' +
+                  '<div class="chart-canvas-wrap chart-canvas-wrap--tall"><canvas id="amp-token-timeline"></canvas></div></div>' +
               '</div>' +
               '<div class="stats-block"><div class="stats-block-title">Top Token Consumers</div>' +
-                '<table class="feat-list-table" style="font-size:12px"><thead><tr><th>#</th><th>Feature</th><th>Agent</th><th>Tokens</th><th>Cost</th></tr></thead>' +
+                '<table class="feat-list-table feat-list-table--sm"><thead><tr><th>#</th><th>Feature</th><th>Agent</th><th>Tokens</th><th>Cost</th></tr></thead>' +
                 '<tbody>' + topRows + '</tbody></table></div>';
           })()}
         </details>
@@ -870,13 +870,13 @@ import { escHtml, logsDateFmt } from './utils.js';
 
       // Toolbar — period filter (always visible)
       html.push('<div class="stats-toolbar">');
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Period:</label>');
+      html.push('<label class="form-label--toolbar">Period:</label>');
       html.push('<select class="stats-select" id="stats-period-filter">');
       [['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['all','All time']].forEach(([v,l]) => {
         html.push(`<option value="${v}"${statsState.period === v ? ' selected' : ''}>${l}</option>`);
       });
       html.push('</select>');
-      html.push('<button class="btn" id="stats-refresh-btn" style="margin-left:auto">Refresh</button>');
+      html.push('<button class="btn toolbar-push-right" id="stats-refresh-btn">Refresh</button>');
       html.push('</div>');
 
       // Filter features for the selected period + repo
@@ -940,7 +940,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       const commitAvgSize = commitTotal > 0 ? Math.round(((commitAdded + commitRemoved) / commitTotal) * 10) / 10 : null;
 
       // ═══ SUMMARY TAB ═══
-      html.push(`<div class="stats-tab-content" data-tab="summary" style="display:${activeSubTab === 'summary' ? '' : 'none'}">`);
+      html.push(`<div class="stats-tab-content" data-tab="summary"${activeSubTab === 'summary' ? '' : ' data-hidden'}>`);
       html.push('<div class="stats-cards">');
       const trend30 = analytics.volume && analytics.volume.trend30d;
       const _proActive = typeof isProActive === 'function' ? isProActive() : true;
@@ -961,7 +961,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push('</div>'); // end free stats-cards grid
 
       // ── Pro stat cards (grouped with section title) ──
-      html.push('<div class="stats-section-title" style="margin-top:16px">Agent Quality' + (_proActive ? '' : ' <span style="font-size:8px;font-weight:700;letter-spacing:.06em;color:var(--accent,#3b82f6);opacity:.7;vertical-align:super;margin-left:4px">PRO</span>') + '</div>');
+      html.push('<div class="stats-section-title stats-section-title--spaced">Agent Quality' + (_proActive ? '' : ' <span class="pro-badge-inline">PRO</span>') + '</div>');
       html.push('<div class="stats-cards">');
       // Commits per feature — median
       const commitsPerFeatureArr = Object.values(featureCommitMap).map(v => v.count).filter(c => c > 0).sort((a, b) => a - b);
@@ -1047,8 +1047,8 @@ import { escHtml, logsDateFmt } from './utils.js';
       const allAgentIds = [...new Set([...Object.keys(leaderAgentMap), ...filteredEvalWins.map(e => e.agent)])];
 
       if (allAgentIds.length > 0) {
-        html.push('<div class="stats-section-title" style="margin-top:4px">Agent Leaderboard</div>');
-        html.push('<div class="stats-block" style="overflow-x:auto">');
+        html.push('<div class="stats-section-title stats-section-title--spaced-sm">Agent Leaderboard</div>');
+        html.push('<div class="stats-block stats-block--scroll">');
         html.push('<table class="stats-leaderboard">');
         const proTh = ' <span class="pro-badge-inline">PRO</span>';
         html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins' + proTh + '</th><th>Fleet win %' + proTh + '</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
@@ -1074,8 +1074,8 @@ import { escHtml, logsDateFmt } from './utils.js';
               html.push(`<td>${ev ? ev.wins : '—'}</td>`);
               html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
             } else {
-              html.push('<td style="color:var(--accent,#3b82f6);font-size:8px;font-weight:700;letter-spacing:.06em;opacity:.6">PRO</td>');
-              html.push('<td style="color:var(--accent,#3b82f6);font-size:8px;font-weight:700;letter-spacing:.06em;opacity:.6">PRO</td>');
+              html.push('<td class="leaderboard-pro-cell">PRO</td>');
+              html.push('<td class="leaderboard-pro-cell">PRO</td>');
             }
             html.push(`<td>${fmtHours(avgCycle)}</td>`);
             html.push(`<td>${fmtPct(fpRate)}</td>`);
@@ -1092,7 +1092,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       const total30d = costTrend30d.reduce((s, v) => s + (v || 0), 0);
       const agentCostRows = (analytics.costByAgent || []);
       const hasCostData = total30d > 0 || agentCostRows.length > 0;
-      html.push('<div class="stats-section-title" style="margin-top:16px">Cost</div>');
+      html.push('<div class="stats-section-title stats-section-title--spaced">Cost</div>');
       html.push('<div class="stats-cards">');
       html.push(buildStatCard('Spend (7d)', total7d > 0 ? fmtUsd(total7d) : 'n/a', null, null,
         'Total estimated AI compute cost for features closed in the last 7 days.'));
@@ -1103,14 +1103,14 @@ import { escHtml, logsDateFmt } from './utils.js';
         const costSpark7 = buildSparklineSvg(costTrend7d, '#f59e0b');
         const costSpark30 = buildSparklineSvg(costTrend30d, '#f97316');
         if (costSpark7 || costSpark30) {
-          html.push('<div class="stats-row" style="margin-top:8px">');
+          html.push('<div class="stats-row stats-cost-row">');
           if (costSpark7) html.push('<div class="stats-block"><div class="stats-block-title">Spend trend (7d)</div><div class="sparkline-wrap">' + costSpark7 + '</div></div>');
           if (costSpark30) html.push('<div class="stats-block"><div class="stats-block-title">Spend trend (30d)</div><div class="sparkline-wrap">' + costSpark30 + '</div></div>');
           html.push('</div>');
         }
         if (agentCostRows.length > 0) {
           const fmtTok = n => n >= 1000000 ? (n / 1000000).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(n);
-          html.push('<div class="stats-block" style="margin-top:8px;overflow-x:auto">');
+          html.push('<div class="stats-block stats-block--mt stats-block--scroll">');
           html.push('<div class="stats-block-title">Cost by Agent (30d)</div>');
           html.push('<table class="stats-leaderboard"><thead><tr><th>Agent</th><th>Sessions</th><th>Tokens</th><th>USD</th></tr></thead><tbody>');
           agentCostRows.forEach(row => {
@@ -1135,19 +1135,19 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push('</div>'); // end summary tab
 
       // ═══ CHARTS TAB ═══
-      html.push(`<div class="stats-tab-content" data-tab="charts" style="display:${activeSubTab === 'charts' ? '' : 'none'}">`);
+      html.push(`<div class="stats-tab-content" data-tab="charts"${activeSubTab === 'charts' ? '' : ' data-hidden'}>`);
 
       // Granularity + nav controls (always shown — free charts use them too)
-      html.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">');
+      html.push('<div class="flex-row-between chart-toolbar-spaced">');
       html.push('<div class="volume-granularity-btns">');
       [['daily','Daily'],['weekly','Weekly'],['monthly','Monthly']].forEach(([g,l]) => {
         const active = statsState.volumeGranularity === g ? ' active' : '';
         html.push(`<button class="vol-gran-btn${active}" data-gran="${g}">${l}</button>`);
       });
       html.push('</div>');
-      html.push('<div style="display:flex;align-items:center;gap:4px">');
+      html.push('<div class="flex-row-gap-sm">');
       html.push('<button id="vol-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-      html.push('<span id="vol-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+      html.push('<span id="vol-nav-range" class="vol-nav-range"></span>');
       html.push('<button id="vol-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
       html.push('</div>');
       html.push('</div>');
@@ -1157,14 +1157,14 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push('<div class="volume-chart-header">');
       html.push('<div class="volume-chart-title">Features Completed</div>');
       html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="volume-chart-canvas"></canvas></div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="volume-chart-canvas"></canvas></div>');
       html.push('</div>');
 
       html.push('<div class="volume-chart-wrap">');
       html.push('<div class="volume-chart-header">');
       html.push('<div class="volume-chart-title">Commits</div>');
       html.push('</div>');
-      html.push('<div style="height:160px;position:relative"><canvas id="commits-chart-canvas"></canvas></div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="commits-chart-canvas"></canvas></div>');
       html.push('</div>');
 
       // ── Pro charts: Cycle Time, CPF, Rework Ratio ──
@@ -1173,34 +1173,34 @@ import { escHtml, logsDateFmt } from './utils.js';
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
         html.push('<div class="volume-chart-title">Median Cycle Time ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
-        html.push('<span id="ct-nav-controls" style="display:flex;align-items:center;gap:4px">');
+        html.push('<span id="ct-nav-controls" class="flex-row-gap-sm">');
         html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-        html.push('<span id="ct-nav-range" style="font-size:11px;color:var(--text-tertiary);min-width:140px;text-align:center"></span>');
+        html.push('<span id="ct-nav-range" class="vol-nav-range"></span>');
         html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
         html.push('</span>');
         html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="cycle-time-chart-canvas"></canvas></div>');
+        html.push('<div class="chart-canvas-wrap"><canvas id="cycle-time-chart-canvas"></canvas></div>');
         html.push('</div>');
 
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
         html.push('<div class="volume-chart-title">Commits per Feature ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
         html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="cpf-chart-canvas"></canvas></div>');
+        html.push('<div class="chart-canvas-wrap"><canvas id="cpf-chart-canvas"></canvas></div>');
         html.push('</div>');
 
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
         html.push('<div class="volume-chart-title">Rework Ratio ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
         html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="rework-chart-canvas"></canvas></div>');
+        html.push('<div class="chart-canvas-wrap"><canvas id="rework-chart-canvas"></canvas></div>');
         html.push('</div>');
 
         html.push('<div class="volume-chart-wrap">');
         html.push('<div class="volume-chart-header">');
         html.push('<div class="volume-chart-title">Tokens Used ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Total billable tokens consumed per period. Correlate with Features Completed above to see token efficiency trends.">?</span></div>');
         html.push('</div>');
-        html.push('<div style="height:160px;position:relative"><canvas id="token-chart-canvas"></canvas></div>');
+        html.push('<div class="chart-canvas-wrap"><canvas id="token-chart-canvas"></canvas></div>');
         html.push('</div>');
       } else {
         // Pro-gated: show blurred SVG placeholders for the 3 Pro charts
@@ -1212,30 +1212,30 @@ import { escHtml, logsDateFmt } from './utils.js';
           'Percentage of commits that are fixes. Lower is better.'));
         html.push(buildProGatedChart('Tokens Used', 'chart-tokens',
           'Total billable tokens consumed per period. Compare with Features Completed to track token efficiency.'));
-        html.push('<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--text-tertiary)">Pro features — coming later. Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code>.</div>');
+        html.push('<div class="pro-footer-note">Pro features — coming later. Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code>.</div>');
       }
 
       html.push('</div>'); // end charts tab
 
       // ═══ DETAILS TAB ═══
-      html.push(`<div class="stats-tab-content" data-tab="details" style="display:${activeSubTab === 'details' ? '' : 'none'}">`);
+      html.push(`<div class="stats-tab-content" data-tab="details"${activeSubTab === 'details' ? '' : ' data-hidden'}>`);
 
       // Feature list section (populated after render via renderFeatureList)
-      html.push('<div class="stats-section-title" style="margin-top:4px">Features</div>');
-      html.push('<div class="stats-block" style="overflow-x:auto"><div id="stats-feature-list"></div></div>');
+      html.push('<div class="stats-section-title stats-section-title--spaced-sm">Features</div>');
+      html.push('<div class="stats-block stats-block--scroll"><div id="stats-feature-list"></div></div>');
 
       // Commit table filters (Pro-gated: type + agent filters)
-      html.push('<div class="stats-section-title" style="margin-top:16px">Commits</div>');
+      html.push('<div class="stats-section-title stats-section-title--spaced">Commits</div>');
       const filterGatedClass = _proActive ? '' : ' pro-gated-filters';
-      html.push(`<div class="stats-toolbar${filterGatedClass}" style="margin-top:0">`);
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Type:</label>');
+      html.push(`<div class="stats-toolbar stats-toolbar--flush${filterGatedClass}">`);
+      html.push('<label class="form-label--toolbar">Type:</label>');
       html.push('<select class="stats-select" id="commit-type-filter">');
       const ctf = statsState.commitTypeFilter || 'all';
       [['all','All'],['feature-only','Feature only'],['non-feature-only','Non-feature only']].forEach(([v,l]) => {
         html.push(`<option value="${v}"${ctf === v ? ' selected' : ''}>${l}</option>`);
       });
       html.push('</select>');
-      html.push('<label style="font-size:12px;color:var(--text-secondary)">Agent:</label>');
+      html.push('<label class="form-label--toolbar">Agent:</label>');
       html.push('<select class="stats-select" id="commit-agent-filter">');
       html.push(`<option value="all"${statsState.commitAgentFilter === 'all' ? ' selected' : ''}>All</option>`);
       html.push(`<option value="unattributed"${statsState.commitAgentFilter === 'unattributed' ? ' selected' : ''}>Unattributed</option>`);
@@ -1284,7 +1284,7 @@ import { escHtml, logsDateFmt } from './utils.js';
         </tr>`;
       }).join('');
       const sortArrow = (key) => commitSort.col === key ? (commitSort.dir === 'asc' ? ' ↑' : ' ↓') : '';
-      html.push('<div class="stats-block" style="overflow-x:auto">');
+      html.push('<div class="stats-block stats-block--scroll">');
       html.push('<table class="commit-list-table">');
       html.push('<colgroup><col class="col-date"><col class="col-repo"><col class="col-msg"><col class="col-feat"><col class="col-agent"><col class="col-files"><col class="col-add"><col class="col-rem"><col class="col-hash"></colgroup>');
       html.push('<thead><tr>');
@@ -1318,7 +1318,7 @@ import { escHtml, logsDateFmt } from './utils.js';
       container.innerHTML = html.join('');
 
       // Temporarily show all tabs so Chart.js can measure canvas dimensions
-      document.querySelectorAll('.stats-tab-content').forEach(el => { el.style.display = ''; });
+      document.querySelectorAll('.stats-tab-content').forEach(el => { el.removeAttribute('data-hidden'); });
 
       // Render Chart.js charts — free charts always, Pro charts only when active
       {
@@ -1341,7 +1341,8 @@ import { escHtml, logsDateFmt } from './utils.js';
 
       // Hide inactive tabs now that charts are rendered
       document.querySelectorAll('.stats-tab-content').forEach(el => {
-        el.style.display = el.dataset.tab === activeSubTab ? '' : 'none';
+        if (el.dataset.tab === activeSubTab) el.removeAttribute('data-hidden');
+        else el.setAttribute('data-hidden', '');
       });
 
       // Wire up sub-tab switching
@@ -1351,7 +1352,8 @@ import { escHtml, logsDateFmt } from './utils.js';
           localStorage.setItem('aigon.stats.subtab', statsState.subTab);
           document.querySelectorAll('.stats-subtab').forEach(b => b.classList.toggle('active', b.dataset.subtab === statsState.subTab));
           document.querySelectorAll('.stats-tab-content').forEach(el => {
-            el.style.display = el.dataset.tab === statsState.subTab ? '' : 'none';
+            if (el.dataset.tab === statsState.subTab) el.removeAttribute('data-hidden');
+            else el.setAttribute('data-hidden', '');
           });
           // Re-render charts when switching to charts tab (canvas needs to be visible)
           if (statsState.subTab === 'charts') {

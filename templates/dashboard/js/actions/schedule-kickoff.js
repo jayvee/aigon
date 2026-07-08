@@ -6,10 +6,10 @@ import * as H from './shared.js';
 // ── Schedule kickoff: datetime-local helpers ──
 
 function skBuildRunAtHtml() {
-  return '<div style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Run at</label>' +
-    '<input type="datetime-local" id="schedule-kickoff-run-at" class="create-input" style="width:100%;padding:8px 10px" />' +
-    '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px" id="schedule-kickoff-tz-hint"></div>' +
+  return '<div class="form-field">' +
+    '<label class="form-label">Run at</label>' +
+    '<input type="datetime-local" id="schedule-kickoff-run-at" class="create-input create-input--full" />' +
+    '<div class="form-hint" id="schedule-kickoff-tz-hint"></div>' +
     '</div>';
 }
 
@@ -91,16 +91,16 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     box.innerHTML = '<h3 id="schedule-kickoff-title">' + H.escHtml(title) + '</h3>' +
       '<p class="modal-desc">' + H.escHtml(entityLabel) + ' #' + H.escHtml(String(feature.id)) + ' ' + H.escHtml(feature.name || '') + '</p>' +
       skBuildRunAtHtml() +
-      '<div style="margin-bottom:12px">' +
-      '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Agents (optional — empty uses Drive)</label>' +
+      '<div class="form-field">' +
+      '<label class="form-label">Agents (optional — empty uses Drive)</label>' +
       '<div class="agent-checks" id="schedule-kickoff-research-agent-checks"></div>' +
       '</div>' +
-      '<div style="margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
+      '<div class="form-field form-row-checks">' +
       '<label><input type="checkbox" id="schedule-kickoff-bg" /> Background</label>' +
       '<label><input type="checkbox" id="schedule-kickoff-fg" /> Foreground</label>' +
       '</div>' +
-      '<p id="schedule-kickoff-msg" class="settings-empty" style="display:none;margin:8px 0;color:var(--error)"></p>' +
-      '<div class="modal-actions" style="margin-top:16px">' +
+      '<p id="schedule-kickoff-msg" class="settings-empty schedule-kickoff-msg" data-hidden></p>' +
+      '<div class="modal-actions modal-actions--spaced">' +
       '<button type="button" class="btn" id="schedule-kickoff-cancel">Cancel</button>' +
       '<button type="button" class="btn btn-primary" id="schedule-kickoff-submit">Add schedule</button>' +
       '</div>';
@@ -126,9 +126,9 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       const msg = box.querySelector('#schedule-kickoff-msg');
       const submitBtn = box.querySelector('#schedule-kickoff-submit');
       const cancelBtn = box.querySelector('#schedule-kickoff-cancel');
-      msg.style.display = 'none';
+      msg.setAttribute('data-hidden', '');
       const runAt = skGetRunAt(box);
-      if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
+      if (!runAt) { msg.textContent = 'Select a date and time'; msg.removeAttribute('data-hidden'); return; }
       const agents = [...box.querySelectorAll('#schedule-kickoff-research-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
       const background = box.querySelector('#schedule-kickoff-bg').checked;
       const foreground = box.querySelector('#schedule-kickoff-fg').checked;
@@ -154,7 +154,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           msg.textContent = data.error || res.statusText || 'Failed';
-          msg.style.display = 'block';
+          msg.removeAttribute('data-hidden');
           return;
         }
         H.showToast('Scheduled research #' + feature.id);
@@ -162,7 +162,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
         if (typeof requestRefresh === 'function') await H.requestRefresh();
       } catch (e) {
         msg.textContent = e.message || 'Failed';
-        msg.style.display = 'block';
+        msg.removeAttribute('data-hidden');
       } finally {
         if (processingToast) processingToast.remove();
         scheduleKickoffBusy = false;
@@ -179,34 +179,34 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
   box.innerHTML = '<h3 id="schedule-kickoff-title">' + H.escHtml(title) + '</h3>' +
     '<p class="modal-desc">' + H.escHtml(entityLabel) + ' #' + H.escHtml(String(feature.id)) + ' ' + H.escHtml(feature.name || '') + '</p>' +
     skBuildRunAtHtml() +
-    '<div style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Workflow (optional)</label>' +
-    '<select id="schedule-kickoff-workflow" class="create-input" style="padding:8px 10px;width:100%">' +
+    '<div class="form-field">' +
+    '<label class="form-label">Workflow (optional)</label>' +
+    '<select id="schedule-kickoff-workflow" class="create-input create-input--full">' +
     '<option value="">(none)</option></select>' +
-    '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px" id="schedule-kickoff-workflow-desc"></div>' +
+    '<div class="form-hint-secondary" id="schedule-kickoff-workflow-desc"></div>' +
     '</div>' +
-    '<div style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Implementation agents</label>' +
+    '<div class="form-field">' +
+    '<label class="form-label">Implementation agents</label>' +
     '<div class="agent-checks" id="schedule-kickoff-agent-checks"></div>' +
     '</div>' +
-    '<div id="schedule-kickoff-eval-wrap" style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Evaluator</label>' +
-    '<select id="schedule-kickoff-eval-agent" class="create-input" style="padding:8px 10px;width:100%"></select>' +
+    '<div id="schedule-kickoff-eval-wrap" class="form-field">' +
+    '<label class="form-label">Evaluator</label>' +
+    '<select id="schedule-kickoff-eval-agent" class="create-input create-input--full"></select>' +
     '</div>' +
-    '<div id="schedule-kickoff-review-wrap" style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Reviewer</label>' +
+    '<div id="schedule-kickoff-review-wrap" class="form-field">' +
+    '<label class="form-label">Reviewer</label>' +
     '<div class="agent-picker-reviewer-grid">' +
-    '<select id="schedule-kickoff-review-agent" class="create-input" style="padding:8px 10px"></select>' +
+    '<select id="schedule-kickoff-review-agent" class="create-input create-input--compact"></select>' +
     '<span id="schedule-kickoff-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>' +
     '<span id="schedule-kickoff-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>' +
     '</div></div>' +
-    '<div style="margin-bottom:12px">' +
-    '<label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:600">Stop after</label>' +
-    '<select id="schedule-kickoff-stop-after" class="create-input" style="padding:8px 10px;width:100%">' +
+    '<div class="form-field">' +
+    '<label class="form-label">Stop after</label>' +
+    '<select id="schedule-kickoff-stop-after" class="create-input create-input--full">' +
     '<option value="close">close (default)</option><option value="eval">eval</option><option value="review">review</option><option value="implement">implement</option></select>' +
     '</div>' +
-    '<p id="schedule-kickoff-msg" class="settings-empty" style="display:none;margin:8px 0;color:var(--error)"></p>' +
-    '<div class="modal-actions" style="margin-top:16px">' +
+    '<p id="schedule-kickoff-msg" class="settings-empty schedule-kickoff-msg" data-hidden></p>' +
+    '<div class="modal-actions modal-actions--spaced">' +
     '<button type="button" class="btn" id="schedule-kickoff-cancel">Cancel</button>' +
     '<button type="button" class="btn btn-primary" id="schedule-kickoff-submit">Add schedule</button>' +
     '</div>';
@@ -263,8 +263,8 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     if (!evalWrap || !reviewWrap || !evalSelect || !reviewSelect || !stopAfter) return;
 
     const previousStop = String(stopAfter.value || 'close').trim();
-    evalWrap.style.display = isSolo ? 'none' : '';
-    reviewWrap.style.display = isSolo ? '' : 'none';
+    evalWrap.toggleAttribute('data-hidden', isSolo);
+    reviewWrap.toggleAttribute('data-hidden', !isSolo);
     evalSelect.disabled = isSolo;
     reviewSelect.disabled = !isSolo;
 
@@ -318,13 +318,13 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     const msg = box.querySelector('#schedule-kickoff-msg');
     const submitBtn = box.querySelector('#schedule-kickoff-submit');
     const cancelBtn = box.querySelector('#schedule-kickoff-cancel');
-    msg.style.display = 'none';
+    msg.setAttribute('data-hidden', '');
     const runAt = skGetRunAt(box);
-    if (!runAt) { msg.textContent = 'Select a date and time'; msg.style.display = 'block'; return; }
+    if (!runAt) { msg.textContent = 'Select a date and time'; msg.removeAttribute('data-hidden'); return; }
     const selectedAgents = [...box.querySelectorAll('#schedule-kickoff-agent-checks input[type="checkbox"]:checked')].map((c) => c.value);
     if (selectedAgents.length === 0) {
       msg.textContent = 'Select at least one implementation agent';
-      msg.style.display = 'block';
+      msg.removeAttribute('data-hidden');
       return;
     }
     const evalSelect = box.querySelector('#schedule-kickoff-eval-agent');
@@ -339,7 +339,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     const stopValue = stopAfter ? String(stopAfter.value || 'close').trim() : 'close';
     if (stopValue === 'review' && !reviewAgent) {
       msg.textContent = 'Select a reviewer when stopping after review';
-      msg.style.display = 'block';
+      msg.removeAttribute('data-hidden');
       return;
     }
     const triplets = selectedAgents.map((id) => {
@@ -398,7 +398,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         msg.textContent = data.error || res.statusText || 'Failed';
-        msg.style.display = 'block';
+        msg.removeAttribute('data-hidden');
         return;
       }
       H.showToast('Scheduled feature #' + feature.id);
@@ -406,7 +406,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
       if (typeof requestRefresh === 'function') await H.requestRefresh();
     } catch (e) {
       msg.textContent = e.message || 'Failed';
-      msg.style.display = 'block';
+      msg.removeAttribute('data-hidden');
     } finally {
       if (processingToast) processingToast.remove();
       scheduleKickoffBusy = false;

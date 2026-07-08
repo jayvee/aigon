@@ -396,11 +396,11 @@ function renderPickerRecommendationBanner(recommendation, mountId) {
   const banner = document.getElementById(mountId || 'agent-picker-recommendation');
   if (!banner) return;
   if (!recommendation || (!recommendation.complexity && !recommendation.specAuthorPreselect && (!recommendation.agents || Object.values(recommendation.agents).every(a => !a.model && !a.effort)))) {
-    banner.style.display = 'none';
+    banner.setAttribute('data-hidden', '');
     banner.innerHTML = '';
     return;
   }
-  banner.style.display = '';
+  banner.removeAttribute('data-hidden');
   const agentBits = [];
   Object.entries(recommendation.agents || {}).forEach(([id, entry]) => {
     if (!entry || (!entry.model && !entry.effort)) return;

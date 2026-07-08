@@ -65,7 +65,7 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
         el.id = 'server-restart-banner';
         el.setAttribute('role', 'status');
         el.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:8px 14px;background:#1e3a8a;color:#fff;text-align:center;font-size:13px;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,.25);';
-        el.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;"></span>Reloading backend…';
+        el.innerHTML = '<span class="monitor-reload-spin"></span>Reloading backend…';
         if (!document.getElementById('server-restart-banner-style')) {
           const style = document.createElement('style');
           style.id = 'server-restart-banner-style';
@@ -275,7 +275,7 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
             + research.filter(r => r.agents.some(a => a.status === 'waiting')).length
             + feedback.filter(f => (f.agents || []).some(a => a.status === 'waiting')).length;
           const collapsed = this.isCollapsed(repo.path);
-          return (waitingCards ? '<span class="pill-filter waiting" style="font-size:10px;padding:1px 6px">' + waitingCards + ' waiting</span>' : '') + ' <span style="color:var(--text-tertiary);font-size:11px" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
+          return (waitingCards ? '<span class="pill-filter waiting pill-filter--sm">' + waitingCards + ' waiting</span>' : '') + ' <span class="monitor-collapse-hint" aria-label="Toggle">' + (collapsed ? '▸' : '▾') + '</span>';
         },
         openFeatureSpec(e, feature) {
           if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.btn')) return;

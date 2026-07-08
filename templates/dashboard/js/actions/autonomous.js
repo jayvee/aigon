@@ -86,7 +86,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
 
   // First paint — show the modal immediately. Banner + workflow dropdown
   // hydrate in the background.
-  modal.style.display = 'flex';
+  modal.removeAttribute('data-hidden');
 
   // F454: cache-hit budget read; only kick a refresh if the cached entry is
   // older than 5 minutes (or absent entirely). Mid-run refreshes are not
@@ -246,7 +246,7 @@ async function saveCurrentAsWorkflow() {
 
 function hideAutonomousModal() {
   const modal = document.getElementById('autonomous-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) modal.setAttribute('data-hidden', '');
   H.setPickerRecommendation(null);
   H.renderPickerRecommendationBanner(null, 'autonomous-picker-recommendation');
   autonomousModalFeature = null;
@@ -350,8 +350,8 @@ function updateAutonomousModeControls() {
   if (!evalWrap || !reviewWrap || !evalSelect || !reviewSelect || !stopAfter) return;
 
   const previousStop = String(stopAfter.value || 'close').trim();
-  evalWrap.style.display = isSolo ? 'none' : '';
-  reviewWrap.style.display = isSolo ? '' : 'none';
+  evalWrap.toggleAttribute('data-hidden', isSolo);
+  reviewWrap.toggleAttribute('data-hidden', !isSolo);
   evalSelect.disabled = isSolo;
   reviewSelect.disabled = !isSolo;
 

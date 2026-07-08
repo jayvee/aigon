@@ -1,3 +1,6 @@
+    .kanban-repo-header{display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin:10px 0 6px;font-weight:600}
+    .kanban-repo-header .repo-header-inline{text-transform:none;letter-spacing:0;font-weight:400}
+    .col-h-actions{display:flex;align-items:center;gap:8px}
     /* Pipeline toolbar */
     .pipeline-toolbar{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
     .pipeline-type-toggle{display:flex;gap:0;border:1px solid var(--border-subtle);border-radius:var(--radius);overflow:hidden;width:fit-content}

@@ -32,17 +32,17 @@ function showCloseModal(feature, repoPath, pipelineType) {
   // Populate adoption checkboxes (losers = non-winner agents)
   const adoptContainer = document.getElementById('close-modal-adopt');
   if (agents.length > 1) {
-    document.getElementById('close-modal-adopt-section').style.display = '';
+    document.getElementById('close-modal-adopt-section').removeAttribute('data-hidden');
     updateAdoptionCheckboxes();
   } else {
-    document.getElementById('close-modal-adopt-section').style.display = 'none';
+    document.getElementById('close-modal-adopt-section').setAttribute('data-hidden', '');
   }
 
   // Update title
   document.getElementById('close-modal-desc').textContent = '#' + feature.id + ' ' + feature.name;
 
   // Show modal
-  document.getElementById('close-modal').style.display = 'flex';
+  document.getElementById('close-modal').removeAttribute('data-hidden');
 }
 
 function updateAdoptionCheckboxes() {
@@ -55,7 +55,7 @@ function updateAdoptionCheckboxes() {
   const adoptContainer = document.getElementById('close-modal-adopt');
 
   if (losers.length === 0) {
-    adoptContainer.innerHTML = '<span style="color:var(--text-tertiary);font-size:12px">No other agents to adopt from</span>';
+    adoptContainer.innerHTML = '<span class="close-adopt-empty">No other agents to adopt from</span>';
     return;
   }
 
@@ -89,7 +89,7 @@ function updateAdoptionCheckboxes() {
 }
 
 function hideCloseModal() {
-  document.getElementById('close-modal').style.display = 'none';
+  document.getElementById('close-modal').setAttribute('data-hidden', '');
   closeModalFeature = null;
   closeModalRepoPath = null;
   closeModalPipelineType = null;

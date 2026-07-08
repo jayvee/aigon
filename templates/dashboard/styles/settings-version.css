@@ -19,6 +19,7 @@
     .version-subheader{margin-top:8px;padding:0 4px;color:var(--text-secondary);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
     .version-subheader:first-child{margin-top:0}
     .version-value{color:var(--text-primary);font-family:var(--mono);font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .version-value--muted{color:var(--text-tertiary)}
     .version-state-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;flex-shrink:0}
     .version-state-badge.state-latest{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac}
     .version-state-badge.state-update{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fcd34d}

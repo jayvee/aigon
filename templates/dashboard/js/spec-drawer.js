@@ -31,11 +31,11 @@ import { copyText, escHtml, showToast } from './utils.js';
         getDrawerState: () => drawerState,
         onToggleSpecView: (showSpec) => {
           if (showSpec) {
-            drawerDetailContent.style.display = 'none';
-            drawerPreview.style.display = '';
+            drawerDetailContent.setAttribute('data-hidden', '');
+            drawerPreview.removeAttribute('data-hidden');
           } else {
-            drawerPreview.style.display = 'none';
-            drawerDetailContent.style.display = '';
+            drawerPreview.setAttribute('data-hidden', '');
+            drawerDetailContent.removeAttribute('data-hidden');
           }
         }
       })
@@ -124,7 +124,7 @@ import { copyText, escHtml, showToast } from './utils.js';
       drawerState.type = specTypeFromPath(specPath);
       // Feature-only tabs (Code Changes) are hidden for research/feedback entities.
       drawerTabs.querySelectorAll('.drawer-tab[data-feature-only]').forEach(btn => {
-        btn.style.display = drawerState.type === 'feature' ? '' : 'none';
+        btn.toggleAttribute('data-hidden', drawerState.type !== 'feature');
       });
       drawerState.repoPath = repoPath || null;
       drawerState.entityId = opts.entityId || specIdFromPath(specPath);
@@ -134,13 +134,13 @@ import { copyText, escHtml, showToast } from './utils.js';
       drawerTitle.textContent = title;
       if (drawerId) {
         drawerId.textContent = drawerState.entityId ? `#${drawerState.entityId}` : '';
-        drawerId.style.display = drawerState.entityId ? '' : 'none';
+        drawerId.toggleAttribute('data-hidden', !drawerState.entityId);
       }
       drawerStage.textContent = stage;
-      drawerPreview.innerHTML = '<span style="color:var(--text-tertiary)">Loading…</span>';
+      drawerPreview.innerHTML = '<span class="text-muted-xs">Loading…</span>';
       drawerDetailContent.innerHTML = '';
-      drawerDetailContent.style.display = 'none';
-      drawerPreview.style.display = '';
+      drawerDetailContent.setAttribute('data-hidden', '');
+      drawerPreview.removeAttribute('data-hidden');
       drawerSaveStatus.textContent = '';
       if (drawerDetailTabs) drawerDetailTabs.reset();
       applyDrawerFontSize();
@@ -175,7 +175,7 @@ import { copyText, escHtml, showToast } from './utils.js';
       drawerState.detailFingerprint = null;
       if (drawerId) {
         drawerId.textContent = '';
-        drawerId.style.display = 'none';
+        drawerId.setAttribute('data-hidden', '');
       }
       if (drawerDetailTabs) drawerDetailTabs.reset();
       // Refit terminal after spec drawer closes (terminal panel goes back to right side)

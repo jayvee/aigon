@@ -95,7 +95,8 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
       if (!els.error) return;
       const msg = String(message || '').trim();
       els.error.textContent = msg;
-      els.error.style.display = msg ? '' : 'none';
+      if (msg) els.error.removeAttribute('data-hidden');
+      else els.error.setAttribute('data-hidden', '');
     }
 
     function setCreateModalBusy(busy) {
@@ -110,7 +111,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
     function hideCreateModal() {
       const els = getCreateModalElements();
       if (!els.modal) return;
-      els.modal.style.display = 'none';
+      els.modal.setAttribute('data-hidden', '');
       setCreateModalError('');
       setCreateModalBusy(false);
       if (els.nameInput) els.nameInput.value = '';
@@ -178,7 +179,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
       const description = els.descriptionInput.value.trim();
       const entityType = els.modal.getAttribute('data-entity-type') || 'features';
       const isResearch = entityType === 'research';
-      const pickedRepo = els.repoPicker && els.repoPicker.style.display !== 'none'
+      const pickedRepo = els.repoPicker && !els.repoPicker.hasAttribute('data-hidden')
         ? (els.repoSelect ? String(els.repoSelect.value || '').trim() : '')
         : String(els.modal.getAttribute('data-repo-path') || '').trim();
 
@@ -281,7 +282,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
 
       els.repoSelect.innerHTML = '';
       if (visibleRepos.length > 1 && !defaultRepo) {
-        els.repoPicker.style.display = '';
+        els.repoPicker.removeAttribute('data-hidden');
         visibleRepos.forEach(repo => {
           const option = document.createElement('option');
           option.value = repo.path;
@@ -290,7 +291,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         });
         els.modal.setAttribute('data-repo-path', '');
       } else {
-        els.repoPicker.style.display = 'none';
+        els.repoPicker.setAttribute('data-hidden', '');
         if (defaultRepo) {
           els.modal.setAttribute('data-repo-path', defaultRepo);
         } else if (visibleRepos[0] && visibleRepos[0].path) {
@@ -312,7 +313,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         if (fallback) fallback.checked = true;
         else if (agentInputs[0]) agentInputs[0].checked = true;
       }
-      els.modal.style.display = 'flex';
+      els.modal.removeAttribute('data-hidden');
       els.nameInput.focus();
     }
 
@@ -2022,7 +2023,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildLeaseBadgeHtml, buildSc
         desired.push('__hidden_overflow__');
         builders['__hidden_overflow__'] = (existing) => {
           const hiddenContainer = existing || document.createElement('div');
-          hiddenContainer.style.display = 'none';
+          hiddenContainer.setAttribute('data-hidden', '');
           hiddenContainer.dataset.kanbanUi = 'hidden-overflow';
           reconcileKeyedCards(hiddenContainer, hiddenCards, repo, pType, stats);
           return hiddenContainer;

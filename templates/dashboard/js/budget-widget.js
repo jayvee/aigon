@@ -815,7 +815,7 @@ function budgetSummaryForAgent(agentId, entry) {
 function updatePickerBudgetNotice() {
   const notice = document.getElementById('agent-picker-budget-notice');
   if (notice) {
-    notice.style.display = 'none';
+    notice.setAttribute('data-hidden', '');
     notice.replaceChildren();
   }
   annotateAgentPickerBudget();
@@ -824,7 +824,7 @@ function updatePickerBudgetNotice() {
 function updateAutonomousBudgetNotice() {
   const notice = document.getElementById('autonomous-budget-notice');
   if (notice) {
-    notice.style.display = 'none';
+    notice.setAttribute('data-hidden', '');
     notice.replaceChildren();
   }
   annotateAutonomousAgentBudget();
@@ -840,11 +840,11 @@ function renderBudgetWidget() {
   const km = data.km;
   const ag = data.ag;
   if (!hasAnyBudgetData(data)) {
-    el.style.display = 'none';
+    el.setAttribute('data-hidden', '');
     el.classList.remove('budget-widget--collapsed');
     return;
   }
-  el.style.display = 'flex';
+  el.removeAttribute('data-hidden');
   const collapsed = budgetWidgetCollapsed();
   const overallClass = budgetOverallSummaryClass(data);
   if (collapsed) el.classList.add('budget-widget--collapsed');
@@ -1082,7 +1082,7 @@ function renderBudgetWidget() {
 function annotateAgentPickerBudget() {
   const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
   const picker = document.getElementById('agent-picker');
-  if (!picker || picker.style.display === 'none') return;
+  if (!picker || picker.hasAttribute('data-hidden')) return;
   const rows = picker.querySelectorAll('.agent-check-row');
   rows.forEach(row => {
     const cb = row.querySelector('input');
@@ -1106,7 +1106,7 @@ function annotateAgentPickerBudget() {
 function annotateAutonomousAgentBudget() {
   const data = _budgetCache || { cc: null, cx: null, gg: null, km: null };
   const modal = document.getElementById('autonomous-modal');
-  if (!modal || modal.style.display === 'none') return;
+  if (!modal || modal.hasAttribute('data-hidden')) return;
   const rows = modal.querySelectorAll('#autonomous-agent-checks .agent-check-row');
   rows.forEach(row => {
     const cb = row.querySelector('input');
@@ -1175,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const picker = document.getElementById('agent-picker');
   if (picker) {
     const observer = new MutationObserver(() => {
-      if (picker.style.display === 'flex') {
+      if (picker && !picker.hasAttribute('data-hidden')) {
         fetchAgentQuota().then(() => { updatePickerBudgetNotice(); });
       }
     });
@@ -1186,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const autonomousModalEl = document.getElementById('autonomous-modal');
   if (autonomousModalEl) {
     const autoObs = new MutationObserver(() => {
-      if (autonomousModalEl.style.display === 'flex') {
+      if (autonomousModalEl && !autonomousModalEl.hasAttribute('data-hidden')) {
         fetchAgentQuota().then(() => { updateAutonomousBudgetNotice(); });
       }
     });

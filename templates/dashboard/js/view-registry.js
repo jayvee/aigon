@@ -72,7 +72,7 @@ function applyChromeVisibility(viewId) {
     if (view.alpineVisibility) continue;
     const el = document.getElementById(view.elementId);
     if (!el) continue;
-    el.style.display = view.id === viewId ? '' : 'none';
+    el.style.display = view.id === viewId ? 'block' : 'none';
   }
 }
 
