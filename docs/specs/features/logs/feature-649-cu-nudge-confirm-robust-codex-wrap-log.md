@@ -4,7 +4,12 @@ Agent: cu
 ## Status
 Implemented normalized pane/message matching in tmux host delivery; submit always runs after paste.
 ## Criteria Attestation
-
+1. met — lib/agent-sessions/hosts/tmux.js `paneContainsMessage` + tests/integration/agent-sessions-tmux-host.test.js `paneContainsMessage matches Codex bordered composer`
+2. met — `deliverOperatorMessage` paste → best-effort confirm → `submitMessage`; 38d61cc87 + `still submits when paste echo is uncertain`
+3. met — `normalizeForMessageCompare`, `extractComposerText`, `promptStillContainsMessage` in tmux.js + wrapped-composer tests
+4. met — `deliverOperatorMessage throws with paneTail only after submit attempts fail` test preserves post-submit error contract
+5. met — tests/integration/agent-sessions-tmux-host.test.js §5 Codex wrapped-composer fixture + submit-key assertions
+6. met — existing single-line `deliverOperatorMessage routes by durable tmuxId` / session-name fallback tests unchanged and passing
 ## New API Surface
 
 ## Key Decisions
