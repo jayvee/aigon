@@ -1,4 +1,11 @@
 /* dashboard-esm-processed */
+
+import { fetchSpecRecommendation, showConfirm, showDangerConfirm, tripletsToCliArgs } from './actions-picker.js';
+import { showAgentPicker } from './sidebar.js';
+import { requestAction, requestFeatureOpen, requestSpecReviewLaunch } from './api.js';
+import { budgetWarningForAgents, fetchBudget } from './budget-widget.js';
+import { hasCloseFailure } from './store.js';
+import { escHtml, formatFeatureIdForDisplay, showToast } from './utils.js';
 // ── F519: actions.js compatibility shell ─────────────────────────────────────
 // Card-level button rendering + lazy-loaded action modules. Picker/triplet
 // helpers live in actions-picker.js; budget widget in budget-widget.js.
@@ -361,4 +368,5 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
 }
 
 // ── ESM exports (F623) ──
+export { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal };
 Object.assign(globalThis, { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal });

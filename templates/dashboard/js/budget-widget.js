@@ -1,4 +1,7 @@
 /* dashboard-esm-processed */
+
+import { createEl, replaceNodeChildren } from './actions-picker.js';
+import { agents } from './injected.js';
 // F519: agent budget + quota widget (extracted from actions.js)
 // ── Agent budget widget (F322; extended for op + cu coverage in F457) ──────
 
@@ -46,7 +49,7 @@ function fetchQuota(force) {
 }
 
 function linkedProviderIds(agentId) {
-  const agent = AIGON_AGENTS.find(a => a.id === agentId);
+  const agent = agents.find(a => a.id === agentId);
   return agent && Array.isArray(agent.quotaProviders) ? agent.quotaProviders : [];
 }
 
@@ -247,7 +250,7 @@ function setBudgetWidgetCollapsed(collapsed) {
 }
 
 function budgetAgentEnabled(agentId) {
-  const agent = AIGON_AGENTS.find(a => a.id === agentId);
+  const agent = agents.find(a => a.id === agentId);
   if (!agent) return false;
   const state = agent.availability && agent.availability.state;
   if (state === 'disabled' || state === 'retired') return false;
@@ -1192,4 +1195,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── ESM exports (F623) ──
+export { benchTooltip, budgetWarningForAgents, fetchBudget, quotaEntryForModel, quotaTooltip, updatePickerBudgetNotice };
 Object.assign(globalThis, { benchTooltip, budgetWarningForAgents, fetchBudget, quotaEntryForModel, quotaTooltip, updatePickerBudgetNotice });

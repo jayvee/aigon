@@ -1,6 +1,7 @@
-/** F519 action module: schedule-kickoff */
-import * as H from './shared.js';
+
 import { defaultAgent } from '../injected.js';
+import * as H from './shared.js';
+/** F519 action module: schedule-kickoff */
 
 // ── Schedule kickoff: datetime-local helpers ──
 

@@ -1,5 +1,6 @@
-/** F519 action module: review */
+
 import * as H from './shared.js';
+/** F519 action module: review */
 
 function getLaunchMode(action) {
   if (action === 'feature-code-review' || action === 'research-review') return 'review';

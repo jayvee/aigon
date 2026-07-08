@@ -1,5 +1,7 @@
-/** F519 action module: set-autonomous */
+
+import { state } from '../state.js';
 import * as H from './shared.js';
+/** F519 action module: set-autonomous */
 
 async function handleSetActionModule(ctx) {
   const va = ctx.va;

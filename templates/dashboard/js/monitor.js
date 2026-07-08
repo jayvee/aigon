@@ -1,4 +1,14 @@
 /* dashboard-esm-processed */
+
+import { complexityBadgeHtml } from './actions-picker.js';
+import { handleFeatureAction, renderActionButtons } from './actions.js';
+import { requestAction, requestAttach } from './api.js';
+import { isCompleteStatus } from './utils.js';
+import { runAskAgent, setAskAgent } from './sidebar.js';
+import { openDrawer } from './spec-drawer.js';
+import { state } from './state.js';
+import { openTerminalPanel } from './terminal.js';
+import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showToast, statusRank } from './utils.js';
     // ── Shared render helpers ─────────────────────────────────────────────────
 
     function updateTitleAndFavicon(waiting){

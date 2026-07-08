@@ -1,4 +1,5 @@
 /* dashboard-esm-processed */
+import { agents, defaultAgent } from './injected.js';
 // F519: triplet picker + shared DOM helpers
 // ── Unified action renderer + dispatcher ────────────────────────────────────
 // Single source of truth for feature/research/feedback action buttons.
@@ -6,7 +7,6 @@
 // their own rendering logic.
 
 /* dashboard-esm-processed */
-import { agents, defaultAgent } from './injected.js';
 
 const AIGON_AGENTS = agents;
 const AGENT_DISPLAY_NAMES = AIGON_AGENTS.reduce((map, agent) => {
@@ -140,13 +140,13 @@ function appendTripletSelects(rowEl, agent) {
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
       let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
-      const quotaEntry = quotaEntryForModel(agent.id, opt.value);
+      const quotaEntry = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, opt.value) : null;
       if (quotaEntry && quotaEntry.verdict === 'depleted') {
         el.disabled = true;
         label = '🔒 ' + label;
-        el.title = quotaTooltip(quotaEntry);
+        el.title = typeof quotaTooltip === 'function' ? quotaTooltip(quotaEntry) : '';
       } else {
-        const benchTip = benchTooltip(quotaEntry);
+        const benchTip = typeof benchTooltip === 'function' ? benchTooltip(quotaEntry) : '';
         if (benchTip) {
           label = '⚠ ' + label;
           el.title = benchTip;
@@ -171,10 +171,10 @@ function appendTripletSelects(rowEl, agent) {
       : recommended && sel.classList.contains('agent-triplet-recommended')
         ? 'Suggested from spec. Default keeps your global aigon model for this task type.'
         : 'Default: use the model from aigon config for this task type';
-    const selectedQuota = quotaEntryForModel(agent.id, sel.value || null);
-    if (selectedQuota && selectedQuota.verdict === 'depleted') sel.title = quotaTooltip(selectedQuota);
+    const selectedQuota = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, sel.value || null) : null;
+    if (selectedQuota && selectedQuota.verdict === 'depleted') sel.title = typeof quotaTooltip === 'function' ? quotaTooltip(selectedQuota) : '';
     else {
-      const selectedBenchTip = benchTooltip(selectedQuota);
+      const selectedBenchTip = typeof benchTooltip === 'function' ? benchTooltip(selectedQuota) : '';
       if (selectedBenchTip) sel.title = selectedBenchTip;
     }
     sel.addEventListener('click', e => e.stopPropagation());
@@ -254,13 +254,13 @@ function updateReviewerTripletSelects(agentId, scope = 'autonomous') {
       el.value = opt.value == null ? '' : String(opt.value);
       const raw = opt.label || (opt.value == null ? '' : String(opt.value));
       let label = opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
-      const quotaEntry = quotaEntryForModel(agent.id, opt.value);
+      const quotaEntry = typeof quotaEntryForModel === 'function' ? quotaEntryForModel(agent.id, opt.value) : null;
       if (quotaEntry && quotaEntry.verdict === 'depleted') {
         el.disabled = true;
         label = '🔒 ' + label;
-        el.title = quotaTooltip(quotaEntry);
+        el.title = typeof quotaTooltip === 'function' ? quotaTooltip(quotaEntry) : '';
       } else {
-        const benchTip = benchTooltip(quotaEntry);
+        const benchTip = typeof benchTooltip === 'function' ? benchTooltip(quotaEntry) : '';
         if (benchTip) {
           label = '⚠ ' + label;
           el.title = benchTip;
@@ -629,4 +629,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── ESM exports (F623) ──
+export {
+  AGENT_DISPLAY_NAMES,
+  AGENT_SHORT_NAMES,
+  AIGON_AGENTS,
+  AUTONOMOUS_AGENT_IDS,
+  complexityBadgeHtml,
+  createEl,
+  fetchSpecRecommendation,
+  renderAgentPickerRows,
+  renderPickerRecommendationBanner,
+  replaceNodeChildren,
+  setPickerRecommendation,
+  showConfirm,
+  showDangerConfirm,
+  tripletsToCliArgs,
+};
 Object.assign(globalThis, { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, AIGON_AGENTS, AUTONOMOUS_AGENT_IDS, complexityBadgeHtml, createEl, fetchSpecRecommendation, renderAgentPickerRows, renderPickerRecommendationBanner, replaceNodeChildren, setPickerRecommendation, showConfirm, showDangerConfirm, tripletsToCliArgs });

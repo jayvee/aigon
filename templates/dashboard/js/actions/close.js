@@ -1,5 +1,6 @@
-/** F519 action module: close */
+
 import * as H from './shared.js';
+/** F519 action module: close */
 
 let closeModalResolve = null;
 let closeModalFeature = null;

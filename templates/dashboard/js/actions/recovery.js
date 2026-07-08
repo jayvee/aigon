@@ -1,5 +1,7 @@
-/** F563/F569 action module: review recovery primitives and grouped autonomous recovery. */
+
+import { state } from '../state.js';
 import * as H from './shared.js';
+/** F563/F569 action module: review recovery primitives and grouped autonomous recovery. */
 
 const CANCEL_ACTIONS = new Set([
   'feature-cancel-code-review',

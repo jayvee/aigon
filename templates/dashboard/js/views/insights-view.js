@@ -1,4 +1,9 @@
 /* dashboard-esm-processed */
+
+import { buildInsightsMetricsSection, initAmpTokenCharts, loadInsights } from '../logs.js';
+import { loadAnalytics, statsState } from '../statistics.js';
+import { isProActive } from '../store.js';
+import { escHtml, relTime } from '../utils.js';
 export function createInsightsView() {
   let mounted = false;
 

@@ -1,4 +1,6 @@
 /* dashboard-esm-processed */
+
+import { escHtml } from './utils.js';
     // ── Statistics view ────────────────────────────────────────────────────────
 
     const VOLUME_WINDOW = { daily: 30, weekly: 12, monthly: 6 };
@@ -1103,4 +1105,5 @@
     }
 
 // ── ESM exports (F623) ──
+export { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildProGatedChart, buildProGatedStatCard, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon };
 Object.assign(globalThis, { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildProGatedChart, buildProGatedStatCard, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon });

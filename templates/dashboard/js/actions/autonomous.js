@@ -1,6 +1,8 @@
-/** F519 action module: autonomous */
-import * as H from './shared.js';
+
 import { defaultAgent } from '../injected.js';
+import { state } from '../state.js';
+import * as H from './shared.js';
+/** F519 action module: autonomous */
 
 function budgetNotice() {
   if (typeof window.updateAutonomousBudgetNotice === 'function') window.updateAutonomousBudgetNotice();

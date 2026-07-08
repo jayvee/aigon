@@ -386,6 +386,3 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   fetchStatus().then(scheduleNext);
 })();
-
-// ── ESM exports (F623) ──
-Object.assign(globalThis, { render });

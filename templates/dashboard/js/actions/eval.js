@@ -1,5 +1,6 @@
-/** F519 action module: eval */
+
 import * as H from './shared.js';
+/** F519 action module: eval */
 
 function getLaunchMode(action) {
   if (action === 'feature-eval' || action === 'research-eval') return 'eval';

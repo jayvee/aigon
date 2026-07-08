@@ -1,4 +1,6 @@
 /* dashboard-esm-processed */
+
+import { POLL_MS, state } from './state.js';
 // F622: SSE live push — status version pings, notifications, server-restart signal.
 const POLL_SLOW_MS = 60000;
 let warnedUnavailable = false;
