@@ -177,4 +177,19 @@ testAsync('zero acceptance criteria skips validation', () => withTempRepo(async 
     assert.strictEqual(result.ok, true);
 }));
 
+testAsync('REGRESSION: implementation log on feature worktree is found from main repo cwd', () => withTempRepo(async (repo) => {
+    const specPath = writeSpec(repo, '09', 'worktree-log', ['Ship fix']);
+    const worktreeDir = path.join(repo, 'wt-feature-09-cu-sample');
+    fs.mkdirSync(path.join(worktreeDir, 'docs', 'specs', 'features', 'logs'), { recursive: true });
+    const logFile = 'feature-09-cu-sample-log.md';
+    fs.writeFileSync(
+        path.join(worktreeDir, 'docs', 'specs', 'features', 'logs', logFile),
+        '# Log\n\n## Criteria Attestation\n1. met — tests/integration/foo.test.js\n',
+    );
+    const result = validateCriteriaAttestation(specPath, repo, '09', { worktreePath: worktreeDir });
+    assert.strictEqual(result.ok, true);
+    assert.ok(result.log);
+    assert.strictEqual(result.log.file, logFile);
+}));
+
 report();
