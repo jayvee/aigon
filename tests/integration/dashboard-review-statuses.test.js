@@ -229,25 +229,16 @@ testAsync('spec-review lifecycle drives card status from events, not tmux', () =
 
 // REGRESSION F651: spec-review tmux session lookup uses role-prefixed names for peek/open.
 test('findSpecReviewTmuxSession resolves spec-review role sessions from tmux list', () => {
-    const helpersPath = require.resolve('../../lib/dashboard-status-helpers');
-    const wrmPath = require.resolve('../../lib/workflow-read-model');
-    const helpers = require(helpersPath);
-    const origFind = helpers.findTmuxSessionsByPrefix;
+    const helpers = require('../../lib/dashboard-status-helpers');
     const featureSession = 'aigon-repo-f649-spec-review-cx-nudge-confirm';
-    helpers.findTmuxSessionsByPrefix = (prefix, mapSession) => [featureSession]
-        .filter(session => session.startsWith(prefix))
-        .map(session => mapSession(session))
-        .filter(Boolean);
-    delete require.cache[wrmPath];
-    const wrmFresh = require(wrmPath);
+    helpers._setTmuxListCacheForTest([featureSession]);
     try {
         assert.strictEqual(
-            wrmFresh.findSpecReviewTmuxSession('/tmp/aigon-repo', 'feature', '649', 'spec-review', 'cx'),
+            helpers.findSpecReviewTmuxSession('/tmp/aigon-repo', 'feature', '649', 'spec-review', 'cx'),
             featureSession,
         );
     } finally {
-        helpers.findTmuxSessionsByPrefix = origFind;
-        delete require.cache[wrmPath];
+        helpers._resetTmuxListCache();
     }
 });
 

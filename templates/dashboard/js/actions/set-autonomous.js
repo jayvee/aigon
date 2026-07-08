@@ -145,7 +145,7 @@ async function handleSetActionModule(ctx) {
         single: true,
         collectTriplet: true,
         title: 'Choose set spec reviewer',
-        submitLabel: 'Review Set Specs',
+        submitLabel: 'Review set specs',
         repoPath,
         taskType: 'review',
         action: va.action,
