@@ -39,6 +39,7 @@
     "workflow-core-barrel:lib/nudge.js->lib/workflow-core/event-store.js",
     "workflow-core-barrel:lib/research-workflow-rules.js->lib/workflow-core/types.js",
     "workflow-core-barrel:lib/set-conductor.js->lib/workflow-core/entity-lifecycle.js",
+    "workflow-core-barrel:lib/auto-session-state.js->lib/workflow-core/entity-lifecycle.js",
     "workflow-core-barrel:lib/workflow-read-model.js->lib/workflow-core/entity-lifecycle.js",
     "workflow-core-barrel:lib/workflow-read-model.js->lib/workflow-core/types.js"
   ],
@@ -64,6 +65,7 @@
     "workflow-core-barrel:lib/nudge.js->lib/workflow-core/event-store.js": "nudge appends operator.nudge_sent to event log",
     "workflow-core-barrel:lib/research-workflow-rules.js->lib/workflow-core/types.js": "rules import LifecycleState constants only — no engine behaviour",
     "workflow-core-barrel:lib/set-conductor.js->lib/workflow-core/entity-lifecycle.js": "set conductor checks member done via isEntityDone",
+    "workflow-core-barrel:lib/auto-session-state.js->lib/workflow-core/entity-lifecycle.js": "set-auto pause heal uses isEntityDone leaf import — barrel pulls engine cycle via feature-status",
     "workflow-core-barrel:lib/workflow-read-model.js->lib/workflow-core/entity-lifecycle.js": "read-model uses isEntityDone for lifecycle projection",
     "workflow-core-barrel:lib/workflow-read-model.js->lib/workflow-core/types.js": "read-model imports LifecycleState for action derivation"
   }
