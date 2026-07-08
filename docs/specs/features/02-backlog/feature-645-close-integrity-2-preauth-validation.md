@@ -42,7 +42,7 @@ Parsing lives beside the existing frontmatter/spec-section readers (`lib/cli-par
 - Research/feedback flows (no policy gates there today).
 
 ## Open Questions
-- Should `feature-submit` hard-block or warn on unmatched slugs (with close as the hard gate)? Recommend: warn at submit, block at close — gives the reviewer context without stalling mid-flow.
+- ~~Should `feature-submit` hard-block or warn on unmatched slugs?~~ — resolved by spec review (cx, 2026-07-08): warning-only from the implementation-complete/submit signal path (never strand an implementer before review); `feature-close` is the hard gate; a `--strict-preauth` submit mode may come later if usage warrants.
 - Whether the F631-style "pre-existing failure" case deserves a built-in slug convention (e.g. spec authors granting `preexisting-<guard>`) — decide from real usage, not speculatively.
 
 ## Related
