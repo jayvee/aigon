@@ -10,7 +10,7 @@ This document gives agents and contributors a fast map of the Aigon codebase. It
 - `lib/`: shared implementation modules used by the CLI.
 - `lib/commands/`: command-family handlers. This is where most command behavior should live.
 - `templates/`: prompt, docs, agent, and spec templates used by install and scaffolding commands.
-- `templates/dashboard/`: dashboard UI assets — `index.html`, `styles.css`, and browser modules under `templates/dashboard/js/`. These are read fresh on every request, so frontend-only changes do not require a server restart.
+- `templates/dashboard/`: dashboard UI assets — `index.html`, ordered stylesheets under `styles/` (concatenated by the server at `/styles.css`, order defined by `styles/manifest.json` — F628), native ES modules under `js/` (single entry `js/main.js` — F623), and vendored third-party libraries under `js/vendor/` (Alpine, marked, Chart.js, xterm — no CDN fetches, F627). All are read fresh on every request, so frontend-only changes do not require a server restart. See **Dashboard Frontend** below for the full client architecture.
 - `tests/`: automated test suites. `tests/integration/` and `tests/workflow-core/` are the core non-browser suites; `tests/dashboard-e2e/` contains Playwright E2E tests (the slow browser tier).
 - `docs/specs/`: workflow state for features, research, feedback, logs, and evaluations.
 - `.aigon/docs/`: aigon-vendored documentation installed into consumer projects (F421). Includes `development_workflow.md`, `feature-sets.md`, and `agents/<id>.md` per installed agent. Marker blocks in `agents/<id>.md` are updated by `install-agent`. The consumer's own `docs/` folder is never touched.
@@ -112,7 +112,7 @@ Current shared modules:
   `safeTmuxSessionExists`, `resolveFeatureWorktreePath`, `normalizeDashboardStatus`, `maybeFlagEndedSession`
 - `lib/auto-session-state.js` (~100 lines): durable autonomous run-state helpers so feature and set conductor status survive tmux/session loss and can be reported by the dashboard/CLI
   `readFeatureAutoState`, `writeFeatureAutoState`, `clearFeatureAutoState`, `readSetAutoState`, `writeSetAutoState`, `clearSetAutoState`
-- `lib/dashboard-status-collector.js` (~900 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, done-count aggregation, and derived set-card payloads stay separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
+- `lib/dashboard-status-collector.js` (~2,300 lines): shared AIGON server read-side collector so repo/entity status assembly, dashboard detail log reads, done-count aggregation, and derived set-card payloads stay separated from HTTP transport and notification code, including metadata-authoritative feedback status reads
   `collectDashboardStatusData`
 - `lib/feature-set-workflow-rules.js` (~60 lines): central read-side action registry for set dashboard cards. Owns `set-autonomous-{start,stop,resume,reset}` eligibility and button metadata; the frontend renders only the returned `validActions`.
   `buildSetValidActions`
@@ -120,7 +120,7 @@ Current shared modules:
   `buildAutonomousPlanHtml`
 - `templates/dashboard/js/set-cards.js` (~100 lines): shared dashboard renderer for set cards and the dep-graph mini-view so SVG/layout markup is testable outside the full browser bundle.
   `buildSetCardBodyHtml`, `buildSetDepGraphSvg`
-- **F519 dashboard action split** (`templates/dashboard/js/actions.js` + `actions/`): `actions.js` is the classic-script compatibility shell (`renderActionButtons`, `handleFeatureAction`, `handleSetAction`, `showNudgeModal`) with lazy `import()` of ESM modules under `templates/dashboard/js/actions/<action>.js` (`open(ctx)` / optional `close(ctx)`). Shared triplet/picker DOM helpers live in `actions-picker.js`; budget/quota widget in `budget-widget.js`. Action modules receive `ctx.helpers` / `./shared.js` — they must not rely on unqualified classic-script globals.
+- **F519 dashboard action split** (`templates/dashboard/js/actions.js` + `actions/`): `actions.js` is the action dispatch shell (`renderActionButtons`, `handleFeatureAction`, `handleSetAction`, `showNudgeModal`) with lazy `import()` of modules under `templates/dashboard/js/actions/<action>.js` (`open(ctx)` / optional `close(ctx)`). Shared triplet/picker DOM helpers live in `actions-picker.js`; budget/quota widget in `budget-widget.js`. Action modules receive `ctx.helpers` / `./shared.js` — they must not rely on unqualified globals.
 - `lib/server-runtime.js` (~90 lines): shared AIGON server lifecycle helpers extracted from infra command wiring
   `launchDashboardServer`, `stopDashboardProcess`
 - `lib/validation.js` (~1,115 lines): Iterate (Autopilot) loop and smart validation helpers
@@ -132,8 +132,16 @@ Current shared modules:
 
 - `lib/proxy.js` (~865 lines): Caddy management (Caddyfile generation, route add/remove, reload), port allocation, dev server utilities
   `writeCaddyfile`, `addCaddyRoute`, `removeCaddyRoute`, `reloadCaddy`, `allocatePort`
-- `lib/dashboard-server.js` (~1,360 lines): AIGON server HTTP/UI shell — serves dashboard HTML/static assets, polls state, handles WebSocket relay, notifications, screenshots, and OSS/Pro route dispatch. It delegates dashboard-triggered mutations to `lib/dashboard-actions/` and detail/settings/static helper work to focused modules.
+- `lib/dashboard-server.js` (~1,530 lines): AIGON server HTTP/UI shell — serves dashboard HTML/static assets, orchestrates status refresh (fs-watch driven + 60s safety-net interval poll), handles WebSocket relay, notifications, screenshots, and OSS/Pro route dispatch. It delegates dashboard-triggered mutations to `lib/dashboard-actions/`, detail/settings/static helper work to focused modules, and status versioning / push / watch / styles to the four F620–F628 modules below.
   `runDashboardServer`, `buildDashboardHtml`
+- `lib/dashboard-status-version.js` (~120 lines, F620): server-side structural fingerprint of the status payload + monotonic `statusVersion`, cached serialized body, and `If-None-Match`/ETag helpers so `/api/status` answers unchanged polls with a 0-byte 304.
+  `createStatusSnapshotStore`, `computeStatusFingerprint`, `ifNoneMatchSatisfied`
+- `lib/dashboard-sse.js` (~90 lines, F622): SSE hub for `GET /api/events` — broadcasts `status` (version ping → client does a conditional fetch), `notification`, and `server-restarting` events to connected dashboards.
+  `createDashboardSseHub`
+- `lib/dashboard-fs-watch.js` (~340 lines, F621): debounced (400ms) filesystem watchers on `.aigon/state`, `.aigon/workflows`, and the spec stage trees per registered repo; each event triggers a targeted `pollRepoStatus(repoPath)`. Recursive `fs.watch` on macOS, per-directory fallback on Linux; failures fall back to the interval poll. Opt-out via `dashboard.fsWatch: false` (global or per-repo config).
+  `createDashboardFsWatch`, `resolveRepoWatchPaths`
+- `lib/dashboard-styles.js` (~80 lines, F628): concatenates the ordered sheets in `templates/dashboard/styles/` (order from `styles/manifest.json`) for the `/styles.css` route, with an mtime-keyed cache. A missing manifest entry throws — new sheets must be registered in the manifest.
+  `concatDashboardStyles`
 - `lib/dashboard-actions/` (~550 lines): dashboard action boundary for session launch, interactive CLI action execution, nudges, agent control, and mark-complete workflow signals.
   `handleLaunchReview`, `handleLaunchSpecReview`, `handleLaunchEval`, `handleLaunchCloseResolve`, `handleLaunchImplementation`, `runDashboardInteractiveAction`
 - `lib/dashboard-detail.js`, `lib/dashboard-settings.js`, `lib/dashboard-pro-assets.js`, `lib/dashboard-action-command.js`: focused helpers for detail drawer payloads, settings schema resolution, Pro dashboard asset/stub resolution, and `/api/action` parsing/validation.
@@ -143,6 +151,7 @@ Current shared modules:
   - `commits.js` — `GET /api/feature/:id/commits` — git commits for a feature at any lifecycle stage; resolves from worktree (in-progress) or merge commit on main (done)
   - `config.js` — config read/write endpoints (`/api/config/*`)
   - `entities.js` — feature/research/feedback CRUD endpoints
+  - `events.js` — `GET /api/events` SSE live push channel (F622)
   - `recommendations.js` — `/api/recommendation/*` (spec-frontmatter-driven start-modal defaults)
   - `sessions.js` — tmux/session endpoints, PTY token issuance
   - `system.js` — health, version, repo metadata
@@ -509,6 +518,41 @@ Current classification:
 The authoritative user-scope list lives in `USER_SCOPE_KEYS` (`lib/config.js`); the schema scope tags are checked against it by `tests/unit/settings-scope.test.js`. If you add a new setting, set its `scope` explicitly and — if it's `user` — add the key to `USER_SCOPE_KEYS` so `getEffectiveConfig` short-circuits the project layer correctly.
 
 Stale per-repo overrides of user-scope keys are listed by `listStaleUserScopeProjectOverrides(projectConfig)` and surface as a one-line warning at dashboard startup. They are *ignored*, not deleted — cleanup is the user's call.
+
+## Dashboard Frontend (`templates/dashboard/`)
+
+Rearchitected by the **dash-arch** set (F620–F628, 2026-07). No build step, no framework beyond Alpine.js for declarative bindings — but the ad-hoc script soup is gone.
+
+### Live update pipeline (F620 → F621 → F622)
+
+Change-to-pixel latency is ~1–2s (previously up to ~80s of stacked poll intervals):
+
+1. **fs-watch** (`lib/dashboard-fs-watch.js`): a change under a repo's `.aigon/state`, `.aigon/workflows`, or spec stage dirs triggers a debounced (400ms) targeted `pollRepoStatus(repoPath)` re-collect. The old interval poll survives only as a 60s safety net (tmux liveness, watcher misses).
+2. **statusVersion** (`lib/dashboard-status-version.js`): each collected payload is structurally fingerprinted server-side; a change bumps a monotonic `statusVersion` and re-serializes the cached body. `/api/status` carries `ETag: "<version>"` and answers matching `If-None-Match` with a 0-byte 304.
+3. **SSE push** (`lib/dashboard-sse.js` + `GET /api/events`): a version bump broadcasts a `status` ping; the client responds with one conditional fetch. While SSE is connected the client poll stretches to 60s; on SSE loss it falls back to 10s polling (`POLL_MS`). `notification` and `server-restarting` events ride the same channel (restart banner, bell refresh).
+
+Rules that follow from this design:
+- **Never bypass `replaceLatestStatus`** in `dashboard-server.js` when producing a new status payload — it is the single write path that versions, caches, and broadcasts. (Write-path contract.)
+- Anything the collector emits that should repaint cards **must be captured by `computeStatusFingerprint`** — a field that changes without changing the fingerprint will not bump the version and will not repaint until the next full fetch.
+
+### Client architecture (F623–F626)
+
+- **ES modules** (F623): `index.html` loads one entry — `js/main.js` — whose sequential side-effect imports encode the old script load order. Server-injected bootstrap is a single `window.__AIGON_BOOTSTRAP__` object (initial data, instance name, agents, default agent) read by `js/injected.js`. *Wave 1 only*: modules still publish via `Object.assign(globalThis, …)` shims and cross-file calls are bare globals — real imports and cycle-breaking are follow-up work.
+- **Central store** (F624, `js/store.js`): owns raw server data, a declarative localStorage persistence map (`PERSISTENCE`), and the **optimistic overlay engine**: overlays are `{key, patch(draft), settled(raw), ttlMs}` entries replayed onto a clone of the last raw payload. `replaceData(next)` is the only data entry point; `subscribeDataChange(listener)` is how renderers react. Never hand-mutate `state.data` for optimism — add an overlay.
+- **Keyed kanban** (F625, `js/pipeline.js`): columns reconcile per-card by key with a per-card fingerprint (`reconcileKeyedCards` / `reconcileKanbanColumn`) instead of `innerHTML = ''` rebuilds. Reconcile stats (`+created/~updated/-removed`) surface in the `?debug=perf` console line.
+- **View registry** (F626, `js/view-registry.js`): every tab is a `{id, elementId, usesRepoSidebar, usesRepoHeader, mount, update, unmount}` entry; the old `render()` if/else display ladder is gone. New views register here — do not toggle `style.display` from elsewhere.
+- **Perf debugging**: `?debug=perf` (or `localStorage['aigon-debug-perf']='1'`) logs per-poll fetch/parse/render/kanban timings client-side; `AIGON_DASH_TIMING=1` does the server side.
+
+### Styling (F628) and vendoring (F627)
+
+- CSS lives in `templates/dashboard/styles/*.css`, concatenated in `styles/manifest.json` order by `lib/dashboard-styles.js` at `/styles.css`. **A new sheet must be added to the manifest** — unlisted files are not served; listed-but-missing files throw.
+- All third-party JS is vendored under `js/vendor/` (Alpine, marked, Chart.js + date-fns adapter, xterm) with licenses and pinned versions in `js/vendor/VERSIONS.md`. Do not add CDN `<script>` tags.
+
+### Known deferred debt (from the dash-arch logs)
+
+- F623 waves 2–3: real `import`s replacing `globalThis` shims, breaking the `state↔api↔init` cycles, deleting the eslint `dashboardAppGlobals` allowlist and `typeof fn === 'function'` guards.
+- Alpine expressions in `index.html` still call bare globals (documented boundary).
+- ~220 inline `style="…"` occurrences across `index.html` + `js/**` awaiting migration into `styles/` sheets.
 
 ## Where To Make Changes
 
