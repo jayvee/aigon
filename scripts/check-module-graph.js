@@ -120,6 +120,18 @@ const RULES = [
             return null;
         },
     },
+    {
+        id: 'telemetry-boundary',
+        description: 'telemetry providers must not import agent-registry or sibling providers (F634)',
+        check(fromFile, toFile) {
+            if (!fromFile.startsWith('lib/telemetry/providers/')) return null;
+            if (fromFile.endsWith('/registry.js')) return null;
+            if (toFile === 'lib/agent-registry.js' || toFile.startsWith('lib/telemetry/providers/')) {
+                return `${fromFile}->${toFile}`;
+            }
+            return null;
+        },
+    },
 ];
 
 // --- Graph construction ---
