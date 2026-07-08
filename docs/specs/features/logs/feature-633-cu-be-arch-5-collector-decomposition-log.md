@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 2639
+lines_removed: 2310
+lines_changed: 4949
+files_touched: 23
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 633 - be-arch-5-collector-decomposition
 Agent: cu
 
