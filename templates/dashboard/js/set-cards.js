@@ -23,6 +23,49 @@ export const AIGON_SET_CARDS = (function() {
     return raw;
   }
 
+  function conductorActivityLabel(autonomous) {
+    if (!autonomous) return 'Conductor: inactive';
+    const st = String(autonomous.status || '');
+    if (autonomous.running || st === 'running') return 'Conductor: running';
+    if (st === 'paused-on-failure' || st === 'paused-on-quota') return 'Conductor: paused';
+    return 'Conductor: inactive';
+  }
+
+  function specReviewActivityLabel(specReview) {
+    if (specReview && specReview.running) {
+      return specReview.label || 'Spec review: running';
+    }
+    return 'Spec review: inactive';
+  }
+
+  function buildSetSessionActivityHtml(setCard, options) {
+    const set = setCard || {};
+    const specReview = set.specReview;
+    const autonomous = set.autonomous;
+    const specRunning = Boolean(specReview && specReview.running);
+    const conductorRunning = Boolean(autonomous && (autonomous.running || autonomous.status === 'running'));
+    const conductorPaused = Boolean(autonomous && (autonomous.status === 'paused-on-failure' || autonomous.status === 'paused-on-quota'));
+    const peekHandler = options && typeof options.onPeek === 'function' ? options.onPeek : null;
+    const specPeek = specRunning && specReview.sessionName && peekHandler
+      ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-spec-review-session="' + escHtml(specReview.sessionName) + '" title="View set spec review session" aria-label="Peek set spec review session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+      : '';
+    const conductorPeek = autonomous && autonomous.sessionName && peekHandler
+      ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-conductor-session="' + escHtml(autonomous.sessionName) + '" title="View set autonomous conductor output" aria-label="Peek set conductor session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+      : '';
+
+    return '<div class="set-session-activity">' +
+      '<span class="set-session-pill' + (specRunning ? ' is-active' : ' is-inactive') + '">' +
+        escHtml(specReviewActivityLabel(specReview)) +
+        (specRunning && specReview.agent ? ' · ' + escHtml(specReview.agent) : '') +
+        specPeek +
+      '</span>' +
+      '<span class="set-session-pill' + (conductorRunning ? ' is-active' : (conductorPaused ? ' is-paused' : ' is-inactive')) + '">' +
+        escHtml(conductorActivityLabel(autonomous)) +
+        conductorPeek +
+      '</span>' +
+    '</div>';
+  }
+
   function buildSetDepGraphSvg(depGraph) {
     const graph = depGraph || {};
     const nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
@@ -86,6 +129,7 @@ export const AIGON_SET_CARDS = (function() {
 
     return '<div class="set-card-stack">' +
       (set.goal ? '<p class="set-card-goal">' + escHtml(set.goal) + '</p>' : '') +
+      buildSetSessionActivityHtml(set) +
       '<div class="set-card-status-row">' +
         '<span class="set-card-status is-' + escHtml(set.status || 'idle') + '">' + escHtml(statusLabel(set.status)) + '</span>' +
         '<span class="set-card-progress-text">' + escHtml(progress.merged || 0) + ' of ' + escHtml(progress.total || 0) + ' merged</span>' +
@@ -102,6 +146,9 @@ export const AIGON_SET_CARDS = (function() {
   return {
     buildSetDepGraphSvg: buildSetDepGraphSvg,
     buildSetCardBodyHtml: buildSetCardBodyHtml,
+    buildSetSessionActivityHtml: buildSetSessionActivityHtml,
+    conductorActivityLabel: conductorActivityLabel,
+    specReviewActivityLabel: specReviewActivityLabel,
   };
 
 })();

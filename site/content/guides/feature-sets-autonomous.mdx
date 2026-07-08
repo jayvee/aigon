@@ -57,7 +57,12 @@ In practice, feature sets let Aigon operate at a higher level of abstraction whi
 
 The dashboard shows feature sets as cards with progress and action buttons. That makes the current set state visible while the conductor is running.
 
-The dashboard view is read-only. The actual set behavior comes from the workflow engine and the set conductor, not from frontend heuristics.
+Two live session types can appear on a set card:
+
+- **Spec review** — launched by `feature-set-spec-review` (one reviewer session anchored on a set member, tagged in the session sidecar as `metadata.setSpecReview.setSlug`)
+- **Conductor** — launched by `set-autonomous-start` (detached tmux session `<repo>-s<slug>-auto`)
+
+The dashboard view is read-only. The actual set behavior comes from the workflow engine, session sidecars, and the set conductor — not from frontend naming guesses.
 
 ## Brewboard as the example
 

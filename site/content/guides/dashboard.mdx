@@ -100,10 +100,13 @@ If multiple features belong to a coordinated effort, add a `set: <slug>` frontma
 
 - Progress bar (merged / total members)
 - Status label (`idle`, `running`, `paused-on-failure`, `done`)
+- **Session activity** — separate inline pills for **Spec review** (set-wide `feature-set-spec-review` tmux session) and **Conductor** (set-autonomous orchestrator). Each pill shows `running`, `paused`, or `inactive`, and a peek control appears when that session is live.
 - Current feature id and the last set-auto event
 - Dependency mini-graph — members are colored by workflow state (backlog / in-progress / in-review / done / failed), intra-set `depends_on` edges are drawn
 
-Action buttons (`Start`, `Stop`, `Resume`, `Reset`) invoke the `set-autonomous-*` commands. Button eligibility is derived server-side by `lib/feature-set-workflow-rules.js` and delivered in the `validActions` payload — the card is a read-only view of engine state.
+Action buttons (`Review set specs`, `Start`, `Stop`, `Resume`, `Reset`) invoke the corresponding `feature-set-spec-review` / `set-autonomous-*` commands. Button eligibility is derived server-side by `lib/feature-set-workflow-rules.js` and delivered in the `validActions` payload — the card is a read-only view of engine state.
+
+Set-wide spec review and the autonomous conductor are different sessions with different tmux names. After **Review set specs**, the set card's spec-review pill turns active and exposes a peek control for that review session; the conductor pill stays separate.
 
 ```bash
 aigon set list              # All sets with stage counts
