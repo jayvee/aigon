@@ -25,7 +25,7 @@ Split `lib/telemetry.js` (1,935 lines) into a telemetry package with per-provide
 - [ ] sqlite access (`_antigravityQuery`, `_opencodeQuery`, `_sqlEscape`) — shared between two providers — becomes one helper module inside the package; identical query/escape semantics.
 - [ ] Behaviour parity: `aigon capture-session-telemetry`, `capture-antigravity-telemetry`, `aigon stats`, analytics cost columns, and the dashboard stats tab produce identical output on a repo with existing telemetry from at least cc + cx (record the comparison in the log). Fallback-record handling (`isFallbackTelemetryRecord`) unchanged.
 - [ ] Existing telemetry tests pass (import paths only); parsing tests move next to their provider. Per T2, the provider-contract seam gets one test proving an unknown agent id degrades to "no telemetry" (not a throw).
-- [ ] No new cycles (be-arch-1 guard); providers import core, never each other, never agent-registry (the registry maps *to* providers — encode direction in the guard rules).
+- [ ] No new cycles (module-graph guard (be-arch-2)); providers import core, never each other, never agent-registry (the registry maps *to* providers — encode direction in the guard rules).
 - [ ] AGENTS.md module map: telemetry row updated to the package shape.
 
 ## Validation
@@ -44,7 +44,7 @@ npm run test:iterate
 
 ## Dependencies
 
-- None hard (be-arch-1 guard helpful but not required). Independent of 2–5; safe to run in parallel with any of them.
+- None hard (module-graph guard (be-arch-2) helpful but not required). Independent of 2–5; safe to run in parallel with any of them.
 
 ## Out of Scope
 

@@ -1,7 +1,7 @@
 ---
 complexity: high
 set: be-arch
-depends_on: [629]
+depends_on: [630]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-07T06:05:28.556Z", actor: "cli/feature-prioritise" }
 ---
@@ -25,7 +25,7 @@ Finish the stalled setup-command migration and delete `lib/commands/setup-legacy
 - [ ] Closure-shared state is made explicit: helpers used by 2+ commands move to named modules in `lib/commands/setup/` (extend the existing five); helpers used by one command stay in that command's module. No new "shared misc" bucket.
 - [ ] Behaviour parity is the hard gate: `install-agent`'s manifest writing (F422), drift layers (F502 — startup warning, version-bump auto-reinstall, lockstep test, prepublish guard), `doctor`/`doctor --fix` repair ordering (migrations first, F353), `remove [--purge]` manifest-driven deletion, and seed-reset semantics are all preserved. The existing integration tests for these (`install-manifest-lockstep.test.js` and friends) pass unmodified.
 - [ ] The `createSetupCommands(overrides)` ctx-pattern surface stays identical so `aigon-cli.js` dispatch and tests' override injection don't change.
-- [ ] Fan-out drops: no single setup module requires more than ~20 modules (from 79); record before/after in the feature log. New cycles: zero (be-arch-1 guard enforces; remove any setup-legacy baseline entries).
+- [ ] Fan-out drops: no single setup module requires more than ~20 modules (from 79); record before/after in the feature log. New cycles: zero (module-graph guard (be-arch-2) enforces; remove any setup-legacy baseline entries).
 - [ ] Manual smoke in a scratch repo with isolated HOME (per the 2026-06-18 incident rule: override `HOME`/`USERPROFILE` when shell-testing against scratch repos — real `apply`/`doctor` mutate the global registry): `aigon init`, `install-agent cc`, `apply`, `doctor`, `doctor --fix`, `remove --dry-run` all behave as on main. Record transcript in the feature log.
 - [ ] AGENTS.md module map: setup-legacy line removed; setup section updated to final shape.
 
@@ -46,7 +46,7 @@ npm run test:iterate
 
 ## Dependencies
 
-- depends_on: be-arch-1-module-graph-guard
+- depends_on: be-arch-2-config-registry-decycle (module-graph guard + config decycle — merged from be-arch-1)
 
 ## Out of Scope
 
@@ -66,5 +66,5 @@ npm run test:iterate
 ## Dependency Graph
 
 <!-- AIGON_DEP_GRAPH_START -->
-<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 631" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-631" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-631)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#629</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 1 module graph gu…</text><text x="36" y="90" font-size="12" fill="#475569">backlog</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#631</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 3 finish setup mi…</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 631" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-631" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-631)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#630</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 2 config registry…</text><text x="36" y="90" font-size="12" fill="#475569">backlog</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#631</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 3 finish setup mi…</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
 <!-- AIGON_DEP_GRAPH_END -->

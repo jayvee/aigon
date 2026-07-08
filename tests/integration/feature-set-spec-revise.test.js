@@ -299,4 +299,22 @@ test('collectPendingSpecReviewsFromGit caches by HEAD and invalidates on new com
     }
 }));
 
+// REGRESSION: set-wide spec revise embeds every member spec in the prompt;
+// inlining that into a cc/cu tmux launch exceeded ARG_MAX and dashboard
+// "Revise Set Specs" failed with "Failed to create tmux session".
+test('set-wide spec revise spills oversized slash-agent prompt to inline file', () => {
+    const { buildAgentCommand } = require('../../lib/worktree');
+    const body = 'spec-revise body '.repeat(400);
+    const cmd = buildAgentCommand({
+        agent: 'cc',
+        featureId: '620',
+        path: process.cwd(),
+        repoPath: process.cwd(),
+        entityType: 'feature',
+        promptOverride: body,
+    }, 'spec-revise');
+    assert.match(cmd, /aigon-inline-prompts/);
+    assert.ok(cmd.length < body.length, 'command line must reference prompt file, not embed body');
+});
+
 report();

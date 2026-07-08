@@ -40,11 +40,11 @@ Work from the module-graph outward: run a quick import-graph scan (madge or a sm
 - Inline style migration (dash-finish-4).
 
 ## Open Questions
-- Whether to add a tiny lint-time or test-time module-graph cycle check for `templates/dashboard/js/` so cycles can't return (note: be-arch F629 builds exactly this for `lib/` — reuse its scanner if it has landed by then rather than writing a second one).
+- Whether to add a tiny lint-time or test-time module-graph cycle check for `templates/dashboard/js/` so cycles can't return (note: be-arch F630 builds exactly this for `lib/` — reuse its scanner if it has landed by then rather than writing a second one).
 
 ## Related
 - Prior work: F623 (waves plan in its implementation log), F624 (store), F626 (view registry), F519 (actions `ctx.helpers` pattern).
-- Cross-set: be-arch-1 `check-module-graph` (F629) — potential shared cycle-detection tooling.
+- Cross-set: be-arch-2 `check-module-graph` (F630) — potential shared cycle-detection tooling.
 ## Dependency Graph
 
 <!-- AIGON_DEP_GRAPH_START -->

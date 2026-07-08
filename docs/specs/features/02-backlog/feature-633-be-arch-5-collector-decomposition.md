@@ -1,7 +1,7 @@
 ---
 complexity: high
 set: be-arch
-depends_on: [629]
+depends_on: [630]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-07T06:05:28.926Z", actor: "cli/feature-prioritise" }
 ---
@@ -28,7 +28,7 @@ Decompose `lib/dashboard-status-collector.js`. The AGENTS.md module map document
   - the tier cache (`getTierCache`, warm/cold mtime buckets) → explicit cache module with its invalidation rules documented (dash-arch-2's watchers will need exactly this knowledge).
 - [ ] Convergence on F517: where the collector re-derives what `buildEntityView` already answers (lifecycle/stage/closed/blocked/agent rows/spec path), the shared core calls or shares implementation with `entity-view.js` instead of duplicating. Dashboard-specific DTO shaping stays in the collector package (per the F517 note: "Dashboard DTO shaping stays in the collector, not here"). Document any place where full convergence is deferred and why (per-call cost across N features is the likely reason — measure before deciding; the F590 `_perf` timings are the tool).
 - [ ] `/api/status` payload is **byte-identical** for a fixture repo before/after (modulo `generatedAt`): capture and diff as the parity gate. The dashboard e2e suite passes untouched.
-- [ ] The read-only rule holds: no new file-format parsing enters the dashboard path — moved code keeps consuming the owner modules (`workflow-snapshot-adapter`, `agent-status`, `state-queries`, `feature-spec-resolver`, `spec-reconciliation`, `dashboard-spec-index`). Encode the collector package into the be-arch-1 boundary rules.
+- [ ] The read-only rule holds: no new file-format parsing enters the dashboard path — moved code keeps consuming the owner modules (`workflow-snapshot-adapter`, `agent-status`, `state-queries`, `feature-spec-resolver`, `spec-reconciliation`, `dashboard-spec-index`). Encode the collector package into the module-graph guard (be-arch-2) boundary rules.
 - [ ] Perf parity: `AIGON_DASH_TIMING=1` poll totals within noise of main for the same repos (record numbers in the log). No extra snapshot/spec reads per entity versus today (the F517 "one read each" discipline).
 - [ ] Unit seams used: at least the entity-agnostic core and set-card module gain focused tests (respect T3 budget — prefer converting existing broad tests to the new seams over net-new lines).
 - [ ] AGENTS.md module map updated (including correcting the stale ~900 figure and the F517 note if convergence shifts it).
@@ -49,7 +49,7 @@ npm run test:iterate
 
 ## Dependencies
 
-- depends_on: be-arch-1-module-graph-guard
+- depends_on: be-arch-2-config-registry-decycle (module-graph guard + config decycle — merged from be-arch-1)
 
 ## Out of Scope
 
@@ -70,5 +70,5 @@ npm run test:iterate
 ## Dependency Graph
 
 <!-- AIGON_DEP_GRAPH_START -->
-<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 633" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-633" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-633)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#629</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 1 module graph gu…</text><text x="36" y="90" font-size="12" fill="#475569">backlog</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#633</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 5 collector decom…</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 633" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-633" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-633)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#630</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 2 config registry…</text><text x="36" y="90" font-size="12" fill="#475569">backlog</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#633</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">be arch 5 collector decom…</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
 <!-- AIGON_DEP_GRAPH_END -->
