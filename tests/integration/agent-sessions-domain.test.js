@@ -255,7 +255,12 @@ test('agent-sessions boundary stays acyclic', () => {
     for (const file of fs.readdirSync(dir).filter((name) => name.endsWith('.js'))) {
         const body = fs.readFileSync(path.join(dir, file), 'utf8');
         assert.ok(!body.includes("require('../worktree") && !body.includes("require('../dashboard-server"));
-        assert.ok(!body.includes("require('../dashboard-routes") && !body.includes("require('../workflow-core"));
+        // The workflow-core constants leaf (paths.js) is sanctioned — the F554
+        // boundary covers engine/session behaviour, not stage-dir name constants
+        // (mirrors the check-module-graph.js rule + lint:paths ownership).
+        const workflowCoreRequires = (body.match(/require\('\.\.\/workflow-core[^']*'\)/g) || [])
+            .filter((m) => m !== "require('../workflow-core/paths')");
+        assert.ok(!body.includes("require('../dashboard-routes") && workflowCoreRequires.length === 0);
         assert.ok(!body.includes("require('../commands"));
     }
 });

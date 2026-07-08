@@ -3,7 +3,7 @@
 
 // REGRESSION: dashboard polls must honour operator-hidden repos synced from the UI.
 const assert = require('assert');
-const path = require('path');
+
 const { test, report } = require('../_helpers');
 const {
     readConductorReposFromGlobalConfig,

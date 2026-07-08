@@ -21,6 +21,10 @@ const RULES = [
         check(fromFile, toFile) {
             if (!fromFile.startsWith('lib/agent-sessions/')) return null;
             if (fromFile.startsWith('lib/agent-sessions/hosts/')) return null;
+            // The workflow-core constants leaf is allowed (see workflow-core-barrel
+            // rule) — the F554 boundary is about engine/session-store behaviour,
+            // not stage-dir name constants, and lint:paths forbids inlining them.
+            if (toFile === 'lib/workflow-core/paths.js') return null;
             const forbidden = [
                 'lib/worktree.js',
                 'lib/workflow-core/',
@@ -47,6 +51,10 @@ const RULES = [
             if (fromFile.startsWith('lib/workflow-core/')) return null;
             if (!toFile.startsWith('lib/workflow-core/')) return null;
             if (toFile === 'lib/workflow-core/index.js') return null;
+            // paths.js is a pure constants/path-helpers leaf (stage-dir names,
+            // spec paths) — sanctioned for direct import; it exposes no engine
+            // behaviour and lint:paths forces consumers to import it.
+            if (toFile === 'lib/workflow-core/paths.js') return null;
             // Documented exception modules may import workflow-core internals directly.
             const exceptionModules = new Set([
                 'lib/workflow-snapshot-adapter.js',
@@ -389,6 +397,20 @@ function findMissingAgentsMdModulePaths() {
             const normalized = modPath.replace(/\\/g, '/');
             // Skip directory-only rows (e.g. lib/dashboard-collect/)
             if (normalized.endsWith('/')) continue;
+            // Glob rows (e.g. lib/commands/setup/*.js): the dir must exist and
+            // contain at least one matching entry.
+            if (normalized.includes('*')) {
+                const dir = path.join(ROOT, path.posix.dirname(normalized));
+                const pattern = new RegExp(
+                    `^${path.posix.basename(normalized).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`
+                );
+                let matched = false;
+                try {
+                    matched = fs.readdirSync(dir).some((entry) => pattern.test(entry));
+                } catch (_) { /* dir missing → unmatched */ }
+                if (!matched) missing.push(normalized);
+                continue;
+            }
             const abs = path.join(ROOT, normalized);
             if (!fs.existsSync(abs)) {
                 missing.push(normalized);

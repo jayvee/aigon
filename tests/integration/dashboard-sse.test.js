@@ -3,7 +3,7 @@
 'use strict';
 
 const assert = require('assert');
-const { test, testAsync, report } = require('../_helpers');
+const { test, report } = require('../_helpers');
 const { createDashboardSseHub, formatSseChunk } = require('../../lib/dashboard-sse');
 const { createDashboardRouteDispatcher } = require('../../lib/dashboard-routes');
 const { createStatusSnapshotStore } = require('../../lib/dashboard-status-version');

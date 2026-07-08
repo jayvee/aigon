@@ -5,13 +5,13 @@
 // registry slots, and mixed-invocation guard.
 
 const assert = require('assert');
-const fs = require('fs');
+
 const os = require('os');
 const path = require('path');
 const { test, withTempDir, report } = require('../_helpers');
 
 const ROOT = path.join(__dirname, '..', '..');
-const CLI_PATH = path.join(ROOT, 'aigon-cli.js');
+const _CLI_PATH = path.join(ROOT, 'aigon-cli.js');
 
 function withIdentityEnv(overrides, fn) {
     const saved = {};

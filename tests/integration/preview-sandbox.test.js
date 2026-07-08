@@ -24,7 +24,7 @@ test('resolveSandboxFixture defaults to brewboard and accepts named fixtures', (
     assert.strictEqual(resolveSandboxFixture(false), null);
 });
 
-test('provisionEphemeralSeededInstance creates isolated home and empty fixture repo', () => withTempDir('aigon-f602-ephemeral-', (tmp) => {
+test('provisionEphemeralSeededInstance creates isolated home and empty fixture repo', () => withTempDir('aigon-f602-ephemeral-', (_tmp) => {
     const instance = provisionEphemeralSeededInstance({
         fixture: 'empty',
         repoPrefix: 'repo-',

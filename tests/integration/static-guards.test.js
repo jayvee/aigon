@@ -169,10 +169,11 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
 // REGRESSION F420: Pro benchmark matrix wiring is OSS-thin — script tag, settings mount, asset proxy.
 // Pro owns the data + UI; OSS must NOT register /api/benchmarks/latest.
 test('dashboard wires benchmark settings placeholder (script order + Pro asset proxy + no OSS API)', () => {
-    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
-    const iBench = idx.indexOf('/js/benchmark-matrix.js');
-    const iSettings = idx.indexOf('/js/settings.js');
-    assert.ok(iBench > 0 && iSettings > iBench, 'benchmark-matrix.js must precede settings.js');
+    // F623: script order moved from index.html tags to main.js import order.
+    const mainJs = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/main.js'), 'utf8');
+    const iBench = mainJs.indexOf("'/js/benchmark-matrix.js'");
+    const iSettings = mainJs.indexOf("'./settings.js'");
+    assert.ok(iBench > 0 && iSettings > iBench, 'benchmark-matrix.js import must precede settings.js in main.js');
     const ds = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
     assert.ok(ds.includes("reqPath === '/js/benchmark-matrix.js'"), 'dashboard-server must serve /js/benchmark-matrix.js via resolveProDashboardAsset');
     const settings = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/settings.js'), 'utf8');

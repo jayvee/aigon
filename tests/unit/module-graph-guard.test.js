@@ -89,6 +89,18 @@ function testWorktreeTmuxContainment() {
     }
 }
 
+function testAgentsMdPathCheckHandlesGlobs() {
+    // REGRESSION: AGENTS.md module-map rows may use globs (lib/commands/setup/*.js);
+    // the F636 path-existence check treated the glob as a literal path and failed
+    // test:core on main after the F631+F636 merge.
+    const { findMissingAgentsMdModulePaths } = require('../../scripts/check-module-graph');
+    const missing = findMissingAgentsMdModulePaths();
+    const globFalsePositives = missing.filter((p) => p.includes('*') && fs.existsSync(path.join(ROOT, path.dirname(p))));
+    if (globFalsePositives.length) {
+        throw new Error(`glob module-map rows reported missing despite dir existing: ${globFalsePositives.join(', ')}`);
+    }
+}
+
 function main() {
     testCanonicalCycleRotation();
     testFixtureCycleAndViolation();
@@ -96,6 +108,7 @@ function main() {
     testRulesTableExists();
     testLoadOrderIsolation();
     testWorktreeTmuxContainment();
+    testAgentsMdPathCheckHandlesGlobs();
     console.log('module-graph guard tests passed');
 }
 

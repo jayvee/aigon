@@ -13,6 +13,8 @@ const { parseAgentOverrideMap } = require('../../lib/cli-parse');
 
 const registry = {
     getAllAgentIds: () => ['cc', 'cx', 'gg', 'cu'],
+    // F592: payload validation resolves launchable (non-deactivated) agents.
+    getLaunchableAgentIds: () => ['cc', 'cx', 'cu'],
 };
 
 test('autonomous payload serializes reviewer triplets with parseable agent=value entries', () => {

@@ -75,6 +75,9 @@ const AGENTS_DIR = path.join(__dirname, '..', '..', 'templates', 'agents');
 for (const file of fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'))) {
     const id = file.replace(/\.json$/, '');
     const cfg = JSON.parse(fs.readFileSync(path.join(AGENTS_DIR, file), 'utf8'));
+    // Deactivated agents (F592: gg) keep a slim audit config without launch
+    // capabilities — they are never launched, so the prompt contract doesn't apply.
+    if (cfg.deactivated) continue;
     const prompt = buildReviewCheckFeedbackPrompt(id, '07', { loadAgentConfig: () => cfg });
     test(`revise injection for '${id}' matches capability (no phantom $aigon-… for any agent)`, () => {
         assert.strictEqual(typeof cfg.capabilities?.resolvesSlashCommands, 'boolean', `${id} missing flag`);

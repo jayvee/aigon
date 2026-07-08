@@ -9,7 +9,6 @@ const {
     testAsync, withTempDirAsync, report, seedEntityDirs, writeSpec,
 } = require('../_helpers');
 const {
-    createDashboardFsWatch,
     shouldIgnoreWatchPath,
     resolveRepoWatchPaths,
 } = require('../../lib/dashboard-fs-watch');
