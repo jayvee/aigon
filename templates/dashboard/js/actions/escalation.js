@@ -8,10 +8,11 @@ function subcommandFromAction(action) {
   return 'accept';
 }
 
-function titleForSubcommand(subcommand) {
-  if (subcommand === 'follow-up') return 'Spin off follow-up feature';
-  if (subcommand === 'reopen') return 'Reopen for revision';
-  return 'Accept escalation';
+function titleForSubcommand(subcommand, va) {
+  if (subcommand === 'follow-up') return 'Track as follow-up feature';
+  if (subcommand === 'reopen') return 'Send back for revision';
+  if (va && va.label) return va.label;
+  return 'Acknowledge & proceed';
 }
 
 export async function open(ctx) {
@@ -55,7 +56,7 @@ export async function open(ctx) {
     : '';
 
   box.innerHTML =
-    '<h3>' + H.escHtml(titleForSubcommand(subcommand)) + '</h3>' +
+    '<h3>' + H.escHtml(titleForSubcommand(subcommand, va)) + '</h3>' +
     '<p class="modal-desc">Feature #' + H.escHtml(id) +
     ' · escalation ' + H.escHtml(String(index)) +
     ' · [' + H.escHtml(category) + ']</p>' +

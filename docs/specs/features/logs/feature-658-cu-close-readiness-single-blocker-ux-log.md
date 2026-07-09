@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+Implemented `buildCloseReadiness` + collector/headline/presentation/action wiring; escalation labels updated; unit tests added.
 ## Criteria Attestation
 
 ## New API Surface

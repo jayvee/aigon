@@ -862,7 +862,10 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
 
     // validActionBtnClass, buildValidActionsHtml, handleValidAction moved to actions.js
 
-    function buildReadyToCloseHtml(agents, reviews) {
+    function buildReadyToCloseHtml(feature, agents, reviews) {
+      if (feature && feature.closeReadiness && feature.closeReadiness.applicable) {
+        if (!feature.closeReadiness.ready) return '';
+      }
       const reviewDone = reviews.length > 0 && reviews.every(r => !r.running);
       const implementerReady = agents.some(a => isCompleteStatus(a.status) || a.status === 'ready');
       if (!reviewDone || !implementerReady) return '';
@@ -887,11 +890,13 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       const headline = feature && feature.cardHeadline;
       // Headline already surfaces failed-controller verb, reason, age, and session exit.
       if (headline && headline.verb === 'Autonomous failed' && status === 'failed') return '';
+      // F658: when headline carries the close blocker, suppress redundant "Manual mode" panel.
+      if (headline && headline.verb && headline.verb.startsWith('Blocked:') && status === 'stopped') return '';
       const isStoppedByUser = controller.reasonCategory === 'stopped-by-user' || controller.reason === 'stopped-by-user';
       const statusMeta = {
         failed: { tone: 'warn', label: 'Autonomous failed' },
         running: { tone: 'running', label: 'Autonomy running' },
-        stopped: { tone: 'waiting', label: 'Manual mode' },
+        stopped: { tone: 'waiting', label: isStoppedByUser ? 'Manual mode' : (controller.reasonLabel || 'Autonomous stopped') },
         completed: { tone: 'ready', label: 'Autonomy complete' },
         'quota-paused': { tone: 'waiting', label: 'Quota paused' },
       }[status] || { tone: 'idle', label: status.replace(/-/g, ' ') };
@@ -1194,7 +1199,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         }
         innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
         if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
-        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(agents, reviews);
+        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
@@ -1224,7 +1229,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         }
         innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
         if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
-        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(agents, reviews);
+        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
         if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (close, review — no session controls)
