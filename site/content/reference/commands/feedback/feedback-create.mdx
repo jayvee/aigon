@@ -15,7 +15,7 @@ aigon feedback-create <title>
 
 ## Description
 
-`feedback-create` opens a new feedback item in `docs/specs/feedback/01-inbox/` with a generated ID. Feedback items are lighter-weight than feature specs — they capture observations, bug reports, user complaints, and suggestions that need to be triaged before they become actionable work.
+`feedback-create` is a legacy no-op. It prints the deprecation notice and does not create a feedback file. Capture new user/customer input as research with `origin: customer-feedback`.
 
 The command creates the file and then expects you (or an agent) to fill in the `## Summary` and `## Evidence` sections, plus attribution fields (`reporter`, `source`). Once filed, use `feedback-triage` to classify it and decide what to do with it.
 
@@ -29,10 +29,10 @@ The command creates the file and then expects you (or an agent) to fill in the `
 
 ```bash
 # Create a feedback item from the CLI
-aigon feedback-create "Export button crashes on Safari"
+aigon research-create "Export button crashes on Safari"
 
 # From an agent session (agent fills in details after creation)
-/aigon:feedback-create "Dashboard load time regression after deploy"
+/aigon:research-create "Dashboard load time regression after deploy"
 ```
 
 ## After creating

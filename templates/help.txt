@@ -206,7 +206,7 @@ Examples:
 
   # Legacy feedback (deprecated — use research-create with origin: customer-feedback)
   aigon feedback-migrate               # Convert docs/specs/feedback/** to research specs
-  aigon feedback-create "Save fails"   # [legacy] Create feedback in inbox
+  aigon feedback-create "Save fails"   # [legacy] No-op; capture as research with origin: customer-feedback
   aigon feedback-list --inbox          # [legacy] List inbox feedback
   aigon feedback-triage 14 --apply --yes # [legacy] Apply triage updates
 

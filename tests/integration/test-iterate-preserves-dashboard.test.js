@@ -10,7 +10,7 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
-const { test, testAsync, withTempDir, report } = require('../_helpers');
+const { test, testAsync, withTempDir, report, initGitRepo } = require('../_helpers');
 const { getDashboardRuntimeEntry } = require('../../lib/server-runtime');
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -76,6 +76,8 @@ test('getDashboardRuntimeEntry is scoped to AIGON_HOME, not lsof on port 4100', 
 testAsync('server start with isolated AIGON_HOME does not stop foreign dashboard-runtime pid', async () => {
     const homeA = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-f538-user-'));
     const homeB = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-f538-fixture-'));
+    const fixtureRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-f538-repo-'));
+    initGitRepo(fixtureRepo);
     const sentinel = spawn('sleep', ['120'], { stdio: 'ignore' });
     const startedAt = '2026-05-22T01:14:41.000Z';
     const runtimeAPath = path.join(homeA, '.aigon', 'dashboard-runtime.json');
@@ -84,7 +86,7 @@ testAsync('server start with isolated AIGON_HOME does not stop foreign dashboard
     const before = JSON.parse(fs.readFileSync(runtimeAPath, 'utf8'));
 
     const dashProc = spawn(process.execPath, [CLI_PATH, 'server', 'start'], {
-        cwd: ROOT,
+        cwd: fixtureRepo,
         env: {
             ...process.env,
             HOME: homeB,
@@ -113,6 +115,7 @@ testAsync('server start with isolated AIGON_HOME does not stop foreign dashboard
         const rmOpts = { recursive: true, force: true, maxRetries: 5, retryDelay: 100 };
         fs.rmSync(homeA, rmOpts);
         fs.rmSync(homeB, rmOpts);
+        fs.rmSync(fixtureRepo, rmOpts);
     }
 });
 

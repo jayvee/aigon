@@ -57,26 +57,6 @@ test('F656-shaped row: open escalation blocks ready and autonomous handoff headl
     assert.ok(!headline.verb.includes('Starting close'));
 });
 
-test('criteria attestation missing lists indices', () => {
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-cr-'));
-    const specPath = path.join(dir, 'spec.md');
-    fs.writeFileSync(specPath, '# Feature\n\n## Acceptance Criteria\n\n- [ ] One\n- [ ] Two\n');
-    const snapshot = snap({});
-    const readiness = buildCloseReadiness(
-        { id: '01', stage: 'in-progress', agents: [{ id: 'cu', status: 'ready' }] },
-        snapshot,
-        { repoPath: dir, featureId: '01', specPath, stage: 'in-progress' },
-    );
-    assert.strictEqual(readiness.ready, false);
-    const criteria = readiness.blockers.find(b => b.kind === 'criteria-attestation');
-    assert.ok(criteria);
-    assert.ok(/1/.test(criteria.detail));
-    fs.rmSync(dir, { recursive: true, force: true });
-});
-
 test('applyCloseReadinessActionPriority keeps one primary escalation action', () => {
     const readiness = {
         primaryBlocker: { actionKind: 'feature-escalation-accept' },

@@ -37,7 +37,7 @@
 ### Feedback Commands
 | Command | Description |
 |---------|-------------|
-| `{{CMD_PREFIX}}feedback-create <title>` | Create a feedback item in inbox |
+| `{{CMD_PREFIX}}feedback-create <title>` | Legacy no-op; capture as research with `origin: customer-feedback` |
 | `{{CMD_PREFIX}}feedback-list [filters]` | List feedback by status/type/severity/tag |
 | `{{CMD_PREFIX}}feedback-triage <ID>` | Triage feedback with explicit apply confirmation |
 

@@ -41,7 +41,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `{{CMD_PREFIX}}feedback-create <title>` | Create feedback item in inbox with next ID |
+| `{{CMD_PREFIX}}feedback-create <title>` | Legacy no-op; capture as research with `origin: customer-feedback` |
 | `{{CMD_PREFIX}}feedback-list [filters]` | List feedback items with status/type/severity/tag filters |
 | `{{CMD_PREFIX}}feedback-triage <ID>` | Run triage preview and apply with explicit confirmation |
 
