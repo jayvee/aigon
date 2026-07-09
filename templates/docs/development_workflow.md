@@ -110,23 +110,13 @@ When a code reviewer finds an issue beyond a safe in-pass fix, they record it in
 
 Categories include at minimum `architectural`, `security`, `scope`, and `spec-shortfall`. List prefixes and bold markers are tolerated.
 
-On `review-complete`, each marker becomes a `review.escalation_raised` workflow event and appears as `openEscalations[]` on the snapshot. **`aigon feature-close` blocks** until the operator dispositions every open escalation:
+On `review-complete`, each marker becomes a `review.escalation_raised` workflow event and appears as `openEscalations[]` on the snapshot. By default these are advisory close findings: `aigon feature-close` records the audit signal and keeps moving. Repos that want strict close gates can set `featureClose.integrityPolicy: "blocking"` or add `review-escalation` to `featureClose.blockingGates`.
 
 - `aigon feature-escalation accept <ID> <n> --reason "…"`
 - `aigon feature-escalation follow-up <ID> <n> --name <slug>` (creates an inbox follow-up spec)
 - `aigon feature-escalation reopen <ID> <n> --reason "…"` (returns to code revision)
 
-Autonomous flows pause on open escalations — they never auto-accept.
-
-## Criteria attestation (optional)
-
-You may record per-criterion status in the implementation log under `## Criteria Attestation` (indexed, not by text similarity):
-
-- `1. met — <evidence pointer>` (test name, command, or commit sha)
-- `2. deferred — <reason>` (if used, raises a `spec-shortfall` escalation for operator disposition)
-- `3. dropped — <spec revision reference>`
-
-Append lines as criteria land during implementation. **Close does not require attestation** — it is an optional audit trail. When present and complete, `feature-close` records a `feature.criteria_attested` event for the dashboard.
+Autonomous flows do not auto-accept escalations.
 
 ## Solo Mode Workflow
 
@@ -182,8 +172,7 @@ or (faster, when your stack tolerates it):
 
 Before running `feature-close`, always:
 
-1. **Optional:** attest acceptance criteria in the implementation log `## Criteria Attestation` section (close no longer requires this).
-2. **Push the branch to origin** to save your work remotely:
+1. **Push the branch to origin** to save your work remotely:
    ```bash
    git push -u origin <current-branch-name>
    ```
@@ -208,6 +197,29 @@ Configure in `.aigon/config.json`:
 - **`true`** — reuse the deploy command from `commands.deploy` or your package manifest when configured.
 - **`false`** — opt out (close prints a loud skip notice).
 
-When the gate fails, the merge is **not** reverted; the feature enters **close recovery** with gate output in `.aigon/state/close-gates/`. Fix merged main, then re-run `aigon feature-close <ID>`.
+By default, when the gate fails, the merge is **not** reverted and close continues. Aigon records an advisory audit event, writes the full gate output in `.aigon/state/close-gates/`, and marks the repo-level main branch condition red until a later passing gate clears it.
+
+Repos that want strict close-integrity behavior can opt in:
+
+```json
+{
+  "featureClose": {
+    "integrityPolicy": "blocking",
+    "postMergeGate": "your-verify-command"
+  }
+}
+```
+
+Or block only selected policy findings:
+
+```json
+{
+  "featureClose": {
+    "blockingGates": ["post-merge-gate"]
+  }
+}
+```
+
+Supported policy gates are `review-escalation`, `preauth-validation`, and `post-merge-gate`. Mechanical failures such as invalid workflow state, missing branches or worktrees, merge conflicts, security scan failures, git failures, and push failures remain hard stops.
 
 The worktree security scan before merge still runs (fail fast before merging). The post-merge gate is the final authority for "done".

@@ -56,7 +56,7 @@ Feature rows carry a server-owned `closeReadiness` DTO from `lib/close-readiness
 
 **Shape:** `{ applicable, ready, blockers[], primaryBlocker, phase, closeLogHint }` — each blocker has `{ kind, label, detail, actionKind?, actionCommand? }`.
 
-**Blocker kinds:** `open-escalation`, `criteria-attestation`, `preauth-validation`, `post-merge-gate`, `merge-conflict`, `close-recovery`, `autonomous-stopped`, `eval-pick-winner`, `awaiting-input`, `dependency-blocked`, `close-gate` (unknown failure fallback).
+**Blocker kinds:** `open-escalation`, `preauth-validation`, `post-merge-gate`, `merge-conflict`, `close-recovery`, `autonomous-stopped`, `eval-pick-winner`, `awaiting-input`, `dependency-blocked`, `close-gate` (unknown failure fallback).
 
 **Headline precedence:** when `closeReadiness.applicable && primaryBlocker`, the headline shows `Blocked: …` **before** autonomous-plan handoff verbs (`Starting close`, etc.). While close is in flight (`phase === 'closing'`), headline is **Closing…**.
 

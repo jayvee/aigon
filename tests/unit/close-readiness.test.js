@@ -19,7 +19,7 @@ function snap(overrides) {
     };
 }
 
-test('F656-shaped row: open escalation blocks ready and autonomous handoff headline', () => {
+test('F656-shaped row: open escalation is advisory by default', () => {
     const snapshot = snap({
         openEscalations: [{
             category: 'architectural',
@@ -43,6 +43,54 @@ test('F656-shaped row: open escalation blocks ready and autonomous handoff headl
         },
     };
     const readiness = buildCloseReadiness(entity, snapshot, { stage: 'in-progress' });
+    assert.strictEqual(readiness.ready, true);
+    assert.strictEqual(readiness.primaryBlocker, null);
+});
+
+test('stale preauth lastCloseFailure is not a blocker under advisory policy', () => {
+    const snapshot = snap({
+        lastCloseFailure: {
+            kind: 'preauth-validation',
+            stderrTail: 'unmatched footer',
+            at: '2026-07-08T00:00:00Z',
+        },
+    });
+    const readiness = buildCloseReadiness(
+        { id: '45', stage: 'in-progress', agents: [{ id: 'cu', status: 'ready' }] },
+        snapshot,
+        { stage: 'in-progress' },
+    );
+    assert.strictEqual(readiness.ready, true);
+    assert.strictEqual(readiness.primaryBlocker, null);
+});
+
+test('strict policy: open escalation blocks ready and autonomous handoff headline', () => {
+    const snapshot = snap({
+        openEscalations: [{
+            category: 'architectural',
+            reason: 'Phase B shortfall',
+            escalationId: 'e1',
+        }],
+    });
+    const entity = {
+        id: '56',
+        stage: 'in-progress',
+        agents: [{ id: 'cu', status: 'ready' }],
+        autonomousController: {
+            status: 'stopped',
+            reason: 'escalation-pending',
+        },
+        autonomousPlan: {
+            stages: [
+                { type: 'review', status: 'complete', agents: [{ id: 'cx' }] },
+                { type: 'close', status: 'waiting', agents: [{ id: 'cu' }] },
+            ],
+        },
+    };
+    const readiness = buildCloseReadiness(entity, snapshot, {
+        stage: 'in-progress',
+        config: { featureClose: { blockingGates: ['review-escalation'] } },
+    });
     assert.strictEqual(readiness.ready, false);
     assert.strictEqual(readiness.primaryBlocker.kind, 'open-escalation');
     const headline = computeCardHeadline(
