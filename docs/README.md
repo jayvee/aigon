@@ -9,6 +9,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 - [../.aigon/docs/feature-sets.md](../.aigon/docs/feature-sets.md) — What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order. Vendored from `templates/docs/` (F421).
 - [dashboard.md](dashboard.md) — Dashboard surface map: tabs, server-owned `validActions`, read-only rule.
 - [workflow-rules.md](workflow-rules.md) — Action registry contract for feature/research/set workflow rules.
+- [pause-semantics.md](pause-semantics.md) — Operator park vs quota wait vs automation stop; label/recovery contract (F656).
 - [autonomous-mode.md](autonomous-mode.md) — AutoConductor loop, supervisor rules, what is and is not auto-decided.
 - [adding-agents.md](adding-agents.md) — How to integrate a new agent CLI (the `templates/agents/<id>.json` schema, capabilities, install hints).
 - [seeds.md](seeds.md) — Maintainer guide for the demo seed repos (brewboard, trailhead); two-repo workflow for seed publishers.
