@@ -23,7 +23,7 @@ Aigon overloads “pause” across several independent mechanisms. This doc is t
 
 | Signal | Dashboard headline / label | Recovery |
 |--------|---------------------------|----------|
-| Agent `status: quota-paused` | Quota waiting (agent row / headline) | `agent-resume` when probe allows; optional `drop-agent` |
+| Agent `status: quota-paused` | Quota paused (agent row) / Quota waiting (headline) | `agent-resume` when probe allows; optional `drop-agent` |
 | `feature-*-auto` `status: quota-paused` | Quota waiting | Wait or `feature-autonomous-resume` |
 | `feature-*-auto` `reason: review-quota-paused` | Reviewer quota paused | Rerun review / `feature-autonomous-resume` |
 | Set `status: paused-on-quota` | Set paused (quota) | `set-autonomous-resume` (choose agents) |
