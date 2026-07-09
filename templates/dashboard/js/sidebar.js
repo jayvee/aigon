@@ -457,9 +457,18 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
       const storageBadge = (typeof buildStorageStatusBadgeHtml === 'function')
         ? buildStorageStatusBadgeHtml(repo.storage)
         : '';
+      const redMain = repo.redMainCondition;
+      const redMainHtml = redMain
+        ? '<div class="repo-red-main-banner" role="status">' +
+            '<strong>Main is red</strong>' +
+            '<span>' + escHtml(redMain.gateCommand || 'post-merge gate') + '</span>' +
+            (redMain.gateLogPath ? '<code>' + escHtml(redMain.gateLogPath) + '</code>' : '') +
+          '</div>'
+        : '';
       header.innerHTML = '<h2 class="repo-header-name">' + escHtml(repo.displayPath) + '</h2>' +
         '<span class="repo-header-meta">' + escHtml(metaText) + (storageBadge ? ' ' + storageBadge : '') + '</span>' +
-        '<span class="repo-header-actions">' + buildMainDevServerHtml(repo) + buildAskAgentHtml(repo.path) + '</span>';
+        '<span class="repo-header-actions">' + buildMainDevServerHtml(repo) + buildAskAgentHtml(repo.path) + '</span>' +
+        redMainHtml;
     }
 
     // Keyboard navigation for sidebar
