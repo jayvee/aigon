@@ -2,7 +2,7 @@
 Agent: cu
 
 ## Status
-
+F656: pause semantics contract (`lib/pause-semantics.js`, `docs/pause-semantics.md`); Parked/Quota waiting/Automation stopped labels; CLI scope hints.
 ## Criteria Attestation
 
 ## New API Surface

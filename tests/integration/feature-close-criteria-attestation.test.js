@@ -14,7 +14,6 @@ const {
     parseCriteriaAttestationLines,
     enumerateAcceptanceCriteria,
     validateCriteriaAttestation,
-    validateCriteriaFromSnapshot,
     criteriaAttestationReady,
     stableCriteriaEscalationId,
     syncCriteriaDeferredEscalations,

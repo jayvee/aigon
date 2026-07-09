@@ -132,6 +132,23 @@ const CASES = [
         { specDrift: { lifecycle: 'in-progress' } }, { currentSpecState: 'implementing' }, [],
         { stages: [{ type: 'implement', status: 'running', agents: [{ id: 'cc' }] }] }, 'in-progress', null,
         { verb: 'Spec drift' }],
+
+    // --- F656: pause semantics ---
+    ['656', 'pre-start parked → Parked (backlog)',
+        {}, { currentSpecState: 'paused', pauseReason: 'prestart:backlog' }, [], null, 'paused', null,
+        { verb: 'Parked (backlog)', tone: 'idle' }],
+    ['656', 'quota-paused agent → Quota waiting',
+        {}, { currentSpecState: 'implementing' },
+        [{ id: 'cc', status: 'quota-paused', isWorking: false }], null, 'in-progress', null,
+        { verb: 'Quota waiting', tone: 'warn' }],
+    ['656', 'autonomous stopped → Automation stopped + reason detail',
+        { autonomousController: { status: 'stopped', running: false, reasonLabel: 'Stopped after review', updatedAt: isoMinusSec(60) } },
+        { currentSpecState: 'ready' }, [], null, 'in-progress', null,
+        { verb: 'Automation stopped', detail: 'Stopped after review', tone: 'warn', age: 60 }],
+    ['656', 'autonomous quota-paused → Quota waiting',
+        { autonomousController: { status: 'quota-paused', running: false, reasonLabel: 'Quota cap reached', reasonCategory: 'quota', updatedAt: isoMinusSec(30) } },
+        { currentSpecState: 'implementing' }, [], null, 'in-progress', null,
+        { verb: 'Quota waiting', detail: 'Quota cap reached', tone: 'warn' }],
 ];
 
 for (const [rule, name, entity, snap, agents, plan, lane, etype, expect] of CASES) {

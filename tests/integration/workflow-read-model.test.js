@@ -568,4 +568,22 @@ for (const [kind, stage, lifecycle, tmuxRunning, expectNudge, label] of NUDGE_CA
     }));
 }
 
+// REGRESSION F656: pre-start parked features expose resume and pauseReason on read model.
+test('prestart paused feature: workflow snapshot carries prestart reason + resume action', () => withTempDir('aigon-rm-pause-', (repo) => {
+    seed(repo);
+    writeSpec(repo, 'features', '06-paused', 'feature-88-parked.md');
+    const snapDir = path.join(repo, '.aigon', 'workflows', 'features', '88');
+    fs.mkdirSync(snapDir, { recursive: true });
+    fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+        entityType: 'feature', featureId: '88',
+        currentSpecState: 'paused', lifecycle: 'paused',
+        pauseReason: 'prestart:inbox',
+        agents: {}, createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:00:00Z',
+    }));
+    const state = wrm.getFeatureDashboardState(repo, '88', 'paused', []);
+    assert.strictEqual(state.stage, 'paused');
+    assert.strictEqual(state.workflowSnapshot.pauseReason, 'prestart:inbox');
+    assert.ok(state.validActions.some((a) => a.action === 'feature-resume'));
+}));
+
 report();

@@ -19,6 +19,7 @@ const {
     deriveFeatureDashboardStatus,
 } = require('../../lib/dashboard-status-helpers');
 const { STATE_RENDER_META, getStateRenderMeta } = require('../../lib/state-render-meta');
+const { resolveStateRenderMeta } = require('../../lib/pause-semantics');
 const { LifecycleState } = require('../../lib/workflow-core/types');
 const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
 
@@ -36,6 +37,14 @@ test('STATE_RENDER_META: complete coverage, required fields, cls + badge invaria
     assert.ok(STATE_RENDER_META.spec_review_in_progress.badge, 'spec review needs badge');
     assert.strictEqual(STATE_RENDER_META.implementing.badge, '🔨 Implementing');
     assert.strictEqual(getStateRenderMeta('unknown_state').cls, 'status-idle');
+});
+
+// REGRESSION F656: operator-parked lifecycle shows pre-start label, not generic Paused.
+test('resolveStateRenderMeta: prestart backlog → Parked (backlog)', () => {
+    const meta = resolveStateRenderMeta('paused', { pauseReason: 'prestart:backlog' });
+    assert.strictEqual(meta.label, 'Parked (backlog)');
+    assert.ok(meta.badge.includes('backlog'));
+    assert.strictEqual(resolveStateRenderMeta('implementing', { pauseReason: 'prestart:backlog' }).label, 'Implementing');
 });
 
 testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_review_in_progress → status-reviewing', () => withTempDirAsync('aigon-srm-', async repo => {
