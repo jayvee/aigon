@@ -101,6 +101,16 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
     // Helper: builds unified action buttons for a feature card (used via x-html).
     // Delegates to the shared renderActionButtons() from actions.js, wrapping in
     // a container with data-repo for event delegation.
+    function isMonitorAgentDetailCollapsed(item) {
+      const pres = item && item.cardPresentation;
+      return Boolean(pres && pres.compactAgents && pres.agentSummary);
+    }
+
+    function isMonitorReviewRowSuppressed(item) {
+      const pres = item && item.cardPresentation;
+      return Boolean(pres && pres.suppress && pres.suppress.reviewerPanels);
+    }
+
     function buildMonitorActionHtml(feature, repoPath) {
       const pipelineType = feature.stage ? 'features' : 'features';
       if (feature.cardPresentation) {
@@ -255,6 +265,8 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
         buildMainDevServerHtml(repo) { return buildMainDevServerHtml(repo); },
         buildAwaitingBadgeHtml(item) { return buildAwaitingBadgeHtml(item); },
         buildMonitorStateHtml(item) { return buildMonitorStateHtml(item); },
+        isMonitorAgentDetailCollapsed(item) { return isMonitorAgentDetailCollapsed(item); },
+        isMonitorReviewRowSuppressed(item) { return isMonitorReviewRowSuppressed(item); },
         buildWorkflowIdleBadgeHtml(item) { return buildWorkflowIdleBadgeHtml(item); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');

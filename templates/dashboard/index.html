@@ -95,7 +95,7 @@
                       <div class="monitor-state" x-html="buildMonitorStateHtml(feature)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
-                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                          <div class="row" x-show="!isMonitorAgentDetailCollapsed(feature)" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="aigon.agentDisplayName(agent)"></span>
                             <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
@@ -106,7 +106,7 @@
                           </div>
                         </template>
                         <template x-for="rs in (feature.reviewSessionSummary || [])" :key="rs.session || rs.agent">
-                          <div class="row" :class="rs.running ? 'reviewing' : 'submitted'">
+                          <div class="row" x-show="!isMonitorReviewRowSuppressed(feature)" :class="rs.running ? 'reviewing' : 'submitted'">
                             <span class="agent">Review</span>
                             <span :class="'kcard-agent-status ' + (rs.statusCls || (rs.running ? 'status-reviewing' : 'status-review-done'))"
                                   x-text="(rs.running ? '● ' : '✓ ') + (aigon.AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : 'Review complete')"></span>
@@ -131,7 +131,7 @@
                       <div class="monitor-state" x-html="buildMonitorStateHtml(item)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
-                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                          <div class="row" x-show="!isMonitorAgentDetailCollapsed(item)" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="aigon.AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
                             <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
@@ -158,7 +158,7 @@
                       <div class="monitor-state" x-html="buildMonitorStateHtml(item)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
-                          <div class="row" :class="[agent.status, 'agent-' + agent.id]">
+                          <div class="row" x-show="!isMonitorAgentDetailCollapsed(item)" :class="[agent.status, 'agent-' + agent.id]">
                             <span class="agent" x-text="aigon.AGENT_DISPLAY_NAMES[agent.id] || agent.id"></span>
                             <span x-html="aigon.buildAgentStatusSpan(agent, { showDevLink: true })"></span>
                             <span class="stamp" :data-updated="agent.updatedAt" x-text="relTimeProxy(agent.updatedAt)"></span>
