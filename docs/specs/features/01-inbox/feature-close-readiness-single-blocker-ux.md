@@ -26,12 +26,13 @@ F650 shipped card hierarchy rules, but close-readiness was not modelled as a **s
 
 ### Server: close readiness projection
 
-- [ ] `lib/close-readiness.js` (or equivalent owner) exports `buildCloseReadiness(entity, snapshot, options)` returning a stable DTO, e.g. `{ ready, blockers[], primaryBlocker, phase, closeLogHint }` where each blocker has `{ kind, label, detail, actionKind?, actionCommand? }`.
+- [ ] `lib/close-readiness.js` (or equivalent owner) exports `buildCloseReadiness(entity, snapshot, options)` returning a stable DTO, e.g. `{ applicable, ready, blockers[], primaryBlocker, phase, closeLogHint }` where each blocker has `{ kind, label, detail, actionKind?, actionCommand? }`.
 - [ ] Blocker kinds cover at minimum: `open-escalation`, `criteria-attestation`, `preauth-validation`, `post-merge-gate`, `merge-conflict`, `close-recovery`, `autonomous-stopped`, `eval-pick-winner`, `awaiting-input`, `dependency-blocked`. Unknown `lastCloseFailure.kind` degrades to a generic `close-gate` blocker with stderr tail — never silent.
 - [ ] `open-escalation` blockers enumerate count + first-line reason; disposition is required before `ready: true`.
 - [ ] `criteria-attestation` blocker lists missing criterion indices (from log parse or snapshot) until satisfied.
-- [ ] `ready: true` only when engine `canCloseFeature` would pass **and** no open escalations **and** no active close-recovery gate failure — mirror the same ordering as `feature-close` phases (escalation → criteria → preauth → merge → post-merge), do not invent new gates.
-- [ ] `buildCloseReadiness` is **advisory, cheap, and derived** — it evaluates snapshot fields and shared predicates extracted from `feature-close` (per Technical Approach §1); it must **never invoke the close path** or spawn a git subprocess per row (the `merge-conflict` blocker reads recorded `lastCloseFailure`, it does not run a live merge probe). `feature-close` remains the sole enforcement authority; a `ready: true` projection that the real close then rejects is a bug in the shared predicate, not a reason to fork the logic.
+- [ ] `ready: true` only when close would succeed per the same semantics as `canCloseFeature` **and** no open escalations **and** no active close-recovery gate failure — mirror the same ordering as `feature-close` phases (escalation → criteria → preauth → merge → post-merge), do not invent new gates. Do **not** call `canCloseFeature` (async XState actor) on every `/api/status` poll; use shared predicates instead (next AC).
+- [ ] Shared close-gate predicates live in one module imported by both `feature-close` and `buildCloseReadiness` (extract from `feature-close` / `criteria-attestation` / escalation helpers as needed). Drift between projection and enforcement is a bug in that shared layer — never fork conditionals.
+- [ ] `buildCloseReadiness` is **advisory, cheap, and derived** — it evaluates snapshot fields and those shared predicates (per Technical Approach §1); it must **never invoke the close path** or spawn a git subprocess per row (the `merge-conflict` blocker reads recorded `lastCloseFailure`, it does not run a live merge probe). `feature-close` remains the sole enforcement authority; a `ready: true` projection that the real close then rejects is a bug in the shared predicate, not a reason to fork the logic.
 - [ ] DTO carries an `applicable: boolean` — `false` for rows that have not reached a close-relevant stage (pre-review lifecycle). When `applicable: false`, headline/presentation precedence skips `closeReadiness` entirely so early-pipeline cards are not hijacked by e.g. `dependency-blocked` (which keeps its existing pre-start surfacing). `dependency-blocked` and `eval-pick-winner` appear as blockers only in the stages where they actually gate close.
 - [ ] Collector attaches `closeReadiness` to every feature row in `/api/status`; field is listed in `computeStatusFingerprint` (`lib/dashboard-status-version.js`) so SSE repaints when blockers change — the existing `lastCloseFailure`/`openEscalations` fingerprint terms are subsumed, not duplicated.
 
@@ -51,6 +52,7 @@ F650 shipped card hierarchy rules, but close-readiness was not modelled as a **s
   - `feature-escalation-reopen` → **Send back for revision**
 - [ ] Escalation badge on card: `N escalation(s) blocking close` — not opaque "1 escalation".
 - [ ] `lib/feature-escalation-dashboard-actions.js` (or action registry) updated; frontend renders labels from server `validActions` only. **Known violation to remove:** `templates/dashboard/js/actions/escalation.js` currently hard-codes `'Accept escalation'` as a client-side label — delete or delegate that fallback in the same commit.
+- [ ] **Acknowledge & proceed** keeps `requiresInput: 'escalationReason'` (already on server action metadata) — dashboard must always collect a one-line reason before dispatch; no v1 skip for `ambiguous` + reviewer-approved (per Open Questions default).
 - [ ] Existing label assertions updated in the same commit (`tests/integration/feature-escalation.test.js` and any Playwright specs matching the old strings) — grep for `Accept escalation`, `Follow-up from escalation`, `Reopen for revision` before declaring done.
 
 ### Actions: one primary
@@ -87,6 +89,7 @@ F650 shipped card hierarchy rules, but close-readiness was not modelled as a **s
 
 ```bash
 node --check lib/close-readiness.js
+node --check lib/close-gate-predicates.js
 node --check lib/card-headline.js
 node --check lib/card-presentation.js
 node --check lib/dashboard-collect/feature-poll.js
@@ -108,11 +111,14 @@ Interactive UI: `aigon preview <ID>` on a worktree with escalation-pending and c
 
 ### 1. Single read model: `buildCloseReadiness`
 
-New module `lib/close-readiness.js` — leaf-ish, imports:
-- `criteria-attestation` (`criteriaAttestationReady`)
+New module `lib/close-readiness.js` — leaf-ish, imports shared predicates module +:
+- `criteria-attestation` (`criteriaAttestationReady` or extracted predicate)
 - `review-escalation` (`getOpenEscalations`, `formatEscalationCloseBlockMessage` excerpts)
-- `workflow-core` snapshot fields (`lastCloseFailure`, `closeRecovery`, `openEscalations`)
-- optional: lightweight preauth/criteria preview helpers already in `feature-close` (extract shared predicates, do not duplicate full close)
+- snapshot fields (`lastCloseFailure`, `closeRecovery`, `openEscalations`)
+
+Extract shared predicates from `feature-close` into e.g. `lib/close-gate-predicates.js` (name flexible) — both `feature-close` and `buildCloseReadiness` import it; do not duplicate full close orchestration.
+
+**`applicable` rule:** `applicable: true` when lifecycle is in the close-relevant set (`ready`, `close_recovery_in_progress`, `closing`, or `lastCloseFailure` / `openEscalations` / `closeRecovery` present on snapshot). `applicable: false` for inbox/backlog/implementing/evaluating and other pre-close stages unless a close-specific blocker is already recorded — keeps early-pipeline dependency messaging on existing paths.
 
 Return blockers in **close phase order**; `primaryBlocker = blockers[0]`.
 
@@ -156,10 +162,10 @@ F650 defined hierarchy but did not define **close blocker authority**. This feat
 
 ## Open Questions
 
-Both questions have a stated default — if unanswered at start, implement the default; do not block.
+Resolved at spec-revise (implement these defaults; do not block start):
 
-- Should **Acknowledge & proceed** require a one-line reason modal on dashboard (CLI already requires `--reason`)? **Default: yes** — always show the modal for audit parity. The conditional skip (`escalation.category === 'ambiguous'` + reviewer approved) is deferred; do not build the skip path in v1.
-- Should autonomous mode auto-disposition `ambiguous` escalations when reviewer ran `--approve`? **Default: no** — operator trust is the point of F646; copy fix only unless operator feedback says otherwise.
+- **Acknowledge & proceed reason modal** — **yes**, always collect reason on dashboard (matches CLI `--reason`; `requiresInput: 'escalationReason'` already wired). Conditional skip for `ambiguous` + reviewer-approved is **out of v1**.
+- **Auto-disposition ambiguous escalations after reviewer `--approve`** — **no**; operator must explicitly acknowledge. Copy/UX fix only.
 
 ## Related
 
