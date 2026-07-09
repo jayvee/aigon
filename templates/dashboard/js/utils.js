@@ -228,16 +228,27 @@ import { state } from './state.js';
       return agent ? (machine + ' · ' + agent) : machine;
     }
 
+    function formatLeaseRoleLabel(role) {
+      const normalized = String(role || '').trim().toLowerCase();
+      if (normalized === 'impl' || normalized === 'implementation') return 'Implementation lock';
+      if (normalized === 'research') return 'Research lock';
+      if (normalized === 'close' || normalized === 'closing') return 'Close lock';
+      if (normalized === 'review' || normalized === 'code-review') return 'Review lock';
+      if (normalized === 'spec' || normalized === 'spec-review') return 'Spec lock';
+      return 'Coordination lock';
+    }
+
     function buildLeaseBadgeHtml(entity, repoStorage) {
       const leases = entity && Array.isArray(entity.activeLeases) ? entity.activeLeases : [];
       if (leases.length === 0) return '';
       const primary = leases[0];
-      const label = formatLeaseHolderLabel(primary);
+      const holderLabel = formatLeaseHolderLabel(primary);
+      const roleLabel = formatLeaseRoleLabel(primary.role);
       const localHolderId = repoStorage && repoStorage.localHolderId ? String(repoStorage.localHolderId) : null;
       const heldByMe = localHolderId && primary.holderId === localHolderId;
       const stale = Boolean(entity.leaseDataStale || (repoStorage && repoStorage.leaseDataStale));
       const titleParts = leases.map((lease) => {
-        const parts = [lease.role, formatLeaseHolderLabel(lease)];
+        const parts = [lease.role || 'lease', formatLeaseHolderLabel(lease)];
         if (lease.expiresAt) parts.push('until ' + lease.expiresAt);
         return parts.join(' · ');
       });
@@ -248,7 +259,12 @@ import { state } from './state.js';
       const extra = leases.length > 1 ? ' +' + (leases.length - 1) : '';
       const cssClass = 'kcard-lease-badge'
         + (stale ? ' kcard-lease-stale' : (heldByMe ? ' kcard-lease-held-by-me' : ' kcard-lease-held-by-other'));
-      return '<span class="' + cssClass + '" title="' + escHtml(title) + '">🔒 ' + escHtml(label) + escHtml(extra) + '</span>';
+      return '<span class="' + cssClass + '" title="' + escHtml(title) + '">' +
+        '<span class="kcard-lease-icon" aria-hidden="true">&#128274;</span>' +
+        '<span class="kcard-lease-role">' + escHtml(roleLabel) + '</span>' +
+        '<span class="kcard-lease-holder">' + escHtml(holderLabel) + '</span>' +
+        (extra ? '<span class="kcard-lease-extra">' + escHtml(extra) + '</span>' : '') +
+        '</span>';
     }
 
     function buildStorageStatusBadgeHtml(storage) {
@@ -275,4 +291,4 @@ import { state } from './state.js';
     }
 
 // ── ESM exports (F623) ──
-export { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };
+export { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, formatLeaseRoleLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };

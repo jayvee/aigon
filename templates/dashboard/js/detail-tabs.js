@@ -4,7 +4,7 @@ import { handleFeatureAction, renderActionButtons } from './actions.js';
 import { isCompleteStatus } from './utils.js';
 import { drawerState } from './spec-drawer.js';
 import { state } from './state.js';
-import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js';
+import { copyText, escHtml, formatLeaseHolderLabel, formatLeaseRoleLabel, showToast } from './utils.js';
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
     function findEntityInDashboardState(entityType, entityId, repoPath) {
@@ -15,7 +15,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         if (repoPath && repo.path !== repoPath) continue;
         const list = entityType === 'research' ? (repo.research || []) : (repo.features || []);
         const hit = list.find((item) => String(item.id) === String(entityId));
-        if (hit) return { feature: hit, repoPath: repo.path, pipelineType: entityType === 'research' ? 'research' : 'features' };
+        if (hit) return { feature: hit, repo, repoPath: repo.path, pipelineType: entityType === 'research' ? 'research' : 'features' };
       }
       return null;
     }
@@ -338,26 +338,43 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
 
       function renderLeaseSection(entityType, entityId, repoPath) {
         const located = findEntityInDashboardState(entityType, entityId, repoPath);
-        const leases = located && located.feature && Array.isArray(located.feature.activeLeases)
-          ? located.feature.activeLeases
+        const entity = located && located.feature ? located.feature : null;
+        const leases = entity && Array.isArray(entity.activeLeases)
+          ? entity.activeLeases
           : [];
         if (leases.length === 0) return '';
+        const storage = located && located.repo ? located.repo.storage : null;
+        const localHolderId = storage && storage.localHolderId ? String(storage.localHolderId) : null;
+        const stale = Boolean((entity && entity.leaseDataStale) || (storage && storage.leaseDataStale));
         const rows = leases.map((lease) => {
           const holder = typeof formatLeaseHolderLabel === 'function'
             ? formatLeaseHolderLabel(lease)
             : ((lease.holderId || 'unknown') + (lease.agentId ? ' · ' + String(lease.agentId).toUpperCase() : ''));
-          return '<div class="stats-row"><div class="stats-key">' + escHtml(lease.role) + '</div><div class="stats-val">' +
-            escHtml(holder) + ' · until ' + escHtml(lease.expiresAt || '—') + '</div></div>';
+          const heldByMe = localHolderId && lease.holderId === localHolderId;
+          const stateLabel = stale ? 'stale' : (heldByMe ? 'this machine' : 'active');
+          const stateClass = stale ? 'is-stale' : (heldByMe ? 'is-local' : 'is-remote');
+          const role = formatLeaseRoleLabel(lease.role);
+          const expires = lease.expiresAt ? formatIso(lease.expiresAt) : 'n/a';
+          return '<div class="drawer-lease-row ' + stateClass + '">' +
+            '<div class="drawer-lease-role">' + escHtml(role) + '</div>' +
+            '<div class="drawer-lease-main">' +
+              '<div class="drawer-lease-holder" title="' + escHtml(holder) + '">' + escHtml(holder) + '</div>' +
+              '<div class="drawer-lease-meta">until ' + escHtml(expires) + '</div>' +
+            '</div>' +
+            '<div class="drawer-lease-state">' + escHtml(stateLabel) + '</div>' +
+          '</div>';
         }).join('');
+        const heading = leases.length === 1 ? 'Active coordination lock' : 'Active coordination locks';
         return '<div class="deep-status-section drawer-lease-section">' +
-          '<h5 class="stats-section-heading">Active leases</h5>' +
-          '<div class="stats-events">' + rows + '</div></div>';
+          '<h4 class="deep-status-heading">Coordination</h4>' +
+          '<div class="drawer-lease-title">' + escHtml(heading) + '</div>' +
+          '<div class="drawer-lease-list">' + rows + '</div>' +
+        '</div>';
       }
 
       function renderStats(payload) {
         const drawer = getDrawerState();
         const parsed = parseEntityFromSpecPath(drawer.path, drawer.type);
-        const leaseHtml = renderLeaseSection(parsed.type, parsed.id, drawer.repoPath);
         const stats = computeStats(payload);
         const startup = payload.startupReadiness || (payload.manifest && payload.manifest.startupReadiness) || {};
         const c = (payload.deepStatus && payload.deepStatus.cost) || {};
@@ -448,7 +465,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
             '</table>';
         }
 
-        detailEl.innerHTML = leaseHtml +
+        detailEl.innerHTML =
           '<div class="stats-grid">' +
             rows.map(([k, v, tip]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + (tip ? ' <span class="stats-tip" data-tip="' + escHtml(tip) + '">?</span>' : '') + '</div><div class="stats-val">' + escHtml(v) + '</div></div>').join('') +
           '</div>' +
@@ -733,6 +750,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         const p = data.progress || {};
         const sp = data.spec || {};
         const parsed = parseEntityFromSpecPath(getDrawerState().path, getDrawerState().type);
+        const leaseHtml = parsed.id ? renderLeaseSection(parsed.type, parsed.id, getDrawerState().repoPath) : '';
 
         const sessionRows = s.completed
           ? [
@@ -816,7 +834,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         detailEl.innerHTML =
           (parsed.id ? renderDrawerRecoveryActions(parsed.type, parsed.id, getDrawerState().repoPath) : '') +
           '<div class="deep-status-grid">' +
-            sessionHtml + progressHtml + costHtml + specHtml + criteriaAttestationHtml + agentSessionsHtml + metaHtml +
+            leaseHtml + sessionHtml + progressHtml + costHtml + specHtml + criteriaAttestationHtml + agentSessionsHtml + metaHtml +
           '</div>' +
           '<div class="deep-status-footer">Collected ' + escHtml(formatIso(data.collectedAt)) + '</div>';
         wireDrawerRecoveryActions(detailEl, parsed.type, parsed.id, getDrawerState().repoPath);
