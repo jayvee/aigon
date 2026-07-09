@@ -279,6 +279,185 @@ test('autonomous plan: approved review skips revision stage', () => withTempDir(
     assert.strictEqual(revision.status, 'complete', 'approved review marks revision as complete (skipped)');
 }));
 
+// REGRESSION F654: progress-index model — one fixture per conductor state, full stage list.
+const SOLO_CLOSE_STAGES = ['implement', 'review', 'revision', 'close'];
+const stageStatuses = (state) => state.autonomousPlan.stages.map(s => s.status);
+
+for (const [desc, id, setup, expectedStatuses] of [
+    ['running implement', '20', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-impl.md`);
+        writeSnap(repo, 'features', featureId, 'implementing');
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx',
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:01:00Z',
+        });
+        return [{ id: 'cc', status: 'implementing' }];
+    }, ['running', 'waiting', 'waiting', 'waiting']],
+    ['running review', '21', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-review.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'code_review_in_progress', lifecycle: 'code_review_in_progress',
+            mode: 'solo_worktree', agents: { cc: { status: 'ready' } },
+            codeReview: { reviewerId: 'cx', reviewStartedAt: '2026-04-01T10:03:00Z' },
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:03:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx', reviewTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:03:00Z',
+        });
+        return [{ id: 'cc', status: 'ready' }];
+    }, ['complete', 'running', 'waiting', 'waiting']],
+    ['requested revision waiting', '22', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-rev-wait.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'implementing', lifecycle: 'implementing',
+            mode: 'solo_worktree', agents: { cc: { status: 'ready' } },
+            codeReview: {
+                reviewerId: 'cx', reviewCompletedAt: '2026-04-01T10:05:00Z',
+                requestRevision: true, revisionAgentId: 'cc',
+            },
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx', reviewTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+        });
+        return [{ id: 'cc', status: 'ready' }];
+    }, ['complete', 'complete', 'waiting', 'waiting']],
+    ['running revision', '23', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-rev-run.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'implementing', lifecycle: 'implementing',
+            mode: 'solo_worktree', agents: { cc: { status: 'implementing' } },
+            codeReview: {
+                reviewerId: 'cx', reviewCompletedAt: '2026-04-01T10:05:00Z',
+                requestRevision: true, revisionAgentId: 'cc',
+            },
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:06:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx', reviewTriggered: true,
+            feedbackInjected: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:06:00Z',
+        });
+        return [{ id: 'cc', status: 'implementing' }];
+    }, ['complete', 'complete', 'running', 'waiting']],
+    ['running eval (fleet)', '24', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-eval.md`);
+        writeSnap(repo, 'features', featureId, 'evaluating');
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'fleet',
+            stopAfter: 'close', agents: ['cc', 'cx'], evalAgent: 'gg',
+            evalTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:10:00Z',
+        });
+        return [
+            { id: 'cc', status: 'ready' },
+            { id: 'cx', status: 'ready' },
+        ];
+    }, ['complete', 'running', 'waiting']],
+    ['eval complete (fleet)', '25', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-eval-done.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'evaluating', lifecycle: 'evaluating',
+            mode: 'fleet', agents: { cc: { status: 'ready' }, cx: { status: 'ready' } },
+            winnerAgentId: 'cc',
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:12:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'fleet',
+            stopAfter: 'close', agents: ['cc', 'cx'], evalAgent: 'gg',
+            evalTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:12:00Z',
+        });
+        return [
+            { id: 'cc', status: 'ready' },
+            { id: 'cx', status: 'ready' },
+        ];
+    }, ['complete', 'complete', 'waiting']],
+    ['close running', '26', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-close.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'closing', lifecycle: 'closing',
+            mode: 'solo_worktree', agents: { cc: { status: 'ready' } },
+            codeReview: {
+                reviewerId: 'cx', reviewCompletedAt: '2026-04-01T10:05:00Z',
+                requestRevision: false,
+            },
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:15:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'running', running: true, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx', closeTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:15:00Z',
+        });
+        return [{ id: 'cc', status: 'ready' }];
+    }, ['complete', 'complete', 'complete', 'running']],
+    ['close complete', '27', (repo, featureId) => {
+        writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-done.md`);
+        const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
+        fs.mkdirSync(snapDir, { recursive: true });
+        fs.writeFileSync(path.join(snapDir, 'snapshot.json'), JSON.stringify({
+            entityType: 'feature', featureId,
+            currentSpecState: 'closing', lifecycle: 'closing',
+            mode: 'solo_worktree', agents: { cc: { status: 'ready' } },
+            codeReview: {
+                reviewerId: 'cx', reviewCompletedAt: '2026-04-01T10:05:00Z',
+                requestRevision: false,
+            },
+            createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:30:00Z',
+        }));
+        writeFeatureAuto(repo, featureId, {
+            featureId, status: 'completed', running: false, mode: 'solo_worktree',
+            stopAfter: 'close', agents: ['cc'], reviewAgent: 'cx',
+            workflowSlug: 'solo-cc-reviewed-cx', closeTriggered: true,
+            startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:30:00Z',
+            endedAt: '2026-04-01T10:30:00Z',
+        });
+        return [{ id: 'cc', status: 'implementation-complete' }];
+    }, ['complete', 'complete', 'complete', 'complete']],
+]) {
+    test(`autonomous plan progress index: ${desc}`, () => withTempDir('aigon-rm-', (repo) => {
+        seed(repo);
+        const agents = setup(repo, id);
+        const state = wrm.getFeatureDashboardState(repo, id, 'in-progress', agents);
+        assert.ok(state.autonomousPlan && !state.autonomousPlan.error, 'plan available');
+        assert.deepStrictEqual(
+            stageStatuses(state),
+            expectedStatuses,
+            `stage statuses for ${desc}`,
+        );
+        assert.deepStrictEqual(
+            state.autonomousPlan.stages.map(s => s.type),
+            expectedStatuses.length === 3 ? ['implement', 'eval', 'close'] : SOLO_CLOSE_STAGES,
+        );
+    }));
+}
+
 // REGRESSION: brewboard-seed backlog specs ship without engine snapshots — Start must still appear.
 test('backlog + MISSING_SNAPSHOT still exposes feature-start and research-start', () => withTempDir('aigon-rm-', (repo) => {
     seed(repo);
