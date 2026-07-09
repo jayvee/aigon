@@ -208,14 +208,55 @@ testAsync('REGRESSION: snapshot attestation satisfies validateCriteriaAttestatio
     assert.strictEqual(result.source, 'snapshot');
 }));
 
-testAsync('criteriaAttestationReady blocks until log or snapshot complete', () => withTempRepo(async (repo) => {
+testAsync('criteriaAttestationReady is advisory — always ready for close gating', () => withTempRepo(async (repo) => {
     const specPath = writeSpec(repo, '12', 'attest-ready', ['Ship']);
     writeLog(repo, '12', '');
     const blocked = criteriaAttestationReady(specPath, repo, '12');
-    assert.strictEqual(blocked.ready, false);
+    assert.strictEqual(blocked.ready, true);
+    assert.strictEqual(blocked.result.ok, false);
     writeLog(repo, '12', '1. met — tests/integration/foo.test.js\n');
     const ready = criteriaAttestationReady(specPath, repo, '12');
     assert.strictEqual(ready.ready, true);
+    assert.strictEqual(ready.result.ok, true);
+}));
+
+testAsync('runCriteriaAttestationPhase: incomplete attestation does not block close', () => withTempRepo(async (repo) => {
+    const { runCriteriaAttestationPhase } = require('../../lib/feature-close');
+    const { PATHS } = require('../../lib/constants');
+    const specPath = writeSpec(repo, '13', 'attest-advisory', ['Ship gate']);
+    writeLog(repo, '13', '');
+    const result = await runCriteriaAttestationPhase(
+        { repoPath: repo, name: '13', num: '13', specPath, worktreePath: null },
+        { findFile: () => ({ fullPath: specPath }), PATHS, noVerifyCriteria: false },
+    );
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.advisory, true);
+    assert.strictEqual(result.incomplete, true);
+}));
+
+testAsync('runCriteriaAttestationPhase: incomplete attestation clears criteria-attestation recovery', () => withTempRepo(async (repo) => {
+    const { runCriteriaAttestationPhase } = require('../../lib/feature-close');
+    const { PATHS } = require('../../lib/constants');
+    await bootstrapFeature(repo, '14', 'attest-recovery-clear', ['Ship']);
+    await recordCriteriaAttestationFailure(repo, '14', {
+        unattested: [1],
+        invalid: [],
+        outputTail: 'missing',
+        returnSpecState: 'ready',
+    });
+    let snap = await wf.showFeature(repo, '14');
+    assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
+    const specPath = writeSpec(repo, '14', 'attest-recovery-clear', ['Ship']);
+    writeLog(repo, '14', '');
+    const result = await runCriteriaAttestationPhase(
+        { repoPath: repo, name: '14', num: '14', specPath, worktreePath: null },
+        { findFile: () => ({ fullPath: specPath }), PATHS, noVerifyCriteria: false },
+    );
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.advisory, true);
+    snap = await wf.showFeature(repo, '14');
+    assert.strictEqual(snap.currentSpecState, 'ready');
+    assert.strictEqual(snap.lastCloseFailure, null);
 }));
 
 testAsync('zero acceptance criteria skips validation', () => withTempRepo(async (repo) => {

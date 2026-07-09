@@ -14,6 +14,8 @@ const {
     isValidReviewerId,
     extractSpecReviewerId,
     extractReviewedAgentIds,
+    captureSpecReviewReturnLifecycle,
+    resolveSpecReviewRestingLifecycle,
 } = require('../../lib/spec-review-state');
 
 // --- normalizeEntityId ---
@@ -121,6 +123,24 @@ test('extractReviewedAgentIds: filters invalid IDs from the list', () => {
 test('extractReviewedAgentIds: returns empty array when reviewed: line absent', () => {
     assert.deepStrictEqual(extractReviewedAgentIds('no reviewed line'), []);
     assert.deepStrictEqual(extractReviewedAgentIds(''), []);
+});
+
+// REGRESSION: inbox spec-review must not promote lifecycle to backlog on complete.
+test('resolveSpecReviewRestingLifecycle: inbox stays inbox without stored return', () => {
+    const ctx = {};
+    assert.strictEqual(resolveSpecReviewRestingLifecycle(ctx, 'inbox'), 'inbox');
+});
+
+test('resolveSpecReviewRestingLifecycle: prefers stored return lifecycle', () => {
+    const ctx = { specReviewReturnLifecycle: 'inbox' };
+    assert.strictEqual(resolveSpecReviewRestingLifecycle(ctx, 'spec_review_in_progress'), 'inbox');
+    assert.strictEqual(ctx.specReviewReturnLifecycle, null);
+});
+
+test('captureSpecReviewReturnLifecycle: inbox vs backlog', () => {
+    assert.strictEqual(captureSpecReviewReturnLifecycle('inbox'), 'inbox');
+    assert.strictEqual(captureSpecReviewReturnLifecycle('backlog'), 'backlog');
+    assert.strictEqual(captureSpecReviewReturnLifecycle('spec_review_in_progress'), 'backlog');
 });
 
 report();

@@ -9,6 +9,7 @@ const engine = require('../../lib/workflow-core/engine');
 const { applySpecReviewFromSnapshots: _applySpecReviewFromSnapshots, clearTierCache } = require('../../lib/dashboard-status-collector');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const { runPendingMigrations } = require('../../lib/migration');
+const { reconcileEntitySpec } = require('../../lib/spec-reconciliation');
 
 const initRepo = (repo) => {
     ['docs/specs/features/01-inbox', 'docs/specs/features/02-backlog', 'docs/specs/research-topics/01-inbox', 'docs/specs/research-topics/02-backlog']
@@ -68,6 +69,51 @@ testAsync('migration backfills legacy spec-review commits into workflow state', 
     const snapshot = await engine.showFeatureOrNull(repo, '12');
     assert.ok(snapshot);
     assert.deepStrictEqual([snapshot.specReview.pendingCount, snapshot.specReview.pendingAgents], [1, ['gg']]);
+}));
+
+// REGRESSION: inbox spec review submit + revise ack must stay inbox (no spec-folder drift).
+testAsync('inbox spec-review cycle stays inbox through submit and revise ack', () => withTempDirAsync('aigon-inbox-sr-', async (repo) => {
+    initRepo(repo);
+    const slug = 'close-readiness-single-blocker-ux';
+    const specPath = path.join(repo, 'docs/specs/features/01-inbox', `feature-${slug}.md`);
+    fs.writeFileSync(specPath, '# Feature: inbox review\n');
+    await engine.ensureEntityBootstrapped(repo, 'feature', slug, 'inbox');
+    await engine.recordSpecReviewSubmitted(repo, 'feature', slug, {
+        reviewId: 'sha-review-inbox',
+        reviewerId: 'cc',
+        summary: 'tighten spec',
+        commitSha: 'sha-review-inbox',
+    });
+    let snapshot = await engine.showFeatureOrNull(repo, slug);
+    assert.strictEqual(snapshot.lifecycle, 'inbox', 'submit+complete must not promote inbox → backlog');
+    await engine.recordSpecReviewAcknowledged(repo, 'feature', slug, { commitSha: 'sha-ack-inbox' });
+    snapshot = await engine.showFeatureOrNull(repo, slug);
+    assert.strictEqual(snapshot.lifecycle, 'inbox', 'revise ack must not promote inbox → backlog');
+    const drift = reconcileEntitySpec(repo, 'feature', slug, { dryRun: true });
+    assert.strictEqual(drift.driftDetected, false, 'no spec-folder drift after inbox review cycle');
+}));
+
+// REGRESSION: post-close spec_review.completed must not downgrade done → backlog.
+testAsync('post-close spec_review.completed does not downgrade done lifecycle', () => withTempDirAsync('aigon-sr-postclose-', async (repo) => {
+    initRepo(repo);
+    const specPath = path.join(repo, 'docs/specs/features/05-done', 'feature-99-done.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# Feature: done\n');
+    const events = [
+        { type: 'feature.bootstrapped', featureId: '99', lifecycle: 'inbox', at: '2026-01-01T00:00:00.000Z' },
+        { type: 'feature.started', mode: 'solo_branch', agents: ['cc'], at: '2026-01-02T00:00:00.000Z' },
+        { type: 'feature.close_requested', at: '2026-01-03T00:00:00.000Z' },
+        { type: 'feature.closed', at: '2026-01-03T00:00:01.000Z' },
+        { type: 'feature.spec_review.completed', reviewerId: 'cc', at: '2026-01-04T00:00:00.000Z' },
+    ];
+    const { projectContext } = require('../../lib/workflow-core/projector');
+    const projected = projectContext(events);
+    assert.strictEqual(projected.currentSpecState, 'done');
+    const drift = reconcileEntitySpec(repo, 'feature', '99', {
+        dryRun: true,
+        snapshot: { lifecycle: projected.currentSpecState, currentSpecState: projected.currentSpecState },
+    });
+    assert.strictEqual(drift.driftDetected, false);
 }));
 
 test('research dashboard actions never emit feature-delete when snapshot lacks entityType', () => {
