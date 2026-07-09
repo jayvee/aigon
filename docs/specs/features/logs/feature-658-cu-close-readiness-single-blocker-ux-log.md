@@ -1,3 +1,17 @@
+---
+commit_count: 4
+lines_added: 728
+lines_removed: 89
+lines_changed: 817
+files_touched: 20
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 658 - close-readiness-single-blocker-ux
 Agent: cu
 
