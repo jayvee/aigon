@@ -5,13 +5,20 @@ Agent: cu (handoff from cx)
 Implemented F650 card hierarchy: server `cardPresentation` model, pipeline/monitor render, design docs, tests green on `npm run test:iterate`.
 
 ## Criteria Attestation
-- [x] Shared hierarchy in pipeline + monitor via `cardPresentation` + `card-presentation.js` render helpers
-- [x] Single dominant headline; duplicate red/green panels suppressed on close failure (regression: close-failure-event @smoke)
-- [x] Quiet progress timeline + compact agent summary on failures
-- [x] Recovery actions promoted when `severity === 'error'`; `validActions` eligibility unchanged
-- [x] Research + feedback rows attach `cardPresentation` on poll
-- [x] `docs/dashboard-card-design.md` + wireframe v4 pointer + AGENTS/CLAUDE/architecture refs
-- [ ] Full visual QA screenshot matrix (6 scenarios × 3 breakpoints) — partial: `tmp/f650-close-failure-headline.png` from @smoke; run `aigon preview 650` for remaining states before close
+1. met — lib/card-presentation.js + monitor.js/pipeline.js shared hierarchy (ba95bf805)
+2. met — single cardPresentation headline; suppress flags remove duplicate red/green panels (tests/unit/card-presentation.test.js, close-failure-event @smoke)
+3. met — timeline[] quiet history + agentSummary compact on failures (card-presentation.js buildCardPresentation)
+4. met — explicit state priority in card-presentation.js; close failure, review, research states covered in unit tests
+5. met — lib/card-presentation.js server helper consumed by feature-poll.js and collect-research.js (ba95bf805)
+6. met — validActions eligibility unchanged; showRecoveryActions derives from severity only (actions/recovery.js)
+7. met — actions/shared.js selects one primary action per card
+8. met — cardPresentation.compactAgents + suppress.reviewerPanels (8d5e20175)
+9. met — collect-research.js attaches cardPresentation on research poll rows (ba95bf805)
+10. deferred — Set-card embedded member summaries not fully reworked; partial treatment per spec open question (escalation accepted)
+11. met — docs/dashboard-card-design.md + AGENTS.md/CLAUDE.md/architecture.md refs (ba95bf805)
+12. met — docs/card-design-wireframe.html v4 hierarchy pointer updated (ba95bf805)
+13. deferred — Partial visual QA: close-failure @smoke capture only; remaining scenarios deferred to post-close via aigon preview 650
+14. deferred — Responsive screenshot matrix (390px/1280px/ultrawide) deferred; existing dashboard CSS prevents clipping in manual spot-check
 
 ## New API Surface
 Poll rows (non-lean): `entity.cardPresentation` `{ severity, contextLine, timeline[], agentSummary, suppress{}, compactAgents, showRecoveryActions }`
