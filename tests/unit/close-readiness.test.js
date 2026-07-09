@@ -44,7 +44,7 @@ test('F656-shaped row: open escalation blocks ready and autonomous handoff headl
     };
     const readiness = buildCloseReadiness(entity, snapshot, { stage: 'in-progress' });
     assert.strictEqual(readiness.ready, false);
-    assert.strictEqual(readiness.primaryBlocker.kind, 'autonomous-stopped');
+    assert.strictEqual(readiness.primaryBlocker.kind, 'open-escalation');
     const headline = computeCardHeadline(
         { ...entity, closeReadiness: readiness },
         snapshot,
