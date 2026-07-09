@@ -3,6 +3,7 @@ Agent: cx
 
 ## Status
 
+Implementation complete. `test:core` passed (2026-07-10). Feature is `ready` — eligible for close.
 ## Criteria Attestation
 
 ## New API Surface
