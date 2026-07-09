@@ -161,4 +161,23 @@ test('quota polling defaults to 30 minutes and allows that interval at runtime',
     assert.ok(pollerSrc.includes('60 * 60 * 1000'), 'runtime clamp should allow the 30-minute default');
 });
 
+test('op probe targets skip OpenRouter vendors covered by cc/cx/ag', () => {
+    const cfg = probeAgent.loadAgent('op');
+    const targets = probeAgent.resolveTargets(cfg, { allModels: true });
+    assert.ok(!targets.some(t => probeAgent.isCoveredByDedicatedAgent(t.value)), 'covered vendors excluded');
+    assert.ok(targets.some(t => (t.value || '').includes('deepseek')), 'non-covered vendors remain');
+    assert.strictEqual(probeAgent.resolveTargets(cfg, {
+        explicitModel: 'openrouter/google/gemini-3.5-flash',
+    }).length, 0);
+});
+
+test('op probe env disables OpenCode title agent (no Gemini side-call)', () => {
+    const cfg = probeAgent.loadAgent('op');
+    const env = probeAgent.probeProcessEnv(cfg);
+    assert.ok(env.OPENCODE_CONFIG_CONTENT, 'inline opencode config set');
+    const parsed = JSON.parse(env.OPENCODE_CONFIG_CONTENT);
+    assert.strictEqual(parsed.agent.title.disable, true);
+    assert.strictEqual(probeAgent.probeProcessEnv(probeAgent.loadAgent('cc')), process.env);
+});
+
 report();

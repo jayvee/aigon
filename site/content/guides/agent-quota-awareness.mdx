@@ -44,6 +44,8 @@ Aigon keeps **one unified cache** at **`.aigon/state/agent-quota.json`** in the 
 
 The dashboard reads **`GET /api/agent-quota`** — a single request for the Agent Quota Usage panel and start-flow warnings. One background poller refreshes all phases on the same schedule (default every 30 minutes). Use **↻** on the panel or `aigon agent-quota refresh` for a manual pass; `aigon agent-quota refresh --force` bypasses the five-minute rate limit.
 
+**OpenCode / OpenRouter cost note:** automatic quota polling **does not** run paid `opencode run` probes for the `op` agent — OpenRouter wallet balance is checked via the free HTTP API instead. Manual `aigon agent-probe op --all` still bills per model; avoid it unless you are deliberately validating routing. OpenRouter models whose vendor is already covered by a dedicated agent (`google` → Antigravity, `anthropic` → Claude Code, `openai` → Codex) are excluded from the probe list. Health probes also disable OpenCode's hidden `title` agent so a PONG check does not side-call Gemini. Set `quota.probeAllModelsOnRefresh: true` in `~/.aigon/config.json` only if you want dashboard refresh to probe every model for every agent (expensive for OpenRouter).
+
 Legacy **`GET /api/budget`** and **`GET /api/quota`** still project slices from the unified file for one release. After upgrading, run **`aigon doctor --fix`** to migrate older `budget-cache.json` and `quota.json` into `agent-quota.json`.
 
 ## See also

@@ -21,10 +21,33 @@
 const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const AGENTS_DIR = path.join(__dirname, '..', 'templates', 'agents');
 const TIMEOUT_MS = 45_000;
 const PROBE_PROMPT = 'Reply with exactly the word PONG and nothing else. No explanation, no punctuation, no markdown.';
+
+// OpenRouter vendor slugs already owned by a dedicated Aigon agent CLI (cc/cx/ag).
+// Probing them via opencode is redundant and may bill a second provider path.
+const COVERED_OPENROUTER_SLUGS = new Set(['anthropic', 'openai', 'google']);
+
+function openRouterVendorSlug(modelValue) {
+    const match = String(modelValue || '').match(/^openrouter\/([^/]+)/);
+    return match ? match[1] : null;
+}
+
+function isCoveredByDedicatedAgent(modelValue) {
+    const slug = openRouterVendorSlug(modelValue);
+    return Boolean(slug && COVERED_OPENROUTER_SLUGS.has(slug));
+}
+
+function probeProcessEnv(agentConfig) {
+    if (!agentConfig || agentConfig.id !== 'op') return process.env;
+    // OpenCode's hidden `title` agent calls small_model (often Gemini via OpenRouter)
+    // on every `opencode run` — disable it for health probes only.
+    const inline = JSON.stringify({ agent: { title: { disable: true } } });
+    return { ...process.env, OPENCODE_CONFIG_CONTENT: inline };
+}
 
 // Agents that support headless invocation and how to call them.
 // Returns [binary, args] or null if the agent can't be probed headlessly.
@@ -36,11 +59,15 @@ function buildCmd(agentConfig, modelValue) {
     switch (id) {
         case 'cc':
             return ['claude', ['-p', PROBE_PROMPT, ...modelArgs]];
-        case 'op':
-            // opencode uses -m not --model
+        case 'op': {
+            // OpenCode loads project rules/context from cwd — use an empty dir so a
+            // PONG probe stays ~10 tokens instead of 30k+ OpenRouter credits.
+            const probeDir = process.env.AIGON_PROBE_DIR || os.tmpdir();
+            const dirArgs = ['--dir', probeDir];
             return modelValue
-                ? ['opencode', ['run', '-m', modelValue, PROBE_PROMPT]]
-                : ['opencode', ['run', PROBE_PROMPT]];
+                ? ['opencode', ['run', ...dirArgs, '-m', modelValue, PROBE_PROMPT]]
+                : ['opencode', ['run', ...dirArgs, PROBE_PROMPT]];
+        }
         case 'ag':
             // ag (Antigravity) is never probed. Even headless `agy -p` opens a
             // Google/Antigravity sign-in tab in the browser when there is no valid
@@ -149,7 +176,7 @@ function runProbe(agentConfig, modelValue, modelLabel) {
         timeout: TIMEOUT_MS,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: process.env,
+        env: probeProcessEnv(agentConfig),
     });
     return normalizeProbeResult({
         elapsed: Date.now() - start,
@@ -194,7 +221,7 @@ function runProbeAsync(agentConfig, modelValue, modelLabel) {
         try {
             child = spawn(bin, args, {
                 stdio: ['ignore', 'pipe', 'pipe'],
-                env: process.env,
+                env: probeProcessEnv(agentConfig),
             });
         } catch (error) {
             finish({ error, status: null });
@@ -237,12 +264,19 @@ function fmtResult(status, result) {
 
 function resolveTargets(config, { explicitModel = null, allModels = false } = {}) {
     const allOpts = getModelOptions(config);
-    if (explicitModel) return [{ value: explicitModel, label: explicitModel }];
+    if (explicitModel) {
+        if (config.id === 'op' && isCoveredByDedicatedAgent(explicitModel)) return [];
+        return [{ value: explicitModel, label: explicitModel }];
+    }
     if (allModels) {
-        const targets = allOpts.filter(o => !isQuarantined(o));
+        let targets = allOpts.filter(o => !isQuarantined(o));
+        if (config.id === 'op') {
+            targets = targets.filter(o => !o.value || !isCoveredByDedicatedAgent(o.value));
+        }
         return targets.length === 0 ? [{ value: null, label: '(agent default)' }] : targets;
     }
-    const first = allOpts.find(o => !isQuarantined(o) && o.value !== null);
+    const first = allOpts.find(o => !isQuarantined(o) && o.value !== null
+        && !(config.id === 'op' && isCoveredByDedicatedAgent(o.value)));
     return [first || { value: null, label: '(agent default)' }];
 }
 
@@ -259,6 +293,10 @@ function main(argv = process.argv.slice(2)) {
     const explicitModel = modelArgIdx >= 0 ? argv[modelArgIdx + 1] : null;
     const positional = argv.find(a => !a.startsWith('-') && argv[argv.indexOf(a) - 1] !== '--model');
     const targetAgentId = positional || null;
+    if (allModelsFlag && (targetAgentId === 'op' || (!targetAgentId && !allAgentsFlag))) {
+        console.error('⚠️  OpenCode probes bill OpenRouter per model (context + multi-provider routing).');
+        console.error('   Prefer: aigon agent-quota refresh (free HTTP balance check) or agent-probe op --model <one>.');
+    }
     const agentIds = allAgentsFlag
         ? listAllAgentIds()
         : targetAgentId
@@ -303,11 +341,15 @@ module.exports = {
     listAllAgentIds,
     getModelOptions,
     isQuarantined,
+    isCoveredByDedicatedAgent,
+    openRouterVendorSlug,
+    probeProcessEnv,
     runProbe,
     runProbeAsync,
     resolveTargets,
     fmtMs,
     main,
+    COVERED_OPENROUTER_SLUGS,
 };
 
 if (require.main === module) {

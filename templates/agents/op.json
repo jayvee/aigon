@@ -20,6 +20,7 @@
     "command": "opencode providers list",
     "loginHint": "Configure a provider with opencode"
   },
+  "skipQuotaProbe": true,
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
