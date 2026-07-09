@@ -3,12 +3,24 @@
 
 // REGRESSION F234: dashboard-invoked feature-close defers restart (writes marker, not call).
 // F428: runDashboardInteractiveAction is async (spawn, not spawnSync).
+// F652: marker path normalization, stderr-422 consumption, poll backstop.
 
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { EventEmitter } = require('events');
 const childProcess = require('child_process');
 const { test, testAsync, report } = require('../_helpers');
-const { restartServerIfLibChanged } = require('../../lib/feature-close');
+const {
+    restartServerIfLibChanged,
+    writeRestartMarkerFile,
+    consumeRestartMarkerFromCandidates,
+    peekRestartMarker,
+    isRestartMarkerStale,
+    RESTART_MARKER_TTL_MS,
+} = require('../../lib/feature-close');
+const { createRestartBackstop } = require('../../lib/dashboard-restart-backstop');
 
 function makeDeps(diff, opts = {}) {
     const calls = { n: 0, marker: null };
@@ -51,6 +63,78 @@ test('dashboard-invoked (F234): never calls restartServer, records marker with f
     } finally {
         if (prevEnv === undefined) delete process.env.AIGON_INVOKED_BY_DASHBOARD;
         else process.env.AIGON_INVOKED_BY_DASHBOARD = prevEnv;
+    }
+});
+
+test('REGRESSION F652: marker round-trip via alternate resolved repo path', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-marker-'));
+    const repo = path.join(tmp, 'repo');
+    fs.mkdirSync(path.join(repo, '.aigon', 'server'), { recursive: true });
+    const marker = { reason: 'lib-changed', files: ['lib/x.js'], at: new Date().toISOString() };
+    writeRestartMarkerFile(repo, marker);
+    const real = fs.realpathSync.native(repo);
+    const consumed = consumeRestartMarkerFromCandidates([path.join(tmp, 'repo'), real]);
+    assert.ok(consumed && consumed.marker && consumed.marker.reason === 'lib-changed');
+    assert.strictEqual(peekRestartMarker(real), null, 'marker consumed');
+});
+
+test('REGRESSION F652: diff failure and missing server log actionable warnings', () => {
+    const warnings = [];
+    delete process.env.AIGON_INVOKED_BY_DASHBOARD;
+    restartServerIfLibChanged({ preMergeBaseRef: 'main' }, {
+        getChangedLibFiles: () => { throw new Error('git diff failed'); },
+        getServerRegistryEntry: () => ({ pid: 1 }),
+        isProcessAlive: () => true,
+        loadProjectConfig: () => ({}),
+        restartServer: () => {},
+        writeRestartMarker: () => {},
+        log: () => {},
+        warn: (m) => warnings.push(m),
+    });
+    assert.ok(warnings.some((w) => /diff/i.test(w) && /manually/i.test(w)));
+
+    warnings.length = 0;
+    restartServerIfLibChanged({ preMergeBaseRef: 'main' }, {
+        getChangedLibFiles: () => ['lib/a.js'],
+        getServerRegistryEntry: () => null,
+        isProcessAlive: () => true,
+        loadProjectConfig: () => ({}),
+        restartServer: () => {},
+        writeRestartMarker: () => {},
+        log: () => {},
+        warn: (m) => warnings.push(m),
+    });
+    assert.ok(warnings.some((w) => /no live aigon server/i.test(w)));
+});
+
+test('REGRESSION F652: stale restart marker detected by TTL helper', () => {
+    const fresh = { at: new Date().toISOString() };
+    const stale = { at: new Date(Date.now() - RESTART_MARKER_TTL_MS - 1000).toISOString() };
+    assert.strictEqual(isRestartMarkerStale(fresh), false);
+    assert.strictEqual(isRestartMarkerStale(stale), true);
+});
+
+test('REGRESSION F652: poll backstop consumes marker without /api/action', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-backstop-'));
+    writeRestartMarkerFile(tmp, { reason: 'lib-changed', files: ['lib/y.js'], at: new Date().toISOString() });
+    let broadcasted = false;
+    const backstop = createRestartBackstop({
+        getRegisteredRepos: () => [tmp],
+        getServerCwd: () => tmp,
+        hasInflightActions: () => false,
+        broadcastServerRestarting: () => { broadcasted = true; },
+        log: () => {},
+        warn: () => {},
+        cliEntryPath: '/fake/aigon-cli.js',
+    });
+    const origExit = process.exit;
+    process.exit = () => {};
+    try {
+        backstop.tick();
+        assert.ok(broadcasted, 'SSE broadcast before restart');
+        assert.strictEqual(peekRestartMarker(tmp), null, 'marker consumed');
+    } finally {
+        process.exit = origExit;
     }
 });
 
