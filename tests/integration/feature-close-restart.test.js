@@ -127,7 +127,10 @@ test('REGRESSION F652: poll backstop consumes marker without /api/action', () =>
         log: () => {},
         warn: () => {},
         cliEntryPath: '/fake/aigon-cli.js',
-        scheduleSelfRestart: () => { restarted = true; },
+        scheduleSelfRestart: (options) => {
+            if (options && typeof options.broadcast === 'function') options.broadcast();
+            restarted = true;
+        },
     });
     backstop.tick();
     assert.ok(broadcasted, 'SSE broadcast before restart');

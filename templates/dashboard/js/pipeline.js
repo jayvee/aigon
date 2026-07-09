@@ -3,7 +3,7 @@
 import { AIGON_SET_CARDS } from './set-cards.js';
 import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
-import { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal } from './actions.js';
+import { handleFeatureAction, handleSetAction, renderActionButtons, resolveCloseWithAgent, shouldShowCloseWithAgent, showNudgeModal } from './actions.js';
 import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestRefresh, requestSpecReconcile } from './api.js';
 import { applyView } from './view-registry.js';
 import { agents, defaultAgent } from './injected.js';
@@ -1408,10 +1408,11 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       card.querySelectorAll('.kcard-close-resolve-btn').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
+          if (!shouldShowCloseWithAgent(feature)) return;
           const info = getCloseFailure(String(feature.id));
-          if (!info) return;
-          clearCloseFailure(String(feature.id));
-          await handleCloseWithAgent(feature.id, info.agentId, info.repoPath, btn);
+          if (info) clearCloseFailure(String(feature.id));
+          const resolved = resolveCloseWithAgent(feature, info, repoPath);
+          await handleCloseWithAgent(feature.id, resolved.agentId, resolved.repoPath, btn);
         };
       });
 

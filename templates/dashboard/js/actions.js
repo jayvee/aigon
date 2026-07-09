@@ -5,6 +5,7 @@ import { showAgentPicker } from './sidebar.js';
 import { requestAction, requestFeatureOpen, requestRefresh, requestSpecReviewLaunch } from './api.js';
 import { budgetWarningForAgents, fetchBudget } from './budget-widget.js';
 import { hasCloseFailure } from './store.js';
+import { defaultAgent } from './injected.js';
 import { escHtml, formatFeatureIdForDisplay, showToast } from './utils.js';
 // ── F519: actions.js compatibility shell ─────────────────────────────────────
 // Card-level button rendering + lazy-loaded action modules. Picker/triplet
@@ -126,6 +127,26 @@ async function dispatchActionModule(moduleName, ctx) {
       if (el.id && el.id.endsWith('-modal') && !el.hasAttribute('data-hidden')) return;
     });
   }
+}
+
+function shouldShowCloseWithAgent(feature) {
+  if (!feature || feature.id == null) return false;
+  if (hasCloseFailure(String(feature.id))) return true;
+  if (feature.currentSpecState === 'close_recovery_in_progress') return true;
+  const lcf = feature.lastCloseFailure;
+  return Boolean(lcf && lcf.kind);
+}
+
+function resolveCloseWithAgent(feature, storedInfo, repoPath) {
+  if (storedInfo && storedInfo.agentId) {
+    return { agentId: storedInfo.agentId, repoPath: storedInfo.repoPath || repoPath };
+  }
+  const agents = feature.agents || [];
+  const impl = agents.find(a => a && a.id && a.id !== 'solo');
+  return {
+    agentId: (impl && impl.id) || defaultAgent || 'cc',
+    repoPath,
+  };
 }
 
 function renderActionButtons(feature, repoPath, pipelineType) {
@@ -251,7 +272,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   primary.forEach(va => { html += renderBtn(va, 'btn btn-primary'); });
   secondary.forEach(va => { html += renderBtn(va, 'btn btn-secondary'); });
 
-  if (hasCloseFailure(String(feature.id))) {
+  if (shouldShowCloseWithAgent(feature)) {
     html += '<button class="btn btn-secondary kcard-close-resolve-btn">Close with agent</button>';
   }
 
@@ -393,4 +414,4 @@ function showNudgeModal(feature, repoPath, btn, entityType) {
 }
 
 // ── ESM exports (F623) ──
-export { handleFeatureAction, handleSetAction, renderActionButtons, showNudgeModal };
+export { handleFeatureAction, handleSetAction, renderActionButtons, resolveCloseWithAgent, shouldShowCloseWithAgent, showNudgeModal };

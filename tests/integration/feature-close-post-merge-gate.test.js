@@ -17,6 +17,7 @@ const {
     recordPostMergeGateFailure,
     isPostMergeGateRetry,
 } = require('../../lib/feature-close');
+const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
     'docs/specs/features/logs',
@@ -92,6 +93,23 @@ testAsync('recordPostMergeGateFailure: events + snapshot recovery state', () => 
     assert.strictEqual(snap.lastCloseFailure.kind, 'post-merge-gate');
     assert.strictEqual(snap.lastCloseFailure.stderrTail, 'gate failed tail');
     assert.ok(isPostMergeGateRetry(snap));
+}));
+
+testAsync('REGRESSION: post-merge-gate failure swaps Close for Close with agent', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '02', 'post-merge-gate-actions');
+    await recordPostMergeGateFailure(repo, '02', {
+        gateCommand: 'npm run test:core',
+        exitCode: 1,
+        outputTail: 'test failed',
+        returnSpecState: 'ready',
+    });
+    const snap = await wf.showFeature(repo, '02');
+    const actions = snapshotToDashboardActions('feature', '02', snap, 'in-progress');
+    const agentClose = actions.validActions.find(a => a.action === 'feature-resolve-and-close');
+    assert.ok(agentClose, 'should expose feature-resolve-and-close');
+    assert.strictEqual(agentClose.label, 'Close with agent');
+    assert.ok(!actions.validActions.some(a => a.action === 'feature-close'),
+        'plain feature-close must be swapped out');
 }));
 
 testAsync('REGRESSION: two merges — first gate passes, second fails when combined markers exist', () => withTempDirAsync('aigon-pmg-merge-', async (root) => {
