@@ -16,10 +16,14 @@
   "installHint": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "installCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "authCheck": {
-    "method": "command",
-    "command": "agy --dangerously-skip-permissions -p \"Reply with exactly the word PONG and nothing else.\"",
-    "successIndicator": "PONG",
-    "loginHint": "Launch agy and complete Google sign-in in the browser, or set ANTIGRAVITY_TOKEN for CI"
+    "method": "envVar",
+    "envVarNames": [
+      "ANTIGRAVITY_TOKEN",
+      "AGY_TOKEN"
+    ],
+    "configFilePath": "~/.gemini/antigravity-cli/settings.json",
+    "skipDoctorProbe": true,
+    "loginHint": "Launch agy interactively for Google sign-in, or set ANTIGRAVITY_TOKEN for CI (doctor never launches agy)"
   },
   "trust": {
     "type": "json-array",
