@@ -3,6 +3,7 @@ Agent: cu
 
 ## Status
 
+Refactored `buildAutonomousStagePlan` to a linear progress-index model (`computeAutonomousProgressIndex`); added table-driven stage fixtures in workflow-read-model tests.
 ## Criteria Attestation
 
 ## New API Surface
