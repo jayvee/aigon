@@ -87,7 +87,7 @@ testAsync('parseEscalationMarkers: F630 log shape + bold/bullet variants', async
     assert.strictEqual(bold[0].category, 'security');
 });
 
-testAsync('review-complete raises escalation events and blocks close', () => withTempRepo(async (repo) => {
+testAsync('review-complete raises escalation events and is advisory by default', () => withTempRepo(async (repo) => {
     const id = '01';
     writeFeature(repo, id, 'escalation-guard');
     const log = writeLog(repo, id, F630_BODY);
@@ -105,7 +105,13 @@ testAsync('review-complete raises escalation events and blocks close', () => wit
     const expectedId = stableEscalationId(log.rel, snap.openEscalations[0].lineNumber, 'architectural');
     assert.strictEqual(snap.openEscalations[0].escalationId, expectedId);
 
-    const blocked = await runEscalationCloseGuard(repo, id);
+    const advisory = await runEscalationCloseGuard(repo, id);
+    assert.strictEqual(advisory.ok, true);
+    assert.strictEqual(advisory.advisory, true);
+
+    const blocked = await runEscalationCloseGuard(repo, id, {
+        config: { featureClose: { blockingGates: ['review-escalation'] } },
+    });
     assert.strictEqual(blocked.ok, false);
 
     const resync = await syncReviewEscalationsFromLog(repo, id, { reviewerAgentId: 'cx' });
