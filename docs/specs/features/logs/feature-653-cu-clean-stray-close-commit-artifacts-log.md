@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 24
+lines_removed: 113
+lines_changed: 137
+files_touched: 3
+fix_commit_count: 1
+fix_commit_ratio: 0.333
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 653 - clean-stray-close-commit-artifacts
 Agent: cu
 
