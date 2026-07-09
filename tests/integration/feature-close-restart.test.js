@@ -118,6 +118,7 @@ test('REGRESSION F652: poll backstop consumes marker without /api/action', () =>
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-backstop-'));
     writeRestartMarkerFile(tmp, { reason: 'lib-changed', files: ['lib/y.js'], at: new Date().toISOString() });
     let broadcasted = false;
+    let restarted = false;
     const backstop = createRestartBackstop({
         getRegisteredRepos: () => [tmp],
         getServerCwd: () => tmp,
@@ -126,16 +127,12 @@ test('REGRESSION F652: poll backstop consumes marker without /api/action', () =>
         log: () => {},
         warn: () => {},
         cliEntryPath: '/fake/aigon-cli.js',
+        scheduleSelfRestart: () => { restarted = true; },
     });
-    const origExit = process.exit;
-    process.exit = () => {};
-    try {
-        backstop.tick();
-        assert.ok(broadcasted, 'SSE broadcast before restart');
-        assert.strictEqual(peekRestartMarker(tmp), null, 'marker consumed');
-    } finally {
-        process.exit = origExit;
-    }
+    backstop.tick();
+    assert.ok(broadcasted, 'SSE broadcast before restart');
+    assert.ok(restarted, 'self-restart scheduled');
+    assert.strictEqual(peekRestartMarker(tmp), null, 'marker consumed');
 });
 
 testAsync('runDashboardInteractiveAction (F428): async spawn injects restart-deferral env', async () => {
