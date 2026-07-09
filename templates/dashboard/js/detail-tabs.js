@@ -4,7 +4,7 @@ import { handleFeatureAction, renderActionButtons } from './actions.js';
 import { isCompleteStatus } from './utils.js';
 import { drawerState } from './spec-drawer.js';
 import { state } from './state.js';
-import { copyText, escHtml, formatLeaseHolderLabel, formatLeaseRoleLabel, showToast } from './utils.js';
+import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js';
     // ── Detail tabs (spec drawer) ────────────────────────────────────────────
 
     function findEntityInDashboardState(entityType, entityId, repoPath) {
@@ -353,10 +353,9 @@ import { copyText, escHtml, formatLeaseHolderLabel, formatLeaseRoleLabel, showTo
           const heldByMe = localHolderId && lease.holderId === localHolderId;
           const stateLabel = stale ? 'stale' : (heldByMe ? 'this machine' : 'active');
           const stateClass = stale ? 'is-stale' : (heldByMe ? 'is-local' : 'is-remote');
-          const role = formatLeaseRoleLabel(lease.role);
           const expires = lease.expiresAt ? formatIso(lease.expiresAt) : 'n/a';
           return '<div class="drawer-lease-row ' + stateClass + '">' +
-            '<div class="drawer-lease-role">' + escHtml(role) + '</div>' +
+            '<div class="drawer-lease-icon" aria-hidden="true">&#128274;</div>' +
             '<div class="drawer-lease-main">' +
               '<div class="drawer-lease-holder" title="' + escHtml(holder) + '">' + escHtml(holder) + '</div>' +
               '<div class="drawer-lease-meta">until ' + escHtml(expires) + '</div>' +
@@ -364,9 +363,9 @@ import { copyText, escHtml, formatLeaseHolderLabel, formatLeaseRoleLabel, showTo
             '<div class="drawer-lease-state">' + escHtml(stateLabel) + '</div>' +
           '</div>';
         }).join('');
-        const heading = leases.length === 1 ? 'Active coordination lock' : 'Active coordination locks';
+        const heading = leases.length === 1 ? 'Active lock' : 'Active locks';
         return '<div class="deep-status-section drawer-lease-section">' +
-          '<h4 class="deep-status-heading">Coordination</h4>' +
+          '<h4 class="deep-status-heading">Lock</h4>' +
           '<div class="drawer-lease-title">' + escHtml(heading) + '</div>' +
           '<div class="drawer-lease-list">' + rows + '</div>' +
         '</div>';

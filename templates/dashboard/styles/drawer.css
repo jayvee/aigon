@@ -118,7 +118,7 @@
     .drawer-lease-row.is-local{border-color:rgba(52,211,153,.28);background:rgba(52,211,153,.06)}
     .drawer-lease-row.is-remote{border-color:rgba(251,191,36,.28);background:rgba(251,191,36,.055)}
     .drawer-lease-row.is-stale{border-color:rgba(148,163,184,.28);background:rgba(148,163,184,.055)}
-    .drawer-lease-role{font-size:11px;font-weight:700;color:var(--text-secondary);white-space:nowrap}
+    .drawer-lease-icon{font-size:13px;line-height:1;color:var(--text-secondary)}
     .drawer-lease-main{min-width:0}
     .drawer-lease-holder{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700;color:var(--text-primary)}
     .drawer-lease-meta{margin-top:2px;font-family:var(--mono);font-size:10px;color:var(--text-tertiary)}
