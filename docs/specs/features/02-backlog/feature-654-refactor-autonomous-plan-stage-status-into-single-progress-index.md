@@ -1,5 +1,7 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-09T00:47:17.028Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: refactor autonomous plan stage status into single progress index
