@@ -25,6 +25,14 @@ Refactored `buildAutonomousStagePlan` to a linear progress-index model (`compute
 
 ## Criteria Attestation
 
+1. met — `computeAutonomousProgressIndex` returns `{ progressIndex, currentStatus }` with index in `[0, stages.length]` and status `running` / `failed` / `waiting` / `complete`.
+2. met — `buildAutonomousStagePlan` maps stages with `index < progressIndex → complete`, `=== → currentStatus`, `> → waiting`.
+3. met — Approved-review skip advances past revision; skipped stage renders `complete` (F524 regression + table-driven "approved review" fixture).
+4. met — `pastAutonomousStage` / `isAutonomousStageRunning` collapse per-boundary predicates; ad-hoc per-stage branches removed.
+5. met — `node tests/integration/workflow-read-model.test.js` — 30 passed, including F524 approved-review revision=complete.
+6. met — Table-driven fixtures cover running implement/review, approved review, requested revision, running revision, running eval, eval complete, close running, close complete.
+7. met — `lib/card-headline.js` unchanged; `node tests/unit/card-headline.test.js` — 26 passed.
+
 ## New API Surface
 
 ## Key Decisions
