@@ -5,13 +5,12 @@ Agent: cu
 Complete. Server poll-loop backstop consumes `.aigon/server/restart-needed.json`, shared detached restart helper, path-normalized marker I/O, and actionable `restartServerIfLibChanged` warnings.
 
 ## Criteria Attestation
-- Root cause (a) F628: dashboard `feature-close` sets `AIGON_INVOKED_BY_DASHBOARD=1` → `restartServerIfLibChanged` **by design** writes a marker instead of calling `restartServer()` (F234 EPIPE guard). Not a regression in close itself.
-- Root cause (b) F622 marker orphan: `/api/action` consumed the marker **after** a stderr `❌` early-return (exit 0 but warning text tripped the 422 path), so restart never scheduled. Hypothesis confirmed in code review; fix moves consumption before that check and still schedules restart on 422 when a marker exists. `consumeRestartMarkerFromCandidates` also normalizes paths via `realpathSync.native`.
-- Reproducer tests added in `tests/integration/feature-close-restart.test.js` (path round-trip, logging, TTL, backstop tick) before/alongside fixes.
-- Self-heal backstop: `lib/dashboard-restart-backstop.js` ticked from `afterPollSideEffects` in `lib/dashboard-server.js`; broadcasts `server-restarting` SSE then uses `lib/dashboard-self-restart.js`.
-- Stale markers: `RESTART_MARKER_TTL_MS` (10 min); backstop warns and forces restart when TTL exceeded; corrupt markers cleared with warning.
-- `restartServerIfLibChanged` now warns on diff failure and missing registry entry (restart errors were already warned).
-- F234 preserved: dashboard subprocess still writes marker only; direct `restartServer()` only from terminal context.
+1. met — log §Status documents root causes (a) F234 marker-by-design on dashboard close; (b) stderr ❌ 422 path skipped marker consumption before fix
+2. met — tests/integration/feature-close-restart.test.js REGRESSION F652 cases (path, logging, TTL, backstop) added with fix
+3. met — lib/dashboard-restart-backstop.js tick from afterPollSideEffects; SSE server-restarting + scheduleDashboardSelfRestart
+4. met — RESTART_MARKER_TTL_MS 10min; isRestartMarkerStale + backstop warn/force; corrupt markers cleared
+5. met — restartServerIfLibChanged warns on diff failure and missing registry; restart errors already warned
+6. met — AIGON_INVOKED_BY_DASHBOARD branch unchanged; terminal close still calls restartServer directly
 
 ## New API Surface
 - `lib/dashboard-self-restart.js`: `scheduleDashboardSelfRestart`
