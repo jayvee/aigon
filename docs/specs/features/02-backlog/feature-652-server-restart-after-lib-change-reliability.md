@@ -1,18 +1,20 @@
 ---
 complexity: medium
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-09T00:47:16.530Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: server-restart-after-lib-change-reliability
 
 ## Summary
-The feature-close "restart server if lib/*.js changed" safety net (F228/F234) is not firing reliably, leaving the dashboard daemon running stale pre-merge code. During the dash-arch set (2026-07-08) this escalated from invisible to user-breaking: F628 merged at 09:22 (deleted `templates/dashboard/styles.css`, added the `/styles.css` concat route to `lib/dashboard-server.js`), but the running server (started 08:31) was never restarted — it served the **new** `index.html` from disk with its **old** in-memory routes, so `/styles.css` returned 404 and the dashboard rendered completely unstyled until a manual `aigon server restart` ~30 minutes later. Separately, an unconsumed `.aigon/server/restart-needed.json` marker from F622's close (written 2026-07-07T13:57Z, listing `lib/dashboard-routes/{events,system,version-status}.js`) was found still on disk — the dashboard action route never consumed it despite the dashboard being open since. This feature diagnoses why both paths failed and makes the server self-heal.
+The feature-close "restart server if lib/*.js changed" safety net (F228/F234) is still too fragile. The terminal path can restart directly, and the dashboard action path can consume `.aigon/server/restart-needed.json`, but marker consumption still depends on a successful action response and `restartServerIfLibChanged` still skips several failure modes silently. During the dash-arch set (2026-07-08), this left the dashboard serving new files with old in-memory routes, causing `/styles.css` to 404 until a manual restart. This feature adds a server-side self-heal backstop and makes restart failures observable.
 
 ## User Stories
 - [ ] As an operator, after any feature-close that merged `lib/*.js` changes, the running dashboard server picks up the new code without me remembering to restart it.
 - [ ] As an operator, I never see the dashboard serve broken output (404 styles, missing routes) because the daemon's in-memory code diverged from what's on disk in the main checkout.
 
 ## Acceptance Criteria
-- [ ] Root cause documented in the implementation log for BOTH observed failures: (a) why F628's close did not call `restartServer()` (it changed `lib/dashboard-server.js` and added `lib/dashboard-styles.js`, and a live registered server existed); (b) why the F622 marker was written but never consumed by `lib/dashboard-routes/system.js` action handler (`consumeRestartMarker(result.repoPath || dedupeRepoPath)` — suspect repoPath mismatch, e.g. worktree path vs main checkout path, or `/private/var` vs `/var` normalisation).
+- [ ] Root cause documented in the implementation log for BOTH observed failures: (a) why F628's close did not call `restartServer()` (or why the marker path was chosen instead); (b) why the F622 marker was written but never consumed by `lib/dashboard-routes/system.js` action handler (`consumeRestartMarker(result.repoPath || dedupeRepoPath)` — suspect repoPath mismatch, e.g. worktree path vs main checkout path, or `/private/var` vs `/var` normalisation).
 - [ ] A reproducer test exists for each root cause before the fix is written (per prove-before-fixing discipline); hypothesis-driven fixes are labelled as such in the log.
 - [ ] Self-heal backstop: the server detects a pending restart marker (or lib-code staleness) via a path that does NOT depend on a dashboard action round-trip — e.g. consume the marker in the poll loop / fs-watch tick (`.aigon/state` sibling `.aigon/server/` is cheap to check) and schedule the same graceful self-restart used by the action route, including the F622 `server-restarting` SSE broadcast so open tabs show the restart banner.
 - [ ] Stale markers cannot sit unconsumed: a marker older than a bounded TTL is either acted on or logged + cleared with a warning, never silently ignored forever.
@@ -21,6 +23,10 @@ The feature-close "restart server if lib/*.js changed" safety net (F228/F234) is
 
 ## Validation
 ```bash
+node --check lib/feature-close.js
+node --check lib/dashboard-server.js
+node --check lib/dashboard-routes/system.js
+npm run test:core
 ```
 
 ## Technical Approach
