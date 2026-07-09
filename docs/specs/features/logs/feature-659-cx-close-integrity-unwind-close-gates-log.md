@@ -1,3 +1,26 @@
+---
+commit_count: 9
+lines_added: 813
+lines_removed: 1053
+lines_changed: 1866
+files_touched: 41
+fix_commit_count: 2
+fix_commit_ratio: 0.222
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 11443604
+output_tokens: 25673
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 11228032
+thinking_tokens: 2792
+total_tokens: 11469277
+billable_tokens: 11472069
+cost_usd: 25.3382
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 659 - close-integrity-unwind-close-gates
 Agent: cx
 
