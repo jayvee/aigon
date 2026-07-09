@@ -564,6 +564,10 @@ Rules that follow from this design:
 - CSS lives in `templates/dashboard/styles/*.css`, concatenated in `styles/manifest.json` order by `lib/dashboard-styles.js` at `/styles.css`. **A new sheet must be added to the manifest** — unlisted files are not served; listed-but-missing files throw.
 - All third-party JS is vendored under `js/vendor/` (Alpine, marked, Chart.js + date-fns adapter, xterm) with licenses and pinned versions in `js/vendor/VERSIONS.md`. Do not add CDN `<script>` tags.
 
+### Card state hierarchy (F650)
+
+Feature/research cards use a server-owned presentation model (`lib/card-presentation.js` → `entity.cardPresentation` on poll rows) layered on `lib/card-headline.js`. The model supplies timeline items, a single context line, suppression flags for duplicate legacy panels, compact agent summary on failures, and `showRecoveryActions` for the action row. Rules and examples: **`docs/dashboard-card-design.md`**; visual reference: **`docs/card-design-wireframe.html`**. Client HTML: `templates/dashboard/js/card-presentation.js` (shared by pipeline + monitor).
+
 ### Known deferred debt (from the dash-arch logs)
 
 - F623 waves 2–3: real `import`s replacing `globalThis` shims, breaking the `state↔api↔init` cycles, deleting the eslint `dashboardAppGlobals` allowlist and `typeof fn === 'function'` guards.

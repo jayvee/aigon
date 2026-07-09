@@ -90,9 +90,11 @@ test.describe('Close failure event dashboard rendering @smoke', () => {
         // Should NOT have a plain "feature-close" action button
         const closeBtn = card.locator('.kcard-va-btn[data-va-action="feature-close"]');
         await expect(closeBtn).toHaveCount(0);
-        // Should render inline failure info with the conflict file
-        const failureInfo = card.locator('.kcard-close-failure');
-        await expect(failureInfo).toBeVisible({ timeout: 3000 });
-        await expect(failureInfo).toContainText('lib/commands/setup.js');
+        // F650: one dominant failure headline — conflict detail in context, not a second red panel
+        const headline = card.locator('.kcard-headline');
+        await expect(headline).toBeVisible({ timeout: 3000 });
+        await expect(headline).toContainText('Close failed');
+        await expect(card.locator('.kcard-headline-context, .kcard-headline-detail')).toContainText('lib/commands/setup.js');
+        await expect(card.locator('.kcard-close-failure')).toHaveCount(0);
     });
 });

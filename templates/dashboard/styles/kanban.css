@@ -270,6 +270,20 @@
     .kcard-close-failure{display:flex;align-items:flex-start;gap:5px;padding:4px 8px;margin-top:5px;background:rgba(251,113,133,.05);border:1px solid rgba(251,113,133,.2);border-left:3px solid #f87171;border-radius:4px;font-size:10px;font-family:var(--mono);color:#fca5a5;cursor:help}
     .kcard-close-failure-icon{flex-shrink:0}
     .kcard-close-failure-text{word-break:break-word}
+    .kcard-headline-context{color:var(--text-secondary)}
+    .kcard-timeline{margin:4px 0 6px;padding:0 2px 0 4px;font-family:var(--mono);font-size:10px;line-height:1.35}
+    .kcard-timeline.is-quiet .kcard-timeline-item.is-complete{color:var(--text-tertiary)}
+    .kcard-timeline.is-quiet .kcard-timeline-item.is-complete .kcard-timeline-icon{color:#6ee7b7;opacity:.55}
+    .kcard-timeline-heading{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);margin:0 0 3px 2px}
+    .kcard-timeline-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+    .kcard-timeline-item{display:flex;align-items:flex-start;gap:5px;color:var(--text-secondary)}
+    .kcard-timeline-item.is-failed{color:#fca5a5;font-weight:600}
+    .kcard-timeline-item.is-complete .kcard-timeline-icon{color:#6ee7b7}
+    .kcard-timeline-item.is-failed .kcard-timeline-icon{color:#f87171}
+    .kcard-timeline-icon{width:10px;flex-shrink:0;text-align:center}
+    .kcard-timeline-detail{color:var(--text-tertiary);font-weight:400}
+    .kcard-agent-summary{margin:2px 0 6px;padding:0 4px;font-size:10px;font-family:var(--mono);color:var(--text-tertiary);line-height:1.35}
+    .kcard-agent-summary-label{font-weight:600;color:var(--text-secondary);margin-right:4px}
     .kcard-spec-review-pending{display:flex;flex-direction:column;gap:5px;padding:6px 8px;margin-top:5px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.22);border-left:3px solid #fbbf24;border-radius:4px;font-size:10px}
     .kcard-spec-review-pending-title{font-weight:600;color:#fcd34d;font-family:var(--mono)}
     .kcard-spec-review-pending-detail{color:var(--text-muted);font-family:var(--mono);line-height:1.35}
