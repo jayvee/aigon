@@ -122,7 +122,7 @@ import { state } from './state.js';
       const title = open.map(function (entry, index) {
         return (index + 1) + '. [' + (entry.category || 'escalation') + '] ' + (entry.reason || '');
       }).join('\n');
-      return '<span class="kcard-escalation-badge" title="' + escHtml(title) + '">⚠ ' + count + ' escalation' + (count === 1 ? '' : 's') + '</span>';
+      return '<span class="kcard-escalation-badge" title="' + escHtml(title) + '">⚠ ' + count + ' escalation' + (count === 1 ? '' : 's') + ' blocking close</span>';
     }
 
     function buildStateRenderBadgeHtml(item) {

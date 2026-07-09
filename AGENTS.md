@@ -229,7 +229,7 @@ A new lifecycle state is a coordinated change across the engine, projector, mach
 12. Docs — `docs/architecture.md` lifecycle table and any module map line; `CHANGELOG.md`; this `AGENTS.md` "State Architecture" section if behaviour shifts.
 
 ### Dashboard read-only rule
-The dashboard may not mutate engine state directly and may not parse engine-state/spec/log files directly from `dashboard-server.js` or frontend code. File-format ownership stays with read-side owner modules (`state-queries.js`, `workflow-snapshot-adapter.js`, `action-command-mapper.js`, `spec-reconciliation.js`, `agent-status.js`, `feature-spec-resolver.js`, `dashboard-status-collector.js`).
+The dashboard may not mutate engine state directly and may not parse engine-state/spec/log files directly from `dashboard-server.js` or frontend code. File-format ownership stays with read-side owner modules (`state-queries.js`, `workflow-snapshot-adapter.js`, `action-command-mapper.js`, `spec-reconciliation.js`, `agent-status.js`, `feature-spec-resolver.js`, `dashboard-status-collector.js`). **Close authority for feature cards:** `closeReadiness` on each feature row (from `buildCloseReadiness` in the collector) — the frontend gates ready indicators, headline precedence, and primary close actions on that DTO only.
 
 ### Write-Path Contract
 Every write path (CLI command, autonomous-loop injection, hook-triggered transition) must produce the engine state its matching read path assumes exists — snapshot, event, or skill-file-pointer prompt for non-slash-command agents. Writes seed engine state; reads derive from it — never the reverse.

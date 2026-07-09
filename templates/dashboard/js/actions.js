@@ -213,6 +213,10 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   }
 
   const evalPickWinner = feature.evalStatus === 'pick winner' && feature.winnerAgent;
+  const closeBlockerAction = feature.closeReadiness
+    && feature.closeReadiness.applicable
+    && feature.closeReadiness.primaryBlocker
+    && feature.closeReadiness.primaryBlocker.actionKind;
   const primary = [];
   const secondary = [];
   const overflow = [];
@@ -220,6 +224,12 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   deduped.forEach((va) => {
     if (demoteStartForSpecReview && (va.action === 'feature-start' || va.action === 'research-start')) {
       secondary.push(va);
+      return;
+    }
+    if (closeBlockerAction) {
+      if (va.action === closeBlockerAction) { primary.push(va); return; }
+      if (va.priority === 'high') { secondary.push(va); return; }
+      overflow.push(va);
       return;
     }
     if (evalPickWinner) {

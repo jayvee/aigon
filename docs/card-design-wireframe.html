@@ -1165,6 +1165,40 @@ body { font-family: var(--sans); background: var(--bg); color: var(--ink);
 
 </div>
 
+<!-- ═══════════════════════════════════════════════ SECTION K -->
+<div class="sec-title">K · Close readiness blockers</div>
+<div class="ann blue" style="margin-bottom:16px;">
+  Close-ready cards use the server-owned <code>closeReadiness.primaryBlocker</code> as the dominant status.
+  Do not show "Ready to close", autonomous handoff copy, or multiple primary buttons while a blocker exists.
+</div>
+<div class="row">
+
+  <div><div class="lbl">K1 · Review escalation blocks close</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#56</span><span class="ct-name">close readiness</span><span class="ct-cnt">1 escalation blocking close</span><span class="ct-ov">▾</span></div>
+    <div class="cs warn">
+      <div class="cs-l"><span class="si">⚠</span><span class="sl warn">Blocked: review escalation</span></div>
+      <div class="cs-r"><span class="btn p">Acknowledge &amp; proceed</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd red">[architectural] Phase B shortfall</div>
+    <div class="cstages"><span class="st ok">Review approved</span><span class="st-sep">→</span><span class="st">Close waiting</span></div>
+  </div>
+  <div class="note">The escalation disposition is the only primary action. Close moves to overflow until the blocker clears.</div></div>
+
+  <div><div class="lbl">K2 · Close gate failure blocks retry</div>
+  <div class="card wide">
+    <div class="ct"><span class="ct-id">#64</span><span class="ct-name">post merge gate</span><span class="ct-ov">▾</span></div>
+    <div class="cs attn">
+      <div class="cs-l"><span class="si">◐</span><span class="sl attn">Blocked: Post-merge gate</span></div>
+      <div class="cs-r"><span class="btn p">Resolve &amp; close</span><span class="btn q">···</span></div>
+    </div>
+    <div class="cd amber">npm run test:deploy · log: .aigon/state/close-gates/feature-64.log</div>
+    <div class="cstages"><span class="st ok">Review approved</span><span class="st-sep">→</span><span class="st ok">Close attempted</span><span class="st-sep">→</span><span class="st gt">Post-merge gate failed</span></div>
+  </div>
+  <div class="note">The gate name and log path are the context. The close-log panel remains the detailed source of truth.</div></div>
+
+</div>
+
 </div><!-- /page -->
 </body>
 </html>

@@ -50,6 +50,22 @@ Do not stack multiple filled red panels or competing headline states on one card
 5. Ready for next operator action  
 6. Completed / resting  
 
+## Close readiness (F658)
+
+Feature rows carry a server-owned `closeReadiness` DTO from `lib/close-readiness.js` (`buildCloseReadiness`), attached in `lib/dashboard-collect/feature-poll.js`. The dashboard frontend **must not** re-derive close blockers from raw `openEscalations`, `lastCloseFailure`, or autonomous plan handoff labels.
+
+**Shape:** `{ applicable, ready, blockers[], primaryBlocker, phase, closeLogHint }` — each blocker has `{ kind, label, detail, actionKind?, actionCommand? }`.
+
+**Blocker kinds:** `open-escalation`, `criteria-attestation`, `preauth-validation`, `post-merge-gate`, `merge-conflict`, `close-recovery`, `autonomous-stopped`, `eval-pick-winner`, `awaiting-input`, `dependency-blocked`, `close-gate` (unknown failure fallback).
+
+**Headline precedence:** when `closeReadiness.applicable && primaryBlocker`, the headline shows `Blocked: …` **before** autonomous-plan handoff verbs (`Starting close`, etc.). While close is in flight (`phase === 'closing'`), headline is **Closing…**.
+
+**Ready indicator:** `.kcard-ready-indicator` renders only when `closeReadiness.ready === true`. Never when blockers exist.
+
+**Actions:** `primaryBlocker.actionKind` drives the sole primary button via `applyCloseReadinessActionPriority` (server) and `actions.js` (client partition).
+
+Shared sync predicates live in `lib/close-gate-predicates.js` — imported by both `feature-close` enforcement and `buildCloseReadiness`.
+
 ## Examples
 
 **Close failure after review**
