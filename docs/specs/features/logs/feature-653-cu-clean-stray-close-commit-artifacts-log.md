@@ -2,6 +2,7 @@
 Agent: cu
 
 ## Status
+Removed orphaned F545 unit test (`b73d98a5e`) and empty feedback-16 stub; close-commit guard already covered by `tests/unit/close-commit-classify.test.js` + `warnStrayFilesBeforeAutoCommit` in `lib/feature-close.js`.
 
 ## Criteria Attestation
 
