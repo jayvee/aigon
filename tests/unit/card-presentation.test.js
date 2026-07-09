@@ -50,6 +50,7 @@ test('close failure suppresses duplicate panels and builds timeline', () => {
     assert.strictEqual(row.cardPresentation.suppress.readyToClose, true);
     assert.strictEqual(row.cardPresentation.suppress.reviewerPanels, true);
     assert.ok(row.cardPresentation.contextLine.includes('review approval'));
+    assert.ok(row.cardPresentation.timeline.some(t => t.label === 'Implemented' && t.detail === 'by CU'));
     assert.ok(row.cardPresentation.timeline.some(t => t.label === 'Close failed' && t.status === 'failed'));
     assert.ok(row.cardPresentation.showRecoveryActions);
 });
