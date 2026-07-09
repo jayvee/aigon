@@ -8,6 +8,7 @@ const { testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const wf = require('../../lib/workflow-core');
 const { resolveCloseIntegrityPolicy, isCloseFindingBlocking } = require('../../lib/close-integrity-policy');
+const { runPendingMigrations } = require('../../lib/migration');
 
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
@@ -107,6 +108,34 @@ testAsync('old implementation log criteria attestation section is inert prose', 
     const snap = await wf.showFeature(repo, '03');
     assert.strictEqual(snap.lastCriteriaAttestation, null);
     assert.strictEqual(snap.openEscalations.length, 0);
+}));
+
+testAsync('migration 2.74.0 repairs stale criteria-attestation close recovery', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '04');
+    await wf.persistEntityEvents(repo, 'feature', '04', [
+        {
+            type: 'feature.close_gate_failed',
+            featureId: '04',
+            gateKind: 'criteria-attestation',
+            unattested: [1],
+            outputTail: 'legacy attestation failure',
+            at: new Date().toISOString(),
+        },
+        {
+            type: 'feature.close_recovery.started',
+            featureId: '04',
+            source: 'cli',
+            returnSpecState: 'ready',
+            at: new Date().toISOString(),
+        },
+    ]);
+    let snap = await wf.showFeature(repo, '04');
+    assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
+
+    await runPendingMigrations(repo, '2.73.0');
+    snap = await wf.showFeature(repo, '04');
+    assert.strictEqual(snap.currentSpecState, 'ready');
+    assert.strictEqual(snap.lastCloseFailure, null);
 }));
 
 report();

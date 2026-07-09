@@ -7,7 +7,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const { testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const wf = require('../../lib/workflow-core');
@@ -20,7 +20,9 @@ const {
     recordPreauthValidationFailure,
     recordPreauthBypass,
     isPreauthValidationRetry,
+    runPreauthValidationPhase,
 } = require('../../lib/feature-close');
+const { resolveCloseIntegrityPolicy } = require('../../lib/close-integrity-policy');
 
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
@@ -150,6 +152,31 @@ testAsync('extractPreauthFootersFromRange: parses commit trailers', () => withTe
     const footers = extractPreauthFootersFromRange(repo, 'main', 'HEAD');
     assert.strictEqual(footers.length, 1);
     assert.strictEqual(footers[0].slug, 'my-slug');
+}));
+
+testAsync('runPreauthValidationPhase: unmatched footer is advisory by default', () => withTempRepo(async (repo) => {
+    const g = seedGitRepo(repo);
+    const specPath = writeSpec(repo, '06', 'preauth-advisory');
+    await bootstrapFeature(repo, '06', 'preauth-advisory');
+    g(['checkout', '-b', 'feature-06-preauth-advisory']);
+    fs.writeFileSync(path.join(repo, 'lib-demo.js'), 'x\n');
+    g(['add', 'lib-demo.js']);
+    g(['commit', '-m', 'feat: demo', '--trailer', 'Pre-authorised-by: invented-slug']);
+
+    const result = await runPreauthValidationPhase(
+        { repoPath: repo, name: '06', num: '06', specPath, worktreePath: null, branchName: 'HEAD' },
+        {
+            getDefaultBranch: () => 'main',
+            execSync,
+            findFile: () => ({ fullPath: specPath }),
+            PATHS: require('../../lib/constants').PATHS,
+            integrityPolicy: resolveCloseIntegrityPolicy({}),
+        },
+    );
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.advisory, true);
+    const snap = await wf.showFeature(repo, '06');
+    assert.notStrictEqual(snap.currentSpecState, 'close_recovery_in_progress');
 }));
 
 report();

@@ -17,6 +17,21 @@ Agent: cx
 
 ## Test Coverage
 
+- `tests/unit/red-main-condition.test.js` — red-main dedupe + clear
+- `tests/integration/feature-close-post-merge-gate.test.js` — advisory/strict `runPostMergeGatePhase`
+- `tests/integration/feature-close-preauth-validation.test.js` — advisory `runPreauthValidationPhase`
+- `tests/integration/feature-escalation.test.js` — REGRESSION F656 advisory close-ready fixture
+- `tests/integration/feature-close-criteria-attestation.test.js` — migration 2.74.0 recovery repair
+
+## Code Revision
+
+**Addressed review**: Accept + Modify
+**Date**: 2026-07-10
+
+- Accepted `9b06a8406` stale advisory close-failure read-path fix
+- Added missing acceptance-criteria test coverage flagged in review
+- Deferred optional `featureClose.pauseOnRedMain` (spec: off by default)
+
 ## Code Review
 
 **Reviewed by**: cu

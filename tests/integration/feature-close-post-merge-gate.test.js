@@ -14,9 +14,12 @@ const wf = require('../../lib/workflow-core');
 const {
     resolvePostMergeGateCommand,
     runPostMergeGate,
+    runPostMergeGatePhase,
     recordPostMergeGateFailure,
     isPostMergeGateRetry,
 } = require('../../lib/feature-close');
+const { resolveCloseIntegrityPolicy } = require('../../lib/close-integrity-policy');
+const { readRedMainCondition, recordRedMainFailure } = require('../../lib/red-main-condition');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const REPO_DIRS = [
     'docs/specs/features/03-in-progress',
@@ -163,6 +166,64 @@ testAsync('happy path: gate pass does not emit close_gate_failed; close clears f
     const snap = await wf.showFeature(repo, '02');
     assert.strictEqual(snap.currentSpecState, 'done');
     assert.strictEqual(snap.lastCloseFailure, null);
+}));
+
+testAsync('runPostMergeGatePhase: advisory failure records red-main without recovery', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '03', 'advisory-pmg');
+    fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), JSON.stringify({
+        featureClose: { postMergeGate: 'node -e "process.exit(1)"' },
+    }, null, 2));
+    const loadProjectConfig = () => JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
+    const result = await runPostMergeGatePhase(
+        { repoPath: repo, name: '03', num: '03' },
+        {
+            loadProjectConfig,
+            resolveDeployCommand: () => null,
+            integrityPolicy: resolveCloseIntegrityPolicy(loadProjectConfig()),
+        },
+    );
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.advisory, true);
+    const red = readRedMainCondition(repo);
+    assert.ok(red && red.active);
+    assert.strictEqual(red.firstSeenFeatureId, '03');
+    const snap = await wf.showFeature(repo, '03');
+    assert.notStrictEqual(snap.currentSpecState, 'close_recovery_in_progress');
+    const events = fs.readFileSync(wf.getEntityWorkflowPaths(repo, 'feature', '03').eventsPath, 'utf8');
+    assert.ok(events.includes('feature.close_finding_advisory'));
+    assert.ok(!events.includes('feature.close_gate_failed'));
+}));
+
+testAsync('runPostMergeGatePhase: passing gate clears red-main', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '04', 'advisory-pmg-clear');
+    recordRedMainFailure(repo, { featureId: '04', gateCommand: 'node -e "process.exit(1)"' });
+    const loadProjectConfig = () => ({ featureClose: { postMergeGate: process.platform === 'win32' ? 'node -e "process.exit(0)"' : 'true' } });
+    const result = await runPostMergeGatePhase(
+        { repoPath: repo, name: '04', num: '04' },
+        {
+            loadProjectConfig,
+            resolveDeployCommand: () => null,
+            integrityPolicy: resolveCloseIntegrityPolicy({}),
+        },
+    );
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(readRedMainCondition(repo), null);
+}));
+
+testAsync('runPostMergeGatePhase: strict policy still enters recovery', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '05', 'blocking-pmg');
+    const loadProjectConfig = () => ({ featureClose: { postMergeGate: 'node -e "process.exit(1)"', integrityPolicy: 'blocking' } });
+    const result = await runPostMergeGatePhase(
+        { repoPath: repo, name: '05', num: '05' },
+        {
+            loadProjectConfig,
+            resolveDeployCommand: () => null,
+            integrityPolicy: resolveCloseIntegrityPolicy(loadProjectConfig()),
+        },
+    );
+    assert.strictEqual(result.ok, false);
+    const snap = await wf.showFeature(repo, '05');
+    assert.strictEqual(snap.currentSpecState, 'close_recovery_in_progress');
 }));
 
 report();
