@@ -3,6 +3,7 @@ Agent: cu
 
 ## Status
 
+Added `lib/model-catalog-diff.js` — classifies op modelOptions with proposed quarantine/archive blocks; `isModelOptionArchived` + archived validation in agent-registry.
 ## Criteria Attestation
 
 ## New API Surface
