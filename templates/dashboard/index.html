@@ -92,6 +92,7 @@
                           <span x-html="buildNextActionHtml(feature, repo.path)"></span>
                         </span>
                       </div>
+                      <div class="monitor-state" x-html="buildMonitorStateHtml(feature)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(feature.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
@@ -127,6 +128,7 @@
                           <span x-html="researchEvalBtn(item)"></span>
                         </span>
                       </div>
+                      <div class="monitor-state" x-html="buildMonitorStateHtml(item)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents)" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">
@@ -153,6 +155,7 @@
                         <span class="feature" x-html="feedbackTitle(item)"></span>
                         <span class="head-actions"><span x-html="buildAwaitingBadgeHtml(item)"></span><span x-html="buildWorkflowIdleBadgeHtml(item)"></span></span>
                       </div>
+                      <div class="monitor-state" x-html="buildMonitorStateHtml(item)"></div>
                       <div class="rows">
                         <template x-for="agent in sortedAgents(item.agents || [])" :key="agent.id">
                           <div class="row" :class="[agent.status, 'agent-' + agent.id]">

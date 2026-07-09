@@ -14,6 +14,7 @@ import { lsKey, state } from './state.js';
 import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, setPipelineGroupBySet as applyPipelineGroupBySet, setPipelineType as applyPipelineType, subscribeDataChange } from './store.js';
 import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
 import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
+import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-presentation.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -1056,6 +1057,10 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
       card.dataset.stage = feature.stage;
       card.dataset.repoPath = repoPath || '';
 
+      const pres = feature.cardPresentation || {};
+      const suppress = pres.suppress || {};
+      feature.__showRecoveryActions = Boolean(pres.showRecoveryActions);
+
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
       const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
@@ -1101,20 +1106,26 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
         '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildEscalationBadgeHtml(feature) + buildLeaseBadgeHtml(feature, repoMeta && repoMeta.storage) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
         buildSpecAuthorHtml(feature) +
         buildCardHeadlineHtml(feature) +
+        buildCardTimelineHtml(feature) +
+        buildCardAgentSummaryHtml(feature) +
         blockedByHtml +
-        autonomousControllerHtml +
+        (suppress.autonomousController ? '' : autonomousControllerHtml) +
         autonomousPlanHtml +
         buildWorkflowIdleBadgeHtml(feature) +
         buildStartupPhaseHtml(feature) +
         nudgeChipsHtml;
 
       if (hasAgentSections) {
+        if (pres.compactAgents && pres.agentSummary) {
+          // Agent detail collapsed — summary rendered above; card-level actions only.
+        } else {
         // --- Evaluation verdict layout (pick-winner state) ---
         // Agent sections — same layout as in-progress (filter out select-winner from per-agent actions)
         agents.forEach(agent => {
           const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
           innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
         });
+        }
 
         // Evaluation section — consolidated eval status, session, and close action
         if (feature.evalStatus || (feature.evalSession && feature.evalSession.running)) {
@@ -1176,16 +1187,16 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
         }
 
         // Review section — dedicated block between agents and actions
-        if (reviews.length > 0) {
+        if (!suppress.reviewerPanels && reviews.length > 0) {
           reviews.forEach(r => {
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
         innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
-        innerHtml += buildReviewCycleHistoryHtml(feature);
-        innerHtml += buildReadyToCloseHtml(agents, reviews);
+        if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
+        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
-        innerHtml += buildCloseFailureHtml(feature);
+        if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (non-per-agent: close, eval, review, etc.)
         const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (cardActionsHtml) {
@@ -1206,16 +1217,16 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
           '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
           '</div>';
         // Review section for solo mode
-        if (reviews.length > 0) {
+        if (reviews.length > 0 && !suppress.reviewerPanels) {
           reviews.forEach(r => {
             innerHtml += buildReviewerSectionHtml('Review', r);
           });
         }
         innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
-        innerHtml += buildReviewCycleHistoryHtml(feature);
-        innerHtml += buildReadyToCloseHtml(agents, reviews);
+        if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
+        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
-        innerHtml += buildCloseFailureHtml(feature);
+        if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
         // Card-level actions (close, review — no session controls)
         const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
         if (soloCardActionsHtml) {
@@ -1651,6 +1662,7 @@ import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, bu
         startupPhase: feature.startupPhase,
         startupReadiness: feature.startupReadiness,
         cardHeadline: feature.cardHeadline,
+        cardPresentation: feature.cardPresentation,
         stateRenderMeta: feature.stateRenderMeta,
         specReviewSessions: feature.specReviewSessions,
         specRevisionSessions: feature.specRevisionSessions,

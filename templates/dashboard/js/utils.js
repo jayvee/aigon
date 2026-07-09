@@ -159,31 +159,32 @@ import { state } from './state.js';
     function buildCardHeadlineHtml(item) {
       const h = item && item.cardHeadline;
       if (!h || !h.verb) return '';
+      const pres = (item && item.cardPresentation) || {};
       const tone = escHtml(h.tone || 'idle');
       const glyph = escHtml(h.glyph || '');
-      const verb = escHtml(h.verb);
+      const ageStr = _formatHeadlineAge(h.age);
+      const verbBase = escHtml(h.verb);
+      const verb = (ageStr && (pres.severity === 'error' || h.tone === 'warn'))
+        ? verbBase + ' · ' + escHtml(ageStr)
+        : verbBase;
       const meta = [];
       if (h.subject) meta.push(escHtml(h.subject));
       if (h.owner) meta.push(escHtml(String(h.owner).toUpperCase()));
-      const ageStr = _formatHeadlineAge(h.age);
-      if (ageStr) meta.push(escHtml(ageStr));
+      // Age moves inline for failure headlines; keep meta age for other tones.
+      if (ageStr && pres.severity !== 'error' && h.tone !== 'warn') meta.push(escHtml(ageStr));
       const metaLine = meta.length ? '<div class="kcard-headline-meta">' + meta.join(' · ') + '</div>' : '';
       const detailText = h.detail ? _resolveAgentIdsInHeadlineText(h.detail) : null;
-      // For 'Needs you' state, the agent's awaitingInput.message is usually
-      // a verbose multi-line prompt the user will read in the terminal anyway.
-      // Suppress it on the card; show ONLY the action hint pointing them at
-      // the terminal. Dashboard signals "agent needs you, go look there" —
-      // the actual question lives where the answer goes.
-      // For other states, render the detail in full (it's typically a short
-      // descriptor like 'needs code review' or 'recommended: cc').
       let detailLine = '';
       const isAwaitingInput = h.verb === 'Needs you';
       if (isAwaitingInput) {
         detailLine = '<div class="kcard-headline-detail"><span class="kcard-headline-detail-action">→ Open eval terminal to respond</span></div>';
+      } else if (pres.contextLine) {
+        detailLine = '<div class="kcard-headline-detail kcard-headline-context">' + escHtml(_resolveAgentIdsInHeadlineText(pres.contextLine)) + '</div>';
       } else if (detailText) {
         detailLine = '<div class="kcard-headline-detail">' + escHtml(detailText) + '</div>';
       }
-      return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '">' +
+      const severityAttr = pres.severity ? ' data-card-severity="' + escHtml(pres.severity) + '"' : '';
+      return '<div class="kcard-headline tone-' + tone + '" data-headline-tone="' + tone + '"' + severityAttr + '>' +
         '<div class="kcard-headline-top">' +
           '<span class="kcard-headline-glyph" aria-hidden="true">' + glyph + '</span>' +
           '<span class="kcard-headline-verb">' + verb + '</span>' +

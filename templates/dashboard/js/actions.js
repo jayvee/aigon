@@ -131,7 +131,13 @@ async function dispatchActionModule(moduleName, ctx) {
 function renderActionButtons(feature, repoPath, pipelineType) {
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
-  const showRecoveryActions = Boolean(feature && feature.__showRecoveryActions);
+  const showRecoveryActions = Boolean(
+    feature && (
+      feature.__showRecoveryActions
+      || (feature.cardPresentation && feature.cardPresentation.showRecoveryActions)
+    )
+  );
+  const cardSeverity = feature.cardPresentation && feature.cardPresentation.severity;
 
   const evalRunning = feature.evalSession && feature.evalSession.running;
   const hasSelectWinner = validActions.some(va => va.action === 'select-winner');
@@ -175,6 +181,14 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     return rank(a) - rank(b);
   });
 
+  if (cardSeverity === 'error') {
+    const recoveryIdx = deduped.findIndex(va => va.metadata && (va.metadata.recovery || va.metadata.recoverySurface));
+    if (recoveryIdx > 0) {
+      const [recovery] = deduped.splice(recoveryIdx, 1);
+      deduped.unshift(recovery);
+    }
+  }
+
   const evalPickWinner = feature.evalStatus === 'pick winner' && feature.winnerAgent;
   const primary = [];
   const secondary = [];
@@ -189,7 +203,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
       if (va.action === 'feature-close') { primary.push(va); return; }
       if (va.action === 'feature-eval') { overflow.push(va); return; }
     }
-    if (va.priority === 'high') {
+    if (va.priority === 'high' || (cardSeverity === 'error' && va.metadata && (va.metadata.recovery || va.metadata.recoverySurface))) {
       if (primary.length === 0) primary.push(va);
       else secondary.push(va);
     } else {

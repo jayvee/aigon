@@ -9,6 +9,7 @@ import { openDrawer } from './spec-drawer.js';
 import { state } from './state.js';
 import { setFilter as applyFilter, setMonitorType as applyMonitorType, toggleCollapse as applyToggleCollapse } from './store.js';
 import { openTerminalPanel } from './terminal.js';
+import { buildMonitorStateHtml } from './card-presentation.js';
 import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showToast, statusRank } from './utils.js';
     // ── Shared render helpers ─────────────────────────────────────────────────
 
@@ -102,6 +103,9 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
     // a container with data-repo for event delegation.
     function buildMonitorActionHtml(feature, repoPath) {
       const pipelineType = feature.stage ? 'features' : 'features';
+      if (feature.cardPresentation) {
+        feature.__showRecoveryActions = Boolean(feature.cardPresentation.showRecoveryActions);
+      }
       const html = renderActionButtons(feature, repoPath, pipelineType);
       if (!html) return '';
       return '<span class="monitor-actions" data-repo="' + escHtml(repoPath) + '" data-feature-id="' + escHtml(feature.id) + '">' + html + '</span>';
@@ -250,6 +254,7 @@ import { buildScheduledGlyphHtml, copyText, escHtml, featureRank, relTime, showT
         buildAskAgentHtml(repoPath) { return buildAskAgentHtml(repoPath); },
         buildMainDevServerHtml(repo) { return buildMainDevServerHtml(repo); },
         buildAwaitingBadgeHtml(item) { return buildAwaitingBadgeHtml(item); },
+        buildMonitorStateHtml(item) { return buildMonitorStateHtml(item); },
         buildWorkflowIdleBadgeHtml(item) { return buildWorkflowIdleBadgeHtml(item); },
         handleAskClick(e) {
           const btn = e.target.closest('[data-ask-run]');
