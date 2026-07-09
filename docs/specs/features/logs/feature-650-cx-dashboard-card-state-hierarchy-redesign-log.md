@@ -36,3 +36,23 @@ n/a (standalone feature)
 - `tests/unit/card-presentation.test.js` — timeline, suppression, merge-conflict context
 - `tests/dashboard-e2e/close-failure-event.spec.js` — updated for F650 headline (no duplicate panel)
 - `npm run test:iterate` — pass (incl. Playwright @smoke)
+
+## Code Review
+
+**Reviewed by**: cu (review pass)
+**Date**: 2026-07-09
+
+### Fixes Applied
+- `902b2cf60` fix(review): label implementer ready agents as Implemented in timeline
+- `8d5e20175` fix(review): collapse monitor agent rows on failure compactAgents
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:subsystem — Visual QA screenshot matrix (6 scenarios × 3 breakpoints) still incomplete per acceptance criteria; implementer should capture via `aigon preview 650` before close.
+- ESCALATE:ambiguous — Set-card embedded member status hierarchy deferred per implementation log; spec open question allows partial treatment this pass.
+
+### Notes
+- Core F650 architecture (server `cardPresentation`, pipeline/monitor render, suppression flags, design docs, unit + smoke tests) looks sound after fixes.
+- Monitor failure cards now align with pipeline `compactAgents` / `suppress.reviewerPanels` behavior.
