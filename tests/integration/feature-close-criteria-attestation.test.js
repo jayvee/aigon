@@ -14,6 +14,8 @@ const {
     parseCriteriaAttestationLines,
     enumerateAcceptanceCriteria,
     validateCriteriaAttestation,
+    validateCriteriaFromSnapshot,
+    criteriaAttestationReady,
     stableCriteriaEscalationId,
     syncCriteriaDeferredEscalations,
 } = require('../../lib/criteria-attestation');
@@ -168,6 +170,52 @@ testAsync('recordCriteriaAttested projects lastCriteriaAttestation', () => withT
     const snap = await wf.showFeature(repo, '07');
     assert.ok(snap.lastCriteriaAttestation);
     assert.strictEqual(snap.lastCriteriaAttestation.counts.met, 1);
+}));
+
+testAsync('REGRESSION: criteria_attested clears criteria-attestation lastCloseFailure', () => withTempRepo(async (repo) => {
+    await bootstrapFeature(repo, '10', 'attest-clear-failure', ['One']);
+    await recordCriteriaAttestationFailure(repo, '10', {
+        unattested: [1],
+        invalid: [],
+        outputTail: 'missing',
+        returnSpecState: 'ready',
+    });
+    let snap = await wf.showFeature(repo, '10');
+    assert.strictEqual(snap.lastCloseFailure.kind, 'criteria-attestation');
+    await recordCriteriaAttested(repo, '10', {
+        counts: { total: 1, met: 1, deferred: 0, dropped: 0 },
+        criteria: [{ index: 1, status: 'met', evidence: 'test.js' }],
+    });
+    snap = await wf.showFeature(repo, '10');
+    assert.strictEqual(snap.lastCloseFailure, null);
+}));
+
+testAsync('REGRESSION: snapshot attestation satisfies validateCriteriaAttestation when log is stale', () => withTempRepo(async (repo) => {
+    const specPath = writeSpec(repo, '11', 'attest-snapshot', ['A', 'B']);
+    writeLog(repo, '11', '1. met — only first\n');
+    const snapshot = {
+        lastCriteriaAttestation: {
+            counts: { total: 2, met: 2, deferred: 0, dropped: 0 },
+            criteria: [
+                { index: 1, status: 'met', evidence: 'a' },
+                { index: 2, status: 'met', evidence: 'b' },
+            ],
+            at: new Date().toISOString(),
+        },
+    };
+    const result = validateCriteriaAttestation(specPath, repo, '11', { snapshot });
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.source, 'snapshot');
+}));
+
+testAsync('criteriaAttestationReady blocks until log or snapshot complete', () => withTempRepo(async (repo) => {
+    const specPath = writeSpec(repo, '12', 'attest-ready', ['Ship']);
+    writeLog(repo, '12', '');
+    const blocked = criteriaAttestationReady(specPath, repo, '12');
+    assert.strictEqual(blocked.ready, false);
+    writeLog(repo, '12', '1. met — tests/integration/foo.test.js\n');
+    const ready = criteriaAttestationReady(specPath, repo, '12');
+    assert.strictEqual(ready.ready, true);
 }));
 
 testAsync('zero acceptance criteria skips validation', () => withTempRepo(async (repo) => {

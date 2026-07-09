@@ -131,6 +131,8 @@ async function dispatchActionModule(moduleName, ctx) {
 
 function shouldShowCloseWithAgent(feature) {
   if (!feature || feature.id == null) return false;
+  // Server swaps feature-close → feature-resolve-and-close when lastCloseFailure is set.
+  if ((feature.validActions || []).some((va) => va.action === 'feature-resolve-and-close')) return false;
   if (hasCloseFailure(String(feature.id))) return true;
   if (feature.currentSpecState === 'close_recovery_in_progress') return true;
   const lcf = feature.lastCloseFailure;

@@ -5,6 +5,7 @@ import { defaultAgent } from './injected.js';
 import { notifyDataRefreshComplete } from './poll-hooks.js';
 import { syncDashboardHiddenRepos } from './preferences-sync.js';
 import { addOptimistic, clearActionPending, clearCloseFailure, clearDevServerPokePending, clearStartupPhaseForEntity, createEntityDeleteOverlay, createEntityStartOverlay, dropOptimistic, isActionPending, lsKey, markActionPending, markDevServerPokePending, recordCloseFailure, replaceData, setFailures, setLastRenderedStatusVersion, setLastStatusVersion, setView, state } from './store.js';
+import { finalizeCloseLogPanel, openCloseLogPanel } from './close-log-panel.js';
 import { openTerminalPanel } from './terminal.js';
 import { escHtml, refreshTimestamps, showToast } from './utils.js';
 
@@ -77,6 +78,25 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
       return payload;
     }
 
+    function closeLogFailureContext(action, args, repoPath) {
+      if (action !== 'feature-close') return {};
+      const featureId = (args || [])[0];
+      let agentId = (args || [])[1];
+      if (!agentId) {
+        const fid = String(featureId);
+        outer: for (const repo of (state.data && state.data.repos || [])) {
+          for (const f of (repo.features || [])) {
+            if (String(f.id) === fid && f.agents && f.agents.length > 0) {
+              agentId = f.agents[0].id;
+              break outer;
+            }
+          }
+        }
+      }
+      if (!agentId) agentId = defaultAgent || 'cc';
+      return { _featureId: featureId, _agentId: agentId, _repoPath: repoPath };
+    }
+
     async function requestAction(action, args, repoPath, btn) {
       const key = action + ':' + (args || []).join(':');
       if (isActionPending(key)) return;
@@ -106,9 +126,9 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
       const actionId = isClose
         ? (action + '-' + ((args || [])[0] || '') + '-' + Date.now())
         : null;
-      if (isClose && actionId && window.openCloseLogPanel) {
+      if (isClose && actionId) {
         const entityLabel = ((args || [])[0] || '');
-        window.openCloseLogPanel(actionId, entityLabel);
+        openCloseLogPanel(actionId, entityLabel);
       }
 
       try {
@@ -135,24 +155,28 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
         if (exitFailed) {
           if (optimisticKey) { dropOptimistic(optimisticKey); notifyDataRefreshComplete(); }
           showToast('Action failed (exit ' + payload.exitCode + ') — check Logs', 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); }, { error: true });
-          if (isClose && actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, { ok: false, error: payload.error || 'exit ' + payload.exitCode });
+          if (isClose && actionId) {
+            finalizeCloseLogPanel(actionId, {
+              ok: false,
+              error: payload.error || 'exit ' + payload.exitCode,
+              ...closeLogFailureContext(action, args, repoPath),
+            });
           }
         } else if (payload.agentWarning) {
           showToast('Warning: ' + payload.agentWarning, 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); }, { error: true });
-          if (isClose && actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, { ok: true });
+          if (isClose && actionId) {
+            finalizeCloseLogPanel(actionId, { ok: true });
           }
         } else if (stderrError) {
           showToast('Done with warnings — check Logs', 'Logs', () => { setView('logs'); notifyDataRefreshComplete(); });
-          if (isClose && actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, { ok: true });
+          if (isClose && actionId) {
+            finalizeCloseLogPanel(actionId, { ok: true });
           }
         } else {
           if (action === 'feature-close') clearCloseFailure(String((args || [])[0]));
           showToast('Done: ' + (payload.command || action));
-          if (isClose && actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, { ok: true });
+          if (isClose && actionId) {
+            finalizeCloseLogPanel(actionId, { ok: true });
           }
         }
         // feature 234: when the backend signals it is about to restart (lib/*.js
@@ -192,8 +216,8 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
             agentId = defaultAgent || 'cc';
           }
           recordCloseFailure(String(featureId), { agentId, repoPath });
-          if (actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, {
+          if (actionId) {
+            finalizeCloseLogPanel(actionId, {
               ok: false, error: e.message,
               _featureId: featureId, _agentId: agentId, _repoPath: repoPath
             });
@@ -207,8 +231,8 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
         } else {
           if (optimisticKey) { dropOptimistic(optimisticKey); notifyDataRefreshComplete(); }
           showToast('Action failed: ' + e.message, null, null, {error:true});
-          if (isClose && actionId && window.finalizeCloseLogPanel) {
-            window.finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
+          if (isClose && actionId) {
+            finalizeCloseLogPanel(actionId, { ok: false, error: e.message });
           }
         }
         if (btn) { btn.disabled = false; btn.textContent = origText || btn._origText || action; }

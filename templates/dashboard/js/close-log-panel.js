@@ -1,4 +1,3 @@
-import { handleCloseWithAgent } from './pipeline.js';
 // ── Close-log panel (feature 428) ─────────────────────────────────────────
 // Live-streaming log panel for feature-close actions. Opens immediately on
 // click, polls /api/action-log/:actionId every 800ms, auto-dismisses on
@@ -26,8 +25,10 @@ function annotateLine(raw) {
     .replace(/>/g, '&gt;');
   if (/✅/.test(raw)) return '<span class="ll-ok">' + esc + '</span>';
   if (/❌/.test(raw)) return '<span class="ll-err">' + esc + '</span>';
-  if (/📦|📤/.test(raw)) return '<span class="ll-pkg">' + esc + '</span>';
+  if (/🧪/.test(raw)) return '<span class="ll-gate">' + esc + '</span>';
+  if (/📦|📤|📋|📡/.test(raw)) return '<span class="ll-pkg">' + esc + '</span>';
   if (/🔒/.test(raw)) return '<span class="ll-lock">' + esc + '</span>';
+  if (/⚠️|⏭️/.test(raw)) return '<span class="ll-warn">' + esc + '</span>';
   if (/^[ \t]/.test(raw)) return '<span class="ll-dim">' + esc + '</span>';
   return esc;
 }
@@ -100,7 +101,9 @@ function drainAndFinalize(actionId, success, result) {
             agentBtn.className = 'btn btn-warn';
             agentBtn.textContent = 'Close with agent';
             agentBtn.addEventListener('click', () => {
-              handleCloseWithAgent(featureId, agentId, repoPath || '');
+              import('./pipeline.js').then(({ handleCloseWithAgent }) => {
+                handleCloseWithAgent(featureId, agentId, repoPath || '');
+              });
               dismissCloseLogPanel();
             });
             f.appendChild(agentBtn);

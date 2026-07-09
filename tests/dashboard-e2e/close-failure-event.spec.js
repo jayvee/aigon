@@ -87,6 +87,8 @@ test.describe('Close failure event dashboard rendering @smoke', () => {
         const resolveBtn = card.locator('.kcard-va-btn[data-va-action="feature-resolve-and-close"]');
         await expect(resolveBtn).toBeVisible({ timeout: 5000 });
         await expect(resolveBtn).toContainText('Resolve & close');
+        // REGRESSION: client fallback must not duplicate server-owned resolve action.
+        await expect(card.locator('.kcard-close-resolve-btn')).toHaveCount(0);
         // Should NOT have a plain "feature-close" action button
         const closeBtn = card.locator('.kcard-va-btn[data-va-action="feature-close"]');
         await expect(closeBtn).toHaveCount(0);
