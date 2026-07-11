@@ -23,3 +23,23 @@ Complete. Projection rebuild is read-only for tracked checkout content.
 ## Test Coverage
 - `dashboard-storage-status.test.js`: projection rebuild leaves stale spec in place, surfaces `specDrift`, checkout invariant holds.
 - `two-clone-git-branch-storage.test.js`: remote lifecycle fetch + storage poller leave peer checkout unchanged while updating `.aigon/workflows` projection.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-11
+
+### Fixes Applied
+- None — implementation was clean
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- `rebuildLocalProjection` removal of `commitProjectionSpecMove` / `reconcileEntitySpec` is the correct single choke point: `fetchRemoteProjection`, `mergeRemote`, `sync`, and the storage poller all funnel through it.
+- `showFeatureOrNull` during snapshot rebuild only materializes effect payloads in memory; `move_spec` filesystem effects are not executed on the projection path.
+- Docs (`docs/specstore-architecture.md`, `docs/architecture.md`) now match behaviour — no fetch-only wording that implied hidden spec commits.
+- Optional follow-up (not blocking): the two-clone test asserts `fetchRemoteProjection` and `pollOnce` but not an explicit `makeStore(cloneB).sync()` checkout invariant; coverage is indirect because sync shares `mergeRemote` → `rebuildLocalProjection`.
