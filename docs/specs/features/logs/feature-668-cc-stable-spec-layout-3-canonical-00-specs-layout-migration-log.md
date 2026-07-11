@@ -1,3 +1,26 @@
+---
+commit_count: 9
+lines_added: 1142
+lines_removed: 4
+lines_changed: 1146
+files_touched: 9
+fix_commit_count: 1
+fix_commit_ratio: 0.111
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 298
+output_tokens: 153171
+cache_creation_input_tokens: 425285
+cache_read_input_tokens: 16480227
+thinking_tokens: 0
+total_tokens: 17058981
+billable_tokens: 153469
+cost_usd: 14.7289
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 668 - stable-spec-layout-3-canonical-00-specs-layout-migration
 Agent: cc
 
