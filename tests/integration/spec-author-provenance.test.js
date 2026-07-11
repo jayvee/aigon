@@ -22,7 +22,7 @@ test('entityCreate with options.agent stamps specAuthor on inbox bootstrap', () 
         });
         assert.ok(created);
     });
-    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/authored-by-flag/snapshot.json'));
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
     assert.strictEqual(snapshot.specAuthor.agentId, 'cx');
     assert.strictEqual(snapshot.specAuthor.model, 'gpt-test');
     assert.strictEqual(snapshot.specAuthor.effort, 'high');
@@ -39,7 +39,7 @@ test('research-create --agent stamps specAuthor on bootstrap', () => withTempDir
             agent: 'gg',
         });
     });
-    const snapshot = readJson(path.join(repo, '.aigon/workflows/research/topic-alpha/snapshot.json'));
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/research/01/snapshot.json'));
     assert.strictEqual(snapshot.specAuthor.agentId, 'gg');
     assert.strictEqual(snapshot.authorAgentId, 'gg');
     assert.strictEqual(snapshot.specAuthor.model, null);

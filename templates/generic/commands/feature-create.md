@@ -63,7 +63,7 @@ git add docs/specs/features/01-inbox/
 git commit -m "feat: create feature spec - <name>"
 ```
 
-Next step: Once the spec is committed, suggest `{{CMD_PREFIX}}feature-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+Next step: Once the spec is committed, suggest `{{CMD_PREFIX}}feature-prioritise {{ARG_SYNTAX}}` to assign an ID and prioritise it to backlog.
 
 ## Prompt Suggestion
 
