@@ -1625,6 +1625,21 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
 
     const DONE_CAP = 6;
     const OVERFLOW_CAP = 8;
+    /** When group-by-set is on, overflow cap must not split a set across visible/hidden buckets. */
+    function expandDisplayCardsForSetGrouping(cappedCards, allCards, pType) {
+      const partialSetSlugs = new Set();
+      for (const card of cappedCards) {
+        if (card.set) partialSetSlugs.add(card.set);
+      }
+      if (partialSetSlugs.size === 0) return cappedCards;
+      const includeKeys = new Set(cappedCards.map(c => kanbanCardKey(pType, c)));
+      for (const card of allCards) {
+        if (card.set && partialSetSlugs.has(card.set)) {
+          includeKeys.add(kanbanCardKey(pType, card));
+        }
+      }
+      return allCards.filter(c => includeKeys.has(kanbanCardKey(pType, c)));
+    }
     let _pipelineReconcileQueued = false;
     let _pipelineDataSubscribed = false;
     const _lastKanbanReconcileStats = { created: 0, updated: 0, removed: 0 };
@@ -2094,8 +2109,12 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       const columnKey = pipelineColumnKey(repo.path, pType, stage);
       const isExpanded = !!expandedColumns[columnKey];
       const shouldCapOverflow = (stage === 'backlog' || stage === 'inbox') && cards.length > OVERFLOW_CAP;
-      const displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
+      const groupBySet = pType === 'features' && !!s.pipelineGroupBySet;
+      let displayCards = (stage === 'done' && cards.length > DONE_CAP) ? cards.slice(0, DONE_CAP)
         : (shouldCapOverflow && !isExpanded) ? cards.slice(0, OVERFLOW_CAP) : cards;
+      if (shouldCapOverflow && !isExpanded && groupBySet) {
+        displayCards = expandDisplayCardsForSetGrouping(displayCards, cards, pType);
+      }
 
       if (cards.length === 0) {
         reconcileRootChildren(colBody, ['__empty__'], {
@@ -2114,7 +2133,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       const desired = [];
       const builders = {};
 
-      if (pType === 'features' && s.pipelineGroupBySet) {
+      if (groupBySet) {
         const orderedSetSlugs = [];
         const bySet = new Map();
         const ungrouped = [];
@@ -2171,17 +2190,20 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       }
 
       if (shouldCapOverflow && !isExpanded) {
-        const hiddenCards = cards.slice(OVERFLOW_CAP);
-        desired.push('__hidden_overflow__');
-        builders['__hidden_overflow__'] = (existing) => {
-          const hiddenContainer = existing || document.createElement('div');
-          hiddenContainer.setAttribute('data-hidden', '');
-          hiddenContainer.dataset.kanbanUi = 'hidden-overflow';
-          reconcileKeyedCards(hiddenContainer, hiddenCards, repo, pType, stats);
-          return hiddenContainer;
-        };
-        desired.push('__overflow_more__');
-        builders['__overflow_more__'] = () => buildOverflowMoreBtn(cards.length - OVERFLOW_CAP, columnKey);
+        const visibleKeys = new Set(displayCards.map(c => kanbanCardKey(pType, c)));
+        const hiddenCards = cards.filter(c => !visibleKeys.has(kanbanCardKey(pType, c)));
+        if (hiddenCards.length > 0) {
+          desired.push('__hidden_overflow__');
+          builders['__hidden_overflow__'] = (existing) => {
+            const hiddenContainer = existing || document.createElement('div');
+            hiddenContainer.setAttribute('data-hidden', '');
+            hiddenContainer.dataset.kanbanUi = 'hidden-overflow';
+            reconcileKeyedCards(hiddenContainer, hiddenCards, repo, pType, stats);
+            return hiddenContainer;
+          };
+          desired.push('__overflow_more__');
+          builders['__overflow_more__'] = () => buildOverflowMoreBtn(hiddenCards.length, columnKey);
+        }
       }
 
       if (stage === 'done' && cards.length > DONE_CAP) {

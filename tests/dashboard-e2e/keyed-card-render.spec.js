@@ -170,4 +170,41 @@ test.describe('F625 keyed kanban card render', () => {
     expect(cardTwoReplaced).toBe(true);
     await expect(bundle.locator('.kcard').filter({ hasText: 'e2e set two renamed' })).toBeVisible();
   });
+
+  test('overflow cap keeps full set visible when group-by-set is on @smoke', async ({ page }) => {
+    const ctx = readCtx();
+    const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
+    await page.click('.pipeline-group-toggle');
+    await page.evaluate(async ({ repoPath }) => {
+      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
+      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
+      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
+        repo.sets = [{ slug: 'overflow-set', memberCount: 5, completed: 0, validActions: [] }];
+        const filler = Array.from({ length: 7 }, (_, i) => ({
+          id: String(800 + i),
+          name: `overflow-filler-${i}`,
+          stage: 'backlog',
+          specPath: `/tmp/filler-${i}.md`,
+          agents: [],
+          validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+        }));
+        const members = Array.from({ length: 5 }, (_, i) => ({
+          id: String(900 + i),
+          name: `overflow-set-member-${i}`,
+          stage: 'backlog',
+          set: 'overflow-set',
+          specPath: `/tmp/set-${i}.md`,
+          agents: [],
+          validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+        }));
+        repo.features = [...filler, ...members];
+      });
+      (await import('/js/store.js')).replaceData(data);
+    }, { repoPath: ctx.tmpDir });
+    await page.waitForTimeout(100);
+
+    const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'overflow-set' }).first();
+    await expect(bundle).toBeVisible({ timeout: 5000 });
+    await expect(bundle.locator('.kcard')).toHaveCount(5);
+  });
 });
