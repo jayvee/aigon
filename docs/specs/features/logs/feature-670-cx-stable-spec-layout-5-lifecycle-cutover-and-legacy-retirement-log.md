@@ -1,3 +1,26 @@
+---
+commit_count: 10
+lines_added: 613
+lines_removed: 175
+lines_changed: 788
+files_touched: 43
+fix_commit_count: 2
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 17134658
+output_tokens: 39970
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 16889088
+thinking_tokens: 8755
+total_tokens: 17174628
+billable_tokens: 17183383
+cost_usd: 37.9669
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 670 - stable-spec-layout-5-lifecycle-cutover-and-legacy-retirement
 Agent: cx
 
