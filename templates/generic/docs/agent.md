@@ -12,7 +12,7 @@
 | Command | Description |
 |---------|-------------|
 | `{{CMD_PREFIX}}feature-create <name>` | Create a new feature spec |
-| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
+| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and prioritise to backlog |
 | `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `{{CMD_PREFIX}}feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
 | `{{CMD_PREFIX}}feature-eval <ID>` | Create evaluation (code review or comparison) |
@@ -73,7 +73,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 
 ## Drive Mode Workflow
 
-1. Run `{{CMD_PREFIX}}feature-start <ID>` to create branch and move spec
+1. Run `{{CMD_PREFIX}}feature-start <ID>` to create branch/workflow state and refresh the lifecycle view
 2. Run `{{CMD_PREFIX}}feature-do <ID>` to begin implementation
 3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec

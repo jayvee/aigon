@@ -7,7 +7,7 @@
 |---------|-------------|
 | `{{CMD_PREFIX}}feature-create <name>` | Create a new feature spec |
 | `{{CMD_PREFIX}}feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
-| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and move to backlog |
+| `{{CMD_PREFIX}}feature-prioritise <name>` | Assign ID and prioritise to backlog |
 | `{{CMD_PREFIX}}feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `{{CMD_PREFIX}}feature-do <ID> [--iterate]` | Do feature work; `--iterate` enables the Autopilot retry loop |
 | `{{CMD_PREFIX}}feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |

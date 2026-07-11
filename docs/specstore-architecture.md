@@ -147,6 +147,7 @@ canonical file is never double-counted alongside a stage copy.
 | **Layout version** | `specLayout: "stable" \| "legacy"` in the tracked `.aigon/config.json`. Committed, so every clone/worktree agrees after normal Git sync. Storage backend selection (local vs git-branch) never alters the layout. |
 | **New creates** | Under `stable`, `feature-create`/`research-create` write the numbered, immutable canonical file directly into `00-specs`; under `legacy` they write into `01-inbox` as before. |
 | **Resolution** | `lib/feature-spec-resolver.js` returns the canonical file (`source: 'canonical'`) whenever one exists; it falls back to legacy stage discovery only when no canonical file exists. Symlinks are excluded from canonical discovery by `lstat`, never by filename heuristics. |
+| **Lifecycle view** | `lib/spec-view.js` generates disposable relative symlinks in lifecycle folders after workflow state is published. Lifecycle commands refresh this view under `stable`; they do not move canonical spec markdown or create commits for lifecycle-only transitions. |
 | **Migration** | Explicit, validated command — never runs from `aigon apply`, dashboard startup, storage polling, or any read path. |
 
 Module: `lib/spec-layout.js` (canonical-path API, status, and the
@@ -165,13 +166,17 @@ Migration is **idempotent and recoverable**: a completed run re-runs as a no-op;
 an interrupted run (canonical copy written but stage source still present) is
 diagnosed and resumed by removing the stale source.
 
-> **Consumer wiring boundary.** The shared resolver is canonical-aware, so the
-> dashboard detail/entity views, `spec-reconciliation`, `nudge`, `migration`,
-> and CLI spec lookups that route through it resolve canonical files. The
-> stage-folder-keyed dashboard spec **index** (`lib/dashboard-spec-index.js`)
-> and the direct-scan dependency/set scanners still enumerate stage folders;
-> their canonical integration lands with the lifecycle-view / cutover set
-> members (669–670), where the lifecycle→folder projection is regenerated.
+> **Final authority model.** Workflow state (`.aigon/workflows/**`, or the
+> canonical `aigon-state` branch for git-branch storage) owns lifecycle. The
+> canonical spec file stays under `00-specs`; lifecycle folders are a generated
+> local navigation view. `move_spec` events from legacy histories remain
+> replayable metadata, but under `stable` they refresh the view instead of
+> mutating tracked spec content.
+
+Legacy `specLayout: "legacy"` remains available for the compatibility window so
+unmigrated repositories can keep the stage-folder write model. New lifecycle
+development should target `stable`; `aigon spec-layout migrate --stable` is the
+documented cutover path.
 
 ## CLI, leases, doctor, and reporting
 

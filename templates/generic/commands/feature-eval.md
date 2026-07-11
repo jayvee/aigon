@@ -13,7 +13,7 @@ aigon feature-eval {{ARG1_SYNTAX}}
 # optional: --allow-same-model-judge    # suppress same-family bias warning
 ```
 
-This moves the spec to `04-in-evaluation/`, creates `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`, detects mode (Drive or Fleet), warns on same-family evaluator/implementer, and commits. The spec body is printed inline — use that copy; do not re-run `aigon feature-spec`.
+This records the evaluation lifecycle state, refreshes the generated view, creates `./docs/specs/features/evaluations/feature-{{ARG1_SYNTAX}}-eval.md`, detects mode (Drive or Fleet), warns on same-family evaluator/implementer, and commits owned artifacts. The spec body is printed inline — use that copy; do not re-run `aigon feature-spec`.
 
 ## Step 2: Review the implementation(s)
 

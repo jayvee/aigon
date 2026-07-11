@@ -9,4 +9,4 @@
 aigon research-unprioritise {{ARG_SYNTAX}}
 ```
 
-`{{ARG_SYNTAX}}` is the numeric research id. The spec moves from `02-backlog/` to `01-inbox/` and the workflow id re-keys to the slug until you `research-prioritise` again.
+`{{ARG_SYNTAX}}` is the numeric research id. The research topic returns to inbox lifecycle state and the generated view is refreshed. Legacy-layout repos may still move the stage-folder file during the compatibility window.

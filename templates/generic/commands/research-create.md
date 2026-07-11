@@ -42,7 +42,7 @@ The template ships with a `complexity:` frontmatter field that feeds the dashboa
 
 Set `complexity:` in the frontmatter; do not write model or effort values into the spec — defaults are resolved at start time from each agent’s `cli.complexityDefaults[<complexity>]`.
 
-Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and move to backlog.
+Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and prioritise it to backlog.
 
 ## Prompt Suggestion
 

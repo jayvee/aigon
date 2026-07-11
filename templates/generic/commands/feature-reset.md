@@ -1,7 +1,7 @@
-<!-- description: Reset feature <ID> - remove worktrees, branches, state, and move spec to backlog -->
+<!-- description: Reset feature <ID> - remove worktrees, branches, state, and return lifecycle to backlog -->
 # aigon-feature-reset
 
-Fully reset a feature back to backlog state. Removes all worktrees, branches, manifest state files, and moves the spec back to backlog.
+Fully reset a feature back to backlog state. Removes all worktrees, branches, manifest state files, and refreshes the lifecycle view.
 
 ## Usage
 
@@ -23,7 +23,7 @@ This command removes:
 - **All local branches** for the feature
 - **Manifest state files** (`.aigon/state/feature-<ID>*.json`)
 - **Worktree permissions** from Claude settings
-- **Spec location** — moved back to `02-backlog/`
+- **Lifecycle view** — refreshed so the feature appears in backlog
 
 ## When to Use
 

@@ -260,10 +260,11 @@ Feedback is not a top-level spec kind — it becomes research origin metadata (f
 
 The Aigon workflow now has two layers:
 
-- Spec location under `docs/specs/` remains the user-visible workflow stage.
+- Canonical feature/research spec content lives under `docs/specs/*/00-specs/` in stable-layout repositories.
+- Lifecycle folders under `docs/specs/` remain the user-visible workflow stage as generated local views.
 - For **features and research**, authoritative lifecycle state lives in SpecStore workflow events — under `.aigon/workflows/` for the local backend, or on the `aigon-state` branch when git-branch storage is enabled. See the SpecStore section above for backends, sync, leases, and projection boundaries.
 
-That means "state-as-location" is still true at the UX level, but feature commands no longer mutate workflow by directly treating folder position as the only source of truth. The engine owns the lifecycle and moves the spec as a side effect.
+That means "state-as-location" is a UX projection, not storage authority. Feature and research commands publish workflow events, then refresh generated lifecycle views; under stable layout they do not move canonical spec markdown for lifecycle-only transitions.
 
 - `docs/specs/features/01-inbox` to `06-paused`
 - `docs/specs/research-topics/01-inbox` to `06-paused`
@@ -387,10 +388,12 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | Feature close failure details | `lib/workflow-core/` event log + snapshot `lastCloseFailure` projection | `feature_close.failed` on merge/push failures; `feature.close_gate_failed` only for blocking close-integrity failures. Advisory review escalation, preauth, and post-merge findings use `feature.close_finding_advisory` and do not project `lastCloseFailure`. Projector sets `lastCloseFailure` (`kind`, `conflictFiles` or `gateCommand`/`logPath`, `stderrTail`, `at`) for mechanical/blocking failures; cleared on `feature.closed`. Dashboard swaps "Close" for "Resolve & close" when `kind === 'merge-conflict'`. Blocking post-merge gate failures use `kind === 'post-merge-gate'` and enter `close_recovery_in_progress`; advisory post-merge failures update the repo-level red-main condition instead. |
 | Feature close-recovery lifecycle (`close_recovery_in_progress`) | `lib/workflow-core/` snapshot + event log | F432: dashboard "Close with agent" appends `feature.close_recovery.started` (engine-first) before spawning the `role: 'close'` tmux session. Projector moves `currentSpecState` to `close_recovery_in_progress` and stores `closeRecovery { agentId, startedAt, returnSpecState, sessionName, source }`. Exit via `feature.close_recovery.ended` / `.cancelled` returns lifecycle to `ready` (machine-authoritative); `feature.close_requested` clears `closeRecovery` and transitions to `closing`. `lastCloseFailure` persists across the recovery transition (cleared only by `feature.closed`). Dashboard surfaces the role-`close` tmux session via `recoveryTmuxSession`. |
 | Feature spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | `spec_review.*` events; dashboard reads snapshot metadata, not `git log` |
-| Feature spec folder location | Engine effects (`move_spec`) | User-visible reflection of engine state |
+| Feature spec content path | `docs/specs/features/00-specs/` under `specLayout: stable` | Canonical Markdown path; lifecycle transitions do not move it |
+| Feature spec lifecycle folders | `lib/spec-view.js` generated symlink view | User-visible reflection of engine state; disposable and locally repairable |
 | Feature agent runtime status (`running`, `waiting`, `ready`, `lost`, etc.) | Engine signals plus per-agent status files in `.aigon/state/feature-{id}-{agent}.json` | Session/runtime metadata, not the lifecycle authority |
 | Feature autonomous conductor runtime (`starting`, `running`, `completed`, `failed`, etc.) | `.aigon/state/feature-{id}-auto.json` plus tmux session presence | Durable proof that autonomous orchestration started, what session it used, and how it ended |
 | Research lifecycle (`backlog`, `implementing`, `evaluating`, `closing`, `done`) | `lib/workflow-core/` snapshot + event log | Sole write path for research lifecycle |
+| Research spec content path | `docs/specs/research-topics/00-specs/` under `specLayout: stable` | Canonical Markdown path; lifecycle transitions do not move it |
 | Research spec-review pending/acked state | `lib/workflow-core/` event log + snapshot `specReview` projection | Same typed state model as features |
 | Feature code-review lifecycle (`code_review_in_progress`, `code_review_complete`, `code_revision_in_progress`, `code_revision_complete`) | `lib/workflow-core/` snapshot + event log | F342: four states; `*_complete` are transient. AutoConductor polls `currentSpecState === 'code_revision_complete'` from snapshot — not the legacy `review-complete` sidecar |
 | tmux session identity | `.aigon/sessions/{name}.json` sidecar (`tmuxId`, `shellPid`, `category`) | F351: `tmuxId` is the durable FK (stable across renames); `category` is `entity` or `repo`. `aigon session-list` surfaces all live sessions. Internal routing uses `-t $N` via `tmuxId` |
