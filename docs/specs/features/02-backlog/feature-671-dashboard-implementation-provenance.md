@@ -21,9 +21,12 @@ Show **which machine and operator implemented a feature** in the dashboard detai
 ## Acceptance Criteria
 
 - [ ] **Status tab → Identity section** includes an **Implemented by** row when provenance is known, formatted consistently with existing lease labels (`user @ machine (AGENT)` via `formatLeaseHolderLabel` semantics).
+- [ ] The drawer presentation distinguishes durable implementation provenance from active lease state: **Implemented by** appears in Identity as a stable historical fact; the existing **Lock** section continues to represent only active leases and must not be shown for closed features merely to display provenance.
+- [ ] The Identity row includes a subdued source hint when useful: `from close stats` when read from `stats.json`, `from lease history` when derived read-only from workflow events, and no hint for active in-progress lease provenance.
 - [ ] For **in-progress** features, provenance comes from the active `impl` lease (same source as the Lock section).
 - [ ] For **done/closed** features, provenance is durable: written to `stats.json` at close from the impl lease (`holderId`, `user`, `agentId`) and exposed through `collectFeatureDeepStatus` / `/api/status` deep-status endpoint.
 - [ ] **Events tab** decorates `lease.acquired`, `lease.renewed`, `lease.released`, and `lease.taken_over` with human-readable labels and actor `user @ holderId` (agent appended when present).
+- [ ] Lease event summaries include the lease role (`impl`, `close`, etc.) and TTL/expiry when present so the timeline remains understandable without opening raw JSON.
 - [ ] **Backfill path**: when stats lack provenance but events contain an impl `lease.acquired`, deep-status derives it read-only (no silent mutation on read); `aigon doctor --fix` or close-time write is the durable repair for already-closed features.
 - [ ] New/changed status fingerprint fields added to `computeStatusFingerprint` if list-card payloads gain provenance (optional — drawer-only is acceptable for v1).
 - [ ] Integration test: fixture with impl lease events → close persists `implementedBy` in stats → deep-status API returns it → Events tab decoration covered by server-side unit test on `decorateDetailEvent`.
@@ -51,6 +54,35 @@ npm run test:related -- lib/feature-status.js lib/feature-close.js lib/dashboard
 Mirror for research close if research uses impl leases the same way.
 
 **Read path (deep status):** Extend `collectFeatureDeepStatus` identity block with `implementedBy` — prefer stats, fall back to scanning events once. Frontend `renderStatus` adds Identity rows; no frontend-only inference from raw events.
+
+Suggested shape:
+
+```json
+"implementedBy": {
+  "holderId": "docker-machine-b",
+  "user": "testuser-b@example.com",
+  "agentId": "cu",
+  "source": "stats",
+  "acquiredAt": "2026-07-11T23:10:00.000Z"
+}
+```
+
+Use `source: "active-lease"` for in-progress rows and `source: "event-history"` for read-only fallback. Omit unknown keys rather than inventing placeholder values.
+
+## Drawer Design Notes
+
+The least surprising layout is:
+
+1. Keep **Identity** as the place for durable facts: ID, name, lifecycle, mode, primary agent, **Implemented by**, and worktree when applicable.
+2. Keep **Lock** as the place for live coordination state only. Active leases can still show `this machine` / `active` / `stale`; done features should not get a fake lock card.
+3. Render **Implemented by** as a compact two-line value when there is enough data:
+
+   - primary line: `testuser-b@example.com @ docker-machine-b (CU)`
+   - secondary line: `from close stats · acquired Jul 12, 2026, 9:10 AM`
+
+4. Use the same visual density as existing `stats-row` values. Do not introduce a large hero card or badge-heavy treatment inside the detail drawer; this is audit metadata, not the main workflow state.
+
+If a richer affordance is desired later, add a small `Provenance` section above `Identity` only for closed features, with exactly two rows: **Implemented by** and **Closed by**. That should be a follow-up unless **Closed by** is added in this feature.
 
 **Events decoration:** Extend `decorateDetailEvent` in `lib/dashboard-detail.js` for `lease.*` types — reuse holder label helper shared with dashboard `formatLeaseHolderLabel` (extract to a small shared module or duplicate minimally in server decorator).
 
