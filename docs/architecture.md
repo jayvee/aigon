@@ -295,7 +295,7 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | File | Purpose |
 |------|---------|
 | `types.js` | Enum constants (LifecycleState, AgentStatus, FeatureMode, etc.) and factory helpers |
-| `paths.js` | Path computation for `.aigon/workflows/` state files |
+| `paths.js` | Path computation for `.aigon/workflows/` state files **and** the canonical spec home: `CANONICAL_SPEC_DIR` (`00-specs`), `getCanonicalSpecDirForEntity`, plus the `CANONICAL_STAGE_DIRS` allow-list (which deliberately excludes `00-specs`) and `LIFECYCLE_TO_*_DIR` stage maps |
 | `event-store.js` | Append-only JSONL event persistence |
 | `snapshot-store.js` | JSON snapshot read/write |
 | `lock.js` | Exclusive file-based locking |
@@ -348,12 +348,30 @@ complexity: low | medium | high | very-high
 
 Per-agent **model and effort** defaults for the start modal are **not** stored in the spec — they are resolved at start time from `templates/agents/<id>.json` `cli.complexityDefaults[<complexity>]`, then global `aigon config models`, so provider SKUs can change without editing specs.
 
-- **What's allowed:** `complexity` (single enum). The CLI may also maintain **`transitions:`** here for audit trail (entity commands).
+- **What's allowed:** `complexity` (single enum); **`aigon_id:`** (`F42` / `R42`) — the immutable numeric identity reserved at create time (F667, see below); the CLI may also maintain **`transitions:`** here for audit trail (entity commands).
 - **What's not allowed:** workflow state. Lifecycle stage, agents, review status etc. live in the workflow-core snapshot — frontmatter is advisory, not authoritative. **Do not** embed `recommended_models` or other per-agent model IDs in specs (legacy fields should be removed in spec review).
 - **Parser:** `lib/cli-parse.js` `parseFrontMatter`.
 - **Resolver:** `lib/spec-recommendation.js` applies `agent.cli.complexityDefaults[<complexity>] → null` and exposes the per-agent recommendation via `/api/recommendation/:type/:id`.
 - **Missing / malformed `complexity` is valid** — treated as "no recommendation, use config defaults" (pre-F313 behaviour preserved).
 - Producers: `feature-create`, `research-create`, and `feature-spec-review` touch frontmatter. Readers: the dashboard start modal (banner + pre-selection), backlog card complexity badge.
+
+### Spec Frontmatter: aigon_id — create-time identity (feature 667)
+
+Every feature and research topic reserves its **permanent numeric identity when it is created**, before its spec file or workflow aggregate exists — under both `specLayout` values:
+
+```yaml
+---
+aigon_id: F42
+complexity: medium
+---
+```
+
+- **Allocation:** `feature-create`/`research-create` call `SpecStore.reserveIdentitySync(kind)` (`lib/entity.js`). Git-branch storage uses a CAS reservation on the state branch (racing clones get distinct IDs; a loser refetches and retries; an unreachable remote refuses rather than guessing). Local storage uses a deterministic local allocator seeded from existing numeric IDs. Feature and research number sequences are independent.
+- **Immutability:** the id is written to frontmatter and is not derived from filename or folder. The spec file is numbered from creation (`feature-42-slug.md`), and the workflow aggregate bootstraps at the numeric id immediately.
+- **Prioritise is lifecycle-only:** it no longer re-keys slug → numeric. `migrateEntityWorkflowIdSync` survives only as the `legacySlugPrioritise` compatibility branch for pre-F667 unnumbered inbox specs (and for `feature-transfer`/legacy import). `unprioritise`/`rename` keep the reserved number and edit only the slug.
+- **Abandoned reservations:** a crash after reservation but before file write leaves a pending, non-recycled identity surfaced by `aigon doctor`. Numbering gaps are possible; IDs are never reused.
+
+See [`docs/specstore-architecture.md`](specstore-architecture.md#create-time-immutable-identity-f667) for the storage-side reservation contract.
 
 ### Spec Pre-authorisation
 

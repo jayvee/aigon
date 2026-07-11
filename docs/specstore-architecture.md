@@ -1,6 +1,6 @@
 # SpecStore Architecture
 
-> Maintainer note for SpecStore storage. Features 573-578 introduced the boundary, local backend, git-backed sync, and leases; features 595-598 hardened stats sync, dashboard visibility, conversion, and two-clone regression coverage; features 609-613 replaced per-spec Git refs with the `git-branch` orphan-branch backend and removed legacy `git-ref`.
+> Maintainer note for SpecStore storage. Features 573-578 introduced the boundary, local backend, git-backed sync, and leases; features 595-598 hardened stats sync, dashboard visibility, conversion, and two-clone regression coverage; features 609-613 replaced per-spec Git refs with the `git-branch` orphan-branch backend and removed legacy `git-ref`. The **stable-spec-layout set (666-670)** then made the spec *file* location lifecycle-independent: canonical `00-specs`, create-time immutable IDs, a generated symlink view of the stage folders, and removal of lifecycle-time spec-file moves. See [Spec layout: canonical `00-specs`](#spec-layout-canonical-00-specs-666-670) below.
 
 ## Purpose
 
@@ -117,7 +117,7 @@ Opt-in backend. Enable with `aigon storage convert --backend=git-branch --remote
 | Concern | Behaviour |
 |---------|-----------|
 | **Canonical store** | File tree on orphan branch `aigon-state` (default): `meta.json`, `specs/<KEY>/events.jsonl`, `leases/<KEY>.json` |
-| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally. **Projection rebuild is read-only for the checked-out branch** — it never moves spec markdown, stages files, or creates commits on `HEAD`; folder drift is surfaced via read-model diagnostics until explicit repair (`aigon repair`) or a generated lifecycle view (set member 669). |
+| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally. **Projection rebuild is read-only for the checked-out branch** — it never moves spec markdown, stages files, or creates commits on `HEAD` (F666). Under stable layout, lifecycle stage folders are the generated symlink view (F669), refreshed from workflow state; under legacy layout, folder drift after a remote transition is surfaced via read-model diagnostics until explicit repair (`aigon repair`). |
 | **Sync** | `aigon storage sync` fetch+merge+push for `refs/heads/<branch>`; `aigon storage status` reports health |
 | **Pre-write sync** | Mutating commands fetch+merge before append unless offline |
 | **Merge** | Union/dedupe by event `id` per spec key |
@@ -130,9 +130,12 @@ Module: `lib/spec-store/git-branch-backend.js` (+ `git-plumbing.js`, `event-merg
 
 `storage.backend: "git-ref"` is **rejected** at runtime with the exact convert command to run — no silent fallback to `local`. Import-only readers for `refs/aigon/specs/*/events` live in `lib/spec-store/convert.js` so the old backend module could be deleted while conversion remains supported.
 
-## Spec layout: canonical `00-specs` (F668)
+## Spec layout: canonical `00-specs` (666-670)
 
-Durable spec markdown has a **lifecycle-independent canonical home**:
+The stable-spec-layout set separates a spec's **file location** from its
+**lifecycle**. Under `specLayout: stable`, durable spec markdown has a
+**lifecycle-independent canonical home** and never moves for a lifecycle-only
+transition; the stage folders become a generated view.
 
 - Features: `docs/specs/features/00-specs/`
 - Research: `docs/specs/research-topics/00-specs/`
@@ -142,17 +145,51 @@ Durable spec markdown has a **lifecycle-independent canonical home**:
 `CANONICAL_STAGE_DIRS` — the stage resolver never treats it as a stage, so a
 canonical file is never double-counted alongside a stage copy.
 
+### Create-time immutable identity (F667)
+
+Every feature and research topic reserves its **permanent numeric identity at
+create time**, before its spec file or workflow aggregate exists — for *both*
+layouts, not just stable:
+
+- `feature-create`/`research-create` call `SpecStore.reserveIdentitySync(kind)`
+  (`lib/entity.js:reserveCreateIdentity`) to obtain a durable display key.
+  On git-branch storage this is a CAS reservation on the state branch so two
+  clones racing for the next number get distinct IDs; on local storage it is a
+  deterministic local allocator. Git-branch create refuses to allocate an
+  official number when the state remote is unreachable — it never guesses.
+- The key is written to spec frontmatter as `aigon_id: F42` / `aigon_id: R42`
+  (`injectAigonIdFrontmatter`). It is immutable and is **not** derived from
+  filename or folder. The file is numbered from creation
+  (`feature-42-slug.md`), and the workflow aggregate bootstraps at the numeric
+  id immediately.
+- **Prioritise is now a lifecycle-only transition** (`transitionEntityLifecycleSync`) —
+  it does not rename the workflow directory or assign a new ID. The old
+  slug→numeric re-keying (`migrateEntityWorkflowIdSync`) survives only as the
+  `legacySlugPrioritise` compatibility branch for pre-F667 unnumbered inbox
+  specs. `unprioritise`/`rename` likewise keep the reserved number and touch
+  only the slug.
+- A reserved-but-unmaterialised identity (crash after reservation, before file
+  write) is treated as abandoned/pending and surfaced by `aigon doctor` — never
+  recycled, so numbering gaps are possible but IDs are never reused.
+
+### Storage, resolution, and the generated view
+
 | Concern | Behaviour |
 |---------|-----------|
-| **Layout version** | `specLayout: "stable" \| "legacy"` in the tracked `.aigon/config.json`. Committed, so every clone/worktree agrees after normal Git sync. Storage backend selection (local vs git-branch) never alters the layout. |
-| **New creates** | Under `stable`, `feature-create`/`research-create` write the numbered, immutable canonical file directly into `00-specs`; under `legacy` they write into `01-inbox` as before. |
-| **Resolution** | `lib/feature-spec-resolver.js` returns the canonical file (`source: 'canonical'`) whenever one exists; it falls back to legacy stage discovery only when no canonical file exists. Symlinks are excluded from canonical discovery by `lstat`, never by filename heuristics. |
-| **Lifecycle view** | `lib/spec-view.js` generates disposable relative symlinks in lifecycle folders after workflow state is published. Lifecycle commands refresh this view under `stable`; they do not move canonical spec markdown or create commits for lifecycle-only transitions. |
+| **Layout version** | `specLayout: "stable" \| "legacy"` in the tracked `.aigon/config.json`. Committed, so every clone/worktree agrees after normal Git sync. Storage backend selection (local vs git-branch) never alters the layout. **Legacy is the default** — stable is reached only by explicit migration; unmigrated repos keep the stage-folder write model. |
+| **New creates** | Under `stable`, `feature-create`/`research-create` write the numbered, immutable canonical file directly into `00-specs`; under `legacy` they write into `01-inbox`. Either way the file is numbered from creation (F667). |
+| **Resolution** | `lib/feature-spec-resolver.js` returns the canonical file (`source: 'canonical'`) whenever one exists; it falls back to legacy stage discovery only when no canonical file exists. Symlinks are excluded from canonical discovery by `lstat`, never by filename heuristics. Helpers: `lib/spec-layout-core.js` (`listCanonicalSpecs`, `findCanonicalSpecFile`, `isSymlink`). |
+| **Lifecycle view (F669)** | `lib/spec-view.js` is an idempotent projector: `computeDesiredView` builds the full `{link → target}` map from current snapshots + canonical `00-specs` identities; `reconcileView` creates/replaces/removes only paths it can **prove** are Aigon-managed (a relative symlink resolving to a direct child of the matching kind's `00-specs`). It leaves regular files and unmanaged/out-of-root symlinks untouched with a structured `DIAG.*` diagnostic. Writes a disposable manifest (`.aigon/state/spec-view-manifest.json`) and excludes generated links via the repo's `info/exclude`. |
+| **Lifecycle transitions (F670)** | Under `stable`, workflow-core suppresses the `move_spec` effect (`lib/spec-lifecycle.js:filterMoveSpecEffects`); prioritise, start, pause/resume, eval, code review/revision, close, reset, unprioritise, autonomous, set, and research equivalents publish workflow events and then call `refreshLifecycleView` — they never move canonical markdown or commit for a lifecycle-only transition. `feature-transfer` reads canonical `00-specs` content from the source repo and writes into the target through its normal create path. Historical `move_spec` events remain replayable metadata but cannot mutate tracked content under stable. |
 | **Migration** | Explicit, validated command — never runs from `aigon apply`, dashboard startup, storage polling, or any read path. |
 
-Module: `lib/spec-layout.js` (canonical-path API, status, and the
-plan→validate→apply→commit migration engine). Command wiring:
-`lib/commands/spec-layout.js`.
+Modules: `lib/spec-layout.js` (canonical-path API, status, and the
+plan→validate→apply→commit migration engine), `lib/spec-layout-core.js` (layout
+version read + canonical listing helpers), `lib/spec-lifecycle.js` (shared
+stable-layout lifecycle helpers: `shouldMoveSpecFiles`, `filterMoveSpecEffects`,
+`refreshLifecycleView`, `syncWorktreeLifecycleLinks`), `lib/spec-view.js` (the
+generated-view projector). Command wiring: `lib/commands/spec-layout.js`,
+`lib/commands/spec-view.js`.
 
 ### `aigon spec-layout`
 
@@ -160,7 +197,7 @@ plan→validate→apply→commit migration engine). Command wiring:
 |---------|------|
 | `aigon spec-layout status` | Read-only report: `legacy` / `mixed` / `migration-blocked` / `stable`, canonical vs legacy counts, warnings, blockers. Never writes. |
 | `aigon spec-layout migrate --stable --dry-run` | Deterministic move/collision plan; performs no writes. |
-| `aigon spec-layout migrate --stable [--yes]` | Validates IDs, duplicate specs, destination collisions, dirty relevant files, and paths outside Aigon spec roots before moving anything. `git mv` preserves rename history; unnumbered inbox specs receive IDs via the feature-2 create-time reservation contract; numbered specs keep their IDs. Commits only the explicit migration paths + the layout-version config. `--yes` acknowledges active entities (in-progress / in-evaluation) whose worktree/branch still references the legacy path until it merges. |
+| `aigon spec-layout migrate --stable [--yes]` | Validates IDs, duplicate specs, destination collisions, dirty relevant files, and paths outside Aigon spec roots before moving anything. `git mv` preserves rename history; unnumbered inbox specs receive IDs via the F667 create-time reservation contract; numbered specs keep their IDs. Commits only the explicit migration paths + the layout-version config. `--yes` acknowledges active entities (in-progress / in-evaluation) whose worktree/branch still references the legacy path until it merges. Also refreshes the generated view on completion. |
 
 Migration is **idempotent and recoverable**: a completed run re-runs as a no-op;
 an interrupted run (canonical copy written but stage source still present) is
@@ -177,6 +214,22 @@ Legacy `specLayout: "legacy"` remains available for the compatibility window so
 unmigrated repositories can keep the stage-folder write model. New lifecycle
 development should target `stable`; `aigon spec-layout migrate --stable` is the
 documented cutover path.
+
+### `aigon spec-view`
+
+The generated lifecycle view (F669) is disposable and regenerated from workflow
+state — it exists only under `specLayout: stable` and is a no-op under legacy.
+
+| Command | Role |
+|---------|------|
+| `aigon spec-view status` | Dry run: report desired vs current links, blocked/unsafe collisions, and counts. No writes. |
+| `aigon spec-view refresh` | Reconcile the view: create/replace/remove only provably Aigon-managed symlinks; non-zero exit on unsafe collisions left untouched. |
+
+`refreshView` is wired into every stable-layout lifecycle transition, into
+`spec-layout migrate`, `storage sync`, and `storage doctor --fix`, so operators
+rarely call it directly. `aigon doctor` reports legacy real files in lifecycle
+directories, missing canonical files, duplicate identities, and unsafe links;
+`--fix` repairs only provably safe generated-view issues.
 
 ## CLI, leases, doctor, and reporting
 
@@ -216,6 +269,11 @@ documented cutover path.
 | 611 | Git-branch observability |
 | 612 | Two-clone git-branch race harness |
 | 613 | Convert to git-branch + git-ref removal |
+| 666 | Storage projection strictly read-only for tracked content |
+| 667 | Create-time immutable ID reservations (`aigon_id`) |
+| 668 | Canonical `00-specs` home + `aigon spec-layout` migration |
+| 669 | Generated lifecycle symlink view + `aigon spec-view` |
+| 670 | Lifecycle cutover — retire stage-folder move authority |
 
 ## Reading order
 
