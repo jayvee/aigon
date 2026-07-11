@@ -21,6 +21,9 @@ Remove slug-to-numeric workflow re-keying by assigning every feature and researc
 - [ ] `feature-create` and `research-create` allocate a numeric ID before creating the canonical workflow aggregate and spec file.
 - [ ] The canonical identity is stored in spec frontmatter as `aigon_id: F42` or `aigon_id: R42`; it is immutable and is not derived solely from filename or folder.
 - [ ] `feature-prioritise` and `research-prioritise` transition an existing numbered entity from inbox to backlog without renaming its workflow directory or assigning a new ID.
+- [ ] Spec files are numbered from creation (e.g. `feature-42-slug.md` while still in inbox), so lifecycle spec moves under the legacy layout change only the folder, never the filename.
+- [ ] `feature-unprioritise` and `research-unprioritise` become lifecycle-only reverse transitions: they no longer strip the numeric ID from the spec filename or re-key workflow state back to a slug (today `runUnprioritise` in `lib/feature-lifecycle.js` does both via `migrateEntityWorkflowIdSync`).
+- [ ] `feature-rename` / `research-rename` accept numbered inbox entities: they rename the slug portion only and never alter the reserved numeric ID (today they refuse anything that already has an ID).
 - [ ] Git-branch allocation uses remote compare-and-swap semantics: two clones racing for the same next number produce different successful reservations, and a non-fast-forward loser refetches and retries.
 - [ ] Reservations are validated as unique and are never combined through the current local-first union merge path.
 - [ ] Feature and research number sequences are independent, existing numeric IDs seed the allocator, and abandoned reservations are never reused.
@@ -42,7 +45,7 @@ node tests/integration/bootstrap-engine-state.test.js
 ## Technical Approach
 Introduce a SpecStore identity-allocation boundary rather than extending `getNextId` filesystem scans. On git-branch storage, store reservation state in the Aigon state branch and publish it with compare-and-swap/fast-forward semantics. A reservation transaction returns a durable display key; only then does create bootstrap the numbered aggregate and write its spec. Treat a reserved-but-unmaterialised identity as abandoned/pending and expose it to doctor rather than recycling it.
 
-Update entity creation, identity parsing, dependency indexes, set prioritisation, dashboard inbox rows, and migration tooling to accept numbered inbox entities. Delete or deprecate `migrateEntityWorkflowIdSync` as a normal prioritise write path; keep a narrowly scoped legacy importer until the layout migration is complete.
+Update entity creation, identity parsing, dependency indexes, set prioritisation, dashboard inbox rows, and migration tooling to accept numbered inbox entities. Delete or deprecate `migrateEntityWorkflowIdSync` as a normal prioritise/unprioritise write path; keep a narrowly scoped legacy importer until the layout migration is complete.
 
 ## Dependencies
 - `stable-spec-layout-1-read-only-storage-projection`.
