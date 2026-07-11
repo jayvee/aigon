@@ -67,3 +67,20 @@ The projector is gated on `specLayout: stable`, so it is a no-op on the current 
   out-of-root unmanaged symlink preserved; duplicate canonical identity blocked; legacy-layout no-op.
 - Verified in a real git repo that a view refresh leaves `git status` clean (link excluded via
   `info/exclude`, manifest under ignored `.aigon/state/`).
+
+## Code Review
+
+**Reviewed by**: Codex
+**Date**: 2026-07-11
+
+### Fixes Applied
+- 76975bd50 `fix(review): keep blocked spec-view collisions out of managed metadata`
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:subsystem — The original acceptance criteria include refresh triggers for local lifecycle persistence, `aigon apply`, and dashboard storage-projection refresh. This branch intentionally leaves those trigger sites to the 670 cutover member, with `refreshView` ready to call from those paths.
+
+### Notes
+- The projector/CLI/storage/migration wiring is otherwise coherent after the metadata fix.
