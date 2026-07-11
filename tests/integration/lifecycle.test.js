@@ -174,6 +174,7 @@ test('snapshotFinalStats prefers real telemetry over earlier close fallback', ()
     const telemetry = require('../../lib/telemetry');
     const close = require('../../lib/feature-close');
     const { readStats } = require('../../lib/feature-status');
+    const { refToLeaseKey } = require('../../lib/spec-store/leases');
     fs.mkdirSync(path.join(repo, '.aigon', 'workflows', 'features', '778'), { recursive: true });
     fs.writeFileSync(path.join(repo, 'file.txt'), 'base\n');
     execSync('git init -q', { cwd: repo });
@@ -184,6 +185,18 @@ test('snapshotFinalStats prefers real telemetry over earlier close fallback', ()
     execSync('git checkout -qb feature-778-cc-race', { cwd: repo });
     fs.writeFileSync(path.join(repo, 'file.txt'), 'base\nchange\n');
     execSync('git add . && git commit -qm feature', { cwd: repo });
+    const leaseKey = refToLeaseKey({ entityType: 'feature', entityId: '778' });
+    fs.writeFileSync(path.join(repo, '.aigon', 'workflows', 'features', '778', 'events.jsonl'), JSON.stringify({
+        type: 'lease.acquired',
+        at: '2026-07-11T23:10:00.000Z',
+        leaseKey,
+        leaseRole: 'impl',
+        holderId: 'docker-machine-b',
+        user: 'testuser-b@example.com',
+        agentId: 'cu',
+        acquiredAt: '2026-07-11T23:10:00.000Z',
+        expiresAt: '2999-01-01T00:00:00.000Z',
+    }) + '\n');
     telemetry.writeAgentFallbackSession('778', 'cc', {
         repoPath: repo,
         source: 'feature-close-fallback',
@@ -220,6 +233,35 @@ test('snapshotFinalStats prefers real telemetry over earlier close fallback', ()
     assert.strictEqual(stats.cost.model, 'claude-opus-4-6');
     assert.strictEqual(stats.cost.costByAgent.cc.sessions, 1);
     assert.strictEqual(stats.cost.costByAgent.cc.hasRealData, true);
+    assert.deepStrictEqual(stats.implementedBy, {
+        holderId: 'docker-machine-b',
+        user: 'testuser-b@example.com',
+        agentId: 'cu',
+        acquiredAt: '2026-07-11T23:10:00.000Z',
+    });
+}));
+testAsync('feature deep status returns implementation provenance from stats', () => withTempRepo(async (repo) => {
+    const { writeStats, collectFeatureDeepStatus } = require('../../lib/feature-status');
+    writeSpec(repo, '80', 'provenance-status');
+    await engine.startFeature(repo, '80', 'solo_branch', ['cu']);
+    await engine.signalAgentReady(repo, '80', 'cu');
+    await engine.closeFeatureWithEffects(repo, '80', async () => {});
+    writeStats(repo, 'feature', '80', {
+        implementedBy: {
+            holderId: 'docker-machine-b',
+            user: 'testuser-b@example.com',
+            agentId: 'cu',
+            acquiredAt: '2026-07-11T23:10:00.000Z',
+        },
+    });
+    const status = collectFeatureDeepStatus(repo, '80');
+    assert.deepStrictEqual(status.implementedBy, {
+        holderId: 'docker-machine-b',
+        user: 'testuser-b@example.com',
+        agentId: 'cu',
+        source: 'stats',
+        acquiredAt: '2026-07-11T23:10:00.000Z',
+    });
 }));
 test('research close finalizer stages engine-moved spec and commits it', () => withTempDir('aigon-research-close-', (repo) => {
     for (const sub of RESEARCH_REPO_DIRS) fs.mkdirSync(path.join(repo, sub), { recursive: true });

@@ -126,6 +126,8 @@
     .drawer-lease-row.is-local .drawer-lease-state{border-color:rgba(52,211,153,.32);color:#86efac}
     .drawer-lease-row.is-remote .drawer-lease-state{border-color:rgba(251,191,36,.32);color:#fcd34d}
     .drawer-lease-row.is-stale .drawer-lease-state{border-color:rgba(148,163,184,.32);color:#cbd5e1}
+    .stats-val-main{min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .stats-subval{margin-top:3px;font-size:11px;color:var(--text-tertiary)}
     .drawer-recovery-section{margin-bottom:12px}
     .drawer-recovery-copy{margin:0 0 10px;font-size:12px;line-height:1.45;color:var(--text-secondary)}
     .drawer-recovery-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
