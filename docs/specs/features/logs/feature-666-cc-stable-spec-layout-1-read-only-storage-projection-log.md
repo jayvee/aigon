@@ -1,3 +1,16 @@
+---
+commit_count: 3
+lines_added: 190
+lines_removed: 51
+lines_changed: 241
+files_touched: 7
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+---
+
 # Implementation Log: Feature 666 - stable-spec-layout-1-read-only-storage-projection
 Agent: cu (failover from cx)
 
