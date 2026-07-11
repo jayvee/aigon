@@ -63,3 +63,31 @@ workflow state is published, and preserve legacy stage-folder moves only for
 - Passed: `npm run test:workflow`
 - Passed: `node scripts/check-template-leaks.js`
 - Passed: `node scripts/check-module-graph.js --report`
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-11
+
+### Fixes Applied
+- None — implementation was clean.
+
+### Validation
+- Passed: `npm run lint`
+- Passed: `npm run test:unit`
+- Passed: `npm run test:integration` (98/98)
+- Passed: `npm run test:workflow`
+- Passed: `node tests/integration/spec-view-projection.test.js` (includes stable move_spec + reconciliation cases)
+- Passed: `node tests/integration/two-clone-git-branch-storage.test.js`
+- Passed: `node scripts/check-template-leaks.js`
+- Passed: `node scripts/check-module-graph.js --report`
+- Note: `npm run test:core` still fails at pre-existing `lint:paths` findings on `main` (unrelated to F670).
+
+### Escalated Issues (exceptions only)
+- **ESCALATE:subsystem** — Content-dependent commands surfacing an actionable "update main" message when canonical content is missing/stale is documented as follow-up hardening in the implementation log; resolver foundations are in place but not every CLI surface was audited in this branch.
+- **ESCALATE:subsystem** — `feature-transfer` cross-repo canonical read/write contract from the spec was not explicitly exercised with new tests; same-repo agent handoff already routes spec reads through the canonical resolver and `startFeature` now respects stable layout.
+
+### Notes
+- Central `lib/spec-lifecycle.js` + `lib/spec-layout-core.js` cleanly gate `move_spec` emission (engine), execution (effects), and command-side commits while refreshing `spec-view` after workflow publication — good write-path/read-path alignment.
+- Legacy `specLayout: legacy` paths are preserved behind `shouldMoveSpecFiles()`; regression risk is low given existing lifecycle integration coverage.
+- `agent-exhaustion-detect.js` paneTail change is consistent with live-pane heuristic removal (F668), not an accidental regression.
