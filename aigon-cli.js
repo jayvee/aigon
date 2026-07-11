@@ -261,6 +261,11 @@ async function main() {
     }
 
     await maybeRunTemplateDriftLayers(resolvedCommand);
+    setImmediate(() => {
+        try {
+            require('./lib/op-models').refreshIfStale().catch(() => {});
+        } catch (_) { /* optional cache refresh */ }
+    });
 
     const isInteractiveEnv = process.stdin.isTTY && process.stdout.isTTY && !process.env.CI && !process.env.AIGON_SKIP_FIRST_RUN;
     if (isInteractiveEnv && !SKIP_FIRST_RUN.has(resolvedCommand) && !firstRunComplete()) {

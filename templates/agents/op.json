@@ -185,11 +185,11 @@
         }
       },
       {
-        "value": "openrouter/qwen/qwen3-235b-a22b-07-25",
+        "value": "openrouter/qwen/qwen3-235b-a22b-2507",
         "label": "Qwen3 235B (2507) via OpenRouter",
         "pricing": { "input": 0.07, "output": 0.1 },
         "notes": {
-          "implement": "Alibaba flagship MoE; 262K ctx; excellent cost/perf at sub-cent input. ID note: '-07-25' is a date-encoded alias for '-2507' (July 2025); both resolve to the same model on OR — NOT a stale ID. 11 providers, 7.8x speed spread. Timeouts on 2026-05-11 traced to seed clone failures before run start, not model degradation. No deprecation or EOL notices as of May 2026."
+          "implement": "Alibaba flagship MoE; 262K ctx; excellent cost/perf at sub-cent input. Canonical OpenCode/OpenRouter id is `-2507`; legacy `-07-25` aliases normalize at launch. Tools-capable on OpenRouter. 11 providers, 7.8x speed spread."
         },
         "score": { "implement": 4 },
         "summary": {
@@ -216,7 +216,7 @@
           "since": "2026-04-28",
           "reason": "Consistently times out (>45s) on a trivial one-shot PONG probe via opencode run. Likely no healthy endpoints on OpenRouter at time of testing.",
           "evidence": "aigon agent-probe op --model returned TIMEOUT on two consecutive runs (2026-04-28).",
-          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-07-25"]
+          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-2507"]
         }
       },
       {
@@ -232,7 +232,7 @@
           "since": "2026-04-30",
           "reason": "0/3 on brewboard bench (2 timeout, 1 error). Thinking mode triggers unbounded token spend on multi-turn tool-use loops; never signals completion within 10m ceiling.",
           "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json",
-          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-07-25"]
+          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-2507"]
         }
       },
       {
@@ -243,7 +243,13 @@
           "implement": "Mistral's coding-agent specialist (July 2025 build); tuned for SWE-bench style tool use; 128K ctx. Superseded by devstral-2512 for new work but kept active for backward-compat benchmark continuity."
         },
         "score": { "implement": 3.5 },
-        "lastRefreshAt": "2026-04-27T12:00:00.000Z"
+        "lastRefreshAt": "2026-04-27T12:00:00.000Z",
+        "quarantined": {
+          "since": "2026-07-11",
+          "reason": "Removed from OpenRouter catalog (STALE-ID). OpenCode cannot route this model id.",
+          "evidence": "openrouter.ai/api/v1/models — no row for mistralai/devstral-small-2507 as of 2026-07-11; superseded by devstral-2512.",
+          "supersededBy": ["openrouter/mistralai/devstral-2512"]
+        }
       },
       {
         "value": "openrouter/mistralai/devstral-2512",
@@ -283,7 +289,13 @@
           "implement": "Mid-tier Devstral (Jul 2025); fills the gap between devstral-small and devstral-2512; probed PASS in 5.3s. Note: openrouter/mistralai/devstral-medium fails (wrong ID) — use this 2507-suffixed form."
         },
         "score": { "implement": null },
-        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-07-11",
+          "reason": "Removed from OpenRouter catalog (STALE-ID). OpenCode cannot route this model id.",
+          "evidence": "openrouter.ai/api/v1/models — no row for mistralai/devstral-medium-2507 as of 2026-07-11; use devstral-2512 instead.",
+          "supersededBy": ["openrouter/mistralai/devstral-2512"]
+        }
       },
       {
         "value": "openrouter/x-ai/grok-4-fast",
@@ -293,7 +305,13 @@
           "implement": "xAI Grok 4 Fast; very cheap at $0.20/$0.50; probed PASS in 5.5s. Distinct from the quarantined grok-code-fast-1 (different model family/routing). Grok 4 family replaces the Grok Code Fast line."
         },
         "score": { "implement": null },
-        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-07-11",
+          "reason": "Removed from OpenRouter catalog (STALE-ID). xAI Grok 4 Fast ids were renamed (grok-4.20 / grok-4.5 family).",
+          "evidence": "openrouter.ai/api/v1/models — no row for x-ai/grok-4-fast as of 2026-07-11.",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/x-ai/grok-4.1-fast",
@@ -303,7 +321,13 @@
           "implement": "xAI Grok 4.1 Fast; latest iteration of the Grok 4 Fast family; probed PASS in 6.2s. Same pricing as grok-4-fast; benchmarking both to track iteration quality."
         },
         "score": { "implement": null },
-        "lastRefreshAt": "2026-05-11T00:00:00.000Z"
+        "lastRefreshAt": "2026-05-11T00:00:00.000Z",
+        "quarantined": {
+          "since": "2026-07-11",
+          "reason": "Removed from OpenRouter catalog (STALE-ID). xAI Grok 4.1 Fast ids were renamed (grok-4.20 / grok-4.5 family).",
+          "evidence": "openrouter.ai/api/v1/models — no row for x-ai/grok-4.1-fast as of 2026-07-11.",
+          "supersededBy": []
+        }
       },
       {
         "value": "openrouter/nvidia/nemotron-3-super-120b-a12b",

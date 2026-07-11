@@ -60,12 +60,14 @@ function buildCmd(agentConfig, modelValue) {
         case 'cc':
             return ['claude', ['-p', PROBE_PROMPT, ...modelArgs]];
         case 'op': {
+            const { resolveOpModel } = require('../lib/op-models');
+            const probeModel = modelValue ? resolveOpModel(modelValue) : null;
             // OpenCode loads project rules/context from cwd — use an empty dir so a
             // PONG probe stays ~10 tokens instead of 30k+ OpenRouter credits.
             const probeDir = process.env.AIGON_PROBE_DIR || os.tmpdir();
             const dirArgs = ['--dir', probeDir];
-            return modelValue
-                ? ['opencode', ['run', ...dirArgs, '-m', modelValue, PROBE_PROMPT]]
+            return probeModel
+                ? ['opencode', ['run', ...dirArgs, '-m', probeModel, PROBE_PROMPT]]
                 : ['opencode', ['run', ...dirArgs, PROBE_PROMPT]];
         }
         case 'ag':
