@@ -423,7 +423,6 @@
         "usage limit",
         "quota exceeded",
         "credit balance",
-        "context window",
         "rate limit"
       ]
     }

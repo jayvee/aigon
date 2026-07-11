@@ -294,13 +294,10 @@
         2
       ],
       "stderrPatterns": [
-        "token limit",
-        "token budget",
         "quota exceeded",
         "usage limit",
         "rate limit exceeded",
-        "insufficient credits",
-        "context length"
+        "insufficient credits"
       ]
     }
   },
