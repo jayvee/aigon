@@ -130,6 +130,49 @@ Module: `lib/spec-store/git-branch-backend.js` (+ `git-plumbing.js`, `event-merg
 
 `storage.backend: "git-ref"` is **rejected** at runtime with the exact convert command to run — no silent fallback to `local`. Import-only readers for `refs/aigon/specs/*/events` live in `lib/spec-store/convert.js` so the old backend module could be deleted while conversion remains supported.
 
+## Spec layout: canonical `00-specs` (F668)
+
+Durable spec markdown has a **lifecycle-independent canonical home**:
+
+- Features: `docs/specs/features/00-specs/`
+- Research: `docs/specs/research-topics/00-specs/`
+
+`00-specs` is owned by `lib/workflow-core/paths.js` (`CANONICAL_SPEC_DIR`,
+`getCanonicalSpecDirForEntity`) and is deliberately **not** a member of
+`CANONICAL_STAGE_DIRS` — the stage resolver never treats it as a stage, so a
+canonical file is never double-counted alongside a stage copy.
+
+| Concern | Behaviour |
+|---------|-----------|
+| **Layout version** | `specLayout: "stable" \| "legacy"` in the tracked `.aigon/config.json`. Committed, so every clone/worktree agrees after normal Git sync. Storage backend selection (local vs git-branch) never alters the layout. |
+| **New creates** | Under `stable`, `feature-create`/`research-create` write the numbered, immutable canonical file directly into `00-specs`; under `legacy` they write into `01-inbox` as before. |
+| **Resolution** | `lib/feature-spec-resolver.js` returns the canonical file (`source: 'canonical'`) whenever one exists; it falls back to legacy stage discovery only when no canonical file exists. Symlinks are excluded from canonical discovery by `lstat`, never by filename heuristics. |
+| **Migration** | Explicit, validated command — never runs from `aigon apply`, dashboard startup, storage polling, or any read path. |
+
+Module: `lib/spec-layout.js` (canonical-path API, status, and the
+plan→validate→apply→commit migration engine). Command wiring:
+`lib/commands/spec-layout.js`.
+
+### `aigon spec-layout`
+
+| Command | Role |
+|---------|------|
+| `aigon spec-layout status` | Read-only report: `legacy` / `mixed` / `migration-blocked` / `stable`, canonical vs legacy counts, warnings, blockers. Never writes. |
+| `aigon spec-layout migrate --stable --dry-run` | Deterministic move/collision plan; performs no writes. |
+| `aigon spec-layout migrate --stable [--yes]` | Validates IDs, duplicate specs, destination collisions, dirty relevant files, and paths outside Aigon spec roots before moving anything. `git mv` preserves rename history; unnumbered inbox specs receive IDs via the feature-2 create-time reservation contract; numbered specs keep their IDs. Commits only the explicit migration paths + the layout-version config. `--yes` acknowledges active entities (in-progress / in-evaluation) whose worktree/branch still references the legacy path until it merges. |
+
+Migration is **idempotent and recoverable**: a completed run re-runs as a no-op;
+an interrupted run (canonical copy written but stage source still present) is
+diagnosed and resumed by removing the stale source.
+
+> **Consumer wiring boundary.** The shared resolver is canonical-aware, so the
+> dashboard detail/entity views, `spec-reconciliation`, `nudge`, `migration`,
+> and CLI spec lookups that route through it resolve canonical files. The
+> stage-folder-keyed dashboard spec **index** (`lib/dashboard-spec-index.js`)
+> and the direct-scan dependency/set scanners still enumerate stage folders;
+> their canonical integration lands with the lifecycle-view / cutover set
+> members (669–670), where the lifecycle→folder projection is regenerated.
+
 ## CLI, leases, doctor, and reporting
 
 | Command | Role |
