@@ -2,6 +2,8 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const { withTempDirAsync } = require('../_helpers');
 const {
   bootEvent,
@@ -26,6 +28,10 @@ const statsCanonical = require('../../lib/spec-store/stats-canonical');
 const sa = require('../../lib/stats-aggregate');
 const { runStorageDoctor } = require('../../lib/spec-store/doctor');
 const { runGit } = require('../../lib/spec-store/git-plumbing');
+const engine = require('../../lib/workflow-core/engine');
+const { pollOnce } = require('../../lib/storage-poller');
+const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
+const { captureGitRepoState, assertGitRepoStateUnchanged } = require('../git-repo-state');
 
 function liveLeaseClock() {
   clearLeaseNowForTests();
@@ -509,7 +515,55 @@ async function main() {
     }
   })) failed += 1;
 
-  const passed = 17 - failed;
+  if (!await runCase('two-clone git-branch harness: remote lifecycle projection does not mutate checkout git state', async () => {
+    await withTempDirAsync('two-clone-readonly-proj-', async (base) => {
+      const { cloneA, cloneB } = await setupTwoCloneHarness(base);
+      const featureId = '70';
+      const ref = { entityType: 'feature', entityId: featureId };
+      const backlogDir = 'docs/specs/features/02-backlog';
+      const specName = 'feature-70-readonly-projection.md';
+      for (const clone of [cloneA, cloneB]) {
+        fs.mkdirSync(path.join(clone, backlogDir), { recursive: true });
+        fs.writeFileSync(path.join(clone, backlogDir, specName), '# Feature: readonly projection\n');
+        git('git add docs', clone);
+        git('git commit -m "add feature 70 spec"', clone);
+      }
+      git('git push origin HEAD', cloneA);
+      git('git pull origin HEAD', cloneB);
+
+      const specPathA = path.join(cloneA, backlogDir, specName);
+      engine.ensureEntityBootstrappedSync(cloneA, 'feature', featureId, 'backlog', specPathA, { authorAgentId: 'cc' });
+      await engine.startFeature(cloneA, featureId, 'solo_branch', ['cc']);
+      await makeStore(cloneA).sync();
+
+      const specPathB = path.join(cloneB, backlogDir, specName);
+      engine.ensureEntityBootstrappedSync(cloneB, 'feature', featureId, 'backlog', specPathB, { authorAgentId: 'cc' });
+      assert.ok(fs.existsSync(specPathB), 'clone B spec should remain in backlog');
+
+      const before = captureGitRepoState(cloneB);
+      await makeStore(cloneB).fetchRemoteProjection();
+      assertGitRepoStateUnchanged(before, captureGitRepoState(cloneB), 'fetchRemoteProjection');
+
+      const beforePoll = captureGitRepoState(cloneB);
+      const pollResult = await pollOnce({ repoPath: cloneB });
+      assert.strictEqual(pollResult.ok, true);
+      assertGitRepoStateUnchanged(beforePoll, captureGitRepoState(cloneB), 'storage poller fetch');
+
+      const snapshotPath = path.join(cloneB, '.aigon/workflows/features/70/snapshot.json');
+      assert.ok(fs.existsSync(snapshotPath), 'projection snapshot should exist on peer');
+      const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+      assert.strictEqual(snapshot.currentSpecState, 'implementing', 'peer projection should reflect remote lifecycle');
+
+      clearTierCache(cloneB);
+      const status = collectRepoStatus(cloneB, { summary: { total: 0 } });
+      const feature = (status.features || []).find((f) => String(f.id) === featureId);
+      assert.ok(feature, 'feature 70 missing from peer collector');
+      assert.ok(feature.specDrift, 'stale backlog folder should surface drift, not a missing row');
+      assert.strictEqual(feature.stage, 'in-progress');
+    });
+  })) failed += 1;
+
+  const passed = 18 - failed;
   console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
 }

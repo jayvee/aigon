@@ -207,13 +207,13 @@ testAsync('assertNoForeignActiveLeases rejects a destructive command when anothe
     });
 });
 
-testAsync('rebuildLocalProjection reconciles visible spec path using local repo paths', async () => {
-    await withTempDirAsync('dash-storage-projection-reconcile-', async (base) => {
+testAsync('rebuildLocalProjection leaves visible spec path unchanged (read-only projection)', async () => {
+    await withTempDirAsync('dash-storage-projection-readonly-', async (base) => {
         const { repo } = initRepoWithBareRemote(base);
         const backlogSpec = path.join(repo, 'docs/specs/features/02-backlog/feature-88-storage.md');
         fs.writeFileSync(backlogSpec, '# Feature: storage\n');
         engine.ensureEntityBootstrappedSync(repo, 'feature', '88', 'backlog', backlogSpec, { authorAgentId: 'cc' });
-        await engine.startFeature(repo, '88', 'solo_worktree', ['cc']);
+        await engine.startFeature(repo, '88', 'solo_branch', ['cc']);
 
         const eventsPath = path.join(repo, '.aigon/workflows/features/88/events.jsonl');
         const events = fs.readFileSync(eventsPath, 'utf8')
@@ -221,22 +221,27 @@ testAsync('rebuildLocalProjection reconciles visible spec path using local repo 
             .filter(Boolean)
             .map((line) => JSON.parse(line));
         const inProgressSpec = path.join(repo, 'docs/specs/features/03-in-progress/feature-88-storage.md');
-        assert.ok(fs.existsSync(inProgressSpec), 'setup should move spec to in-progress');
+        assert.ok(fs.existsSync(backlogSpec), 'stale backlog spec remains the visible file');
+        assert.ok(!fs.existsSync(inProgressSpec), 'engine.startFeature does not move spec files');
 
-        fs.mkdirSync(path.dirname(backlogSpec), { recursive: true });
-        fs.renameSync(inProgressSpec, backlogSpec);
         fs.rmSync(path.join(repo, '.aigon/workflows/features/88'), { recursive: true, force: true });
+
+        const { captureGitRepoState, assertGitRepoStateUnchanged } = require('../git-repo-state');
+        const before = captureGitRepoState(repo);
 
         const { rebuildLocalProjection } = require('../../lib/spec-store/projection');
         await rebuildLocalProjection(repo, { entityType: 'feature', entityId: '88' }, events);
 
-        assert.ok(fs.existsSync(inProgressSpec), 'projection rebuild should reconcile visible spec to in-progress');
-        assert.ok(!fs.existsSync(backlogSpec), 'projection rebuild should remove stale backlog spec');
-        const docsStatus = execSync('git status --short -- docs/specs/features', {
-            cwd: repo,
-            encoding: 'utf8',
-        }).trim();
-        assert.strictEqual(docsStatus, '', 'projection reconciliation should not leave visible spec moves dirty');
+        assertGitRepoStateUnchanged(before, captureGitRepoState(repo), 'projection rebuild');
+        assert.ok(fs.existsSync(backlogSpec), 'stale backlog spec should remain in place');
+        assert.ok(!fs.existsSync(inProgressSpec), 'projection must not move spec to in-progress');
+
+        clearTierCache(repo);
+        const status = collectRepoStatus(repo, { summary: { total: 0 } });
+        const feature = (status.features || []).find((f) => String(f.id) === '88');
+        assert.ok(feature, 'feature 88 missing from collector');
+        assert.ok(feature.specDrift, 'stale folder should surface drift diagnostic');
+        assert.strictEqual(feature.stage, 'in-progress');
     });
 });
 
