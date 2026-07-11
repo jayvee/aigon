@@ -169,6 +169,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
   const demoteStartForSpecReview = pendingSpecReviews.length > 0
     && validActions.some(va => va.action === reviseActionName);
   const buttonsToRender = validActions.filter(va => {
+    if (va.disabled) return false;
     if (va.action === 'select-winner') return false;
     if (va.agentId) return false;
     if (va.category === 'infra' || va.category === 'view') return false;
@@ -311,6 +312,10 @@ function renderActionButtons(feature, repoPath, pipelineType) {
 }
 
 async function handleFeatureAction(va, feature, repoPath, btn, pipelineType) {
+  if (va && va.disabled) {
+    if (btn) btn.title = va.disabledReason || btn.title || 'Action unavailable';
+    return;
+  }
   const id = feature.id;
   const agentId = va.agentId || null;
   const ctx = buildActionContext(va, feature, repoPath, btn, pipelineType);

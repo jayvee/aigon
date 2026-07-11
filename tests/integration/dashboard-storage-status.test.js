@@ -14,6 +14,7 @@ const { buildDashboardSettingsPayload } = require('../../lib/dashboard-settings'
 const {
     buildRepoStorageStatus,
     buildEntityActiveLeases,
+    applyForeignLeaseActionBlocks,
 } = require('../../lib/dashboard-storage');
 
 function initRepoWithBareRemote(base) {
@@ -110,6 +111,118 @@ testAsync('collectRepoStatus attaches storage and active leases for git-branch r
 
 test('buildEntityActiveLeases returns empty for non-numeric ids', () => {
     assert.deepStrictEqual(buildEntityActiveLeases(process.cwd(), 'feature', 'inbox-slug'), []);
+});
+
+test('applyForeignLeaseActionBlocks disables close and reset actions for foreign leases', () => {
+    const previousMachineId = process.env.AIGON_MACHINE_ID;
+    process.env.AIGON_MACHINE_ID = 'machine-local';
+    try {
+        const item = {
+            validActions: [
+                { action: 'feature-close', label: 'Close' },
+                { action: 'feature-reset', label: 'Reset' },
+                { action: 'feature-start', label: 'Start' },
+            ],
+        };
+        applyForeignLeaseActionBlocks(item, 'feature', [{
+            role: 'impl',
+            holderId: 'machine-remote',
+            agentId: 'cc',
+            expiresAt: '2026-07-01T12:30:00.000Z',
+            expired: false,
+        }]);
+
+        const close = item.validActions.find((a) => a.action === 'feature-close');
+        const reset = item.validActions.find((a) => a.action === 'feature-reset');
+        const start = item.validActions.find((a) => a.action === 'feature-start');
+        assert.strictEqual(close.disabled, true);
+        assert.match(close.disabledReason, /machine-remote/);
+        assert.strictEqual(reset.disabled, true);
+        assert.strictEqual(start.disabled, undefined);
+    } finally {
+        if (previousMachineId === undefined) delete process.env.AIGON_MACHINE_ID;
+        else process.env.AIGON_MACHINE_ID = previousMachineId;
+    }
+});
+
+testAsync('assertNoForeignActiveLeases rejects a destructive command when another machine holds a lease', async () => {
+    await withTempDirAsync('dash-storage-foreign-lease-', async (base) => {
+        const { repo } = initRepoWithBareRemote(base);
+
+        delete require.cache[require.resolve('../../lib/spec-store/index.js')];
+        const { createSpecStore, resolveStorageConfig } = require('../../lib/spec-store/index.js');
+        const { assertNoForeignActiveLeases } = require('../../lib/spec-store/lease-coordination');
+        const store = createSpecStore({ repoPath: repo, storage: resolveStorageConfig(repo) });
+        const ref = { entityType: 'feature', entityId: '88' };
+        await store.acquireLease(ref, {
+            role: 'impl',
+            agentId: 'cc',
+            holderId: 'machine-remote',
+        });
+
+        await assert.rejects(
+            () => assertNoForeignActiveLeases(repo, ref, { holderId: 'machine-local' }),
+            /held by machine-remote/,
+        );
+        await assertNoForeignActiveLeases(repo, ref, { holderId: 'machine-remote' });
+    });
+});
+
+testAsync('rebuildLocalProjection reconciles visible spec path using local repo paths', async () => {
+    await withTempDirAsync('dash-storage-projection-reconcile-', async (base) => {
+        const { repo } = initRepoWithBareRemote(base);
+        const backlogSpec = path.join(repo, 'docs/specs/features/02-backlog/feature-88-storage.md');
+        fs.writeFileSync(backlogSpec, '# Feature: storage\n');
+        engine.ensureEntityBootstrappedSync(repo, 'feature', '88', 'backlog', backlogSpec, { authorAgentId: 'cc' });
+        await engine.startFeature(repo, '88', 'solo_worktree', ['cc']);
+
+        const eventsPath = path.join(repo, '.aigon/workflows/features/88/events.jsonl');
+        const events = fs.readFileSync(eventsPath, 'utf8')
+            .split('\n')
+            .filter(Boolean)
+            .map((line) => JSON.parse(line));
+        const inProgressSpec = path.join(repo, 'docs/specs/features/03-in-progress/feature-88-storage.md');
+        assert.ok(fs.existsSync(inProgressSpec), 'setup should move spec to in-progress');
+
+        fs.mkdirSync(path.dirname(backlogSpec), { recursive: true });
+        fs.renameSync(inProgressSpec, backlogSpec);
+        fs.rmSync(path.join(repo, '.aigon/workflows/features/88'), { recursive: true, force: true });
+
+        const { rebuildLocalProjection } = require('../../lib/spec-store/projection');
+        await rebuildLocalProjection(repo, { entityType: 'feature', entityId: '88' }, events);
+
+        assert.ok(fs.existsSync(inProgressSpec), 'projection rebuild should reconcile visible spec to in-progress');
+        assert.ok(!fs.existsSync(backlogSpec), 'projection rebuild should remove stale backlog spec');
+        const docsStatus = execSync('git status --short -- docs/specs/features', {
+            cwd: repo,
+            encoding: 'utf8',
+        }).trim();
+        assert.strictEqual(docsStatus, '', 'projection reconciliation should not leave visible spec moves dirty');
+    });
+});
+
+testAsync('rebuildLocalProjection removes empty projections so backlog specs keep start actions', async () => {
+    await withTempDirAsync('dash-storage-empty-projection-', async (base) => {
+        const { repo } = initRepoWithBareRemote(base);
+        const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-88-storage.md');
+        fs.writeFileSync(specPath, '# Feature: storage\n');
+
+        const eventsDir = path.join(repo, '.aigon/workflows/features/88');
+        fs.mkdirSync(eventsDir, { recursive: true });
+        fs.writeFileSync(path.join(eventsDir, 'events.jsonl'), '');
+
+        const { rebuildLocalProjection } = require('../../lib/spec-store/projection');
+        await rebuildLocalProjection(repo, { entityType: 'feature', entityId: '88' }, []);
+
+        assert.ok(!fs.existsSync(eventsDir), 'empty projection directory should be removed');
+
+        clearTierCache(repo);
+        const status = collectRepoStatus(repo, { summary: { total: 0 } });
+        const feature = (status.features || []).find((f) => String(f.id) === '88');
+        assert.ok(feature, 'feature 88 missing from collector');
+        assert.strictEqual(feature.stage, 'backlog');
+        assert.ok((feature.validActions || []).some((a) => a.action === 'feature-start'), 'backlog feature should retain Start action');
+    });
 });
 
 report();

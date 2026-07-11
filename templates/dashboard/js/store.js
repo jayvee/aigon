@@ -470,6 +470,7 @@ export function toggleCollapse(path) {
 export function setSidebarHidden(hidden) {
   storeTarget().sidebarHidden = !!hidden;
   persistWrite('sidebarHidden', storeTarget().sidebarHidden);
+  notifyDataChange();
 }
 
 export function toggleSidebarHidden() {
@@ -479,6 +480,7 @@ export function toggleSidebarHidden() {
 export function setSelectedRepo(repoPath) {
   storeTarget().selectedRepo = repoPath;
   persistWrite('selectedRepo', repoPath);
+  notifyDataChange();
 }
 
 export function isRepoHidden(repoPath) {

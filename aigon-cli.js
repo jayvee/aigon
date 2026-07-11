@@ -192,7 +192,15 @@ async function maybeRunTemplateDriftLayers(cmd) {
             && !repoIdentity.isAigonSourceRepo(repoRoot)
             && process.env.AIGON_NO_AUTO_REINSTALL !== '1'
             && manifest && manifest.aigonVersion && manifest.aigonVersion !== pkgVersion) {
-            const installedAgents = installManifestLib.getInstalledAgents(manifest);
+            // Drop agents that have since been deactivated (e.g. `gg`). Passing a
+            // deactivated id to install-agent makes it reject the whole batch and
+            // print `❌ Cannot install …` to stderr (which the stdout-only silencing
+            // below doesn't catch), so the reinstall would refresh nothing while
+            // still claiming success. Filter here to keep the reinstall accurate.
+            const agentRegistry = require('./lib/agent-registry');
+            const installedAgents = installManifestLib
+                .getInstalledAgents(manifest)
+                .filter(id => agentRegistry.isAgentLaunchable(id));
             if (installedAgents.length > 0) {
                 const beforeVersion = manifest.aigonVersion;
                 // Snapshot hand-edited files BEFORE reinstall and restore

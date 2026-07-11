@@ -1399,12 +1399,13 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       card.querySelectorAll('.kcard-va-btn').forEach(btn => {
         const vaAction = btn.getAttribute('data-va-action');
         const vaAgentId = btn.getAttribute('data-agent') || null;
-        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
-          || (vaAction === 'feature-close' ? { action: 'feature-close', label: 'Close' } : null);
+        const va = (feature.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId);
         if (!va) return;
+        if (va.disabled || btn.disabled) return;
         btn._origText = btn.textContent;
         btn.onclick = async (e) => {
           e.stopPropagation();
+          if (va.disabled || btn.disabled) return;
           closeAllKcardOverflowMenus();
           await handleFeatureAction(va, feature, repoPath, btn, pipelineType);
         };
