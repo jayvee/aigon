@@ -1,6 +1,8 @@
 ---
 complexity: high
 set: stable-spec-layout
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-11T08:31:54.012Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: make storage projection strictly read-only for tracked repository content
