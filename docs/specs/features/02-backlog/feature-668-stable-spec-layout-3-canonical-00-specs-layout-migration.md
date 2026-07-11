@@ -20,13 +20,14 @@ Introduce a lifecycle-independent canonical home for feature and research Markdo
 - [ ] Canonical feature files live under `docs/specs/features/00-specs/`; canonical research files live under `docs/specs/research-topics/00-specs/`.
 - [ ] New creates write numbered, immutable canonical files directly into the relevant `00-specs` directory.
 - [ ] Spec CRUD, resolver, dashboard spec index, dependency/set scanners, agent prompt resolution, close/eval validation, and other content consumers resolve canonical files without relying on lifecycle folders.
-- [ ] The project records an explicit layout version such as `specLayout: stable`; storage backend selection does not alter the layout.
+- [ ] The project records an explicit layout version (e.g. `specLayout: stable`) in a tracked, committed project file such as `.aigon/config.json`, so every clone and worktree agrees on the layout after normal Git sync; storage backend selection does not alter the layout.
 - [ ] `aigon spec-layout status` reports legacy, mixed, migration-blocked, or stable state without changing files.
 - [ ] `aigon spec-layout migrate --stable --dry-run` produces a complete deterministic move/collision plan and performs no writes.
 - [ ] `aigon spec-layout migrate --stable` validates IDs, duplicate specs, destination collisions, dirty relevant files, and paths outside Aigon-owned spec roots before moving anything.
+- [ ] Migration detects entities with active worktrees or unmerged feature branches (in-progress, eval, review) and blocks or requires explicit acknowledgement, documenting that those branches still reference legacy spec paths and how that resolves at merge.
 - [ ] Migration moves feature/research content to `00-specs`, preserves Git rename history where possible, updates portable spec references/projections, and commits only explicit migration paths on main.
 - [ ] Migration is idempotent and recoverable: rerunning after success is a no-op, while an interrupted run is diagnosed and safely resumed or repaired.
-- [ ] Existing unnumbered inbox specs receive previously reserved IDs through the feature-2 allocation contract; existing numbered specs retain their IDs.
+- [ ] Existing unnumbered inbox specs receive IDs allocated through the feature-2 allocation contract; existing numbered specs retain their IDs.
 - [ ] Legacy layouts remain readable during a bounded compatibility period, but mixed layouts never silently select between duplicate real files.
 - [ ] No symlinks are followed as canonical content by scanners, dependency resolution, template generation, or search indexes.
 - [ ] Tests cover feature and research migration, dirty files, duplicate IDs, destination collisions, partial migration recovery, and both storage backends.
