@@ -3,22 +3,16 @@
 const assert = require('assert'), fs = require('fs'), path = require('path'), { spawnSync } = require('child_process');
 const { implAgentReadyForAutonomousClose } = require('../../lib/feature-autonomous');
 const { test, withTempDir, withRepoCwd, report } = require('../_helpers');
-// REGRESSION F538: dashboard registry must read dashboard-runtime.json via AIGON_HOME, not lsof on 4100.
-test('getServerRegistryEntry uses dashboard-runtime.json scoped to AIGON_HOME', () => {
-    const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
-    const block = infra.match(/function getServerRegistryEntry\([^)]*\) \{[\s\S]*?\n    \}/);
-    assert.ok(block, 'getServerRegistryEntry must exist');
-    assert.ok(block[0].includes('getDashboardRuntimeEntry'));
-    assert.ok(block[0].includes('instanceId'));
-    assert.ok(!block[0].includes('lsof'));
-});
-test('static guards: home.html stays GA4-free and lib/pro.js ignores project config', () => {
-    const html = fs.readFileSync(path.join(__dirname, '../../site/public/home.html'), 'utf8');
-    const pro = fs.readFileSync(require.resolve('../../lib/pro.js'), 'utf8');
-    assert.ok(!html.includes('G-XXXXXXXXXX') && !html.includes('googletagmanager.com'));
-    assert.ok(!/loadProjectConfig|require\(['"]\.\/config['"]\)/.test(pro));
-});
-// REGRESSION F594: default dashboard e2e bootstrap must fence mock-only runs.
+
+// Behavioral regression guards. These exercise real functions / scripts and
+// assert observable behaviour or exit codes. (Brittle source-text greps that
+// asserted implementation strings in lib/dashboard files were removed — they
+// broke on every refactor, tested text not behaviour, and overlapped lint +
+// the dashboard e2e suite.)
+
+// REGRESSION F594: default dashboard e2e bootstrap must fence mock-only runs so a
+// live-agent env can never leak model overrides / a real agent binary into the
+// mock dashboard, and must not carry mock env into the host-agent process.
 test('dashboard e2e mock bootstrap strips model overrides and forces mock agent bin', () => {
     const { stripLiveAgentEnv, buildMockOnlyDashEnv, buildHostAgentEnv, MOCK_AGENT_BIN_PATH } = require('../dashboard-e2e/e2e-env');
     const stripped = stripLiveAgentEnv({
@@ -45,16 +39,6 @@ test('dashboard e2e mock bootstrap strips model overrides and forces mock agent 
     assert.ok(!('AIGON_TEST_MODE' in host));
     assert.ok(!('MOCK_AGENT_BIN' in host));
     assert.ok(!('TMUX_TMPDIR' in host));
-    const setup = fs.readFileSync(path.join(__dirname, '../dashboard-e2e/bootstrap.js'), 'utf8');
-    assert.ok(setup.includes('isLiveAgentRun()'), 'bootstrap must reject AIGON_E2E_REAL on default path');
-});
-// REGRESSION F600: Caddy route writes are gated on instance identity, not only AIGON_E2E_SERVER.
-test('server start/restart gates Caddy proxy writes for ephemeral dashboard instances', () => {
-    const infra = fs.readFileSync(path.join(__dirname, '../../lib/commands/infra.js'), 'utf8');
-    assert.ok(infra.includes('resolveServerIdentity'));
-    assert.ok(infra.includes('sandboxPreview'));
-    assert.ok(infra.includes('proxyAvailable: (!identity.isEphemeral || sandboxPreview) && isProxyAvailable()'));
-    assert.ok(!infra.includes("const isE2eServer = process.env.AIGON_E2E_SERVER === '1';"));
 });
 // REGRESSION: F286 mode-conditional implementation logs (fleet-only + skip copy).
 test('implementation logging policy', () => {
@@ -78,58 +62,8 @@ test('autonomous close gate: feedback-addressed and per-agent file bridge snapsh
     const snapSolo = { agents: { solo: { status: 'ready' } } };
     assert.ok(implAgentReadyForAutonomousClose(snapSolo, 'cu', '1', repo), 'solo engine slot bridges concrete --agents id');
 }));
-// REGRESSION: F313 banner used querySelector('#agent-picker .modal-card') but the modal is .modal-box — banner never rendered.
-test('agent picker recommendation banner mounts in index.html (no phantom .modal-card)', () => {
-    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
-    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
-    assert.ok(idx.includes('id="agent-picker-recommendation"'));
-    assert.ok(idx.includes('id="autonomous-picker-recommendation"'));
-    assert.ok(!picker.includes("querySelector('#agent-picker .modal-card')"));
-    assert.ok(picker.includes("getElementById(mountId || 'agent-picker-recommendation')"));
-});
-// REGRESSION: agent picker and Start Autonomously must share pickerEligible filtering — not all bootstrap agents.
-test('agent picker rows filter pickerEligible like autonomous modal', () => {
-    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
-    assert.ok(picker.includes('function getPickerEligibleAgents'), 'shared picker eligibility helper');
-    assert.ok(/getPickerEligibleAgents\(\)\.map\(agent/.test(picker), 'renderAgentPickerRows uses pickerEligible filter');
-    assert.ok(picker.includes('autonomousOnly: true'), 'autonomous list reuses picker helper');
-    assert.ok(!/AIGON_AGENTS\.map\(agent => \{[\s\S]*buildAgentCheckRow/.test(picker), 'agent picker must not map all bootstrap agents');
-});
-// REGRESSION: Start Autonomously reviewer row must reuse the same triplet wiring as implement rows (spec recommendations + localStorage), not dead selects.
-test('autonomous reviewer triplet uses recommendation and tripletStorage like implement rows', () => {
-    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
-    const block = picker.match(/function updateReviewerTripletSelects\([\s\S]*?\n}\n\n\/\/ Convert picker triplets/);
-    assert.ok(block, 'updateReviewerTripletSelects block present');
-    const body = block[0];
-    assert.ok(body.includes('getRecommendedValue(agent.id, \'model\')'), 'reviewer model select applies spec recommendation');
-    assert.ok(body.includes('tripletStorage.read(agent.id)'), 'reviewer model select reads last-used triplet');
-    assert.ok(body.includes('getRecommendedValue(agent.id, \'effort\')'), 'reviewer effort select applies spec recommendation');
-    assert.ok(body.includes('tripletStorage.write(agent.id, { effort:'), 'reviewer effort persists');
-    const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
-    assert.ok(idx.includes('id="autonomous-review-triplet-hint"'), 'autonomous reviewer hint documents picker parity');
-    assert.ok(idx.includes('autonomous-review-model-cell'), 'reviewer model override cell present');
-});
-// REGRESSION: picker UX — model summaries in tooltips only; configured-model labels truncated; shared exports helpers.
-test('agent picker triplet UX avoids inline summary blocks', () => {
-    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
-    const shared = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions/shared.js'), 'utf8');
-    const css = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/styles/components.css'), 'utf8');
-    assert.ok(picker.includes('function formatConfiguredModelDisplay'), 'friendly configured-model labels');
-    assert.ok(picker.includes('function refreshAutonomousPickerTriplets'), 'recommendation refresh after async load');
-    assert.ok(!picker.includes('className: \'model-summary-hint\''), 'no inline hint divs');
-    assert.ok(shared.includes('applyConfiguredModelCell'), 'autonomous modal imports configured-model helper via shared');
-    assert.ok(css.includes('text-overflow:ellipsis'), 'configured model column truncates long paths');
-});
-// REGRESSION: set-conductor spawns per-feature AutoConductor via tmux; wrong aigon-cli path exits immediately (no review/close).
-test('AutoConductor loop cmd targets repo-root aigon-cli', () => {
-    const p = path.join(__dirname, '../../lib/feature-autonomous.js');
-    const content = fs.readFileSync(p, 'utf8');
-    assert.ok(
-        !content.includes("path.join(__dirname, '..', '..', 'aigon-cli.js')"),
-        'inner __run-loop must use lib/../aigon-cli.js not ../../ (parent of repo)',
-    );
-});
-// REGRESSION: feature 307 bans blanket staging in aigon-owned commit paths.
+// REGRESSION: feature 307 bans blanket staging in aigon-owned commit paths (behavioural
+// policy with no other coverage — a stray `git add -A` would stage the user's whole tree).
 test('aigon-owned commit paths avoid git add -A and git add .', () => {
     const repoRoot = path.join(__dirname, '../..');
     ['lib/feature-close.js', 'lib/worktree.js', 'lib/commands/setup.js'].forEach(relPath => {
@@ -185,23 +119,6 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
     const noArgs = spawnSync('bash', [sh], { encoding: 'utf8' });
     assert.notStrictEqual(noArgs.status, 0);
     assert.ok(String(noArgs.stderr + noArgs.stdout).includes('Usage'));
-});
-// REGRESSION F420: Pro benchmark matrix wiring is OSS-thin — script tag, settings mount, asset proxy.
-// Pro owns the data + UI; OSS must NOT register /api/benchmarks/latest.
-test('dashboard wires benchmark settings placeholder (script order + Pro asset proxy + no OSS API)', () => {
-    // F623: script order moved from index.html tags to main.js import order.
-    const mainJs = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/main.js'), 'utf8');
-    const iBench = mainJs.indexOf("'/js/benchmark-matrix.js'");
-    const iSettings = mainJs.indexOf("'./settings.js'");
-    assert.ok(iBench > 0 && iSettings > iBench, 'benchmark-matrix.js import must precede settings.js in main.js');
-    const ds = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-server.js'), 'utf8');
-    assert.ok(ds.includes("reqPath === '/js/benchmark-matrix.js'"), 'dashboard-server must serve /js/benchmark-matrix.js via resolveProDashboardAsset');
-    const settings = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/settings.js'), 'utf8');
-    assert.ok(settings.includes("addSection('perf-benchmarks'"), 'settings.js must add the perf-benchmarks section');
-    assert.ok(settings.includes('AigonProBenchmarkMatrix'), 'settings.js must mount via window.AigonProBenchmarkMatrix');
-    assert.ok(!settings.includes('aigon perf-bench'), 'OSS settings copy must not tell users to run removed perf-bench command');
-    const cfg = fs.readFileSync(path.join(__dirname, '../../lib/dashboard-routes/config.js'), 'utf8');
-    assert.ok(!cfg.includes('/api/benchmarks'), 'OSS must not register /api/benchmarks — Pro owns it via pro-bridge');
 });
 // REGRESSION F537: benchmark-specific agent-probe flag was removed from OSS.
 test('agent-probe rejects removed benchmark flag without launching probe', () => {
