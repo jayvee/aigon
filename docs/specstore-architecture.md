@@ -117,7 +117,7 @@ Opt-in backend. Enable with `aigon storage convert --backend=git-branch --remote
 | Concern | Behaviour |
 |---------|-----------|
 | **Canonical store** | File tree on orphan branch `aigon-state` (default): `meta.json`, `specs/<KEY>/events.jsonl`, `leases/<KEY>.json` |
-| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally |
+| **Local projection** | `.aigon/workflows/**` remains the read cache; sync rebuilds events, snapshots, and stats projections locally. **Projection rebuild is read-only for the checked-out branch** — it never moves spec markdown, stages files, or creates commits on `HEAD`; folder drift is surfaced via read-model diagnostics until explicit repair (`aigon repair`) or a generated lifecycle view (set member 669). |
 | **Sync** | `aigon storage sync` fetch+merge+push for `refs/heads/<branch>`; `aigon storage status` reports health |
 | **Pre-write sync** | Mutating commands fetch+merge before append unless offline |
 | **Merge** | Union/dedupe by event `id` per spec key |

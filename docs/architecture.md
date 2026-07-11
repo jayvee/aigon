@@ -252,7 +252,7 @@ Git-branch storage is opt-in through `.aigon/config.json` or `aigon storage conv
 
 Leases are advisory append-only `lease.*` events in the same canonical stream. Defaults are a 30 minute TTL and renew checkpoints at most every 10 minutes; `--takeover` records `lease.taken_over` for auditable conflict resolution. `aigon storage status|doctor|report`, `aigon storage sync`, and `aigon board --storage` are the public CLI surfaces. `lib/dashboard-storage.js` provides server-owned DTOs for dashboard repo/settings storage health and active feature/research lease metadata.
 
-Projection boundaries are explicit: `.aigon/workflows/**` remains the local read cache, snapshots are disposable, spec markdown and code changes still move through normal Git, and analytics files such as `.aigon/workflows/**/stats.json` plus `.aigon/cache/stats-aggregate.json` are local projections/caches. Canonical `stats.recorded` events sync through git-branch storage and rebuild those local stats projections where available.
+Projection boundaries are explicit: `.aigon/workflows/**` remains the local read cache, snapshots are disposable, spec markdown and code changes still move through normal Git (lifecycle commands and explicit `aigon repair` only — **not** storage fetch/sync projection rebuild), and analytics files such as `.aigon/workflows/**/stats.json` plus `.aigon/cache/stats-aggregate.json` are local projections/caches. Canonical `stats.recorded` events sync through git-branch storage and rebuild those local stats projections where available.
 
 Feedback is not a top-level spec kind — it becomes research origin metadata (feature 574).
 
