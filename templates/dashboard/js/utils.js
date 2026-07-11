@@ -228,6 +228,27 @@ import { state } from './state.js';
       return agent ? (machine + ' · ' + agent) : machine;
     }
 
+    function isEntityHeldByOtherMachine(entity, repoStorage) {
+      const leases = entity && Array.isArray(entity.activeLeases) ? entity.activeLeases : [];
+      if (leases.length === 0) return false;
+      const localHolderId = repoStorage && repoStorage.localHolderId ? String(repoStorage.localHolderId) : null;
+      if (!localHolderId) return false;
+      return leases.some((lease) => (
+        lease
+        && !lease.expired
+        && lease.holderId
+        && String(lease.holderId) !== localHolderId
+      ));
+    }
+
+    function canShowSessionPeek(entity, repoStorage, opts) {
+      if (isEntityHeldByOtherMachine(entity, repoStorage)) return false;
+      const options = opts || {};
+      if (options.tmuxRunning != null) return Boolean(options.tmuxRunning);
+      if (options.sessionRunning != null) return Boolean(options.sessionRunning);
+      return false;
+    }
+
     function buildLeaseBadgeHtml(entity, repoStorage) {
       const leases = entity && Array.isArray(entity.activeLeases) ? entity.activeLeases : [];
       if (leases.length === 0) return '';
@@ -279,4 +300,4 @@ import { state } from './state.js';
     }
 
 // ── ESM exports (F623) ──
-export { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };
+export { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, buildStorageStatusBadgeHtml, canShowSessionPeek, copyText, escHtml, featureRank, formatFeatureIdForDisplay, formatLeaseHolderLabel, isCompleteStatus, isEntityHeldByOtherMachine, logsDateFmt, refreshTimestamps, relTime, showToast, statusRank };

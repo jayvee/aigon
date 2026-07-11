@@ -13,7 +13,7 @@ import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
 import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, setPipelineGroupBySet as applyPipelineGroupBySet, setPipelineType as applyPipelineType, subscribeDataChange } from './store.js';
 import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
-import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
+import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, canShowSessionPeek, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
 import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-presentation.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
@@ -661,7 +661,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
 
     // Actions rendered from API — do not add action eligibility logic here.
     // All actions (workflow + infra) are derived server-side via the action registry.
-    function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType) {
+    function buildAgentSectionHtml(agent, agentValidActions, feature, repoPath, pipelineType, repoStorage) {
       // After a failover the slot id (agent.id) stays as the original agent
       // for routing/file-keying, but `runtimeAgentId` reflects who's actually
       // running now. Render the runtime so the card visibly changes after a
@@ -817,8 +817,8 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         ).join('');
         actionsHtml += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + stopItems + secondaryInfraOverflow + sessionOverflow + markCompleteItem + '</div></div>';
       }
-      // Peek button — only shown when agent has a tmux session
-      const peekBtn = agent.tmuxSession
+      // Peek — only when tmux is alive on this machine and we hold (or share) the lease.
+      const peekBtn = canShowSessionPeek(feature, repoStorage, { tmuxRunning: agent.tmuxRunning })
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(agent.tmuxSession) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
       // Solo cards: the headline banner already carries the lifecycle phase
@@ -926,6 +926,8 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
 
     function buildReviewerSectionHtml(title, reviewer, options) {
       const mode = options && options.mode ? options.mode : 'implementation';
+      const repoStorage = options && options.repoStorage ? options.repoStorage : null;
+      const feature = options && options.feature ? options.feature : null;
       const reviewerName = AGENT_DISPLAY_NAMES[reviewer.agent] || reviewer.agent;
       const isRunning = reviewer.running === true;
       const sessionLive = typeof reviewer.sessionRunning === 'boolean'
@@ -936,7 +938,8 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         ? (mode === 'spec-revise' ? 'Revising' : mode === 'spec-check' ? 'Checking' : 'Reviewing')
         : (mode === 'spec' ? 'Review submitted' : mode === 'spec-revise' ? 'Spec revised' : mode === 'spec-check' ? 'Review check complete' : 'Review complete');
       const statusCls = isRunning ? 'status-reviewing' : 'status-review-done';
-      const peekBtn = reviewer.session
+      const peekEligible = reviewer.session && canShowSessionPeek(feature, repoStorage, { sessionRunning: sessionLive });
+      const peekBtn = peekEligible
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(reviewer.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
       // Show revision verdict badge when review is complete and verdict is known
@@ -953,14 +956,15 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         '</div>';
     }
 
-    function buildSpecReviewSectionsHtml(feature) {
+    function buildSpecReviewSectionsHtml(feature, repoStorage) {
       const specReviews = feature.specReviewSessions || [];
       const specRevisions = Array.isArray(feature.specRevisionSessions) && feature.specRevisionSessions.length > 0
         ? feature.specRevisionSessions
         : (feature.specCheckSessions || []);
+      const reviewerOpts = { feature, repoStorage };
       let html = '';
-      specReviews.forEach(r => { html += buildReviewerSectionHtml('Spec Review', r, { mode: 'spec' }); });
-      specRevisions.forEach(r => { html += buildReviewerSectionHtml('Spec Revision', r, { mode: 'spec-revise' }); });
+      specReviews.forEach(r => { html += buildReviewerSectionHtml('Spec Review', r, { ...reviewerOpts, mode: 'spec' }); });
+      specRevisions.forEach(r => { html += buildReviewerSectionHtml('Spec Revision', r, { ...reviewerOpts, mode: 'spec-revise' }); });
       return html;
     }
 
@@ -991,8 +995,8 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       '</div>';
     }
 
-    function buildSpecReviewBlockHtml(feature, validActions, pipelineType) {
-      return buildSpecReviewSectionsHtml(feature) + buildPendingSpecReviewCalloutHtml(feature, validActions, pipelineType);
+    function buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage) {
+      return buildSpecReviewSectionsHtml(feature, repoStorage) + buildPendingSpecReviewCalloutHtml(feature, validActions, pipelineType);
     }
 
     function buildReviewCycleHistoryHtml(feature) {
@@ -1068,7 +1072,11 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
 
       const agents = feature.agents || [];
       const validActions = feature.validActions || [];
-      const autonomousPeekBtn = feature.autonomousSession && feature.autonomousSession.sessionName
+      const repoStorage = repoMeta && repoMeta.storage ? repoMeta.storage : null;
+      const autonomousSessionRunning = feature.autonomousSession
+        && feature.autonomousSession.sessionName
+        && (feature.autonomousSession.sessionRunning === true || feature.autonomousSession.running === true);
+      const autonomousPeekBtn = autonomousSessionRunning && canShowSessionPeek(feature, repoStorage, { sessionRunning: true })
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
         : '';
       const autonomousControllerHtml = buildAutonomousControllerStatusHtml(feature);
@@ -1128,7 +1136,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         // Agent sections — same layout as in-progress (filter out select-winner from per-agent actions)
         agents.forEach(agent => {
           const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
-          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType);
+          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType, repoStorage);
         });
         }
 
@@ -1144,7 +1152,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
           innerHtml += '<div class="kcard-eval-section">';
           innerHtml += '<div class="kcard-eval-section-header">';
           innerHtml += '<span class="kcard-eval-section-title">Evaluation</span>';
-          if (evalRunning && evalSess.session) {
+          if (evalRunning && evalSess.session && canShowSessionPeek(feature, repoStorage, { sessionRunning: true })) {
             innerHtml += '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at live eval output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
           }
           innerHtml += '</div>';
@@ -1194,10 +1202,10 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         // Review section — dedicated block between agents and actions
         if (!suppress.reviewerPanels && reviews.length > 0) {
           reviews.forEach(r => {
-            innerHtml += buildReviewerSectionHtml('Review', r);
+            innerHtml += buildReviewerSectionHtml('Review', r, { feature, repoStorage });
           });
         }
-        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
+        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
         if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
         if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
@@ -1224,10 +1232,10 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         // Review section for solo mode
         if (reviews.length > 0 && !suppress.reviewerPanels) {
           reviews.forEach(r => {
-            innerHtml += buildReviewerSectionHtml('Review', r);
+            innerHtml += buildReviewerSectionHtml('Review', r, { feature, repoStorage });
           });
         }
-        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType);
+        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
         if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
         if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
         innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
@@ -1254,7 +1262,7 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
               evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
             }
           }
-          const specReviewHtml = buildSpecReviewBlockHtml(feature, validActions, pipelineType);
+          const specReviewHtml = buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
           innerHtml +=
             (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
             evalStatusHtml +

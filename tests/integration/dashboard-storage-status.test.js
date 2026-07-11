@@ -15,6 +15,7 @@ const {
     buildRepoStorageStatus,
     buildEntityActiveLeases,
     applyForeignLeaseActionBlocks,
+    sanitizeForeignLeaseSessionAffordances,
 } = require('../../lib/dashboard-storage');
 
 function initRepoWithBareRemote(base) {
@@ -122,6 +123,7 @@ test('applyForeignLeaseActionBlocks disables close and reset actions for foreign
                 { action: 'feature-close', label: 'Close' },
                 { action: 'feature-reset', label: 'Reset' },
                 { action: 'feature-start', label: 'Start' },
+                { action: 'open-session', label: 'Open Terminal', agentId: 'cu' },
             ],
         };
         applyForeignLeaseActionBlocks(item, 'feature', [{
@@ -130,15 +132,52 @@ test('applyForeignLeaseActionBlocks disables close and reset actions for foreign
             agentId: 'cc',
             expiresAt: '2026-07-01T12:30:00.000Z',
             expired: false,
-        }]);
+        }], 'machine-local');
 
         const close = item.validActions.find((a) => a.action === 'feature-close');
         const reset = item.validActions.find((a) => a.action === 'feature-reset');
         const start = item.validActions.find((a) => a.action === 'feature-start');
+        const openSession = item.validActions.find((a) => a.action === 'open-session');
         assert.strictEqual(close.disabled, true);
         assert.match(close.disabledReason, /machine-remote/);
         assert.strictEqual(reset.disabled, true);
         assert.strictEqual(start.disabled, undefined);
+        assert.strictEqual(openSession.disabled, true);
+        assert.match(openSession.disabledReason, /machine-remote/);
+    } finally {
+        if (previousMachineId === undefined) delete process.env.AIGON_MACHINE_ID;
+        else process.env.AIGON_MACHINE_ID = previousMachineId;
+    }
+});
+
+test('sanitizeForeignLeaseSessionAffordances strips local tmux peek targets for foreign leases', () => {
+    const previousMachineId = process.env.AIGON_MACHINE_ID;
+    process.env.AIGON_MACHINE_ID = 'machine-local';
+    try {
+        const item = {
+            agents: [{
+                id: 'cu',
+                tmuxSession: 'brewboard-f2-cu',
+                tmuxRunning: true,
+                attachCommand: 'tmux attach -t brewboard-f2-cu',
+            }],
+            autonomousSession: { sessionName: 'brewboard-f2-auto', sessionRunning: true },
+            evalSession: { session: 'brewboard-f2-eval-cc', running: true },
+            reviewSessions: [{ session: 'brewboard-f2-review-cc', running: true }],
+        };
+        sanitizeForeignLeaseSessionAffordances(item, [{
+            role: 'impl',
+            holderId: 'machine-remote',
+            agentId: 'cu',
+            expired: false,
+        }], 'machine-local');
+
+        assert.strictEqual(item.heldByForeignLease, true);
+        assert.strictEqual(item.agents[0].tmuxSession, null);
+        assert.strictEqual(item.agents[0].tmuxRunning, false);
+        assert.strictEqual(item.autonomousSession.sessionRunning, false);
+        assert.strictEqual(item.evalSession.running, false);
+        assert.strictEqual(item.reviewSessions[0].running, false);
     } finally {
         if (previousMachineId === undefined) delete process.env.AIGON_MACHINE_ID;
         else process.env.AIGON_MACHINE_ID = previousMachineId;

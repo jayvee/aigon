@@ -33,6 +33,17 @@ test('inbox + spec_review_in_progress lifecycle still buckets as inbox (feature 
     assert.strictEqual(r.readModelSource, wrm.WORKFLOW_SOURCE.SNAPSHOT);
 }));
 
+// REGRESSION: solo close uses the in-evaluation column but must not show fleet eval UI.
+test('closing lifecycle in in-evaluation column does not set evalStatus evaluating', () => withTempDir('aigon-rm-close-', (repo) => {
+    seed(repo);
+    writeSpec(repo, 'features', '04-in-evaluation', 'feature-2-brewery-import.md');
+    writeSnap(repo, 'features', '2', 'closing');
+    const state = wrm.getFeatureDashboardState(repo, '2', 'in-evaluation', [{ id: 'cu', status: 'ready' }]);
+    assert.strictEqual(state.stage, 'in-evaluation');
+    assert.strictEqual(state.evalStatus, null);
+    assert.strictEqual(state.evalSession, null);
+}));
+
 for (const [kind, getState] of [['features', wrm.getFeatureDashboardState], ['research-topics', wrm.getResearchDashboardState]]) {
     const id = kind === 'features' ? '12' : '21';
     test(`${kind}: snapshot lifecycle overrides visible folder stage`, () => withTempDir('aigon-rm-', (repo) => {
