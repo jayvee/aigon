@@ -66,6 +66,7 @@ Research may recommend zero or more features via its `## Output` section. The ol
 | `aigon feature-code-review <ID>` | Post-implementation code review with fixes by a different agent |
 | `aigon feature-cancel-code-review <ID>` | Cancel an in-progress code review, stop the reviewer session, and return the feature to `ready` |
 | `aigon feature-code-revise [ID]` | Implementer-side follow-up after a code review |
+| `aigon feature-escalation <accept\|follow-up\|reopen> <ID> <n>` | Disposition an open review escalation before close (`--reason` required; follow-up needs `--name`) |
 | `aigon feature-autonomous-stop <ID>` | Stop the AutoConductor and take over manually from the current workflow state |
 | `aigon feature-push [ID] [agent]` | Push the feature branch to `origin` for PR review |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
@@ -100,6 +101,22 @@ Typical recovery flow:
 1. Stop autonomy if the feature is still under autonomous orchestration.
 2. Cancel the bad review.
 3. Re-run `aigon feature-code-review <ID>` with a different reviewer or model.
+
+## Review escalations
+
+When a code reviewer finds an issue beyond a safe in-pass fix, they record it in the implementation log under `## Code Review` using:
+
+`ESCALATE:<category> — <reason>`
+
+Categories include at minimum `architectural`, `security`, `scope`, and `spec-shortfall`. List prefixes and bold markers are tolerated.
+
+On `review-complete`, each marker becomes a `review.escalation_raised` workflow event and appears as `openEscalations[]` on the snapshot. By default these are advisory close findings: `aigon feature-close` records the audit signal and keeps moving. Repos that want strict close gates can set `featureClose.integrityPolicy: "blocking"` or add `review-escalation` to `featureClose.blockingGates`.
+
+- `aigon feature-escalation accept <ID> <n> --reason "…"`
+- `aigon feature-escalation follow-up <ID> <n> --name <slug>` (creates an inbox follow-up spec)
+- `aigon feature-escalation reopen <ID> <n> --reason "…"` (returns to code revision)
+
+Autonomous flows do not auto-accept escalations.
 
 ## Solo Mode Workflow
 
@@ -158,3 +175,49 @@ Before running `feature-close`, always:
    git push -u origin <current-branch-name>
    ```
 2. **Ask the user** if they want to delete the local branch after merge (the CLI will delete it by default)
+
+### Post-merge verification gate
+
+After the feature branch merges into your default branch, `feature-close` can run a **post-merge gate** on merged main before marking the feature done. This catches cross-feature interactions that per-worktree checks miss.
+
+Configure in `.aigon/config.json`:
+
+```json
+{
+  "featureClose": {
+    "postMergeGate": "your-verify-command"
+  }
+}
+```
+
+- **String** — shell command run from the repo root on merged main (e.g. your project's verify script).
+- **Array** — argv form: `["tool", "arg1", "arg2"]`.
+- **`true`** — reuse the deploy command from `commands.deploy` or your package manifest when configured.
+- **`false`** — opt out (close prints a loud skip notice).
+
+By default, when the gate fails, the merge is **not** reverted and close continues. Aigon records an advisory audit event, writes the full gate output in `.aigon/state/close-gates/`, and marks the repo-level main branch condition red until a later passing gate clears it.
+
+Repos that want strict close-integrity behavior can opt in:
+
+```json
+{
+  "featureClose": {
+    "integrityPolicy": "blocking",
+    "postMergeGate": "your-verify-command"
+  }
+}
+```
+
+Or block only selected policy findings:
+
+```json
+{
+  "featureClose": {
+    "blockingGates": ["post-merge-gate"]
+  }
+}
+```
+
+Supported policy gates are `review-escalation`, `preauth-validation`, and `post-merge-gate`. Mechanical failures such as invalid workflow state, missing branches or worktrees, merge conflicts, security scan failures, git failures, and push failures remain hard stops.
+
+The worktree security scan before merge still runs (fail fast before merging). The post-merge gate is the final authority for "done".

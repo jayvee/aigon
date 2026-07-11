@@ -29,6 +29,16 @@ Explore the codebase to understand the existing architecture, patterns, and code
 
 Use this understanding to write a well-informed spec — especially the **Technical Approach**, **Dependencies**, and **Acceptance Criteria** sections.
 
+### Feature sets (`set:` frontmatter)
+
+**Default: standalone.** Most new specs should **not** have a `set:` tag.
+
+Use `set: <slug>` only when you are creating **two or more inbox specs** that ship together and will be prioritised with `aigon set-prioritise <slug>`.
+
+**Before reusing any set slug**, run `aigon set show <slug>`. If every member is `done`, the set is **closed** — do **not** tag into it. For follow-up work, use `depends_on: [<id>]` and mention prior features under `## Related` instead.
+
+See `.aigon/docs/feature-sets.md` § *Completed sets — do not rejoin*.
+
 ### Set the spec frontmatter
 
 **`complexity:` (required)** — drives the per-agent {model, effort} **defaults** in the dashboard start modal, resolved from each agent's complexity-defaults table and then `aigon config`. **Do not put model names or effort levels in the spec**; those SKUs change over time and belong only in agent config.

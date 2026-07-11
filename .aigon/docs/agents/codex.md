@@ -37,7 +37,7 @@
 ### Feedback Commands
 | Command | Description |
 |---------|-------------|
-| `$aigon-feedback-create <title>` | Create a feedback item in inbox |
+| `$aigon-feedback-create <title>` | Legacy no-op; capture as research with `origin: customer-feedback` |
 | `$aigon-feedback-list [filters]` | List feedback by status/type/severity/tag |
 | `$aigon-feedback-triage <ID>` | Triage feedback with explicit apply confirmation |
 

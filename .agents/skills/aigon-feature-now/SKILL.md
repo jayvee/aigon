@@ -132,7 +132,7 @@ aigon agent-status implementation-complete
 
 Write and commit the log **before** calling `aigon agent-status implementation-complete`. Run `aigon feature-do {{ARG1_SYNTAX}}` once from the checkout where you implement — the CLI prints your mode.
 
-- **Fleet** (another agent worktree exists for this feature): fill in the 7-section log skeleton at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` targeting 200–400 words, then commit it.
+- **Fleet** (another agent worktree exists for this feature): fill in the log skeleton at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` targeting 200–400 words, then commit it.
 - **Solo Drive worktree** (only worktree for this feature): at most **one line** in that log path if the starter file exists.
 - **Solo Drive branch** (feature branch in the main repo path, not an `…-<agent>-…` worktree folder): **no log** — do not create `docs/specs/features/logs/` files. Go to **Step 5** (`aigon agent-status implementation-complete`).
 

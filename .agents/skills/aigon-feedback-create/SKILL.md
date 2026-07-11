@@ -5,9 +5,9 @@ description: Create feedback <title>
 
 # aigon-feedback-create
 
-Create a new feedback item in `docs/specs/feedback/01-inbox/`.
+Legacy no-op. Feedback intake now lives in research with `origin: customer-feedback`.
 
-## Step 1: Run the CLI command
+## Step 1: Do not create a feedback item
 
 ```bash
 aigon feedback-create $ARGUMENTS
@@ -15,20 +15,13 @@ aigon feedback-create $ARGUMENTS
 
 ## Argument resolution
 
-If no title is provided:
-1. Ask the user for a short title
-2. Re-run `aigon feedback-create "<title>"`
+This command prints the deprecation notice and exits without creating a file.
 
 ## Expected result
 
-- A new file `feedback-<ID>-<slug>.md` is created in inbox
-- Front matter includes the assigned ID and title
-- The command output prints the next step (`aigon feedback-triage <ID>`)
+- No feedback file is created
+- The command output tells you to use `aigon research-create` with `origin: customer-feedback`
 
 ## Follow-up
 
-After creation, read the new file and fill in:
-- `## Summary`
-- `## Evidence`
-- attribution fields (`reporter`, `source`)
-
+Capture the input as research instead.

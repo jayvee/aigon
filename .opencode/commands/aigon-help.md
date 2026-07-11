@@ -43,7 +43,7 @@ description: Show Aigon commands
 
 | Command | Description |
 |---------|-------------|
-| `aigon-feedback-create <title>` | Create feedback item in inbox with next ID |
+| `aigon-feedback-create <title>` | Legacy no-op; capture as research with `origin: customer-feedback` |
 | `aigon-feedback-list [filters]` | List feedback items with status/type/severity/tag filters |
 | `aigon-feedback-triage <ID>` | Run triage preview and apply with explicit confirmation |
 
@@ -58,7 +58,6 @@ description: Show Aigon commands
 | Code | Agent | Command | Mode |
 |------|-------|---------|------|
 | cc | Claude Code | `claude --permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
-| gg | Gemini | `gemini --yolo` | Auto-approves all |
 | cx | Codex | `codex` | Workspace-write, smart approval |
 | cu | Cursor | `agent --force` | Auto-approves commands (yolo mode) |
 | op | OpenCode | `opencode` | Workspace-write, smart approval |
