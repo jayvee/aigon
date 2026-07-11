@@ -2,7 +2,7 @@
 
 **Goal: ship features fast. Tests exist to catch regressions, not to perform.** Every minute spent re-running a green suite is a minute taken from the next feature. This doc tells you the minimum testing required at each step of the lifecycle, where the rules live, and what NOT to do.
 
-If you remember nothing else: **default to scoped (`npm run test:iterate`); full suite runs once before push.**
+If you remember nothing else: **default to scoped (`npm run test:iterate`); rerun the failed file; full release suites are explicit, rare, and operator-driven.**
 
 ---
 
@@ -14,11 +14,14 @@ There are four named stages. The iterate gate and deploy gate are the two lifecy
 |---|---|---|
 | `npm run test:quick` | alias for `test:iterate` | shorthand |
 | `npm run test:iterate` | scoped lint + matched integration/workflow tests + smoke fallback | every code change mid-iteration |
-| `npm run test:core` | lint + workflow diagram check + full integration + full workflow | when you need the full non-browser suite |
-| `npm run test:browser` | full Playwright E2E suite (`MOCK_DELAY=fast`) | deploy gate, CI on push-to-main |
+| `npm run test:core` | lint + workflow diagram check + fast integration + workflow | normal non-browser safety gate |
+| `npm run test:core:full` | `test:core` + heavyweight unit/integration files | release triage only |
+| `npm run test:browser` | alias for browser smoke | normal browser safety gate |
+| `npm run test:browser:full` | full Playwright E2E suite (`MOCK_DELAY=fast`) | release triage only |
 | `npm run test:browser:smoke` | Playwright @smoke subset only | auto-run by iterate gate on dashboard-file changes |
-| `npm run test:deploy` | `test:core` + `security:package-config` + `security:suspicious-deps` + `npm audit --omit=dev --audit-level=high` + `test:browser` + budget check | **deploy gate** — run before `git push` / `feature-close` |
-| `npm run test:all` | alias for `test:deploy` | |
+| `npm run test:deploy` | `test:core` + browser smoke + budget check | **deploy gate** — run before `git push` / `feature-close` |
+| `npm run test:release` | full heavyweight integration + security/audit + full Playwright + budget | maintainer release check |
+| `npm run test:all` | alias for `test:release` | |
 | `npm test` | same as `test:core` | backwards compat; kept for existing tooling |
 | `npm run test:ui` | same as `test:browser` | backwards compat; kept for existing tooling |
 
@@ -29,7 +32,7 @@ npm run test:iterate
 ```
 
 - **What it runs**: lint scoped to changed `lib/` files; integration + workflow tests whose filename matches keywords from `git diff`; a 5-test smoke fallback if no match. Lints + scoped tests + diagram check only when relevant.
-- **What it skips**: full Playwright suite (`test:browser`); LOC budget check; tests unrelated to changed files.
+- **What it skips**: full Playwright suite (`test:browser:full`); LOC budget check; tests unrelated to changed files.
 - **Dashboard touch**: when the diff includes `templates/dashboard/**`, `lib/dashboard*.js`, or `lib/server*.js`, the iterate gate automatically runs `test:browser:smoke` (Playwright @smoke subset, ~fast) instead of the 2-minute full browser suite.
 - **Wall-time target**: <30s for the typical iteration; ~2s for `lib/`-only changes with no dashboard touches.
 - **Implementation**: `lib/test-loop/scoped.js`, `scripts/iterate-validate.js`.
@@ -41,9 +44,9 @@ npm run test:iterate
 npm run test:deploy
 ```
 
-- **What it runs**: `test:core` (lint + diagrams + integration + workflow, ~12s) + `security:package-config` + `security:suspicious-deps` + `npm audit --omit=dev --audit-level=high` + `test:browser` (full Playwright suite, ~90s) + `scripts/check-test-budget.sh`.
+- **What it runs**: `test:core` (lint + diagrams + fast integration + workflow) + browser smoke + `scripts/check-test-budget.sh`.
 - **When it fires**: before `git push`, before `aigon agent-status implementation-complete`, before `feature-close` merges to main. Catches everything the iterate gate skipped.
-- **Failures here block the push.** `security:suspicious-deps` is the one exception: it is a required release-triage report, so review its output even though the command itself may exit zero. Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
+- **Failures here block the push.** Do not skip with `--no-verify`. Do not proceed past a real failure — fix it.
 
 The deploy gate is the safety net that lets the iterate gate be aggressive. Trust it.
 
@@ -60,7 +63,7 @@ This table is the authoritative answer for "what tests do I run when I'm doing X
 | **`feature-code-review` making fixes** | None automatic. | **Reviewers do not run tests.** Record `Validation not run by reviewer per policy` in the review log. The implementor owns validation after revision. | Don't run any test command — not even `test:iterate`. |
 | **`feature-code-revise` accepting/reverting/modifying** | None automatic. | Run `npm run test:iterate` for the files you changed after accepting/modifying. See `feature-code-revise.md` Step 4.5. | Don't run the full browser suite. |
 | **`feature-close` (Drive mode)** | Triggers the **deploy gate** as part of the merge sequence. | Let it run. Watch for failures. | Don't bypass with `--no-verify`. Don't push past a red gate. |
-| **`feature-close` (Fleet, after adopting changes)** | Per `feature-close.md:114-117`: "After all adoptions are applied, run the project's test suite. Re-run tests until green." | Run `npm run test:core` after each adoption batch; full deploy gate before the merge. | Don't merge with adoptions unverified. |
+| **`feature-close` (Fleet, after adopting changes)** | Per `feature-close.md:114-117`: "After all adoptions are applied, run the project's test suite. Re-run tests until green." | Run `npm run test:deploy` after each adoption batch. If one file fails, rerun that file directly after the fix. | Don't restart the full suite after a single-file failure. |
 
 **Rule of thumb:** if you didn't change code in this turn, you don't need to run any tests. If you changed code, the iterate gate is enough until the deploy gate.
 
@@ -70,11 +73,12 @@ This table is the authoritative answer for "what tests do I run when I'm doing X
 
 These are anti-patterns that have repeatedly slowed the dev cycle. Don't:
 
-1. **Run the full Playwright suite mid-iteration.** It takes ~76s. If your diff doesn't touch `templates/dashboard/**` or `lib/(dashboard|server)*.js`, you have nothing to verify there. The iterate gate will auto-include Playwright when relevant — trust it.
-2. **Run `npm test` (full integration + workflow) "to be sure" between edits.** That's what `test:iterate` exists to scope. Re-running the full integration suite for a one-line change in `lib/scheduled-kickoff.js` runs 48 unrelated test files.
+1. **Run the full Playwright suite mid-iteration.** It takes ~76s. If your diff doesn't touch `templates/dashboard/**` or `lib/(dashboard|server)*.js`, you have nothing to verify there. The iterate gate will auto-include browser smoke when relevant — trust it.
+2. **Run `npm test` "to be sure" between edits.** That's what `test:iterate` exists to scope.
 3. **Run `bash scripts/check-test-budget.sh` mid-iteration.** Budget is a deploy-gate concern. Mid-iteration it just adds noise.
 4. **Re-run a green suite to "verify".** Per `feature-do.md:85`: "Ship within 60 seconds of green tests — don't re-run validation 'to be sure'."
-5. **Add a test for code that already has coverage.** Per `AGENTS.md` T3, the suite has a hard LOC ceiling (see `scripts/check-test-budget.sh` for the current value); before adding, check if coverage already exists.
+5. **Restart a full suite after one file fails.** Run the exact failed file first, for example `node tests/integration/spec-author-provenance.test.js`. Only run a broader command when the targeted file is green and the operator asks for a gate.
+6. **Add a test for code that already has coverage.** Per `AGENTS.md` T3, the suite has a hard LOC ceiling (see `scripts/check-test-budget.sh` for the current value); before adding, check if coverage already exists.
 
 ---
 
@@ -115,7 +119,7 @@ Full rules in `AGENTS.md` § Testing Discipline. Summary:
 tests/
 ├── _helpers.js              Shared test() / report() helpers
 ├── commands/                CLI command-handler tests (run via integration glob)
-├── integration/             Engine + filesystem + workflow integration (~49 files)
+├── integration/             Engine + filesystem + workflow integration
 ├── workflow-core/           XState machine core invariants
 ├── utils/                   Shared test utilities
 └── dashboard-e2e/           Playwright UI + lifecycle (the slow tier)
@@ -126,7 +130,7 @@ tests/
     └── state-consistency.spec.js
 ```
 
-`npm test` / `npm run test:core` runs `lint → workflow-diagrams check → tests/integration → tests/workflow-core`, all parallelised. `npm run test:browser` / `npm run test:ui` runs `tests/dashboard-e2e/` via Playwright (all tests). `npm run test:browser:smoke` runs only the `@smoke`-tagged browser tests. `npm run test:deploy` chains core + dependency/security release checks + browser + budget.
+`npm test` / `npm run test:core` runs `lint → workflow-diagrams check → fast tests/integration → tests/workflow-core`, all parallelised. `npm run test:browser` / `npm run test:ui` runs only the smoke browser subset. `npm run test:browser:full` runs all Playwright tests. `npm run test:deploy` chains core + browser smoke + budget. `npm run test:release` is the heavyweight maintainer gate.
 
 ---
 
@@ -160,5 +164,5 @@ For async tests, collect promises and `Promise.all()` them before reporting. Pla
 
 - **"Why is the iterate gate running Playwright?"** Your diff touched a dashboard file. The scoped runner auto-includes the `@smoke` browser subset when `templates/dashboard/**` or `lib/(dashboard|server)*.js` change. If you didn't mean to touch them, check `git status`.
 - **"Why does my feature spec say `npm test && npm run test:ui` in Validation?"** That's the old pre-push gate. Update any such spec blocks to use `npm run test:deploy` — or drop `test:browser`/`test:ui` from the per-feature block if the feature is `lib/`-only and doesn't need browser verification mid-iteration. The Pre-authorised default authorises skipping browser tests mid-iteration.
-- **"Why is `npm test` taking 90s?"** It shouldn't. `npm test` (`test:core`) should be ~12s on a clean checkout. If it's slower, check whether someone re-introduced the serial runner pattern in `package.json` scripts. The slow tier is `test:browser` (~90s); it belongs at the deploy gate, not mid-iteration.
-- **"The deploy gate failed but my changes are unrelated."** Don't bypass it. Run the failing test in isolation (`node tests/integration/foo.test.js` or `npx playwright test tests/dashboard-e2e/foo.spec.js`) and either fix the regression or, if it's a flake, file a feature to de-flake it.
+- **"Why is `npm test` taking 90s?"** It shouldn't. `npm test` (`test:core`) is the fast non-browser gate. If it's slow, check whether someone moved heavyweight files back into `test:unit` / `test:integration` or re-introduced a serial runner pattern in `package.json` scripts. The slow tiers are `test:unit:heavy`, `test:integration:heavy`, and `test:browser:full`; they belong in `test:release`, not mid-iteration.
+- **"The deploy gate failed but my changes are unrelated."** Don't bypass it. Run the failing test in isolation (`node tests/integration/foo.test.js` or `npx playwright test tests/dashboard-e2e/foo.spec.js`) and either fix the regression or, if it's a flake, file a feature to de-flake it. Do not restart the full gate until the failed file is green.

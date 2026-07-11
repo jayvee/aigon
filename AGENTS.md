@@ -359,7 +359,7 @@ The test suite runs at two tiers; do not collapse them into one.
 ```bash
 npm run test:deploy
 ```
-Equivalent to `npm run test:core && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser && bash scripts/check-test-budget.sh`. Blocking checks must pass. `security:suspicious-deps` is a required release-triage report and its findings must be consciously assessed, even when the command itself exits zero. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
+Equivalent to `npm run test:core && npm run test:browser:smoke && bash scripts/check-test-budget.sh`. Blocking checks must pass. Heavyweight release checks live behind `npm run test:release`; do not run them unless the operator explicitly asks. Do NOT push with a failing suite. Do NOT skip hooks with `--no-verify`.
 
 **Iterate-loop gate** (per autopilot iteration; `aigon feature-do <ID> --iterate`):
 ```bash
@@ -367,15 +367,20 @@ npm run test:iterate
 ```
 Scoped: lint on changed `lib/` files, integration/workflow tests whose filename matches keywords from `git diff`, plus a 5-test smoke fallback. **No Playwright. No budget check.** When dashboard files are in the diff, the gate automatically runs `test:browser:smoke` (Playwright @smoke subset) instead of the full 2-minute browser suite. The `DASHBOARD_PATH_RE` trigger (in `lib/test-loop/scoped.js`) matches not just `templates/dashboard/` and `lib/dashboard*`/`lib/server*` but also the state-projection and workflow-rules modules (`lib/state-render-meta.js`, `lib/workflow-snapshot-adapter.js`, `lib/{feature,research}-workflow-rules.js`, `lib/workflow-core/**`) — a refactor there can silently change which dashboard actions are available, which only a browser test catches (F556). Implementation lives in `lib/test-loop/scoped.js` and `scripts/iterate-validate.js`. Wall-time target <30s.
 
-**Agents must NOT manually run `test:browser`, `test:deploy`, `test:ui`, or the full Playwright suite mid-iteration.** The scoped runner invokes the smoke browser subset automatically when dashboard paths are in the diff. The `## Pre-authorised` template default authorises skipping the full browser suite mid-iteration.
+**Agents must NOT manually run `test:browser`, `test:deploy`, `test:ui`, `test:release`, or the full Playwright suite mid-iteration.** The scoped runner invokes the smoke browser subset automatically when dashboard paths are in the diff. The `## Pre-authorised` template default authorises skipping the full browser suite mid-iteration.
+
+**Failed-test rerun rule:** if a gate fails in one test file, run that exact file after the fix (`node tests/integration/foo.test.js`, or the single Playwright spec). Do not restart `npm test`, `test:deploy`, or `test:release` after a single-file failure unless the operator explicitly asks for a full gate.
 
 **Test stage reference:**
 - `npm run test:quick` / `test:iterate` — iterate gate (alias)
-- `npm run test:core` — lint + diagrams + integration + workflow (no browser); lint now covers `templates/dashboard/js/**` (ESLint `no-undef` catches undeclared dashboard globals — the F556 `AUTONOMOUS_AGENT_IDS` class). Cross-file dashboard globals are allowlisted in `eslint.config.js`; do not add a name there without confirming it is genuinely defined somewhere.
-- `npm run test:browser` — full Playwright E2E suite (MOCK_DELAY=fast)
+- `npm run test:core` — lint + diagrams + fast integration + workflow (no browser); lint now covers `templates/dashboard/js/**` (ESLint `no-undef` catches undeclared dashboard globals — the F556 `AUTONOMOUS_AGENT_IDS` class). Cross-file dashboard globals are allowlisted in `eslint.config.js`; do not add a name there without confirming it is genuinely defined somewhere.
+- `npm run test:core:full` — core plus heavyweight unit/integration files; release triage only
+- `npm run test:browser` — browser smoke alias
+- `npm run test:browser:full` — full Playwright E2E suite (MOCK_DELAY=fast); release triage only
 - `npm run test:browser:smoke` — Playwright @smoke subset (fast, auto-run in iterate gate)
-- `npm run test:deploy` — core + dependency/security release checks + browser + budget (the deploy gate)
-- `npm run test:all` — alias for `test:deploy`
+- `npm run test:deploy` — core + browser smoke + budget (the deploy gate)
+- `npm run test:release` — heavyweight unit/integration + dependency/security + full browser + budget
+- `npm run test:all` — alias for `test:release`
 
 ### T2 — new code ships with a test
 New modules, new exported functions with non-trivial logic, and bug fixes ship with a test in the same commit. Exceptions: pure config, pure docs, pure template edits, system-integration code (launchd, signals, sockets) — and state the exception in the commit message. Every new test includes a one-line comment naming the specific regression it prevents (`// REGRESSION: ...`).

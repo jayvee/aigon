@@ -698,10 +698,13 @@ For the full canonical reference on test discipline (iterate vs deploy gates, wh
 | Script | What it runs | When |
 |---|---|---|
 | `npm run test:iterate` / `test:quick` | scoped lint + matched integration/workflow + smoke fallback | every code change mid-iteration |
-| `npm test` / `npm run test:core` | lint + workflow diagram check + `tests/integration/` + `tests/workflow-core/` (parallelised, ~12s) | core non-browser suite |
-| `npm run test:browser` / `test:ui` | full Playwright E2E in `tests/dashboard-e2e/` (MOCK_DELAY=fast, ~90s) | deploy gate, CI push-to-main |
+| `npm test` / `npm run test:core` | lint + workflow diagram check + fast `tests/integration/` + `tests/workflow-core/` | core non-browser suite |
+| `npm run test:core:full` | core + heavyweight unit/integration files | maintainer release triage |
+| `npm run test:browser` / `test:ui` | Playwright smoke subset | deploy gate, CI push-to-main |
+| `npm run test:browser:full` | full Playwright E2E in `tests/dashboard-e2e/` (MOCK_DELAY=fast) | maintainer release triage |
 | `npm run test:browser:smoke` | Playwright `@smoke` subset only | auto-run in iterate gate on dashboard changes |
-| `npm run test:deploy` / `test:all` | `test:core` + `security:package-config` + `security:suspicious-deps` + `npm audit --omit=dev --audit-level=high` + `test:browser` + `scripts/check-test-budget.sh` | before `git push` / `feature-close` |
+| `npm run test:deploy` | `test:core` + `test:browser:smoke` + `scripts/check-test-budget.sh` | before `git push` / `feature-close` |
+| `npm run test:release` / `test:all` | full heavyweight integration + security/audit + full browser + budget | release-only |
 
 ### Test directory layout
 
@@ -736,10 +739,12 @@ tests/
 
 ```bash
 npm run test:iterate            # iterate gate — scoped, fast (<30s)
-npm run test:core               # full non-browser suite (~12s)
+npm run test:core               # normal non-browser suite
 npm run test:browser:smoke      # Playwright @smoke subset
-npm run test:browser            # full Playwright E2E (~90s)
-npm run test:deploy             # deploy gate — core + dependency/security release checks + browser + budget
+npm run test:browser            # alias for browser smoke
+npm run test:browser:full       # full Playwright E2E
+npm run test:deploy             # deploy gate — core + browser smoke + budget
+npm run test:release            # heavyweight release gate
 npm run test:migration          # Brewboard legacy→current migration test
 node -c aigon-cli.js            # Quick syntax check (no tests)
 node -c lib/<module>.js         # Quick syntax check for a module
