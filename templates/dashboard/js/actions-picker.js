@@ -218,6 +218,45 @@ function wireModelSummarySelect(sel, agent, pickerRole) {
   update();
 }
 
+function applyRecommendedTripletToSelects(agent, modelSel, effortSel, pickerRole) {
+  if (!agent) return;
+  const modelOpts = Array.isArray(agent.modelOptions) ? agent.modelOptions : [];
+  const effortOpts = Array.isArray(agent.effortOptions) ? agent.effortOptions : [];
+  if (modelSel && modelOpts.length > 0) {
+    const recommended = getRecommendedValue(agent.id, 'model');
+    if (recommended && modelOpts.some((o) => String(o.value || '') === recommended)) {
+      modelSel.value = recommended;
+      modelSel.classList.add('agent-triplet-recommended');
+      syncModelSummaryHint(modelSel, agent, pickerRole);
+    }
+  }
+  if (effortSel && effortOpts.length > 0) {
+    const recommendedEffort = getRecommendedValue(agent.id, 'effort');
+    if (recommendedEffort && effortOpts.some((o) => String(o.value || '') === recommendedEffort)) {
+      effortSel.value = recommendedEffort;
+      effortSel.classList.add('agent-triplet-recommended');
+    }
+  }
+}
+
+/** Re-apply spec recommendations after async /api/recommendation resolves (autonomous modal). */
+function refreshAutonomousPickerTriplets() {
+  document.querySelectorAll('#autonomous-agent-checks .agent-check-row[data-agent-id]').forEach((row) => {
+    const agent = AIGON_AGENTS.find((a) => a.id === row.dataset.agentId);
+    if (!agent) return;
+    applyRecommendedTripletToSelects(
+      agent,
+      row.querySelector('.agent-triplet-model'),
+      row.querySelector('.agent-triplet-effort'),
+      null,
+    );
+  });
+  const reviewSel = document.getElementById('autonomous-review-agent');
+  if (reviewSel && !reviewSel.disabled) {
+    updateReviewerTripletSelects(String(reviewSel.value || '').trim(), 'autonomous');
+  }
+}
+
 // Append model + effort controls for triplet-grid rows. Always emits two
 // columns (select or placeholder) so the agent-picker grid stays aligned.
 function appendTripletSelects(rowEl, agent, options) {
@@ -687,6 +726,7 @@ export {
   formatConfiguredModelDisplay,
   getAutonomousAgentIds,
   getPickerEligibleAgents,
+  refreshAutonomousPickerTriplets,
   renderAgentPickerRows,
   renderPickerRecommendationBanner,
   replaceNodeChildren,

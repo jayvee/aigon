@@ -107,6 +107,18 @@ test('autonomous reviewer triplet uses recommendation and tripletStorage like im
     assert.ok(body.includes('tripletStorage.write(agent.id, { effort:'), 'reviewer effort persists');
     const idx = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/index.html'), 'utf8');
     assert.ok(idx.includes('id="autonomous-review-triplet-hint"'), 'autonomous reviewer hint documents picker parity');
+    assert.ok(idx.includes('autonomous-review-model-cell'), 'reviewer model override cell present');
+});
+// REGRESSION: picker UX — model summaries in tooltips only; configured-model labels truncated; shared exports helpers.
+test('agent picker triplet UX avoids inline summary blocks', () => {
+    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
+    const shared = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions/shared.js'), 'utf8');
+    const css = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/styles/components.css'), 'utf8');
+    assert.ok(picker.includes('function formatConfiguredModelDisplay'), 'friendly configured-model labels');
+    assert.ok(picker.includes('function refreshAutonomousPickerTriplets'), 'recommendation refresh after async load');
+    assert.ok(!picker.includes('className: \'model-summary-hint\''), 'no inline hint divs');
+    assert.ok(shared.includes('applyConfiguredModelCell'), 'autonomous modal imports configured-model helper via shared');
+    assert.ok(css.includes('text-overflow:ellipsis'), 'configured model column truncates long paths');
 });
 // REGRESSION: set-conductor spawns per-feature AutoConductor via tmux; wrong aigon-cli path exits immediately (no review/close).
 test('AutoConductor loop cmd targets repo-root aigon-cli', () => {

@@ -115,6 +115,7 @@ async function showAutonomousModal(feature, repoPath, btn) {
   ]).then(([autonomousRec]) => {
     H.setPickerRecommendation(autonomousRec || null);
     H.renderPickerRecommendationBanner(autonomousRec || null, 'autonomous-picker-recommendation');
+    if (typeof H.refreshAutonomousPickerTriplets === 'function') H.refreshAutonomousPickerTriplets();
   });
 }
 
@@ -327,6 +328,8 @@ function updateAutonomousModeControls() {
   reviewWrap.toggleAttribute('data-hidden', !isSolo);
   evalSelect.disabled = isSolo;
   reviewSelect.disabled = !isSolo;
+  const fleetReviewHint = document.getElementById('autonomous-fleet-review-hint');
+  if (fleetReviewHint) fleetReviewHint.toggleAttribute('data-hidden', isSolo);
 
   updateAutonomousEvalOptions();
   updateAutonomousReviewOptions();

@@ -368,15 +368,19 @@
           <label class="form-label">Implementation agents</label>
           <div class="agent-checks" id="autonomous-agent-checks"></div>
         </div>
+        <p id="autonomous-fleet-review-hint" class="form-hint-secondary autonomous-fleet-review-hint" data-hidden>Fleet mode (2+ implementation agents) uses an evaluator to pick a winner — not a code reviewer. Select exactly one implementation agent to configure a reviewer with model and effort overrides.</p>
         <div id="autonomous-eval-wrap" class="form-field">
-          <label class="form-label">Evaluator</label>
+          <label class="form-label">Evaluator <span class="form-label-note">(Fleet — picks winner)</span></label>
           <select id="autonomous-eval-agent" class="create-input create-input--compact"></select>
         </div>
         <div id="autonomous-review-wrap" class="form-field" data-hidden>
-          <label class="form-label">Reviewer</label>
-          <p id="autonomous-review-triplet-hint" class="autonomous-review-triplet-hint">Same per-run model and effort rules as the Code review picker: only agents that expose overrides in aigon config show dropdowns; others show —.</p>
-          <div class="agent-picker-reviewer-grid">
-            <select id="autonomous-review-agent" class="create-input create-input--compact"></select>
+          <label class="form-label">Reviewer <span class="form-label-note">(code review)</span></label>
+          <p id="autonomous-review-triplet-hint" class="autonomous-review-triplet-hint">Choose reviewer agent, then override model and effort for the review phase. Hover a model dropdown for maintainer notes.</p>
+          <div class="agent-picker-reviewer-grid agent-picker-reviewer-grid--headed">
+            <span class="agent-picker-reviewer-th">Agent</span>
+            <span class="agent-picker-reviewer-th">Model override</span>
+            <span class="agent-picker-reviewer-th">Effort override</span>
+            <select id="autonomous-review-agent" class="create-input create-input--compact" aria-label="Review agent"></select>
             <span id="autonomous-review-model-cell" class="agent-triplet-cell agent-triplet-cell-model"></span>
             <span id="autonomous-review-effort-cell" class="agent-triplet-cell agent-triplet-cell-effort"></span>
           </div>
