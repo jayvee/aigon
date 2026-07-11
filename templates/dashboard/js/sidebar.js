@@ -1,6 +1,7 @@
 /* dashboard-esm-processed */
 
 import {
+  applyConfiguredModelCell,
   populateSetAgentPickerReviewerSection,
   renderAgentPickerRows,
   renderPickerRecommendationBanner,
@@ -228,7 +229,12 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
               const hint = row.querySelector('.agent-check-hint');
               if (hint) hint.after(modelEl); else row.appendChild(modelEl);
             }
-            modelEl.textContent = modelName;
+            const agentMeta = agents.find((a) => a.id === cb.value);
+            if (modelEl.classList.contains('agent-check-config-model')) {
+              applyConfiguredModelCell(modelEl, agentMeta || cb.value, modelName);
+            } else {
+              modelEl.textContent = modelName;
+            }
           } else if (modelEl) {
             if (modelEl.classList.contains('agent-check-config-model')) modelEl.textContent = '';
             else modelEl.remove();

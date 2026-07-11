@@ -148,6 +148,33 @@ function buildModelOptionDisplayLabel(opt) {
   return opt.value == null && (!raw || raw === 'Use config default') ? 'Default' : (raw || String(opt.value));
 }
 
+/** Human-readable configured-model cell text; full id/path in title. */
+function formatConfiguredModelDisplay(agentOrId, rawValue) {
+  const raw = rawValue == null ? '' : String(rawValue).trim();
+  if (!raw) return { label: '—', title: 'No model configured for this task type' };
+  const agent = typeof agentOrId === 'object' && agentOrId
+    ? agentOrId
+    : AIGON_AGENTS.find((a) => a.id === agentOrId);
+  const opt = agent ? findModelOption(agent, raw) : null;
+  if (opt && opt.label) return { label: buildModelOptionDisplayLabel(opt), title: raw };
+  const shortened = raw
+    .replace(/^openrouter\//, '')
+    .replace(/^ollama\//, '')
+    .split('/')
+    .filter(Boolean)
+    .slice(-2)
+    .join(' / ') || raw;
+  return { label: shortened, title: raw };
+}
+
+function applyConfiguredModelCell(el, agentOrId, rawValue) {
+  if (!el) return;
+  const { label, title } = formatConfiguredModelDisplay(agentOrId, rawValue);
+  el.textContent = label;
+  if (title && title !== label) el.setAttribute('title', title);
+  else el.removeAttribute('title');
+}
+
 function decorateModelSelectOption(el, opt, agent) {
   el.value = opt.value == null ? '' : String(opt.value);
   let label = buildModelOptionDisplayLabel(opt);
@@ -170,9 +197,6 @@ function decorateModelSelectOption(el, opt, agent) {
 }
 
 function syncModelSummaryHint(selectEl, agent, pickerRole) {
-  const container = selectEl.closest('.agent-triplet-cell-model');
-  if (!container) return;
-  container.querySelectorAll('.model-summary-hint, .model-summary-warn').forEach(n => n.remove());
   const opt = findModelOption(agent, selectEl.value);
   const headline = opt && opt.summary && opt.summary.headline ? String(opt.summary.headline) : '';
   if (!headline) return;
@@ -180,17 +204,12 @@ function syncModelSummaryHint(selectEl, agent, pickerRole) {
   const shouldWarn = pickerRole === 'review'
     && Array.isArray(summary.avoidFor)
     && summary.avoidFor.includes('review');
-  if (shouldWarn) {
-    const warn = createEl('div', {
-      className: 'model-summary-warn',
-      attrs: { role: 'note', 'aria-live': 'polite' },
-    });
-    warn.textContent = headline + ' — Not recommended for code review per maintainer summary.';
-    container.appendChild(warn);
-  } else {
-    const hint = createEl('div', { className: 'model-summary-hint', text: headline });
-    container.appendChild(hint);
-  }
+  const summaryNote = shouldWarn
+    ? `Not recommended for code review. ${headline}`
+    : headline;
+  const base = String(selectEl.title || '').trim();
+  if (base.includes(headline)) return;
+  selectEl.title = base ? `${base} — ${summaryNote}` : summaryNote;
 }
 
 function wireModelSummarySelect(sel, agent, pickerRole) {
@@ -658,12 +677,14 @@ export {
   AGENT_SHORT_NAMES,
   AIGON_AGENTS,
   appendTripletSelects,
+  applyConfiguredModelCell,
   AUTONOMOUS_AGENT_IDS,
   buildAgentCheckRow,
   buildTripletPickerHeaderRow,
   complexityBadgeHtml,
   createEl,
   fetchSpecRecommendation,
+  formatConfiguredModelDisplay,
   getAutonomousAgentIds,
   getPickerEligibleAgents,
   renderAgentPickerRows,

@@ -246,7 +246,7 @@ async function openScheduleKickoffModal(entityType, feature, repoPath, btn) {
     row.dataset.agentId = agentId;
     H.appendTripletSelects(row, agent);
     const cfg = row.querySelector('.agent-check-config-model');
-    if (cfg) cfg.textContent = modelName || '';
+    if (cfg) H.applyConfiguredModelCell(cfg, agent, modelName);
     return row;
   });
   H.replaceNodeChildren(checks, [H.buildTripletPickerHeaderRow(), ...autoRows]);
