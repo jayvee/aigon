@@ -11,18 +11,20 @@ function freshRequire(modPath) {
     delete require.cache[require.resolve(modPath)];
     return require(modPath);
 }
-// REGRESSION: F296 must not leave a snapshotless inbox spec behind when create bootstrapping fails.
+// REGRESSION: F296/F667 create bootstraps numbered inbox workflow state and rolls back the spec on bootstrap failure.
 test('entityCreate bootstraps inbox workflow state and rolls back the spec on bootstrap failure', () => withTempDir('aigon-f296-create-', (repo) => {
     seedEntityDirs(repo, 'features');
     withRepoCwd(repo, () => {
         const { utils, entity } = freshEntityModules();
         const created = entity.entityCreate(entity.FEATURE_DEF, 'foo', buildEntityCtx(utils));
         assert.ok(created);
-        assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/01-inbox/feature-foo.md')));
-        const snapshot = readJson(path.join(repo, '.aigon/workflows/features/foo/snapshot.json'));
-        assert.strictEqual(snapshot.featureId, 'foo');
+        const specPath = path.join(repo, 'docs/specs/features/01-inbox/feature-01-foo.md');
+        assert.ok(fs.existsSync(specPath));
+        assert.ok(fs.readFileSync(specPath, 'utf8').includes('aigon_id: F1'));
+        const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
+        assert.strictEqual(snapshot.featureId, '01');
         assert.strictEqual(snapshot.currentSpecState, 'inbox');
-        assert.strictEqual(normalizePath(snapshot.specPath), normalizePath(path.join(repo, 'docs/specs/features/01-inbox/feature-foo.md')));
+        assert.strictEqual(normalizePath(snapshot.specPath), normalizePath(specPath));
         const original = engine.ensureEntityBootstrappedSync;
         const originalError = console.error;
         const errors = [];
@@ -35,8 +37,8 @@ test('entityCreate bootstraps inbox workflow state and rolls back the spec on bo
             engine.ensureEntityBootstrappedSync = original;
             console.error = originalError;
         }
-        assert.ok(!fs.existsSync(path.join(repo, 'docs/specs/features/01-inbox/feature-bar.md')));
-        assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/bar')));
+        assert.ok(!fs.existsSync(path.join(repo, 'docs/specs/features/01-inbox/feature-02-bar.md')));
+        assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/02')));
         assert.ok(errors.some((line) => line.includes('bootstrap exploded')));
     });
 }));
@@ -55,10 +57,28 @@ test('entityCreate stores authorAgentId on the inbox workflow snapshot when crea
         if (prevAgentId == null) delete process.env.AIGON_AGENT_ID;
         else process.env.AIGON_AGENT_ID = prevAgentId;
     }
-    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/authored-by-cx/snapshot.json'));
-    const events = fs.readFileSync(path.join(repo, '.aigon/workflows/features/authored-by-cx/events.jsonl'), 'utf8');
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
+    const events = fs.readFileSync(path.join(repo, '.aigon/workflows/features/01/events.jsonl'), 'utf8');
     assert.strictEqual(snapshot.authorAgentId, 'cx');
     assert.ok(events.includes('"authorAgentId":"cx"'));
+}));
+// REGRESSION: F667 prioritise moves numbered inbox specs without re-keying workflow identity.
+test('entityPrioritise transitions numbered inbox workflow state without re-keying', () => withTempDir('aigon-f667-prio-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    withRepoCwd(repo, () => {
+        const { utils, entity } = freshEntityModules();
+        entity.entityCreate(entity.FEATURE_DEF, 'numbered', buildEntityCtx(utils));
+        entity.entityPrioritise(entity.FEATURE_DEF, '01', buildEntityCtx(utils));
+    });
+    assert.ok(fs.existsSync(path.join(repo, '.aigon/workflows/features/01/snapshot.json')));
+    assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/numbered')));
+    const snapshot = readJson(path.join(repo, '.aigon/workflows/features/01/snapshot.json'));
+    assert.strictEqual(snapshot.featureId, '01');
+    assert.strictEqual(snapshot.currentSpecState, 'backlog');
+    assert.strictEqual(
+        normalizePath(snapshot.specPath),
+        normalizePath(path.join(repo, 'docs/specs/features/02-backlog/feature-01-numbered.md')),
+    );
 }));
 // REGRESSION: F296 re-keys slug inbox workflow state to the numeric backlog id instead of silently minting a fresh snapshot.
 test('entityPrioritise migrates slug-keyed workflow state to the numeric id', () => withTempDir('aigon-f296-prio-', (repo) => {

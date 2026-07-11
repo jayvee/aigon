@@ -15,9 +15,17 @@ const {
   assertHarnessAsync,
   setupTwoCloneHarness,
   forkAcquireLease,
+  forkReserveIdentity,
   git,
 } = require('./two-clone-git-branch-harness');
 const { setCasTestHooks, clearCasTestHooks } = require('../../lib/spec-store/git-branch-leases');
+const {
+  setIdentityCasTestHooks,
+  clearIdentityCasTestHooks,
+} = require('../../lib/spec-store/identity-alloc-git-branch');
+const {
+  IdentityUnavailableError,
+} = require('../../lib/spec-store/identity-sequences');
 const {
   LeaseConflictError,
   LeaseUnavailableError,
@@ -563,7 +571,65 @@ async function main() {
     });
   })) failed += 1;
 
-  const passed = 18 - failed;
+  // REGRESSION: F667 git-branch identity CAS assigns distinct feature ids across clones.
+  if (!await runCase('two-clone git-branch: parallel feature identity reservations are distinct', async () => {
+    await withTempDirAsync('two-clone-id-feature-', async (base) => {
+      const { cloneA, cloneB } = await setupTwoCloneHarness(base);
+      const [a, b] = await Promise.all([
+        forkReserveIdentity(cloneA, 'machine-a', 'feature'),
+        forkReserveIdentity(cloneB, 'machine-b', 'feature'),
+      ]);
+      assert.ok(a.ok && b.ok, JSON.stringify({ a, b }));
+      assert.notStrictEqual(a.reserved.number, b.reserved.number);
+      await makeStore(cloneA).sync();
+      await makeStore(cloneB).sync();
+      const tip = runGit(cloneA, ['rev-parse', 'refs/heads/aigon-state']);
+      const raw = runGit(cloneA, ['cat-file', '-p', `${tip}:identity/sequences.json`]);
+      const doc = JSON.parse(raw);
+      assert.ok(doc.feature.next > Math.max(a.reserved.number, b.reserved.number));
+    });
+  })) failed += 1;
+
+  // REGRESSION: F667 research ids use an independent sequence from features.
+  if (!await runCase('two-clone git-branch: feature and research identity sequences are independent', async () => {
+    await withTempDirAsync('two-clone-id-kind-', async (base) => {
+      const { cloneA } = await setupTwoCloneHarness(base);
+      const store = makeStore(cloneA);
+      const feature = store.reserveIdentitySync('feature');
+      const research = store.reserveIdentitySync('research');
+      assert.strictEqual(feature.number, 1);
+      assert.strictEqual(research.number, 1);
+      assert.strictEqual(feature.key, 'F1');
+      assert.strictEqual(research.key, 'R1');
+    });
+  })) failed += 1;
+
+  // REGRESSION: F667 offline git-branch create refuses to invent a numeric id locally.
+  if (!await runCase('two-clone git-branch: offline storage refuses identity reservation', async () => {
+    await withTempDirAsync('two-clone-id-offline-', async (base) => {
+      const { cloneA } = await setupTwoCloneHarness(base);
+      const store = makeStore(cloneA, { offline: true });
+      assert.throws(() => store.reserveIdentitySync('feature'), (error) => error instanceof IdentityUnavailableError);
+    });
+  })) failed += 1;
+
+  // REGRESSION: F667 abandoned reservations remain pending and are never reused.
+  if (!await runCase('two-clone git-branch: pending reservation leaves a gap without reuse', async () => {
+    await withTempDirAsync('two-clone-id-pending-', async (base) => {
+      const { cloneA } = await setupTwoCloneHarness(base);
+      const store = makeStore(cloneA);
+      const first = store.reserveIdentitySync('feature');
+      assert.ok(store.readIdentityPending().some((row) => row.number === String(first.number)));
+      const second = store.reserveIdentitySync('feature');
+      assert.notStrictEqual(first.number, second.number);
+      store.markIdentityMaterializedSync('feature', first.number);
+      const pending = store.readIdentityPending();
+      assert.ok(!pending.some((row) => row.number === String(first.number)));
+      assert.ok(pending.some((row) => row.number === String(second.number)));
+    });
+  })) failed += 1;
+
+  const passed = 22 - failed;
   console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
 }

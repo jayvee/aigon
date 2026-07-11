@@ -38,6 +38,10 @@ function runCli(root, args) {
         stdio: 'pipe',
     });
 }
+function findInboxSpecBySlug(root, slug) {
+    const dir = path.join(root, 'docs/specs/features/01-inbox');
+    return fs.readdirSync(dir).find((f) => f === `feature-${slug}.md` || new RegExp(`^feature-\\d+-${slug}\\.md$`).test(f));
+}
 test('isValidSetSlug rejects whitespace, slashes, empty, non-strings', () => {
     assert.strictEqual(featureSets.isValidSetSlug('feature-set-1'), true);
     ['', 'Has Space', 'a/b', '-lead', 'UPPER', null, 5].forEach(v =>
@@ -102,9 +106,13 @@ test('feature-create --set writes set frontmatter at creation time', () => withT
     initRepo(root);
     fs.mkdirSync(path.join(root, 'docs', 'specs', 'features', '01-inbox'), { recursive: true });
     runCli(root, ['feature-create', 'set aware feature', '--set', 'feature-set']);
-    const createdPath = path.join(root, 'docs', 'specs', 'features', '01-inbox', 'feature-set-aware-feature.md');
-    const { data } = parseFrontMatter(fs.readFileSync(createdPath, 'utf8'));
+    const createdFile = findInboxSpecBySlug(root, 'set-aware-feature');
+    assert.ok(createdFile, 'expected numbered inbox spec for set-aware feature');
+    const raw = fs.readFileSync(path.join(root, 'docs', 'specs', 'features', '01-inbox', createdFile), 'utf8');
+    const { data } = parseFrontMatter(raw);
     assert.strictEqual(data.set, 'feature-set');
+    assert.ok(data.aigon_id, 'expected aigon_id frontmatter');
+    assert.strictEqual((raw.match(/^aigon_id:/gm) || []).length, 1, 'duplicate aigon_id');
 }));
 test('computeSetInboxPrioritisationOrder orders inbox peers and rejects cycles', () => {
     // REGRESSION: batch set prioritisation must topo-sort slug depends_on and fail on cycles.
@@ -137,8 +145,8 @@ test('aigon set-prioritise assigns ids in intra-set dependency order', () => wit
         body = body.replace(/^(set: [^\n]+\n)/m, `$1${depLine}`);
         fs.writeFileSync(fp, body);
     }
-    injectDep('feature-xbb.md', ['xaa']);
-    injectDep('feature-xcc.md', ['xbb']);
+    injectDep(findInboxSpecBySlug(root, 'xbb'), ['xaa']);
+    injectDep(findInboxSpecBySlug(root, 'xcc'), ['xbb']);
     execFileSync('git', ['add', 'docs/specs/features/'], { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
     execFileSync('git', ['commit', '-m', 'test: inbox deps for set'], { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
     runCli(root, ['set-prioritise', 'prio']);

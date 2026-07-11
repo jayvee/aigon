@@ -148,6 +148,31 @@ function forkAcquireLease(repo, machineId, featureId, holderId, agentId) {
   });
 }
 
+function forkReserveIdentity(repo, machineId, kind = 'feature') {
+  return new Promise((resolve, reject) => {
+    const child = fork(path.join(__dirname, 'two-clone-git-branch-worker.js'), [], {
+      env: { ...process.env, ...GIT_SAFE_ENV, ...cloneEnv(repo, machineId) },
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    });
+    let stdout = '';
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stdout += chunk; });
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code !== 0) {
+        reject(new Error(`worker exit ${code}: ${stdout}`));
+        return;
+      }
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch (_error) {
+        reject(new Error(`worker parse failed: ${stdout}`));
+      }
+    });
+    child.send({ cmd: 'reserve-identity', kind, repo });
+  });
+}
+
 module.exports = {
   git,
   cloneEnv,
@@ -164,4 +189,5 @@ module.exports = {
   assertHarnessAsync,
   setupTwoCloneHarness,
   forkAcquireLease,
+  forkReserveIdentity,
 };
