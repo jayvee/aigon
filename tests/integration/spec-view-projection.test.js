@@ -13,7 +13,9 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report, seedEntityDirs, writeSnap, initGitRepo } = require('../_helpers');
+const { test, testAsync, withTempDir, withTempDirAsync, report, seedEntityDirs, writeSnap, initGitRepo } = require('../_helpers');
+const { runFeatureEffect } = require('../../lib/workflow-core/effects');
+const { reconcileEntitySpec } = require('../../lib/spec-reconciliation');
 
 function freshSpecView() {
   delete require.cache[require.resolve('../../lib/spec-view')];
@@ -216,6 +218,55 @@ test('legacy layout is a no-op (view only exists under stable layout)', () => {
     assert.strictEqual(result.skipped, true, 'skipped under legacy layout');
     assert.strictEqual(result.reason, 'legacy-layout');
     assert.ok(!fs.existsSync(linkAt(repo, 'features', '03-in-progress', 'feature-01-legacy.md')));
+  });
+});
+
+testAsync('stable move_spec effects refresh the lifecycle view without moving files', async () => {
+  await withTempDirAsync((repo) => {
+    setStable(repo);
+    seedEntityDirs(repo, 'features');
+    const file = writeCanonical(repo, 'features', 'feature', 2, 'effect-skip');
+    writeSnap(repo, 'features', 2, 'done');
+
+    const legacySource = linkAt(repo, 'features', '04-in-evaluation', file);
+    fs.writeFileSync(legacySource, 'legacy real file that must not move');
+    const legacyTarget = linkAt(repo, 'features', '05-done', file);
+
+    return runFeatureEffect(repo, '02', {
+      type: 'move_spec',
+      payload: {
+        entityType: 'feature',
+        entityId: '02',
+        fromPath: legacySource,
+        toPath: legacyTarget,
+        toLifecycle: 'done',
+      },
+    }).then(() => {
+      assert.strictEqual(fs.readFileSync(legacySource, 'utf8'), 'legacy real file that must not move');
+      assert.ok(fs.lstatSync(legacyTarget).isSymbolicLink(), 'done folder contains generated view link');
+      assert.strictEqual(fs.readlinkSync(legacyTarget), path.join('..', '00-specs', file));
+      assert.ok(fs.readFileSync(legacyTarget, 'utf8').includes('# effect-skip'), 'view link resolves to canonical content');
+    });
+  });
+});
+
+test('stable reconciliation refreshes the view and never physically moves feature specs', () => {
+  withTempDir((repo) => {
+    setStable(repo);
+    seedEntityDirs(repo, 'features');
+    const file = writeCanonical(repo, 'features', 'feature', 6, 'reconcile-skip');
+    writeSnap(repo, 'features', 6, 'implementing');
+
+    const staleRealFile = linkAt(repo, 'features', '02-backlog', file);
+    fs.writeFileSync(staleRealFile, 'stale real stage file');
+
+    const result = reconcileEntitySpec(repo, 'feature', '6', { dryRun: false });
+    assert.strictEqual(result.skipped, 'stable-layout-view');
+    assert.strictEqual(fs.readFileSync(staleRealFile, 'utf8'), 'stale real stage file', 'stale real file left untouched');
+
+    const viewLink = linkAt(repo, 'features', '03-in-progress', file);
+    assert.ok(fs.lstatSync(viewLink).isSymbolicLink(), 'generated view link created for workflow state');
+    assert.strictEqual(fs.readlinkSync(viewLink), path.join('..', '00-specs', file));
   });
 });
 
