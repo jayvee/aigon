@@ -31,3 +31,22 @@ Complete. Create-time numeric identity reservation shipped for local and git-bra
 ## Test Coverage
 - `bootstrap-engine-state.test.js`: numbered create bootstrap, lifecycle-only prioritise, legacy slug prioritise migration retained.
 - `two-clone-git-branch-storage.test.js`: parallel distinct feature reservations, independent research sequence, offline refusal, pending gap semantics.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-11
+
+### Fixes Applied
+- `789eb98fb` fix(review): avoid duplicate aigon_id on --set create and update set tests
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:subsystem — Acceptance criteria list two-clone coverage for parallel research creates, CAS retry after a lost race, and crash-after-reservation; branch ships parallel feature + sequential in-process research + pending-gap tests only. Safe to land core allocator; follow-up test hardening is separate harness work.
+
+### Notes
+- Core create-time reservation, lifecycle-only prioritise/unprioritise/rename, and git-branch CAS merge path look sound against the spec.
+- `feature-create --set` was duplicating `aigon_id` in frontmatter; fixed to append `set:` only after `injectAigonIdFrontmatter`.
+- `feature-sets.test.js` still assumed slug-only inbox filenames; updated for numbered create-time specs.
