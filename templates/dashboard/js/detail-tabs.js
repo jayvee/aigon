@@ -744,6 +744,21 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         return '<div class="deep-status-section"><h4 class="deep-status-heading">' + escHtml(title) + '</h4>' + body + '</div>';
       }
 
+      function implementedByHtml(implementedBy) {
+        if (!implementedBy) return null;
+        const label = typeof formatLeaseHolderLabel === 'function'
+          ? formatLeaseHolderLabel(implementedBy)
+          : (implementedBy.holderId || implementedBy.user || implementedBy.agentId || 'unknown');
+        const hintParts = [];
+        if (implementedBy.source === 'stats') hintParts.push('from close stats');
+        else if (implementedBy.source === 'event-history') hintParts.push('from lease history');
+        if (hintParts.length && implementedBy.acquiredAt) hintParts.push('acquired ' + formatIso(implementedBy.acquiredAt));
+        const hint = hintParts.length
+          ? '<div class="stats-subval">' + escHtml(hintParts.join(' · ')) + '</div>'
+          : '';
+        return '<div class="stats-val-main">' + escHtml(label) + '</div>' + hint;
+      }
+
       function renderStatus(data, transcriptBundle) {
         const s = data.session || {};
         const p = data.progress || {};
@@ -808,6 +823,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
           ['Lifecycle', escHtml(data.lifecycle || 'unknown')],
           ['Mode', escHtml(data.mode || 'unknown')],
           ['Primary agent', escHtml(data.primaryAgent || 'none')],
+          data.implementedBy ? ['Implemented by', implementedByHtml(data.implementedBy)] : null,
           data.worktreePath ? ['Worktree', '<span class="mono">' + escHtml(data.worktreePath) + '</span>'] : null,
         ]);
 
