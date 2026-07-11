@@ -270,4 +270,25 @@ test('stable reconciliation refreshes the view and never physically moves featur
   });
 });
 
+test('syncWorktreeLifecycleLinks mirrors main-repo view symlinks into a worktree', () => {
+  withTempDir((mainRepo) => {
+    const specView = freshSpecView();
+    setStable(mainRepo);
+    seedEntityDirs(mainRepo, 'features');
+    const file = writeCanonical(mainRepo, 'features', 'feature', 2, 'brewery-import');
+    writeSnap(mainRepo, 'features', 2, 'implementing');
+    specView.refreshView(mainRepo);
+
+    const worktree = path.join(mainRepo, 'wt');
+    fs.mkdirSync(worktree, { recursive: true });
+    fs.writeFileSync(path.join(worktree, 'README.md'), 'wt\n');
+
+    const result = specView.syncWorktreeLifecycleLinks(mainRepo, worktree, 'feature', '02');
+    assert.ok(result.synced.length >= 1, 'creates lifecycle symlink in worktree');
+    const wtLink = linkAt(worktree, 'features', '03-in-progress', file);
+    assert.ok(fs.lstatSync(wtLink).isSymbolicLink(), 'worktree link is symlink not copied file');
+    assert.strictEqual(readlinkTarget(wtLink), path.join('..', '00-specs', file));
+  });
+});
+
 report();

@@ -47,7 +47,7 @@ test('resolveStateRenderMeta: prestart backlog → Parked (backlog)', () => {
     assert.strictEqual(resolveStateRenderMeta('implementing', { pauseReason: 'prestart:backlog' }).label, 'Implementing');
 });
 
-testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_review_in_progress → status-reviewing', () => withTempDirAsync('aigon-srm-', async repo => {
+testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_review_in_progress without tmux → session-lost', () => withTempDirAsync('aigon-srm-', async repo => {
     ['01-inbox', '02-backlog', '03-in-progress'].forEach(d =>
         fs.mkdirSync(path.join(repo, 'docs/specs/features', d), { recursive: true }));
     require('child_process').execSync('git init -q && git config user.email t@t && git config user.name t', { cwd: repo });
@@ -65,7 +65,8 @@ testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_r
     assert.strictEqual(snap.currentSpecState, LifecycleState.CODE_REVIEW_IN_PROGRESS);
     assert.strictEqual(getStateRenderMeta(snap.currentSpecState).cls, 'status-reviewing');
     const state = wrm.getFeatureDashboardState(repo, '77', 'in-progress', []);
-    assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].statusCls, 'status-reviewing');
+    assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].status, 'session-lost');
+    assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].statusCls, 'status-review-stale');
 }));
 
 test('collectRepoStatus decorates feature-set cards with pending schedule metadata', () => withTempDir('aigon-set-schedule-', (repo) => {

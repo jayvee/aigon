@@ -62,6 +62,7 @@
     .kcard-winner{font-size:11px;color:#86efac;font-weight:600;margin-left:4px;flex-shrink:0}
     .agent-review{border-left-color:#fbbf24}
     .kcard-agent-status.status-reviewing{color:#fbbf24}
+    .kcard-agent-status.status-review-stale{color:#fbbf24;font-weight:600}
     .kcard-agent-status.status-review-done{color:#86efac}
     .kcard-review-verdict{font-size:11px;font-weight:600;margin-top:3px;padding:2px 6px;border-radius:4px;display:inline-block}
     .kcard-review-verdict.verdict-revision{color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25)}

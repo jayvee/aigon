@@ -87,6 +87,14 @@ test('agent picker recommendation banner mounts in index.html (no phantom .modal
     assert.ok(!picker.includes("querySelector('#agent-picker .modal-card')"));
     assert.ok(picker.includes("getElementById(mountId || 'agent-picker-recommendation')"));
 });
+// REGRESSION: agent picker and Start Autonomously must share pickerEligible filtering — not all bootstrap agents.
+test('agent picker rows filter pickerEligible like autonomous modal', () => {
+    const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');
+    assert.ok(picker.includes('function getPickerEligibleAgents'), 'shared picker eligibility helper');
+    assert.ok(/getPickerEligibleAgents\(\)\.map\(agent/.test(picker), 'renderAgentPickerRows uses pickerEligible filter');
+    assert.ok(picker.includes('autonomousOnly: true'), 'autonomous list reuses picker helper');
+    assert.ok(!/AIGON_AGENTS\.map\(agent => \{[\s\S]*buildAgentCheckRow/.test(picker), 'agent picker must not map all bootstrap agents');
+});
 // REGRESSION: Start Autonomously reviewer row must reuse the same triplet wiring as implement rows (spec recommendations + localStorage), not dead selects.
 test('autonomous reviewer triplet uses recommendation and tripletStorage like implement rows', () => {
     const picker = fs.readFileSync(path.join(__dirname, '../../templates/dashboard/js/actions-picker.js'), 'utf8');

@@ -933,11 +933,14 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       const sessionLive = typeof reviewer.sessionRunning === 'boolean'
         ? reviewer.sessionRunning
         : isRunning;
-      const statusIcon = isRunning ? '●' : '✓';
+      const sessionLost = reviewer.status === 'session-lost';
+      const statusIcon = isRunning ? '●' : (sessionLost ? '⚠' : '✓');
       const statusLabel = isRunning
         ? (mode === 'spec-revise' ? 'Revising' : mode === 'spec-check' ? 'Checking' : 'Reviewing')
-        : (mode === 'spec' ? 'Review submitted' : mode === 'spec-revise' ? 'Spec revised' : mode === 'spec-check' ? 'Review check complete' : 'Review complete');
-      const statusCls = isRunning ? 'status-reviewing' : 'status-review-done';
+        : (sessionLost
+          ? 'Review session ended'
+          : (mode === 'spec' ? 'Review submitted' : mode === 'spec-revise' ? 'Spec revised' : mode === 'spec-check' ? 'Review check complete' : 'Review complete'));
+      const statusCls = isRunning ? 'status-reviewing' : (sessionLost ? 'status-review-stale' : 'status-review-done');
       const peekEligible = reviewer.session && canShowSessionPeek(feature, repoStorage, { sessionRunning: sessionLive });
       const peekBtn = peekEligible
         ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(reviewer.session) + '" title="Peek at session output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'

@@ -72,6 +72,9 @@
   },
   "cli": {
     "command": "opencode",
+    "pathCandidates": [
+      "~/.opencode/bin/opencode"
+    ],
     "implementFlag": "",
     "injectPromptViaTmux": true,
     "promptFlag": "--prompt",

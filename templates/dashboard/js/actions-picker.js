@@ -22,8 +22,19 @@ const AGENT_SHORT_NAMES = AIGON_AGENTS.reduce((map, agent) => {
   return map;
 }, {});
 
+/** Agents eligible for dashboard pickers (Start, review, eval). Skips unconfigured/disabled. */
+function getPickerEligibleAgents(options = {}) {
+  const autonomousOnly = !!options.autonomousOnly;
+  return AIGON_AGENTS.filter(agent => {
+    if (!agent || !agent.id) return false;
+    if (agent.pickerEligible === false) return false;
+    if (autonomousOnly && agent.autonomousEligible === false) return false;
+    return true;
+  });
+}
+
 function getAutonomousAgentIds() {
-  return AIGON_AGENTS.filter(agent => agent.pickerEligible !== false && agent.autonomousEligible !== false).map(agent => agent.id);
+  return getPickerEligibleAgents({ autonomousOnly: true }).map(agent => agent.id);
 }
 const AUTONOMOUS_AGENT_IDS = getAutonomousAgentIds();
 
@@ -570,7 +581,7 @@ function renderAgentPickerRows(options) {
   const pickerRole = opts.pickerRole == null ? null : opts.pickerRole;
   const checks = document.getElementById('agent-picker-checks');
   if (!checks) return;
-  const rows = AIGON_AGENTS.map(agent => {
+  const rows = getPickerEligibleAgents().map(agent => {
     const row = buildAgentCheckRow({
       value: agent.id,
       label: agent.id,
@@ -654,6 +665,7 @@ export {
   createEl,
   fetchSpecRecommendation,
   getAutonomousAgentIds,
+  getPickerEligibleAgents,
   renderAgentPickerRows,
   renderPickerRecommendationBanner,
   replaceNodeChildren,

@@ -247,6 +247,26 @@ test('getAgentAvailability and getDashboardAgents terminate with quota state pre
     }
 }));
 
+// REGRESSION: OpenCode installs to ~/.opencode/bin — launchd/minimal PATH must still resolve op.
+test('resolveAgentCliBinary finds opencode outside PATH via pathCandidates', () => {
+    const agentRegistry = require('../../lib/agent-registry');
+    const { resolveBinary } = require('../../lib/binary-check');
+    const candidates = agentRegistry.getAgentCliPathCandidates('op');
+    assert.ok(candidates.includes('~/.opencode/bin/opencode'));
+    const prevPath = process.env.PATH;
+    process.env.PATH = '/usr/bin:/bin';
+    try {
+        const resolved = resolveBinary('opencode', { candidates });
+        if (fs.existsSync(path.join(os.homedir(), '.opencode', 'bin', 'opencode'))) {
+            assert.strictEqual(resolved, path.join(os.homedir(), '.opencode', 'bin', 'opencode'));
+        } else {
+            assert.strictEqual(resolved, null);
+        }
+    } finally {
+        process.env.PATH = prevPath;
+    }
+});
+
 function agentRegistryReset() {
     try {
         const agentRegistry = require('../../lib/agent-registry');

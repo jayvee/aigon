@@ -279,4 +279,34 @@ test('stale review-timeout reconciles to resume-automation when review since com
     assert.ok(resume, 'resume automation action exposed');
 }));
 
+test('stale manual code review exposes cancel and recovery surface', () => withTempDir('aigon-f670-review-stale-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    writeSpec(repo, 'features', '03-in-progress', 'feature-02-brewery-import.md');
+    const snapPath = path.join(repo, '.aigon', 'workflows', 'features', '02', 'snapshot.json');
+    fs.mkdirSync(path.dirname(snapPath), { recursive: true });
+    fs.writeFileSync(snapPath, JSON.stringify({
+        currentSpecState: 'code_review_in_progress',
+        lifecycle: 'code_review_in_progress',
+        codeReview: { activeReviewerId: 'op', reviewStartedAt: '2026-07-11T12:53:23.418Z' },
+        agents: { cx: { status: 'ready' } },
+    }, null, 2));
+
+    const dashboard = wrm.getFeatureDashboardState(repo, '02', 'in-progress', []);
+    const review = (dashboard.reviewSessions || [])[0];
+    assert.ok(review, 'review session projected');
+    assert.strictEqual(review.running, false, 'dead tmux is not running');
+    assert.strictEqual(review.status, 'session-lost');
+
+    const cancel = (dashboard.validActions || []).find((a) => a.action === 'feature-cancel-code-review');
+    assert.ok(cancel, 'cancel action present');
+
+    const { buildCardPresentation } = require('../../lib/card-presentation');
+    const pres = buildCardPresentation({
+        ...dashboard,
+        reviewSessionSummary: dashboard.reviewSessions,
+        cardHeadline: dashboard.cardHeadline,
+    });
+    assert.strictEqual(pres.showRecoveryActions, true, 'stale review surfaces recovery actions');
+}));
+
 report();

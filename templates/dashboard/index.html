@@ -108,8 +108,8 @@
                         <template x-for="rs in (feature.reviewSessionSummary || [])" :key="rs.session || rs.agent">
                           <div class="row" x-show="!isMonitorReviewRowSuppressed(feature)" :class="rs.running ? 'reviewing' : 'submitted'">
                             <span class="agent">Review</span>
-                            <span :class="'kcard-agent-status ' + (rs.statusCls || (rs.running ? 'status-reviewing' : 'status-review-done'))"
-                                  x-text="(rs.running ? '● ' : '✓ ') + (aigon.AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : 'Review complete')"></span>
+                            <span :class="'kcard-agent-status ' + (rs.statusCls || (rs.running ? 'status-reviewing' : (rs.status === 'session-lost' ? 'status-review-stale' : 'status-review-done')))"
+                                  x-text="(rs.running ? '● ' : (rs.status === 'session-lost' ? '⚠ ' : '✓ ')) + (aigon.AGENT_DISPLAY_NAMES[rs.agent] || rs.agent) + ' — ' + (rs.running ? 'Reviewing' : (rs.status === 'session-lost' ? 'Review session ended' : 'Review complete'))"></span>
                           </div>
                         </template>
                       </div>

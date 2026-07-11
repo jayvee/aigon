@@ -174,8 +174,10 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     if (va.agentId) return false;
     if (va.category === 'infra' || va.category === 'view') return false;
     if (!showRecoveryActions && va.metadata && va.metadata.recoverySurface) return true;
-    if (!showRecoveryActions && va.metadata && va.metadata.recovery) return false;
-    if (!showRecoveryActions && (va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review')) return false;
+    if (!showRecoveryActions && va.metadata && va.metadata.recovery) {
+      if (va.action === 'feature-cancel-code-review' || va.action === 'research-cancel-code-review') return true;
+      return false;
+    }
     if (!showRecoveryActions && va.action === 'feature-autonomous-stop') return false;
     if (evalRunning && (va.action === 'feature-eval' || va.action === 'research-eval' || va.action === 'feature-code-review')) return false;
     return true;
