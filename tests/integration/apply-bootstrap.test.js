@@ -73,4 +73,36 @@ testAsync('uninstall-alias: aigon uninstall exits non-zero with redirect hint', 
     assert.ok(output.includes('aigon remove'), `must say "aigon remove": ${output}`);
 }));
 
+// Stable-spec-layout default (F666–F670): a fresh repo comes up on the stable
+// layout with a canonical `00-specs` home; a repo that already holds legacy
+// stage-folder specs is left on legacy for deliberate migration.
+testAsync('apply-bootstrap: fresh repo defaults to stable spec layout', () => withTempDirAsync('aigon-stable-fresh-', async (repo) => {
+    gitInit(repo);
+    const { output } = runAigon(repo, ['apply']);
+    const cfg = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
+    assert.strictEqual(cfg.specLayout, 'stable', `fresh repo must default to stable: ${JSON.stringify(cfg)}`);
+    assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '00-specs')), 'features/00-specs must exist');
+    assert.ok(fs.existsSync(path.join(repo, 'docs', 'specs', 'research-topics', '00-specs')), 'research-topics/00-specs must exist');
+    assert.ok(output.includes('stable spec layout'), `should announce the default: ${output}`);
+
+    // Idempotent: a second apply must not disturb the recorded layout.
+    runAigon(repo, ['apply']);
+    const cfg2 = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
+    assert.strictEqual(cfg2.specLayout, 'stable', 'second apply must leave specLayout=stable');
+}));
+
+testAsync('apply-bootstrap: repo with legacy specs stays on legacy layout', () => withTempDirAsync('aigon-stable-legacy-', async (repo) => {
+    gitInit(repo);
+    // Seed a real legacy stage-folder spec before the first apply.
+    const inbox = path.join(repo, 'docs', 'specs', 'features', '01-inbox');
+    fs.mkdirSync(inbox, { recursive: true });
+    fs.writeFileSync(path.join(inbox, 'feature-1-legacy-thing.md'), '---\naigon_id: F1\n---\n\n# Feature: legacy thing\n\n## Summary\nreal content\n');
+
+    runAigon(repo, ['apply']);
+    const cfgPath = path.join(repo, '.aigon', 'config.json');
+    const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
+    assert.notStrictEqual(cfg.specLayout, 'stable', `repo with legacy specs must NOT be flipped to stable: ${JSON.stringify(cfg)}`);
+    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'specs', 'features', '00-specs')), '00-specs must not be created for a legacy repo');
+}));
+
 report();
