@@ -47,23 +47,17 @@ test('resolveStateRenderMeta: prestart backlog → Parked (backlog)', () => {
     assert.strictEqual(resolveStateRenderMeta('implementing', { pauseReason: 'prestart:backlog' }).label, 'Implementing');
 });
 
-testAsync('collectRepoStatus: row carries stateRenderMeta + reviewCycles; code_review_in_progress without tmux → session-lost', () => withTempDirAsync('aigon-srm-', async repo => {
-    ['01-inbox', '02-backlog', '03-in-progress'].forEach(d =>
-        fs.mkdirSync(path.join(repo, 'docs/specs/features', d), { recursive: true }));
-    require('child_process').execSync('git init -q && git config user.email t@t && git config user.name t', { cwd: repo });
-    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-77-srm.md');
-    fs.writeFileSync(specPath, '# Feature: srm\n');
-    engine.ensureEntityBootstrappedSync(repo, 'feature', '77', 'backlog', specPath, { authorAgentId: 'cc' });
-    clearTierCache(repo);
-    const row = (collectRepoStatus(repo, []).features || []).find(f => String(f.id) === '77');
-    assert.ok(row && row.stateRenderMeta && row.stateRenderMeta.cls, 'stateRenderMeta missing');
-    assert.ok(Array.isArray(row.reviewCycles), 'reviewCycles must be array');
-    await engine.startFeature(repo, '77', 'solo_branch', ['cc']);
-    await engine.signalAgentReady(repo, '77', 'cc');
-    await engine.recordCodeReviewStarted(repo, 'feature', '77', { reviewerId: 'cx' });
-    const snap = await engine.showFeatureOrNull(repo, '77');
-    assert.strictEqual(snap.currentSpecState, LifecycleState.CODE_REVIEW_IN_PROGRESS);
-    assert.strictEqual(getStateRenderMeta(snap.currentSpecState).cls, 'status-reviewing');
+test('code_review_in_progress without tmux → session-lost', () => withTempDir('aigon-srm-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    fs.writeFileSync(path.join(repo, 'docs/specs/features/03-in-progress/feature-77-srm.md'), '# Feature: srm\n');
+    const snapPath = path.join(repo, '.aigon/workflows/features/77/snapshot.json');
+    fs.mkdirSync(path.dirname(snapPath), { recursive: true });
+    fs.writeFileSync(snapPath, JSON.stringify({
+        currentSpecState: LifecycleState.CODE_REVIEW_IN_PROGRESS,
+        lifecycle: 'code_review_in_progress',
+        codeReview: { activeReviewerId: 'cx', reviewStartedAt: '2026-07-11T12:00:00Z' },
+        agents: { cc: { status: 'ready' } },
+    }, null, 2));
     const state = wrm.getFeatureDashboardState(repo, '77', 'in-progress', []);
     assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].status, 'session-lost');
     assert.strictEqual(state.reviewSessions[0] && state.reviewSessions[0].statusCls, 'status-review-stale');

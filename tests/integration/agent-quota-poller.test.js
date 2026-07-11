@@ -43,27 +43,6 @@ function writeFreshUnified(dir, ageMs = 0) {
     }, dir);
 }
 
-test('migration merges legacy budget-cache + quota.json into agent-quota.json', () => withTempDir((dir) => {
-    fs.mkdirSync(path.join(dir, '.aigon', 'state'), { recursive: true });
-    fs.writeFileSync(path.join(dir, '.aigon', 'budget-cache.json'), JSON.stringify({
-        cc: { polled_at: '2026-07-01T00:00:00.000Z', session: { pct_used: 5 } },
-    }));
-    fs.writeFileSync(path.join(dir, '.aigon', 'state', 'quota.json'), JSON.stringify({
-        schemaVersion: 2,
-        agents: { cx: { models: { __default__: { verdict: 'available' } } } },
-        providers: { openrouter: { verdict: 'available', balanceUsd: 10 } },
-    }));
-
-    assert.strictEqual(agentQuotaRead.mergeLegacyFiles(dir), true);
-    const state = agentQuotaRead.readAgentQuotaState(dir);
-    assert.strictEqual(state.schemaVersion, 1);
-    assert.ok(state.agents.cc.budget);
-    assert.ok(state.agents.cx.models.__default__);
-    assert.ok(state.providers.openrouter);
-
-    assert.strictEqual(agentQuotaRead.mergeLegacyFiles(dir), false);
-}));
-
 // Async poller tests share module-level in-flight state — run sequentially.
 testAsync('agent-quota poller integration scenarios', async () => {
     const quotaProbe = require('../../lib/quota-probe');

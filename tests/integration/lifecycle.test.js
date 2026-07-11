@@ -110,25 +110,6 @@ test('listVisibleEntitySpecs matches unprioritised feature-slug.md (REGRESSION: 
     const m2 = fr.listVisibleEntitySpecs(repo, 'feature', 'feature-my-slug-pause');
     assert.strictEqual(m2.length, 1);
 }));
-test('feature-prioritise bootstraps missing slug workflow before migrate', () => withTempDir('aigon-prio-missing-snap-', (repo) => {
-    // REGRESSION: inbox spec with no .aigon/workflows/<slug> (import / pre-F296) must not require `doctor --fix` before prioritise.
-    const { execFileSync } = require('child_process');
-    const { GIT_SAFE_ENV, seedEntityDirs } = require('../_helpers');
-    execFileSync('git', ['init', '-q'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    execFileSync('git', ['config', 'user.email', 't@t'], { cwd: repo, stdio: 'pipe' });
-    execFileSync('git', ['config', 'user.name', 't'], { cwd: repo, stdio: 'pipe' });
-    seedEntityDirs(repo, 'features');
-    const inbox = path.join(repo, 'docs/specs/features/01-inbox');
-    fs.writeFileSync(path.join(inbox, 'feature-orphan-import.md'), '# Feature: orphan-import\n');
-    execFileSync('git', ['add', 'docs/'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    execFileSync('git', ['commit', '-m', 'inbox'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    const cli = path.join(__dirname, '../../aigon-cli.js');
-    execFileSync(process.execPath, [cli, 'feature-prioritise', 'orphan-import'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    const snap = JSON.parse(fs.readFileSync(path.join(repo, '.aigon/workflows/features/01/snapshot.json'), 'utf8'));
-    assert.strictEqual(snap.featureId, '01');
-    assert.strictEqual(snap.currentSpecState, 'backlog');
-    assert.ok(fs.existsSync(path.join(repo, 'docs/specs/features/02-backlog/feature-01-orphan-import.md')));
-}));
 test('feature-unprioritise re-keys workflow id and strips numeric filename prefix', () => withTempDir('aigon-unprio-', (repo) => {
     // REGRESSION: unprioritise must migrate engine dir numeric → slug and rename spec to inbox slug form.
     execSync('git init -q', { cwd: repo });

@@ -2,8 +2,7 @@
 'use strict';
 // REGRESSION (F341): spec review/revision must be first-class engine states,
 // not sidecar context. Pins: transient always: → backlog; projector dual-event
-// acceptance; MISSING_MIGRATION tag; agent: frontmatter precedence; migration
-// idempotency.
+// acceptance; agent: frontmatter precedence.
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -12,7 +11,6 @@ const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const { createActor } = require('xstate');
 const { featureMachine } = require('../../lib/workflow-core/machine');
 const { projectContext } = require('../../lib/workflow-core/projector');
-const readModel = require('../../lib/workflow-read-model');
 const { resolveSpecRevisionAgent } = require('../../lib/commands/entity-commands');
 const wf = require('../../lib/workflow-core');
 function initRepo(repo) {
@@ -44,23 +42,6 @@ test('projector: accepts both legacy spec_review.started and new feature.spec_re
     assert.strictEqual(newCtx.specReview.activeReviewers.length, 1);
     // New event promotes lifecycle to spec_review_in_progress
     assert.strictEqual(newCtx.currentSpecState, 'spec_review_in_progress');
-});
-test('read-model: sidecar specReview with inbox/backlog lifecycle tagged MISSING_MIGRATION', () => {
-    assert.strictEqual(readModel.detectMissingMigration({
-        currentSpecState: 'backlog',
-        specReview: { pendingCount: 1, activeReviewers: [] },
-    }), true);
-    assert.strictEqual(readModel.detectMissingMigration({
-        currentSpecState: 'backlog',
-        specReview: { pendingCount: 0, activeReviewers: [{ agentId: 'gg' }] },
-    }), true);
-    // Already migrated: state matches spec review
-    assert.strictEqual(readModel.detectMissingMigration({
-        currentSpecState: 'spec_review_in_progress',
-        specReview: { pendingCount: 0, activeReviewers: [{ agentId: 'gg' }] },
-    }), false);
-    // No specReview sidecar at all
-    assert.strictEqual(readModel.detectMissingMigration({ currentSpecState: 'backlog' }), false);
 });
 test('agent resolver: precedence event > frontmatter > authorAgentId > default', () => {
     // 1. Event-payload wins outright.

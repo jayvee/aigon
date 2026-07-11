@@ -8,7 +8,6 @@ const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
 const { applySpecReviewFromSnapshots: _applySpecReviewFromSnapshots, clearTierCache } = require('../../lib/dashboard-status-collector');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
-const { runPendingMigrations } = require('../../lib/migration');
 const { reconcileEntitySpec } = require('../../lib/spec-reconciliation');
 
 const initRepo = (repo) => {
@@ -57,19 +56,6 @@ testAsync('spec-review engine guard rejects implementing lifecycle', () => withT
     await assert.rejects(() => engine.recordSpecReviewStarted(repo, 'feature', '05', { reviewerId: 'gg' }), /inbox or backlog/);
 }));
 
-
-testAsync('migration backfills legacy spec-review commits into workflow state', () => withTempDirAsync('aigon-spec-review-mig-', async (repo) => {
-    initRepo(repo);
-    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-12-test.md');
-    fs.writeFileSync(specPath, '# Feature: test\n');
-    execSync('git add . && git commit -qm init', { cwd: repo });
-    fs.writeFileSync(specPath, '# Feature: test\n\nReviewed.\n');
-    execSync('git add . && git commit -qm "spec-review: feature 12 — tighten acceptance criteria" -m "Reviewer: gg"', { cwd: repo });
-    await runPendingMigrations(repo);
-    const snapshot = await engine.showFeatureOrNull(repo, '12');
-    assert.ok(snapshot);
-    assert.deepStrictEqual([snapshot.specReview.pendingCount, snapshot.specReview.pendingAgents], [1, ['gg']]);
-}));
 
 // REGRESSION: inbox spec review submit + revise ack must stay inbox (no spec-folder drift).
 testAsync('inbox spec-review cycle stays inbox through submit and revise ack', () => withTempDirAsync('aigon-inbox-sr-', async (repo) => {

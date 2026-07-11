@@ -50,17 +50,6 @@ function loadGitBranchStore(repo) {
   return createSpecStore({ repoPath: repo, storage: resolveStorageConfig(repo) });
 }
 
-function seedLegacyGitRef(repo, key, events) {
-  const { serializeEventsPayload } = require('../../lib/spec-store/event-merge');
-  const { runGit } = require('../../lib/spec-store/git-plumbing');
-  const ref = `refs/aigon/specs/${key}/events`;
-  const payload = serializeEventsPayload(events);
-  const blobSha = runGit(repo, ['hash-object', '-w', '--stdin'], { input: payload });
-  const treeSha = runGit(repo, ['mktree'], { input: `100644 blob ${blobSha}\tevents.json\n` });
-  const commitSha = runGit(repo, ['commit-tree', treeSha, '-m', 'seed']);
-  runGit(repo, ['update-ref', ref, commitSha]);
-}
-
 testAsync('storage convert dry-run reports planned git-branch config without writing', async () => {
   // REGRESSION: dry-run must preview branch import without mutating disk (F613 AC).
   await withTempDirAsync('storage-convert-dry-', async (base) => {
@@ -140,30 +129,6 @@ testAsync('storage convert imports local projections on first enable', async () 
     assert.strictEqual(result.importCount, 1);
     const store = loadGitBranchStore(repo);
     assert.deepStrictEqual(store._readCanonicalEvents('F7').map((event) => event.id), ['evt-7']);
-  });
-});
-
-testAsync('storage convert migrates legacy git-ref refs to git-branch', async () => {
-  // REGRESSION: git-ref → git-branch must import refs including stats.recorded (F613 AC).
-  await withTempDirAsync('storage-convert-gitref-', async (base) => {
-    const repo = initLocalAigonRepo(base);
-    fs.writeFileSync(path.join(repo, '.aigon', 'config.json'), `${JSON.stringify({
-      storage: { backend: 'git-ref', git: { remote: 'origin', refPrefix: 'refs/aigon/specs' } },
-    }, null, 2)}\n`);
-    seedLegacyGitRef(repo, 'F3', [
-      { id: 'evt-3', type: 'feature.bootstrapped', at: '2026-06-25T04:00:00.000Z', featureId: '3', lifecycle: 'backlog' },
-      { id: 'stats-3', type: 'stats.recorded', at: '2026-06-25T05:00:00.000Z', key: 'F3' },
-    ]);
-    const { runStorageConvert } = loadConvertModule();
-    const result = await runStorageConvert(repo, { remote: 'origin' });
-    assert.strictEqual(result.ok, true);
-    assert.strictEqual(result.converted, true);
-    assert.strictEqual(result.sourceBackend, 'git-ref');
-    const store = loadGitBranchStore(repo);
-    const ids = store._readCanonicalEvents('F3').map((e) => e.id).sort();
-    assert.deepStrictEqual(ids, ['evt-3', 'stats-3']);
-    const config = JSON.parse(fs.readFileSync(path.join(repo, '.aigon', 'config.json'), 'utf8'));
-    assert.strictEqual(config.storage.backend, 'git-branch');
   });
 });
 

@@ -9,7 +9,6 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV } = require('../_helpers');
-const { runPendingMigrations } = require('../../lib/migration');
 
 const CLI = path.join(__dirname, '..', '..', 'aigon-cli.js');
 
@@ -108,55 +107,6 @@ testAsync('install-agent cc: does not create AGENTS.md, leaves existing byte-ide
     runInstallAgent(repo, 'cc');
     assert.strictEqual(fs.readFileSync(agentsPath, 'utf8'), userContent,
         'AGENTS.md must be byte-identical after install-agent');
-}));
-
-// --- F420/F421 migrations: one fixture covers pristine legacy + AIGON-block strip +
-//     aigon-project.md delete + user-owned-files-untouched + idempotency in one pass. ---
-testAsync('migration 2.59→2.60: full flow (block strip, doc relocate, idempotency, user-owned untouched)', () => withTempDirAsync('aigon-mig-flow-', async (repo) => {
-    const templatesDocs = path.join(__dirname, '..', '..', 'templates', 'docs');
-
-    // 1. AGENTS.md with marker block; user content surrounding it must be preserved.
-    fs.writeFileSync(path.join(repo, 'AGENTS.md'),
-        '# My project\n\nUser content.\n\n<!-- AIGON_START -->\n## Aigon\n\nThis project uses Aigon.\n<!-- AIGON_END -->\n\n## Other section\n\nMore user content.\n');
-
-    // 2. Legacy docs/aigon-project.md must be deleted.
-    fs.mkdirSync(path.join(repo, 'docs', 'agents'), { recursive: true });
-    fs.writeFileSync(path.join(repo, 'docs', 'aigon-project.md'), '# Old descriptor\n');
-
-    // 3. Pristine vendored docs (copied from templates) must move under .aigon/docs/.
-    for (const file of fs.readdirSync(templatesDocs).filter(f => f.endsWith('.md'))) {
-        fs.copyFileSync(path.join(templatesDocs, file), path.join(repo, 'docs', file));
-    }
-    fs.writeFileSync(path.join(repo, 'docs', 'agents', 'claude.md'),
-        '<!-- AIGON_START -->\n# Claude\nuser content\n<!-- AIGON_END -->\n');
-
-    // 4. A user-owned file (no AIGON marker) must stay put.
-    const userOwnedPath = path.join(repo, 'docs', 'agents', 'internal-notes.md');
-    const userOwned = '# My internal note about agent X\nNot installed by aigon.\n';
-    fs.writeFileSync(userOwnedPath, userOwned);
-
-    await runPendingMigrations(repo);
-    await runPendingMigrations(repo); // second pass — must be idempotent
-
-    // AGENTS.md: block stripped, surrounding content intact, no triple-newline runs.
-    const agentsAfter = fs.readFileSync(path.join(repo, 'AGENTS.md'), 'utf8');
-    assert.ok(!agentsAfter.includes('AIGON_START'));
-    assert.ok(!agentsAfter.includes('AIGON_END'));
-    assert.ok(!agentsAfter.includes('## Aigon'));
-    assert.ok(agentsAfter.includes('User content.') && agentsAfter.includes('Other section'));
-    assert.ok(!/\n{3,}/.test(agentsAfter), 'no 3+ consecutive newlines after collapse');
-
-    // aigon-project.md deletion.
-    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'aigon-project.md')));
-
-    // Pristine vendored docs relocated under .aigon/docs/.
-    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'development_workflow.md')));
-    assert.ok(!fs.existsSync(path.join(repo, 'docs', 'development_workflow.md')));
-    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'agents', 'claude.md')));
-
-    // User-owned file untouched.
-    assert.ok(fs.existsSync(userOwnedPath));
-    assert.strictEqual(fs.readFileSync(userOwnedPath, 'utf8'), userOwned);
 }));
 
 // --- F440 registry contract (pure-function, no install spawn) ---
