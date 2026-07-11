@@ -58,7 +58,13 @@ set -euo pipefail
 # failure. Deleted trivial repo-identity predicate unit test (-16 LOC) in the same commit;
 # ceiling raised to match the new architecture/test-policy baseline rather than deleting
 # critical browser/session coverage.
-CEILING="${CEILING:-11200}"
+# 2026-07-12: ceiling was fiction (11200) while the suite had silently grown to
+# 18204 — it only ran at deploy, so it never bit. Now enforced in `test:core`
+# (every core run) with ZERO headroom, after deleting 14 peripheral/tooling/
+# narrow single-fix regression tests (-1027 LOC). Ceiling set to the true post-cut
+# total so any new test LOC fails core until an equal-or-greater deletion lands.
+# To add a test: delete one first. Do not raise this number without deleting.
+CEILING="${CEILING:-17177}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
