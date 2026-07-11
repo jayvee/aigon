@@ -57,3 +57,21 @@ deferred to the lifecycle-view set members (see below).
   destination-collision block; unnumbered→allocated ID; active-entity ack gate; symlink exclusion;
   git-branch backend does not alter the plan; resolver prefers canonical; CLI `status` smoke.
 - Spec-declared validation green: `bootstrap-engine-state.test.js`, `spec-review-status.test.js`.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-11
+
+### Fixes Applied
+- efd8f8eac — fix(review): commit layout version on no-op migrate and finish allocated-ID contract
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:subsystem — `lib/dashboard-spec-index.js` and direct-scan dependency/set scanners remain stage-folder keyed; implementation log defers to set members 669–670 (lifecycle view / cutover).
+- ESCALATE:subsystem — Migration does not rewrite workflow snapshot `specPath` fields; resolver-first read paths (entity-view, dashboard collector) compensate until lifecycle cutover (670).
+
+### Notes
+- Core migration engine, CLI wiring, resolver canonical-first lookup, and stable-layout creates look solid. Deferred scanner/index work is documented and consistent with the set plan.
