@@ -1,3 +1,26 @@
+---
+commit_count: 3
+lines_added: 284
+lines_removed: 3
+lines_changed: 287
+files_touched: 11
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 4422003
+output_tokens: 13022
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 4275968
+thinking_tokens: 3575
+total_tokens: 4435025
+billable_tokens: 4438600
+cost_usd: 9.8034
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 671 - dashboard-implementation-provenance
 Agent: cx
 
