@@ -99,10 +99,10 @@ If a richer affordance is desired later, add a small `Provenance` section above 
 - Changing lease TTL or holder-id resolution (`AIGON_MACHINE_ID` / `machineId` config).
 - Provenance for spec-review-only work with no impl lease (follow-up if needed).
 
-## Open Questions
+## Resolved decisions
 
-- Should **Closed by** (close-role lease holder) be a separate Identity row, or fold into Implemented by when the same machine?
-- Research entities: same stats field name or `researchedBy`?
+- **Closed by** is out of scope for v1 (follow-up). Identity shows **Implemented by** only; close-role lease holder stays in Events decoration.
+- Research entities reuse the same `implementedBy` stats field and Identity row label — research `impl` leases use the same lease role semantics.
 
 ## Related
 
