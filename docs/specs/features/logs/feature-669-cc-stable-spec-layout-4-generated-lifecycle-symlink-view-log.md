@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 841
+lines_removed: 2
+lines_changed: 843
+files_touched: 8
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 245
+output_tokens: 115566
+cache_creation_input_tokens: 349908
+cache_read_input_tokens: 10402396
+thinking_tokens: 0
+total_tokens: 10868115
+billable_tokens: 115811
+cost_usd: 10.2785
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 669 - stable-spec-layout-4-generated-lifecycle-symlink-view
 Agent: cc
 
