@@ -278,33 +278,6 @@ function buildAutonomousAgentOptions(taskType, options) {
   return rows;
 }
 
-/** Set autonomous: reviewer row on the same modal as implementers (agent-picker). */
-function populateSetAgentPickerReviewerSection(repoPath, implementerIds) {
-  const sel = document.getElementById('agent-picker-review-agent');
-  if (!sel) return Promise.resolve();
-  const setup = function(models) {
-    const prev = autonomousModalModels;
-    autonomousModalModels = models || {};
-    H.replaceSelectOptions(sel, buildAutonomousAgentOptions('review', {
-      includeNone: true,
-      noneLabel: 'No code review (skip review step)',
-      selectedAgents: Array.isArray(implementerIds) ? implementerIds : [],
-    }));
-    sel.value = '';
-    sel.onchange = function() {
-      H.updateReviewerTripletSelects(String(sel.value || '').trim(), 'picker-set');
-    };
-    H.updateReviewerTripletSelects('', 'picker-set');
-    autonomousModalModels = prev;
-  };
-  if (typeof H.fetchAgentModels === 'function') {
-    return H.fetchAgentModels(repoPath).then(setup).catch(function() { setup({}); });
-  }
-  setup({});
-  return Promise.resolve();
-}
-if (typeof window !== 'undefined') window.populateSetAgentPickerReviewerSection = populateSetAgentPickerReviewerSection;
-
 function updateAutonomousEvalOptions() {
   const evalSelect = document.getElementById('autonomous-eval-agent');
   if (!evalSelect) return;

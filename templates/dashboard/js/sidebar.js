@@ -1,6 +1,11 @@
 /* dashboard-esm-processed */
 
-import { renderAgentPickerRows, renderPickerRecommendationBanner, setPickerRecommendation } from './actions-picker.js';
+import {
+  populateSetAgentPickerReviewerSection,
+  renderAgentPickerRows,
+  renderPickerRecommendationBanner,
+  setPickerRecommendation,
+} from './actions-picker.js';
 import { fetchAgentModels } from './agent-models.js';
 import { requestRepoMainDevServerStart } from './api.js';
 import { updatePickerBudgetNotice } from './budget-widget.js';
@@ -235,9 +240,7 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
         if (revWrap) revWrap.toggleAttribute('data-hidden', !pickerIncludeSetReviewer);
         if (pickerIncludeSetReviewer && checksEl) {
           const refreshReviewerOptions = function() {
-            if (typeof window.populateSetAgentPickerReviewerSection === 'function') {
-              window.populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds());
-            }
+            populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds());
           };
           checksEl.removeEventListener('change', checksEl._aigonSetReviewerRefresh);
           checksEl._aigonSetReviewerRefresh = refreshReviewerOptions;
@@ -252,8 +255,8 @@ import { buildStorageStatusBadgeHtml, escHtml, showToast } from './utils.js';
           const submitEl = document.getElementById('agent-picker-submit');
           if (submitEl) submitEl.focus();
         };
-        if (pickerIncludeSetReviewer && typeof window.populateSetAgentPickerReviewerSection === 'function') {
-          window.populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds()).then(afterOpen).catch(afterOpen);
+        if (pickerIncludeSetReviewer) {
+          populateSetAgentPickerReviewerSection(opts.repoPath, getPickerCheckedImplementerIds()).then(afterOpen).catch(afterOpen);
         } else {
           afterOpen();
         }
