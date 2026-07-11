@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 141
+lines_removed: 10
+lines_changed: 151
+files_touched: 2
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 665 - model-catalog-intelligence-2026-w28
 Agent: cu
 
