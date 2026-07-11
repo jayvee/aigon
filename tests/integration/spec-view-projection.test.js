@@ -13,7 +13,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { test, withTempDir, report, seedEntityDirs, writeSnap } = require('../_helpers');
+const { test, withTempDir, report, seedEntityDirs, writeSnap, initGitRepo } = require('../_helpers');
 
 function freshSpecView() {
   delete require.cache[require.resolve('../../lib/spec-view')];
@@ -148,6 +148,7 @@ test('missing local canonical content yields a diagnosable broken (dangling) lin
 test('a regular file in a managed path blocks that entity and is never overwritten', () => {
   withTempDir((repo) => {
     const specView = freshSpecView();
+    initGitRepo(repo);
     setStable(repo);
     seedEntityDirs(repo, 'features');
     const file = writeCanonical(repo, 'features', 'feature', 2, 'clash');
@@ -163,6 +164,9 @@ test('a regular file in a managed path blocks that entity and is never overwritt
     assert.strictEqual(result.blocked[0].code, specView.DIAG.REGULAR_FILE);
     assert.ok(!fs.lstatSync(collide).isSymbolicLink(), 'still a regular file');
     assert.strictEqual(fs.readFileSync(collide, 'utf8'), 'hand-written content', 'content preserved');
+    assert.ok(!result.managed.some((m) => m.path.endsWith(file)), 'blocked file not marked managed');
+    assert.ok(!JSON.stringify(specView.readManifest(repo)).includes(file), 'blocked file not written to manifest');
+    assert.ok(!fs.readFileSync(path.join(repo, '.git', 'info', 'exclude'), 'utf8').includes(file), 'blocked file not excluded from git');
   });
 });
 
