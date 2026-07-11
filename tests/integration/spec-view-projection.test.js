@@ -83,7 +83,7 @@ test('idempotent — rebuild after deleting the manifest reproduces the same vie
     const specView = freshSpecView();
     setStable(repo);
     seedEntityDirs(repo, 'features');
-    const file = writeCanonical(repo, 'features', 'feature', 1, 'x');
+    writeCanonical(repo, 'features', 'feature', 1, 'x');
     writeSnap(repo, 'features', 1, 'done'); // -> 05-done
 
     const first = specView.refreshView(repo);

@@ -20,10 +20,6 @@ const {
 } = require('./two-clone-git-branch-harness');
 const { setCasTestHooks, clearCasTestHooks } = require('../../lib/spec-store/git-branch-leases');
 const {
-  setIdentityCasTestHooks,
-  clearIdentityCasTestHooks,
-} = require('../../lib/spec-store/identity-alloc-git-branch');
-const {
   IdentityUnavailableError,
 } = require('../../lib/spec-store/identity-sequences');
 const {
@@ -527,7 +523,6 @@ async function main() {
     await withTempDirAsync('two-clone-readonly-proj-', async (base) => {
       const { cloneA, cloneB } = await setupTwoCloneHarness(base);
       const featureId = '70';
-      const ref = { entityType: 'feature', entityId: featureId };
       const backlogDir = 'docs/specs/features/02-backlog';
       const specName = 'feature-70-readonly-projection.md';
       for (const clone of [cloneA, cloneB]) {
