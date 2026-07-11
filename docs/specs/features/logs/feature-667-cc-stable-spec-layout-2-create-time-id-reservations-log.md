@@ -1,3 +1,26 @@
+---
+commit_count: 4
+lines_added: 993
+lines_removed: 86
+lines_changed: 1079
+files_touched: 20
+fix_commit_count: 1
+fix_commit_ratio: 0.25
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 34
+output_tokens: 1999
+cache_creation_input_tokens: 195905
+cache_read_input_tokens: 59684
+thinking_tokens: 0
+total_tokens: 257622
+billable_tokens: 2033
+cost_usd: 1.1855
+sessions: 2
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 667 - stable-spec-layout-2-create-time-id-reservations
 Agent: cu (failover from cx/cc)
 
