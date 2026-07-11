@@ -21,6 +21,7 @@ Establish the safety boundary required by the stable spec layout: fetching or re
 - [ ] Projection refresh leaves the checked-out `HEAD`, index tree, tracked working-tree content, and untracked user files unchanged.
 - [ ] Existing spec reconciliation remains available only as an explicit diagnostic/repair path during the legacy-layout transition; read paths and background pollers do not mutate specs.
 - [ ] Projection failures and legacy spec-location drift surface structured diagnostics rather than being silently swallowed.
+- [ ] With projection-time moves removed, engine-first read models (dashboard and CLI) still render an entity correctly when its spec file sits in a now-stale lifecycle folder on this clone after a remote transition; the mismatch appears as a drift diagnostic, not a missing or broken row, until the generated view (set member 4) restores filesystem navigation.
 - [ ] Local and git-branch backends retain equivalent lifecycle snapshot/read-model behaviour after removing projection-time spec moves.
 - [ ] Integration coverage creates two clones, publishes a remote lifecycle event, refreshes the peer projection, and proves the peer's normal Git state is byte-for-byte unchanged.
 - [ ] Documentation no longer claims that storage polling is fetch-only while indirectly committing spec moves.
