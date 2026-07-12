@@ -137,10 +137,23 @@ defense-in-depth, not as the driver.
       that `Origin`/`Referer` (when present) is loopback/`.localhost`, and reject
       requests whose `Host` header is not loopback/`.localhost`/an allow-listed
       host (DNS-rebinding defense). When a shared secret is configured, a matching
-      `X-Aigon-Token` (or equivalent) header is required on every dashboard HTTP
-      route, including read-only GETs, so a non-loopback bind is fully gated.
-      GET read-only endpoints may stay token-free only in the default loopback
-      mode, but must still pass the Host check.
+      token is required on every dashboard HTTP route, including read-only GETs,
+      so a non-loopback bind is fully gated. GET read-only endpoints may stay
+      token-free only in the default loopback mode, but must still pass the Host
+      check.
+- [ ] **F3a (token transport):** The token must be accepted from an
+      `X-Aigon-Token` header **and** from an equivalent source usable by requests
+      that cannot set custom headers, because header-only enforcement would make a
+      fully-gated non-loopback dashboard unloadable. Specifically: the top-level
+      HTML document load (`GET /`, an address-bar navigation) and the SSE
+      `EventSource` streams (`/api/events`, `/api/session/stream`) cannot attach
+      custom headers from the browser. Support a bootstrap path — a one-time
+      token in the URL that the server exchanges for an `HttpOnly`, `SameSite`
+      cookie (or an equivalent query-param token for the SSE streams) — so the
+      document, its assets, and the SSE channels authenticate without a custom
+      header. XHR/`fetch` calls continue to use the header. A test asserts that,
+      with a secret configured on a non-loopback bind, `GET /` and `/api/events`
+      succeed via the cookie/query bootstrap and fail without it.
 - [ ] **F4:** `GET /api/pty-token` requires the same Origin/Host (and token, when
       configured) checks as other privileged endpoints, so a bare LAN client
       cannot mint a token. The PTY WebSocket upgrade path also runs the shared
@@ -180,10 +193,18 @@ npm run test:browser:smoke
   `server.on('upgrade')` PTY WebSocket branch before delegating to
   `pty-session-handler.js`. The helper should: (a) validate `Host` against a
   loopback/allow-list; (b) validate `Origin`/`Referer` for non-GET and token-mint
-  requests; (c) check the shared-secret header whenever configured. Return 403
-  (or close the upgrade socket without handing it to the PTY handler) on failure.
-  Reuse `isValidOrigin` from `pty-session-handler.js` by extracting it to the
-  shared module rather than duplicating host parsing.
+  requests; (c) check the shared secret whenever configured, reading it from the
+  `X-Aigon-Token` header for XHR/`fetch`, and from the bootstrap cookie/query
+  token for header-less requests (F3a). Return 403 (or close the upgrade socket
+  without handing it to the PTY handler) on failure. Reuse `isValidOrigin` from
+  `pty-session-handler.js` by extracting it to the shared module rather than
+  duplicating host parsing.
+- **Token bootstrap for header-less loads (F3a):** when a secret is configured,
+  accept a one-time token in the `GET /` URL, set an `HttpOnly`/`SameSite=Strict`
+  session cookie, and honour that cookie (and a query-param token for
+  `EventSource` streams) so the document, static assets, and SSE channels
+  authenticate without a custom header. `fetch`/XHR keeps using `X-Aigon-Token`.
+  In default loopback mode none of this engages.
 - **Path containment (F2):** add a `resolveWithinBase(baseDir, reqPath)` helper
   that `path.resolve`s and verifies `resolved === base || resolved.startsWith(base + path.sep)`;
   use it in both static handlers. Reject `..`/`%2e` early as belt-and-suspenders.
@@ -193,9 +214,10 @@ npm run test:browser:smoke
 - **Body cap (F6):** wrap the `req.on('data')` accumulators with a byte counter
   that `req.destroy()`s past the limit and rejects the promise.
 - **Tests:** cover default loopback binding, non-loopback startup refusal without
-  a token, Host/Origin rejection, token success/failure when configured, static
-  traversal rejection for `/assets/` and `/js/`, `repoPath` fail-closed behavior,
-  and PTY token/upgrade protection.
+  a token, Host/Origin rejection, token success/failure when configured, the F3a
+  cookie/query bootstrap for `GET /` and `/api/events` (succeeds with the
+  bootstrap, 403 without), static traversal rejection for `/assets/` and `/js/`,
+  `repoPath` fail-closed behavior, and PTY token/upgrade protection.
 - Keep changes surgical and covered by a focused unit test file plus the browser
   smoke subset; **do not** run the full `test:deploy` gate mid-iteration (repo
   testing guidance). Restart the server after `lib/*.js` edits.
