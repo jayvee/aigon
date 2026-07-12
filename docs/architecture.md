@@ -688,14 +688,51 @@ If a future contribution to aigon needs to make a coordinated change with the Pr
 - The AIGON server is the foreground HTTP process. It serves the dashboard UI at `localhost:4100`. Named URLs (`aigon.localhost`, `cc-71.aigon.localhost`) are provided by the optional Caddy reverse proxy.
 - The proxy uses Caddy (`brew install caddy`). `aigon proxy install` sets it up as a system service on port 80. Routes are written to a Caddyfile at `~/.aigon/dev-proxy/Caddyfile` — they survive process crashes (Caddy returns 502 until the backend recovers). No PID tracking or registration lifecycle.
 
-## Remote Access
+## Dashboard security & Remote Access (F672)
 
-The AIGON server binds to `0.0.0.0` by default, making the dashboard UI accessible from any device on the local network.
+The dashboard is the control plane for autonomous agents — it can spawn agents,
+open PTY shells, inject keystrokes, run lifecycle actions, and read files.
+Because of that, the server enforces a **trusted-localhost** boundary
+(`lib/dashboard-security.js`, invoked from `lib/dashboard-server.js`):
 
-- **Same WiFi (phone/tablet):** open `http://<mac-ip>:4100` in a browser. Find your Mac's IP with `ipconfig getifaddr en0`.
-- **Outside the LAN (cellular, travel):** install [Tailscale](https://tailscale.com/) (free) on both devices, then use `http://<tailscale-ip>:4100`.
-- **What works remotely:** monitoring, board management, and state transitions — anything that doesn't require spawning a local terminal session.
-- **Session peek (feature 106):** will add streaming tmux output viewable from any browser, closing the gap for remote implementation monitoring.
+- **Bind (F1):** binds to `127.0.0.1` (loopback) by default. A wider bind is
+  opt-in via `AIGON_SERVER_HOST` (env) or config `server.host`. When the bind is
+  **non-loopback**, a shared secret is **required** — the server refuses to start
+  (throws `AIGON_INSECURE_BIND`) unless `AIGON_SERVER_TOKEN` (env) or config
+  `server.token` is set. Tokens are not auto-generated; the operator supplies one.
+- **Host / Origin (F3/F4):** every request passes a `Host` allow-list check
+  (loopback / `.localhost` / `server.allowedHosts` / `AIGON_SERVER_ALLOWED_HOSTS`)
+  — a DNS-rebinding defense. State-changing methods and the PTY-token mint also
+  require a loopback `Origin`/`Referer` when present — a drive-by-CSRF defense.
+- **Token transport (F3a):** when a secret is configured, every route is gated.
+  XHR/`fetch` send it via the `X-Aigon-Token` header. Header-less loads — the
+  `GET /` document navigation and SSE `EventSource` streams — bootstrap via a
+  one-time `?token=` URL param that the server exchanges for an `HttpOnly`,
+  `SameSite=Strict` cookie (`aigon_token`); assets and SSE then authenticate via
+  that cookie. The PTY WebSocket upgrade runs the shared Host/token guard (secret
+  from cookie/header, since its `?token=` is the single-use PTY token) before the
+  existing Origin allow-list + PTY token in `lib/pty-session-handler.js`.
+- **Path containment (F2):** the `/assets/` and `/js/` static handlers resolve
+  through `resolveWithinBase` and 404 any request that escapes the base dir
+  (traversal / encoded traversal / NUL).
+- **Fail-closed repo (F5):** `resolveDashboardActionRepoPath` only honours a
+  caller-supplied `repoPath` that is registered, or (when no repos are
+  registered) equal to the server's own default/cwd — never an arbitrary dir.
+- **Body cap (F6):** request-body readers abort past ~1 MB.
+
+### Reaching the dashboard from another device
+
+Non-loopback access is now an explicit opt-in, not the default:
+
+- **Same WiFi (phone/tablet) or Docker/OrbStack:** set a shared secret and a wider
+  bind, e.g. `AIGON_SERVER_TOKEN=<secret> AIGON_SERVER_HOST=0.0.0.0`, add the
+  access host to `AIGON_SERVER_ALLOWED_HOSTS` (e.g. your Mac's LAN IP from
+  `ipconfig getifaddr en0`), then open `http://<host>:4100/?token=<secret>` once
+  to bootstrap the cookie.
+- **Outside the LAN (cellular, travel):** prefer [Tailscale](https://tailscale.com/)
+  (keeps traffic on a private network) with the same token opt-in.
+- **What works remotely:** monitoring, board management, and state transitions —
+  anything that doesn't require spawning a local terminal session.
 
 ## Reading Order For New Agents
 
