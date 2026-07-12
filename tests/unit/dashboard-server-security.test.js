@@ -90,6 +90,14 @@ describe('F3: Host / Origin checks', () => {
         );
         assert.strictEqual(d.ok, true);
     });
+    it('POST with a configured remote host origin passes', () => {
+        const remoteHosts = sec.buildAllowedHosts('0.0.0.0', ['192.168.1.5']);
+        const d = sec.evaluateHttpSecurity(
+            { method: 'POST', url: '/api/action', headers: { host: '192.168.1.5:4100', origin: 'http://192.168.1.5:4100', 'x-aigon-token': 'secret' } },
+            { token: 'secret', allowedHosts: remoteHosts }
+        );
+        assert.strictEqual(d.ok, true);
+    });
     it('rejects a request whose Host is not allow-listed (DNS-rebinding)', () => {
         const d = sec.evaluateHttpSecurity({ method: 'GET', url: '/', headers: { host: 'attacker.example' } }, { token: null, allowedHosts });
         assert.strictEqual(d.ok, false);
@@ -127,6 +135,11 @@ describe('F3/F3a: token gate + cookie/query bootstrap', () => {
     it('rejects a wrong token', () => {
         const d = sec.evaluateHttpSecurity({ method: 'GET', url: '/api/status', headers: { host: 'localhost:4100', 'x-aigon-token': 'nope' } }, { token, allowedHosts });
         assert.strictEqual(d.ok, false);
+    });
+    it('treats malformed token cookies as missing tokens', () => {
+        const d = sec.evaluateHttpSecurity({ method: 'GET', url: '/api/status', headers: { host: 'localhost:4100', cookie: 'aigon_token=%' } }, { token, allowedHosts });
+        assert.strictEqual(d.ok, false);
+        assert.strictEqual(d.status, 403);
     });
 });
 
