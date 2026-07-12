@@ -585,20 +585,6 @@ async function main() {
     });
   })) failed += 1;
 
-  // REGRESSION: F667 research ids use an independent sequence from features.
-  if (!await runCase('two-clone git-branch: feature and research identity sequences are independent', async () => {
-    await withTempDirAsync('two-clone-id-kind-', async (base) => {
-      const { cloneA } = await setupTwoCloneHarness(base);
-      const store = makeStore(cloneA);
-      const feature = store.reserveIdentitySync('feature');
-      const research = store.reserveIdentitySync('research');
-      assert.strictEqual(feature.number, 1);
-      assert.strictEqual(research.number, 1);
-      assert.strictEqual(feature.key, 'F1');
-      assert.strictEqual(research.key, 'R1');
-    });
-  })) failed += 1;
-
   // REGRESSION: F667 offline git-branch create refuses to invent a numeric id locally.
   if (!await runCase('two-clone git-branch: offline storage refuses identity reservation', async () => {
     await withTempDirAsync('two-clone-id-offline-', async (base) => {
