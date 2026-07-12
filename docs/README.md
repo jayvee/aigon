@@ -5,6 +5,8 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 ## Engineering
 
 - [architecture.md](architecture.md) — Full module docs, the `ctx` pattern, state architecture, write-path contract. Read when changing how `lib/` modules fit together. See § "Install manifest" for `lib/install-manifest.js` — the module that tracks install-agent footprint with sha256+version per file and enables `aigon remove`.
+- [specstore-architecture.md](specstore-architecture.md) — SpecStore boundary, local vs git-branch backends, stable layout interaction. Read when changing `lib/spec-store/` or storage CLI.
+- [aigon-git-branch-storage-migration.md](aigon-git-branch-storage-migration.md) — Operator runbook for converting **this repo** from local storage to the `aigon-state` orphan branch on `origin`.
 - [../.aigon/docs/development_workflow.md](../.aigon/docs/development_workflow.md) — Feature/research lifecycle, Solo vs Arena modes, spec-driven discipline. Read when working a feature for the first time. Vendored from `templates/docs/`; aigon-the-repo dogfoods it from `.aigon/docs/` (F421).
 - [../.aigon/docs/feature-sets.md](../.aigon/docs/feature-sets.md) — What feature sets are, when to use them, how `set-prioritise` assigns IDs in dependency order. Vendored from `templates/docs/` (F421).
 - [dashboard.md](dashboard.md) — Dashboard surface map: tabs, server-owned `validActions`, read-only rule.
