@@ -1,0 +1,216 @@
+---
+aigon_id: F672
+complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-12T10:02:09.615Z", actor: "cli/feature-prioritise" }
+---
+
+# Feature: harden-dashboard-server-security
+
+## Summary
+
+A security review of the Aigon dashboard server (`lib/dashboard-server.js` and
+`lib/dashboard-routes/*`, `lib/dashboard-actions/*`, `lib/pty-session-handler.js`)
+found that the local dashboard binds to **`0.0.0.0`** (all network interfaces)
+with **no authentication, no CSRF/Origin protection on state-changing HTTP
+endpoints, and a path-traversal flaw in the static file handlers.** Because the
+dashboard can spawn autonomous coding agents, open PTYs into running agent
+terminals, inject keystrokes into those terminals, run `aigon` lifecycle actions,
+and read files, the current posture means **any host on the same LAN (coffee
+shop, office, conference Wi-Fi), and in some cases any website the developer
+merely visits, can drive the developer's machine.** All of these categories are
+listed as *in scope* in `SECURITY.md` ("Path traversal or injection", "Authentication
+bypass in the AIGON server / dashboard", "Code execution", "Credential leakage").
+
+This feature hardens the server: bind to loopback by default, add
+defense-in-depth Origin/Host validation and an optional shared-secret token on
+state-changing endpoints, fix the path traversal, and tighten the
+repo-path allow-listing. `aigon-pro` was also reviewed — its exec surface uses
+argument-array `spawnSync` (no shell string interpolation, no `execSync`), so no
+Pro code changes are required; the findings are all in OSS `aigon`.
+
+## Threat model
+
+Aigon runs on a developer workstation and orchestrates AI agents that execute
+code and shell commands with the developer's privileges. The dashboard is the
+control plane. The realistic attackers are: (1) another device on the same
+local network, and (2) a malicious web page the developer opens in a browser
+(drive-by CSRF / DNS-rebinding). Per `SECURITY.md`, pure DoS against local
+tooling is out of scope, so unbounded-body concerns are noted only as
+defense-in-depth, not as the driver.
+
+## Findings (verified during review)
+
+### F1 — CRITICAL: dashboard binds `0.0.0.0` with zero authentication (root cause)
+- `lib/dashboard-server.js:418` hardcodes `const host = '0.0.0.0';`. There is no
+  config or env override. The entire API (grep confirmed: no `bearer`, `token`,
+  `authorization`, CSRF, or session concept anywhere in the server) is served to
+  every network interface.
+- Consequence: every endpoint below is reachable, unauthenticated, from any host
+  that can route to the machine (same subnet by default). This is the single
+  root cause that amplifies every other finding.
+
+### F2 — HIGH: path traversal → unauthenticated arbitrary file read
+- `lib/dashboard-server.js:1145-1157` (`/assets/` handler) builds
+  `path.join(ROOT_DIR, reqPath)` and `:1266-1276` (`/js/` handler) builds
+  `path.join(templateRoot, 'templates', 'dashboard', reqPath)` with **no
+  containment check** on the resolved path.
+- `reqPath = (req.url||'/').split('?')[0]` is the raw request target. Node's HTTP
+  server does **not** normalize `..` (verified: a client such as
+  `curl --path-as-is` delivers `req.url` verbatim). `reqPath.startsWith('/assets/')`
+  still passes for `/assets/../../../../etc/passwd`.
+- Verified: `path.join('/Users/jviner/src/aigon', '/assets/../../../../../../etc/passwd')`
+  resolves to `/etc/passwd`, which `fs.existsSync && isFile()` accepts and the
+  handler streams back (`application/octet-stream`). Same for the `/js/` handler.
+- Combined with F1, this is **remote, unauthenticated arbitrary file read**
+  (SSH keys, `.env`, tokens, source).
+
+### F3 — HIGH: no CSRF / Origin / Host validation on state-changing HTTP endpoints
+- `POST /api/action` (`lib/dashboard-routes/system.js:158-160`) runs any
+  allow-listed lifecycle action via `runDashboardInteractiveAction` — including
+  `feature-start` / `feature-do` (spawns autonomous coding agents),
+  `feature-delete`, `feature-reset`, `feature-push`, `dev-server`, etc.
+- The request handler (`lib/dashboard-server.js:1101`) performs **no** Origin,
+  Referer, or Host check. `readJsonBody` (`lib/dashboard-routes/util.js:14`)
+  `JSON.parse`s the body regardless of `Content-Type`, so a malicious web page can
+  send a CORS "simple request" (`text/plain`, no preflight) and the server will
+  act on it. This makes the endpoints reachable via **drive-by CSRF and
+  DNS-rebinding**, not only the LAN.
+- Other state-changing endpoints with the same gap:
+  `POST /api/session/terminal-input` (`sessions.js:355`) injects arbitrary
+  keystrokes + Enter into a live agent tmux session — i.e. an attacker can *type
+  commands into a running agent's terminal*; `POST /api/session/run`,
+  `/api/session/stop`, `/api/session/view`, `/api/attach`, `/api/sessions/cleanup`,
+  `/api/session/ask`, and the `/api/repos/.../dev-server/start` family.
+
+### F4 — MEDIUM: PTY / full-shell access reachable by any LAN client
+- `lib/pty-session-handler.js` *does* gate the PTY WebSocket with an Origin
+  allow-list (`isValidOrigin`, loopback/`.localhost` only) plus a single-use
+  token. That defends against browser drive-by, but **not** against a non-browser
+  LAN client: `Origin` is a request header any client can set freely, and
+  `GET /api/pty-token` (`sessions.js:298`) mints tokens with **no auth and no
+  Origin check**. So a LAN attacker can: fetch a token → open
+  `ws://host:port/api/session/pty/<session>` with a spoofed `Origin: http://localhost`
+  → get a **full interactive PTY attached to a running agent's tmux session**
+  (arbitrary shell as the developer). This is gated today only by F1's absence of
+  network isolation.
+
+### F5 — MEDIUM: `repoPath` allow-list bypass when no repos are registered
+- `resolveDashboardActionRepoPath` (`lib/dashboard-action-command.js:108-132`):
+  when `registeredRepos` is empty, an attacker-supplied `repoPath` is returned
+  **unchecked** (the `repos.length > 0 && !repos.includes(requested)` guard is
+  skipped), so actions run in an arbitrary caller-chosen directory. Even when
+  repos are registered, the check is an exact `path.resolve` string match — fine,
+  but the empty-list branch is a hole. Should fail closed.
+
+### F6 — LOW / defense-in-depth: unbounded request body
+- `readJsonBody` (`util.js:14-27`) and the inline body reader
+  (`dashboard-server.js:238`) accumulate the whole body in memory with no cap.
+  DoS against local tooling is explicitly out of scope in `SECURITY.md`, so this
+  is tracked only as hardening, not as a primary driver — add a sane cap (e.g.
+  reject bodies over ~1 MB) while we are in the file.
+
+## User Stories
+- [ ] As a developer running Aigon on a laptop on shared Wi-Fi, no other device
+      on the network can read my files, drive my agents, or open a shell on my
+      machine through the dashboard.
+- [ ] As a developer, visiting a malicious website cannot trigger Aigon actions,
+      spawn agents, or inject keystrokes into my agent terminals via my running
+      dashboard.
+- [ ] As a Docker/OrbStack user who needs the dashboard reachable from a
+      container, I can opt in explicitly (bind address + shared secret) without
+      that being the insecure default for everyone.
+
+## Acceptance Criteria
+- [ ] **F1:** The server binds to `127.0.0.1` (loopback) by default. Any wider
+      bind (`0.0.0.0` / specific interface) is opt-in via explicit config/env
+      (e.g. `AIGON_SERVER_HOST` or `.aigon` config) and, when the bind is
+      non-loopback, a shared-secret token is **required** (server refuses to
+      start a non-loopback bind without one).
+- [ ] **F2:** `/assets/` and `/js/` handlers reject any request whose resolved
+      absolute path is not contained within the intended base directory
+      (`path.resolve` + prefix check with a trailing separator, or reject any
+      `reqPath` containing `..` / encoded `..` before joining). Regression test
+      asserts `/assets/../../../../etc/passwd` → 404/400, not file contents.
+- [ ] **F3:** All state-changing endpoints (POST/DELETE, PTY-token mint) validate
+      that `Origin`/`Referer` (when present) is loopback/`.localhost`, and reject
+      requests whose `Host` header is not loopback/`.localhost`/an allow-listed
+      host (DNS-rebinding defense). When a shared secret is configured, a matching
+      `X-Aigon-Token` (or equivalent) header is also required. GET read-only
+      endpoints may stay open on loopback but must still pass the Host check.
+- [ ] **F4:** `GET /api/pty-token` requires the same Origin/Host (and token, when
+      configured) checks as other privileged endpoints, so a bare LAN client
+      cannot mint a token; the PTY upgrade path keeps its existing Origin + token
+      gate.
+- [ ] **F5:** `resolveDashboardActionRepoPath` fails closed: when no repos are
+      registered, a caller-supplied `repoPath` is rejected (or constrained to the
+      server's own cwd) rather than honored blindly.
+- [ ] **F6:** Request-body readers enforce a maximum size and abort oversized
+      requests. (Defense-in-depth; keep the change minimal.)
+- [ ] The dashboard UI and Playwright smoke tests still pass on the default
+      loopback bind (the browser talks to `localhost`, so no UX regression).
+- [ ] `SECURITY.md` / `docs/architecture.md` note the new bind + token model so
+      the trust boundary is documented.
+
+## Validation
+```bash
+# unit + integration for the new guards (targeted — do NOT run full deploy gate)
+node --test tests/unit/dashboard-server-security.test.js
+npm run test:browser:smoke
+```
+
+## Pre-authorised
+
+## Technical Approach
+- **Bind default (F1):** replace the hardcoded `host = '0.0.0.0'` with a resolver
+  that defaults to `127.0.0.1`, reads an override from config/env, and — for any
+  non-loopback bind — requires a configured shared secret or refuses to start
+  with a clear error. Keep the Caddy `.localhost` proxy path working (it targets
+  `127.0.0.1:<port>` already, per `lib/server-runtime.js`).
+- **Central guard middleware (F3/F4):** add one `enforceRequestSecurity(req, res)`
+  helper invoked at the top of the request handler (and the WS upgrade + token
+  mint) that: (a) validates `Host` against a loopback/allow-list; (b) validates
+  `Origin`/`Referer` for non-GET; (c) checks the shared-secret header when
+  configured. Return 403 on failure. Reuse `isValidOrigin` from
+  `pty-session-handler.js` (extract to a shared `lib/dashboard-security.js`).
+- **Path containment (F2):** add a `resolveWithinBase(baseDir, reqPath)` helper
+  that `path.resolve`s and verifies `resolved === base || resolved.startsWith(base + path.sep)`;
+  use it in both static handlers. Reject `..`/`%2e` early as belt-and-suspenders.
+- **Fail-closed repo resolution (F5):** in `resolveDashboardActionRepoPath`, when
+  `repos.length === 0` and a `requested` path is supplied, only accept it if it
+  equals the resolved default repo/cwd; otherwise 403.
+- **Body cap (F6):** wrap the `req.on('data')` accumulators with a byte counter
+  that `req.destroy()`s past the limit and rejects the promise.
+- Keep changes surgical and covered by a focused unit test file plus the browser
+  smoke subset; **do not** run the full `test:deploy` gate mid-iteration (repo
+  testing guidance). Restart the server after `lib/*.js` edits.
+
+## Dependencies
+- None. Self-contained within `lib/dashboard-*` + `lib/pty-session-handler.js`.
+
+## Out of Scope
+- `aigon-pro` code changes — its exec paths use argument-array `spawnSync` with no
+  shell string interpolation and no `execSync`; review found no injection there.
+- Full authenticated multi-user access control / TLS. The goal is to restore the
+  "trusted localhost" boundary the code already assumes, not to build a
+  hardened multi-tenant server.
+- Rate limiting / DoS protection beyond the single body-size cap (out of scope
+  per `SECURITY.md`).
+- Dashboard client-side XSS hardening (self-XSS requiring local access is out of
+  scope per `SECURITY.md`); revisit separately if stored-XSS via repo data is
+  found.
+
+## Open Questions
+- Token distribution UX for the opt-in non-loopback case: auto-generate + print
+  on start, or require the user to set it? (Lean: auto-generate, persist in
+  `~/.aigon`, surface in the start banner.)
+- Should GET read endpoints also require the token when a secret is configured,
+  or only enforce Host/Origin? (Lean: require token for all endpoints once a
+  secret is set, so a non-loopback bind is fully gated.)
+
+## Related
+- Security policy scope: `SECURITY.md` (§ Scope — all findings in-scope)
+- Server: `lib/dashboard-server.js`, `lib/server-runtime.js`
+- Routes: `lib/dashboard-routes/{system,sessions,config,util}.js`
+- Actions: `lib/dashboard-actions/run-interactive.js`, `lib/dashboard-action-command.js`
+- PTY: `lib/pty-session-handler.js`
