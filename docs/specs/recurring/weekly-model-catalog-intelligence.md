@@ -16,7 +16,7 @@ Keep Aigon's curated agent model registry (`templates/agents/*.json`) honest aga
 
 This is the operational layer the project is missing today. F503 (`bench-refresh`) and F537 (maintainer tooling moved to Pro) cover **monthly benchmark sweeps** and **discovery append-only** — but not weekly catalog hygiene, retirement, role-specific ranking, or a single report an operator can triage. This recurring task closes that gap until a dedicated Pro command (`model-catalog-refresh` or similar) exists.
 
-**This is a triage + maintainer-publish task, not an auto-merge task.** The agent produces a report and a small set of curated JSON diffs; a human reviews before anything ships to `main`.
+**This task auto-applies deterministic catalog changes and commits them.** Pricing refresh and retire/archive of removed / tool-less / superseded IDs — all computed mechanically by `lib/model-catalog-diff.js` — are applied to `templates/agents/op.json`, validated with `npm test`, and committed without asking. **Anything requiring judgment is never auto-applied**: adding NEW models, writing `summary` headlines, and promoting/demoting models in role rankings are each surfaced to the maintainer as a single clear **yes/no question** (with evidence), and only the ones answered "yes" are applied.
 
 ## User Stories
 
@@ -142,16 +142,20 @@ Bad: `Powerful next-gen model with great capabilities.` (marketing, no role guid
   - best **quality** code review (note if not OpenRouter)
 - [ ] Apply `docs/model-inclusion-policy.md` §4: thinking variants get warnings; do not promote into `complexityDefaults` without scores + notes.
 
-### 6. Curated registry updates (human-gated)
+### 6. Registry updates (auto-apply deterministic, ask on judgment)
 
-- [ ] Prepare JSON patches for `templates/agents/op.json` (the only enumerable-provider agent):
-  - append NEW models (minimal shape: `value`, `label`, `pricing`, `lastRefreshAt`, `summary`, `score: { implement: null, review: null, ... }`)
-  - refresh pricing on existing models
-  - add or refresh `summary` per §4 for all in-scope models
-  - add `quarantined` / `archived` blocks per policy
-  - add `notes.<role>` for any model promoted or demoted in the ranking table (must not contradict `summary.headline`)
-- [ ] Run `npm test` (or `node -e "require('./lib/agent-registry').validateModelOptions(...)"` per agent) — contract test must pass before proposing commit.
-- [ ] **Do not commit registry changes on `main` without explicit maintainer approval** in the report's "Recommended commits" section. This recurring task may commit the **report only**.
+**Auto-apply tier — apply and commit without asking.** These are mechanically derived from the provider catalog / `lib/model-catalog-diff.js` classifications:
+- [ ] Refresh `pricing` on existing models from the provider response.
+- [ ] Add `quarantined` / `archived` blocks for `retire-candidate` / `archive-candidate` rows (removed, tool-less, or superseded IDs) per policy.
+- [ ] Run `npm test` (or `node -e "require('./lib/agent-registry').validateModelOptions(...)"` per agent) — must pass **before** committing. If validation fails, do not commit; report the failure.
+- [ ] Commit the applied changes as `chore(models): refresh op catalog {{YYYY-WW}}`.
+
+**Ask tier — never auto-apply; one yes/no question each.** These need human judgment; present each with its evidence and apply only on an explicit "yes":
+- [ ] Add NEW model to `op.json` (minimal shape: `value`, `label`, `pricing`, `lastRefreshAt`, `summary`, `score: { implement: null, review: null, ... }`)? — one question per model.
+- [ ] Apply this drafted/refreshed `summary` (§4)?
+- [ ] Promote/demote this model in role rankings via `notes.<role>` / `complexityDefaults` (must not contradict `summary.headline`)?
+
+Batch the yes/no questions at the end of the run so the maintainer answers them in one pass. Apply approved answers, re-run `npm test`, and commit.
 
 ### 7. Report & follow-ups
 
@@ -303,13 +307,13 @@ Do **not** file features for routine "add this one model" work — that belongs 
 - **Deep web research** for in-scope models: provider pages, benchmark aggregators, and practitioner sources (HN/Reddit/blogs) from the last 30 days; no paywalled source scraping.
 - Write `.aigon/reports/model-catalog-intelligence-{{YYYY-WW}}.md`.
 - Run `aigon feature-create` at most once per weekly run for systemic gaps.
-- Prepare but not commit `templates/agents/*.json` changes unless this run is explicitly tagged `publish-ok` in the kickoff message.
+- **Auto-apply and commit** deterministic `templates/agents/*.json` changes (pricing refresh + retire/archive of stale / tool-less / superseded IDs) after `npm test` passes. Judgment changes (NEW model adds, summaries, role-rank promotions) are surfaced as yes/no questions and applied only on an explicit "yes" — never auto-applied.
 - Skip full `npm run test:browser` — no dashboard edits expected.
 
 ## Out of Scope (for this recurring task)
 
 - End-user CLI for model discovery (Pro/internal only per F537).
-- Automatic merge of registry changes without human review.
+- Auto-applying **judgment** changes (NEW model adds, `summary` headlines, role-rank promotions) — those stay yes/no gated. Deterministic pricing/retirement changes are auto-applied (see §6).
 - Discovering `cc` / `cx` models (no public enumerate API — manual curator lane in report).
 - Replacing frontier reviewers (Claude/GPT) with OpenRouter — report may recommend, not enforce.
 
