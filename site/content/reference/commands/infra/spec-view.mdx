@@ -1,0 +1,38 @@
+---
+title: "spec-view"
+description: "Inspect or rebuild the generated lifecycle view for stable spec layouts"
+---
+
+## Synopsis
+
+```bash
+aigon spec-view status
+aigon spec-view refresh
+```
+
+## Description
+
+In a stable spec layout, lifecycle folders are a disposable symlink view generated from canonical specs and workflow state. `spec-view` reports or reconciles that view without changing the canonical Markdown.
+
+The command is a no-op for legacy layouts. Aigon refreshes the view after stable-layout lifecycle transitions, storage sync, storage doctor repairs, and a successful layout migration; use this command when diagnosing links or resolving a reported collision.
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `status` | Dry run showing desired links, current links, and unsafe collisions without writing files |
+| `refresh` | Create, replace, or remove only links Aigon can prove it manages; exits non-zero if unsafe collisions remain |
+
+Regular files, unmanaged symlinks, and links outside the canonical `00-specs` roots are left untouched. Resolve those conflicts manually, then run `aigon spec-view refresh` again.
+
+## Examples
+
+```bash
+# Inspect lifecycle links without changing them
+aigon spec-view status
+
+# Rebuild safely managed lifecycle links
+aigon spec-view refresh
+```
+
+See [`spec-layout`](/docs/reference/commands/infra/spec-layout) for the stable-layout migration workflow.

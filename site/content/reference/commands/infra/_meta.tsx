@@ -3,6 +3,8 @@ import { withPro } from "../../../../components/pro-badge";
 export default {
   board: "board",
   storage: "storage",
+  "spec-layout": "spec-layout",
+  "spec-view": "spec-view",
   server: "server",
   preview: "preview",
   config: "config",

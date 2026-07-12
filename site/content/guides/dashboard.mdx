@@ -283,7 +283,7 @@ No phase auto-advances — every transition requires an explicit click. The pill
 
 ## Settings → Storage
 
-For each registered repo, the dashboard shows the server-resolved SpecStore backend. Local repos show `local` with healthy status. Git-ref repos show remote, ref prefix, offline state, last sync time, ahead/behind counts, and health (`ok`, `ahead`, `behind`, or `degraded`).
+For each registered repo, the dashboard shows the server-resolved SpecStore backend. Local repos show `local` with healthy status. Git-branch repos show remote, state branch, offline state, last sync time, ahead/behind counts, and health (`ok`, `ahead`, `behind`, or `degraded`). A legacy `git-ref` configuration is flagged with a conversion hint instead of silently falling back.
 
 The storage settings actions run the same CLI surfaces as the terminal:
 
@@ -293,7 +293,7 @@ The storage settings actions run the same CLI surfaces as the terminal:
 | Storage doctor | `aigon storage doctor` |
 | Storage report | `aigon storage report` |
 
-Feature and research cards/details show active, non-expired lease metadata when a git-ref backed workflow has a current holder. See [Storage Backends](/docs/reference/storage-backends) for the storage model and two-machine behavior.
+Feature and research cards/details show active, non-expired lease metadata when a git-branch backed workflow has a current holder. See [Storage Backends](/docs/reference/storage-backends) for the storage model and multi-clone behavior.
 
 ## Remote access
 

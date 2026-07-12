@@ -1,6 +1,6 @@
 ---
 title: "storage"
-description: "Manage SpecStore local and git-ref storage state"
+description: "Manage SpecStore local and git-branch storage state"
 ---
 
 ## Synopsis
@@ -10,12 +10,12 @@ aigon storage sync
 aigon storage status
 aigon storage doctor [--fix]
 aigon storage report [--json]
-aigon storage convert --backend=git-ref [--remote=origin] [--ref-prefix=refs/aigon/specs] [--dry-run]
+aigon storage convert --backend=git-branch [--remote=origin] [--branch=aigon-state] [--keep-refs] [--dry-run]
 ```
 
 ## Description
 
-Manages SpecStore storage for feature and research workflow state. Local storage is the default. Git-ref storage is opt-in and stores canonical workflow, lease, and stats events under `refs/aigon/specs/<key>/events`.
+Manages SpecStore storage for feature and research workflow state. Local storage is the default. Git-branch storage is opt-in and stores canonical lifecycle state as a file tree on a dedicated branch (default: `aigon-state`).
 
 Spec markdown and code changes still use normal Git. Storage commands do not commit or merge working-tree files.
 
@@ -23,36 +23,37 @@ Spec markdown and code changes still use normal Git. Storage commands do not com
 
 | Subcommand | Description |
 |------------|-------------|
-| `sync` | Fetch, merge/dedupe by event id, rebuild local projections, and push git-ref events |
-| `status` | Show backend, remote, ref prefix, offline state, last sync, ahead/behind, and health |
-| `doctor` | Diagnose ref reachability, duplicate event ids, projection drift, and lease health |
-| `doctor --fix` | Apply safe projection repairs where available |
+| `sync` | Fetch, merge and dedupe state events, rebuild local projections, and push the configured state branch |
+| `status` | Show backend, remote, branch, offline state, last sync, ahead/behind, and health |
+| `doctor` | Diagnose state-branch reachability, duplicate event IDs, projection drift, and lease health |
+| `doctor --fix` | Apply safe projection repairs and refresh the stable lifecycle view |
 | `report` | Show a cross-repo storage and active-lease report |
 | `report --json` | Print the report as JSON |
-| `convert` | Validate remote access, write git-ref config, import existing local events, and sync |
-| `convert --dry-run` | Show planned config and import candidates without writing config |
+| `convert` | Validate remote access, write git-branch config, import local or legacy git-ref events, and sync |
+| `convert --dry-run` | Show planned config and import candidates without writing config or remote state |
 
 ## Examples
 
 ```bash
-# Convert the current repo to git-ref storage
-aigon storage convert --backend=git-ref --remote=origin
+# Convert the current repository to git-branch storage
+aigon storage convert --backend=git-branch --remote=origin
+
+# Use a differently named state branch
+aigon storage convert --backend=git-branch --remote=origin --branch=workflow-state
 
 # Check whether this clone is ahead, behind, degraded, or healthy
 aigon storage status
 
-# Push/pull canonical storage refs
+# Pull and push canonical lifecycle state
 aigon storage sync
 
 # Diagnose storage and lease issues
 aigon storage doctor
 
-# Inspect active leases across registered repos
+# Inspect active leases across registered repositories
 aigon storage report
 ```
 
-## Git-ref requirements
+`git-ref` is no longer supported. If a project still has that backend configured, run `aigon storage convert --backend=git-branch --remote=origin`; add `--keep-refs` if the legacy refs must remain available temporarily.
 
-The configured remote must allow pushing custom refs under `refs/aigon/*`. GitHub, GitLab, and Bitbucket may not show those refs in their web UIs; use `git ls-remote origin 'refs/aigon/*'` or `aigon storage status`.
-
-See [Storage Backends](/docs/reference/storage-backends) for config examples, two-machine behavior, leases, and offline mode.
+See [Storage Backends](/docs/reference/storage-backends) for configuration, multi-clone behavior, leases, offline mode, and stable spec layout.

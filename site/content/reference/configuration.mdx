@@ -84,10 +84,11 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
 | `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
 | `github.prCheck` | Project | Show GitHub PR status on dashboard cards | `true` (default), `false` to hide |
-| `storage.backend` | Project | SpecStore backend for workflow events | `local` (default), `git-ref` |
-| `storage.git.remote` | Project | Remote used by git-ref storage | Remote name such as `origin` |
-| `storage.git.refPrefix` | Project | Git ref namespace for canonical SpecStore events | Default: `refs/aigon/specs` |
-| `storage.git.offline` | Project | Skip pre-write fetch/merge for git-ref storage | `false` (default), `true` |
+| `storage.backend` | Project | SpecStore backend for workflow events | `local` (default), `git-branch` |
+| `storage.git.remote` | Project | Remote used by git-branch storage | Remote name such as `origin` |
+| `storage.git.branch` | Project | Branch holding canonical SpecStore state | `aigon-state` (default) |
+| `storage.git.offline` | Project | Skip pre-write sync for git-branch storage | `false` (default), `true` |
+| `specLayout` | Project | Durable spec-file layout | `stable` for new repos; `legacy` for unmigrated repos |
 | `iterate.validationCommand` | Project | Override the automatic iterate-mode validation command | String |
 | `fleet.testInstructions` | Project | Custom test instructions for Fleet mode | String |
 | `devProxy.command` | Project | Dev server start command | Default: `npm run dev` |
@@ -161,10 +162,10 @@ SpecStore controls feature and research workflow events, snapshots, leases, and 
 }
 ```
 
-Git-ref storage is opt-in. Prefer the conversion command because it validates remote push access and imports existing local workflow events:
+Git-branch storage is opt-in. Prefer the conversion command because it validates remote push access and imports existing local workflow events:
 
 ```bash
-aigon storage convert --backend=git-ref --remote=origin
+aigon storage convert --backend=git-branch --remote=origin
 ```
 
 The resulting project config is:
@@ -172,17 +173,31 @@ The resulting project config is:
 ```json
 {
   "storage": {
-    "backend": "git-ref",
+    "backend": "git-branch",
     "git": {
       "remote": "origin",
-      "refPrefix": "refs/aigon/specs",
+      "branch": "aigon-state",
       "offline": false
     }
   }
 }
 ```
 
-Git-ref storage syncs canonical workflow, lease, and stats events through `refs/aigon/specs/<key>/events`. Spec markdown and code changes still use normal Git. See [Storage Backends](/docs/reference/storage-backends) for two-machine behavior, leases, offline mode, and diagnostics.
+Git-branch storage syncs canonical workflow, lease, and stats events through a file tree on the configured state branch (default: `aigon-state`). Spec markdown and code changes still use normal Git. `git-ref` is retired; use `aigon storage convert --backend=git-branch --remote=origin` to migrate it. See [Storage Backends](/docs/reference/storage-backends) for multi-clone behavior, leases, offline mode, and diagnostics.
+
+## Spec layout
+
+Storage controls lifecycle state; `specLayout` controls where spec Markdown lives. New repositories default to the stable layout, which keeps canonical specs under `docs/specs/features/00-specs/` and `docs/specs/research-topics/00-specs/`. Lifecycle folders are generated symlink views and should not be edited or moved manually.
+
+Existing repositories keep the legacy stage-folder layout until you explicitly migrate them:
+
+```bash
+aigon spec-layout status
+aigon spec-layout migrate --stable --dry-run
+aigon spec-layout migrate --stable --yes
+```
+
+See [`spec-layout`](/docs/reference/commands/infra/spec-layout) and [`spec-view`](/docs/reference/commands/infra/spec-view) for the migration and generated-view commands.
 
 ## Per-worktree setup (`worktreeSetup`)
 

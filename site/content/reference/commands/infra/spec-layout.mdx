@@ -1,0 +1,45 @@
+---
+title: "spec-layout"
+description: "Inspect or migrate durable feature and research spec locations"
+---
+
+## Synopsis
+
+```bash
+aigon spec-layout status
+aigon spec-layout migrate --stable --dry-run
+aigon spec-layout migrate --stable --yes
+```
+
+## Description
+
+Controls the durable layout of feature and research Markdown. This is independent of the selected [storage backend](/docs/reference/storage-backends).
+
+New repositories use the stable layout: canonical specs live in `docs/specs/features/00-specs/` and `docs/specs/research-topics/00-specs/`. The familiar lifecycle folders are generated symlink views of workflow state. Existing repositories stay on the legacy stage-folder layout until explicitly migrated.
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `status` | Read-only report of layout version, canonical and legacy spec counts, warnings, and blockers |
+| `migrate --stable --dry-run` | Build and display the deterministic migration plan without writing files |
+| `migrate --stable --yes` | Validate, move specs with `git mv`, record `specLayout: "stable"`, and refresh the lifecycle view |
+
+The migration validates IDs, duplicate specs, collisions, dirty relevant files, and paths outside Aigon spec roots before changing files. It assigns IDs to unnumbered inbox specs, preserves existing numeric IDs, and commits the migration paths plus the layout setting.
+
+`--yes` acknowledges active entities whose branches or worktrees can still reference a legacy spec path until they merge. Migration never runs automatically from `aigon apply`, dashboard startup, or storage polling.
+
+## Examples
+
+```bash
+# Inspect the current repository without changing it
+aigon spec-layout status
+
+# Review the exact file moves and blockers
+aigon spec-layout migrate --stable --dry-run
+
+# Apply the reviewed migration
+aigon spec-layout migrate --stable --yes
+```
+
+Use [`spec-view`](/docs/reference/commands/infra/spec-view) to inspect or repair the generated lifecycle links after migration.
