@@ -44,3 +44,19 @@ Out of scope:
 - Denial of service against developer tooling running on a user's own machine
 - Self-XSS in the dashboard requiring local file access
 - Issues only reproducible in non-supported configurations
+
+## Dashboard trust boundary
+
+The dashboard server (`lib/dashboard-server.js`) assumes a **trusted localhost**.
+It binds to `127.0.0.1` by default; exposing it to the network is an explicit
+opt-in that **requires a shared secret**:
+
+- Wider bind: `AIGON_SERVER_HOST` (env) or config `server.host`. A non-loopback
+  bind without `AIGON_SERVER_TOKEN` / config `server.token` is refused at startup.
+- All requests are `Host`-allow-listed (DNS-rebinding defense); state-changing
+  requests are `Origin`/`Referer`-checked (CSRF defense). When a secret is
+  configured, every route requires the token — via the `X-Aigon-Token` header,
+  or a `?token=` bootstrap that mints an `HttpOnly`/`SameSite=Strict` cookie.
+- Add extra reachable hostnames with `AIGON_SERVER_ALLOWED_HOSTS` (comma list).
+
+See `docs/architecture.md` § "Dashboard security & Remote Access" for details.
