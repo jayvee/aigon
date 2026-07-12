@@ -80,6 +80,20 @@ test('F620: computeStatusFingerprint includes rendered update-check details', ()
     assert.notStrictEqual(computeStatusFingerprint(a), computeStatusFingerprint(b));
 });
 
+// REGRESSION F671: completing spec revision must invalidate cached /api/status.
+test('F671: computeStatusFingerprint bumps when spec revision sessions change', () => {
+    const base = buildStatus();
+    base.repos[0].features[0].stage = 'backlog';
+    base.repos[0].features[0].currentSpecState = 'backlog';
+    base.repos[0].features[0].agents = [];
+    const revising = JSON.parse(JSON.stringify(base));
+    revising.repos[0].features[0].specRevisionSessions = [{ agent: 'cu', running: true, status: 'addressing-spec-review' }];
+    const done = JSON.parse(JSON.stringify(base));
+    done.repos[0].features[0].specRevisionSessions = [];
+    assert.notStrictEqual(computeStatusFingerprint(base), computeStatusFingerprint(revising));
+    assert.notStrictEqual(computeStatusFingerprint(revising), computeStatusFingerprint(done));
+});
+
 test('F620: replaceLatestStatus bumps version only when fingerprint changes', () => {
     const store = createStatusSnapshotStore();
     store.replaceLatestStatus(buildStatus(), 'a');
