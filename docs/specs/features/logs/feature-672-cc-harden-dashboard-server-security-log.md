@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 720
+lines_removed: 32
+lines_changed: 752
+files_touched: 10
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 179
+output_tokens: 106423
+cache_creation_input_tokens: 542290
+cache_read_input_tokens: 9946205
+thinking_tokens: 0
+total_tokens: 10595097
+billable_tokens: 106602
+cost_usd: 11.0239
+sessions: 1
+model: "claude-opus-4-8"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 672 - harden-dashboard-server-security
 Agent: cc
 
