@@ -23,9 +23,9 @@ listed as *in scope* in `SECURITY.md` ("Path traversal or injection", "Authentic
 bypass in the AIGON server / dashboard", "Code execution", "Credential leakage").
 
 This feature hardens the server: bind to loopback by default, add
-defense-in-depth Origin/Host validation and an optional shared-secret token on
-state-changing endpoints, fix the path traversal, and tighten the
-repo-path allow-listing. `aigon-pro` was also reviewed — its exec surface uses
+defense-in-depth Origin/Host validation, require a shared-secret token whenever
+the operator opts into a non-loopback bind, fix the path traversal, and tighten
+the repo-path allow-listing. `aigon-pro` was also reviewed — its exec surface uses
 argument-array `spawnSync` (no shell string interpolation, no `execSync`), so no
 Pro code changes are required; the findings are all in OSS `aigon`.
 
@@ -124,9 +124,10 @@ defense-in-depth, not as the driver.
 ## Acceptance Criteria
 - [ ] **F1:** The server binds to `127.0.0.1` (loopback) by default. Any wider
       bind (`0.0.0.0` / specific interface) is opt-in via explicit config/env
-      (e.g. `AIGON_SERVER_HOST` or `.aigon` config) and, when the bind is
-      non-loopback, a shared-secret token is **required** (server refuses to
-      start a non-loopback bind without one).
+      (e.g. `AIGON_SERVER_HOST` or dashboard config) and, when the bind is
+      non-loopback, a shared-secret token is **required**. The server refuses to
+      start a non-loopback bind unless the token is already configured via env or
+      config; token auto-generation UX is deferred.
 - [ ] **F2:** `/assets/` and `/js/` handlers reject any request whose resolved
       absolute path is not contained within the intended base directory
       (`path.resolve` + prefix check with a trailing separator, or reject any
@@ -136,12 +137,15 @@ defense-in-depth, not as the driver.
       that `Origin`/`Referer` (when present) is loopback/`.localhost`, and reject
       requests whose `Host` header is not loopback/`.localhost`/an allow-listed
       host (DNS-rebinding defense). When a shared secret is configured, a matching
-      `X-Aigon-Token` (or equivalent) header is also required. GET read-only
-      endpoints may stay open on loopback but must still pass the Host check.
+      `X-Aigon-Token` (or equivalent) header is required on every dashboard HTTP
+      route, including read-only GETs, so a non-loopback bind is fully gated.
+      GET read-only endpoints may stay token-free only in the default loopback
+      mode, but must still pass the Host check.
 - [ ] **F4:** `GET /api/pty-token` requires the same Origin/Host (and token, when
       configured) checks as other privileged endpoints, so a bare LAN client
-      cannot mint a token; the PTY upgrade path keeps its existing Origin + token
-      gate.
+      cannot mint a token. The PTY WebSocket upgrade path also runs the shared
+      Host/token guard before the existing single-use PTY token check; its
+      existing Origin allow-list remains in place.
 - [ ] **F5:** `resolveDashboardActionRepoPath` fails closed: when no repos are
       registered, a caller-supplied `repoPath` is rejected (or constrained to the
       server's own cwd) rather than honored blindly.
@@ -156,6 +160,7 @@ defense-in-depth, not as the driver.
 ```bash
 # unit + integration for the new guards (targeted — do NOT run full deploy gate)
 node --test tests/unit/dashboard-server-security.test.js
+node --test tests/integration/pty-terminal.test.js
 npm run test:browser:smoke
 ```
 
@@ -166,13 +171,19 @@ npm run test:browser:smoke
   that defaults to `127.0.0.1`, reads an override from config/env, and — for any
   non-loopback bind — requires a configured shared secret or refuses to start
   with a clear error. Keep the Caddy `.localhost` proxy path working (it targets
-  `127.0.0.1:<port>` already, per `lib/server-runtime.js`).
-- **Central guard middleware (F3/F4):** add one `enforceRequestSecurity(req, res)`
-  helper invoked at the top of the request handler (and the WS upgrade + token
-  mint) that: (a) validates `Host` against a loopback/allow-list; (b) validates
-  `Origin`/`Referer` for non-GET; (c) checks the shared-secret header when
-  configured. Return 403 on failure. Reuse `isValidOrigin` from
-  `pty-session-handler.js` (extract to a shared `lib/dashboard-security.js`).
+  `127.0.0.1:<port>` already, per `lib/server-runtime.js`). Do not auto-generate
+  a token in this feature; operators who opt into non-loopback access must
+  provide one explicitly.
+- **Central guard middleware (F3/F4):** add shared helpers in
+  `lib/dashboard-security.js` and invoke them from both entry points:
+  `lib/dashboard-server.js` before route dispatch/static handling, and the
+  `server.on('upgrade')` PTY WebSocket branch before delegating to
+  `pty-session-handler.js`. The helper should: (a) validate `Host` against a
+  loopback/allow-list; (b) validate `Origin`/`Referer` for non-GET and token-mint
+  requests; (c) check the shared-secret header whenever configured. Return 403
+  (or close the upgrade socket without handing it to the PTY handler) on failure.
+  Reuse `isValidOrigin` from `pty-session-handler.js` by extracting it to the
+  shared module rather than duplicating host parsing.
 - **Path containment (F2):** add a `resolveWithinBase(baseDir, reqPath)` helper
   that `path.resolve`s and verifies `resolved === base || resolved.startsWith(base + path.sep)`;
   use it in both static handlers. Reject `..`/`%2e` early as belt-and-suspenders.
@@ -181,6 +192,10 @@ npm run test:browser:smoke
   equals the resolved default repo/cwd; otherwise 403.
 - **Body cap (F6):** wrap the `req.on('data')` accumulators with a byte counter
   that `req.destroy()`s past the limit and rejects the promise.
+- **Tests:** cover default loopback binding, non-loopback startup refusal without
+  a token, Host/Origin rejection, token success/failure when configured, static
+  traversal rejection for `/assets/` and `/js/`, `repoPath` fail-closed behavior,
+  and PTY token/upgrade protection.
 - Keep changes surgical and covered by a focused unit test file plus the browser
   smoke subset; **do not** run the full `test:deploy` gate mid-iteration (repo
   testing guidance). Restart the server after `lib/*.js` edits.
@@ -201,12 +216,10 @@ npm run test:browser:smoke
   found.
 
 ## Open Questions
-- Token distribution UX for the opt-in non-loopback case: auto-generate + print
-  on start, or require the user to set it? (Lean: auto-generate, persist in
-  `~/.aigon`, surface in the start banner.)
-- Should GET read endpoints also require the token when a secret is configured,
-  or only enforce Host/Origin? (Lean: require token for all endpoints once a
-  secret is set, so a non-loopback bind is fully gated.)
+- Exact config key names for the bind address and shared secret should follow
+  the existing dashboard/server config naming during implementation. The
+  behavior is fixed: loopback by default, explicit non-loopback opt-in, and a
+  required operator-provided token for non-loopback mode.
 
 ## Related
 - Security policy scope: `SECURITY.md` (§ Scope — all findings in-scope)
