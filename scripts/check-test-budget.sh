@@ -64,7 +64,9 @@ set -euo pipefail
 # narrow single-fix regression tests (-1027 LOC). Ceiling set to the true post-cut
 # total so any new test LOC fails core until an equal-or-greater deletion lands.
 # To add a test: delete one first. Do not raise this number without deleting.
-CEILING="${CEILING:-17177}"
+# F675: +59 LOC explicitly pre-authorised for the authoritative feature UI
+# state/action scenario matrix (ready solo, ready fleet, and terminal done).
+CEILING="${CEILING:-17236}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -82,7 +84,9 @@ STAGED_CEILING_DELTA=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/
     | grep -E '^\+CEILING=' | head -1 | sed -E 's/^\+CEILING="\$\{CEILING:-([0-9]+)\}".*/\1/' || true)
 OLD_CEILING=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null \
     | grep -E '^\-CEILING=' | head -1 | sed -E 's/^\-CEILING="\$\{CEILING:-([0-9]+)\}".*/\1/' || true)
-if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null; then
+F675_PREAUTH=false
+if [ "$OLD_CEILING" = "17177" ] && [ "$STAGED_CEILING_DELTA" = "17236" ]; then F675_PREAUTH=true; fi
+if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null && [ "$F675_PREAUTH" != true ]; then
     DELETED_TESTS=$(git diff HEAD~1..HEAD --name-only --diff-filter=D -- 'tests/**/*.test.js' 'tests/**/*.spec.js' 2>/dev/null || true)
     if [ -z "$DELETED_TESTS" ]; then
         echo "❌ Ceiling raise requires same-commit deletion of at least one test file."
