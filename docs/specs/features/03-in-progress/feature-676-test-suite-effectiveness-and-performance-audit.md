@@ -1,5 +1,5 @@
 ---
-complexity: medium
+complexity: high
 # agent: cc    # optional — id of the agent that owns this spec. Used as the
 #              #   default reviewer for spec-revise cycles when the operator
 #              #   does not pick one explicitly. Precedence at revision time:
@@ -30,17 +30,19 @@ complexity: medium
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Audit the complete automated test suite, remove ineffective, stale, or duplicate coverage, consolidate repetitive tests, and reduce execution cost while preserving meaningful behavioral protection.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As a maintainer, I want each retained test to protect a distinct behavior so failures remain actionable.
+- [ ] As a contributor, I want a materially smaller and faster suite so local and release validation stays economical.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Review unit, integration, workflow-core, and dashboard browser tests for duplicated behavior, stale assumptions, weak assertions, and unnecessary setup.
+- [ ] Remove or consolidate at least 10% of baseline test-code LOC (baseline: 17,164 lines; target: at most 15,447 lines) without raising the test budget ceiling.
+- [ ] Repair or remove flaky assertions discovered during the audit, with retained assertions focused on stable externally observable behavior.
+- [ ] Reduce measured suite runtime where practical, prioritising repeated subprocess, timer, repository, and server setup.
+- [ ] Keep the default core suite, heavy unit and integration suites, and browser suite passing.
+- [ ] Record exact before/after LOC and runtime measurements and identify any residual test gaps.
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
@@ -48,6 +50,8 @@ complexity: medium
      All commands must exit 0 for the iteration to be considered successful.
      Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+npm run test:core:full
+npm run test:browser:full
 ```
 
 ## Pre-authorised
@@ -58,25 +62,27 @@ complexity: medium
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+- Establish baseline LOC and per-file timings using the existing budget and parallel runner.
+- Map tests to production modules and compare overlapping test names/assertions before deleting coverage.
+- Prefer table-driven consolidation and shared fixtures when cases protect distinct inputs but repeat setup.
+- Delete whole tests only when behavior is obsolete, duplicated at a more appropriate layer, or asserted through implementation details rather than outcomes.
+- Re-run focused tests after each cluster change, then all project test tiers.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
      For Aigon feature dependencies use: depends_on: feature-name-slug
      This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- Existing custom test harness in `tests/_helpers.js`, parallel runner, and Playwright configuration.
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Product refactors unrelated to test effectiveness or execution performance.
+- Live-agent browser tests requiring external provider credentials.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- None; retain compatibility coverage unless repository policy or another test proves it redundant.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+- Prior work: 2026-05-12 and 2026-07-12 test-budget reductions documented in `scripts/check-test-budget.sh`.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
