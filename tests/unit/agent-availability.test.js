@@ -144,8 +144,13 @@ test('getDefaultFleetAgents excludes disabled agents', () => withTempDir(async (
         if (fleet.length === 0) return;
         const target = fleet[0];
         agentAvailability.disableAgent(target, { reason: 'manual', scope: 'global', repoPath: repo });
-        const ids = agentAvailability.getDefaultFleetAgents(repo);
-        assert.ok(!ids.includes(target), `disabled fleet agent ${target} should be excluded`);
+        const remainingFleet = fleet.filter(id => id !== target);
+        if (remainingFleet.length === 0) {
+            assert.throws(() => agentAvailability.getDefaultFleetAgents(repo), err => err?.code === 'no-usable-fleet-agents');
+        } else {
+            const ids = agentAvailability.getDefaultFleetAgents(repo);
+            assert.ok(!ids.includes(target), `disabled fleet agent ${target} should be excluded`);
+        }
     } finally {
         process.env.HOME = prevHome;
         process.chdir(prevCwd);
