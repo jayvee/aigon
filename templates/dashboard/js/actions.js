@@ -158,7 +158,12 @@ function renderActionButtons(feature, repoPath, pipelineType) {
     const tools = contract.tools || [];
     const cardActions = decisions.concat(tools)
       .filter(action => action.interaction && action.interaction.surface !== 'agent');
-    if (cardActions.length === 0) return '';
+    // Close-failure resolution depends on client-stored failure info the
+    // server contract cannot carry — keep the resolve affordance here.
+    const closeResolveHtml = shouldShowCloseWithAgent(feature)
+      ? '<button class="btn btn-secondary kcard-close-resolve-btn">Close with agent</button>'
+      : '';
+    if (cardActions.length === 0) return closeResolveHtml;
 
     function renderContractButton(action, cls) {
       const unavailable = action.unavailableReason || '';
@@ -172,7 +177,7 @@ function renderActionButtons(feature, repoPath, pipelineType) {
       ? cardActions.find(action => action.actionId === primaryId && !action.disabled)
       : null;
     const overflow = cardActions.filter(action => action !== primary);
-    let html = primary ? renderContractButton(primary, 'btn btn-primary') : '';
+    let html = (primary ? renderContractButton(primary, 'btn btn-primary') : '') + closeResolveHtml;
     if (overflow.length > 0) {
       const items = overflow.map(action => {
         const cls = action.interaction && action.interaction.destructive
