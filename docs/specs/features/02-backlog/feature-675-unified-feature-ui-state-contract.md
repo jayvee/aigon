@@ -20,8 +20,9 @@ Feature workflow truth is currently distributed across several independently edi
 - `lib/feature-workflow-rules.js` defines engine states, transitions, action candidates, `bypassMachine` candidates, and a separate stage-oriented action table.
 - `lib/workflow-snapshot-adapter.js` maps only selected machine actions into dashboard action DTOs and separately maps lifecycle states to board lanes.
 - `lib/state-queries.js` contains another stage/action derivation path.
-- `lib/workflow-read-model.js` and focused helpers append quota, escalation, autonomous, recovery, failover, and other actions after the base action derivation has completed.
-- `templates/dashboard/js/actions.js` and card renderers rank, suppress, group, and relabel actions in the browser.
+- `lib/workflow-read-model.js` chains post-derivation merges via `appendFeatureAutonomousDashboardActions`, `appendFeatureReviewRecoveryDashboardActions`, and `appendQuotaPausedDashboardActions` (`lib/quota-dashboard-actions.js`).
+- `lib/close-readiness.js`, `lib/card-headline.js`, and `lib/card-presentation.js` derive separate presentation DTOs from overlapping snapshot/fact inputs.
+- `templates/dashboard/js/actions.js` filters actions by lifecycle/session heuristics (`evalRunning`, `pendingSpecReviews`, `closeReadiness.primaryBlocker`, `cardPresentation.severity`) and chooses the primary button client-side; card renderers consume those DTOs independently.
 - Dashboard scenario tests frequently hand-author `validActions`, so they can exercise combinations that are not produced by the real machine and can omit combinations that are.
 
 This fragmentation permits machine transitions without dashboard descriptors, dashboard actions without machine ownership, conflicting state and stage rules, multiple definitions of priority, and UI copy that invents a single "next" step where the workflow actually offers choices.
@@ -92,9 +93,16 @@ Project the composed machine into a versioned DTO with at least:
 
 ```js
 {
-  contractVersion,
+  contractVersion: 1,
   entity: { id, displayKey, name },
   state: { lifecycle, phase, lane, label, severity },
+  presentation: {
+    headline,
+    contextLine,
+    timeline,
+    agentSummary,
+    closeReadiness
+  },
   decisions: {
     primaryActionId,
     actions: []
@@ -108,6 +116,8 @@ Project the composed machine into a versioned DTO with at least:
 }
 ```
 
+`presentation` replaces the parallel `cardHeadline` / `cardPresentation` / `closeReadiness` fields on feature rows — all three are projected from the same definition and runtime facts, not derived in separate modules with independent precedence rules. Follow F650 headline/action separation: presentation answers *what is happening*; `decisions`/`tools` answer *what the operator may do*.
+
 The contract must distinguish workflow decisions from observation/session tools. It must expose at most one primary action and contain explicit alternatives rather than synthesizing a single next stage. Disabled actions may be included only when the same definition provides a stable unavailable reason; otherwise unavailable actions remain absent.
 
 ### 5. Current dashboard consumes the contract
@@ -117,13 +127,14 @@ The existing dashboard must render feature cards from the new contract without a
 Frontend code may dispatch an action or open the interaction surface named by the contract. It must not:
 
 - derive action eligibility from lifecycle, stage, agents, sessions, or filenames;
-- choose the primary action;
+- choose the primary action (remove client-side primary selection in `renderActionButtons` — today driven by `closeReadiness.primaryBlocker`, `evalPickWinner`, `cardPresentation.severity`, and `priority === 'high'`);
+- filter actions by eval/session/spec-review heuristics before render;
 - reclassify workflow decisions as tools or vice versa;
 - replace, inject, demote, or suppress server actions;
 - infer a next stage or assignment;
 - use action-specific conditions to decide visibility.
 
-Temporary compatibility fields such as `validActions` may remain for non-dashboard consumers during migration, but the feature dashboard must consume the versioned contract and compatibility output must be generated from the same definition.
+Temporary compatibility fields such as `validActions`, `cardHeadline`, `cardPresentation`, and `closeReadiness` may remain for non-dashboard consumers during migration, but the feature dashboard must consume the versioned contract and compatibility output must be generated from the same projector. Any new contract field that affects card repaint must be added to `computeStatusFingerprint` in `lib/dashboard-status-version.js`.
 
 ### 6. Extension boundary
 
@@ -144,10 +155,11 @@ OSS and registered extensions must contribute actions before the machine/contrac
 
 ### UI contract and current behavior
 
-- [ ] `/api/status` or a focused feature endpoint exposes the versioned feature UI contract for every non-lean feature row required by the pipeline.
-- [ ] The current feature pipeline renders state, primary/secondary actions, tools, blockers, drag targets, and interaction requirements from that contract.
+- [ ] `/api/status` exposes `uiContract` (or equivalent) on every non-lean feature row in `lib/dashboard-collect/feature-poll.js`; contract changes that affect card repaint bump `computeStatusFingerprint`.
+- [ ] `lib/card-headline.js`, `lib/card-presentation.js`, and `lib/close-readiness.js` become thin compatibility projections from the unified projector (or are inlined into it) with no independent eligibility/precedence logic.
+- [ ] The current feature pipeline (`templates/dashboard/js/pipeline.js`, `card-presentation.js`, `actions.js`) renders state, primary/secondary actions, tools, blockers, drag targets, and interaction requirements from that contract.
 - [ ] The browser does not contain feature action eligibility, ranking, or suppression rules; action-specific execution adapters are allowed only after the server has exposed the action.
-- [ ] The server rehydrates the latest aggregate/runtime facts and revalidates the requested action against the same machine definition immediately before execution.
+- [ ] `lib/dashboard-actions/` and `POST /api/action` route execution through a shared gateway that rehydrates the latest aggregate/runtime facts and revalidates `{ actionId, payload }` against the same machine definition immediately before dispatch.
 - [ ] Existing feature dashboard workflows remain available: prioritise, unprioritise, start, autonomous start, schedule, spec review/revision, implementation/session control, optional code review, revision, fleet evaluation/winner selection, close, close recovery, pause/resume where currently supported, reset/delete, quota/failover, escalation disposition, autonomous recovery, spec reconciliation, and view actions.
 - [ ] Existing dashboard layout, styling, terminology, modals, and interaction behavior remain materially unchanged except where required to stop hiding or misrepresenting an authoritative action.
 - [ ] The contract invariant permits zero or one `primaryActionId`; the server must reject or fail tests on multiple primary decisions.
@@ -173,26 +185,59 @@ OSS and registered extensions must contribute actions before the machine/contrac
 
 ## Technical Approach
 
-1. Add characterization coverage for the current state/action matrix before moving code. Include the live motivating combination: `implementing` + solo ready agent.
-2. Introduce a small declarative workflow/action DSL in or beside `lib/workflow-core/`. Compile the XState state config and action descriptors from the same definitions rather than maintaining parallel tables.
-3. Define a normalized runtime-facts schema and move ephemeral eligibility predicates into named machine guards.
-4. Represent action-only operations as guarded internal/root transitions or orthogonal-region events. Replace `bypassMachine` candidates and post-processing injectors one category at a time.
-5. Add machine metadata for lane, phase, state label, and severity. Generate compatibility mappings from this metadata during migration.
-6. Add the versioned UI-contract projector. Keep it pure: one aggregate, one runtime-facts object, no I/O, no post-projection mutation.
-7. Add an action execution gateway that validates `{ actionId, payload }` against a freshly derived contract before dispatching the registered handler.
-8. Adapt the current dashboard to render the contract while retaining its current DOM and styling. Keep interaction-surface adapters generic and driven by contract metadata.
-9. Remove obsolete feature stage rules, action mappings, injectors, and frontend eligibility/priority logic once all callers use the new definition.
-10. Generate state/action documentation and scenario fixtures from the completed definition.
+### Phase 0 — characterization (no behavior change)
 
-Prefer a composed definition over a monolithic machine with a state for every cross-product. Keep workflow-core pure and pass runtime facts into it; collectors remain responsible only for normalized observation. Preserve the repo boundary: no Pro implementation or internal-only workflow may enter OSS.
+1. Add characterization coverage for the current state/action matrix before moving code. Include the live motivating combination: `implementing` + solo ready agent. Snapshot today's `validActions`, `cardHeadline`, and `closeReadiness` per scenario as golden fixtures.
+
+### Phase 1 — definition + projector (server-only)
+
+2. Introduce a small declarative workflow/action DSL in or beside `lib/workflow-core/` (e.g. `lib/workflow-core/interaction-definition.js`). Compile the XState state config and action descriptors from the same definitions rather than maintaining parallel tables in `lib/feature-workflow-rules.js`.
+3. Define a normalized runtime-facts schema (`lib/workflow-core/runtime-facts.js` or equivalent) and move ephemeral eligibility predicates into named machine guards.
+4. Add machine metadata for lane, phase, state label, and severity. Generate `LIFECYCLE_TO_STAGE` compatibility from this metadata during migration.
+5. Add the versioned UI-contract projector (`lib/feature-ui-contract.js` or under `lib/workflow-core/`). Keep it pure: one aggregate, one runtime-facts object, no I/O, no post-projection mutation. Fold headline/presentation/close-readiness into `presentation`.
+
+**Exit:** projector output matches Phase 0 golden fixtures for all required scenarios; existing integration tests still pass with compatibility shims.
+
+### Phase 2 — eliminate post-injection (server-only)
+
+6. Represent action-only operations as guarded internal/root transitions or orthogonal-region events. Replace `bypassMachine` candidates and post-processing injectors one category at a time (`quota-dashboard-actions`, `feature-autonomous-dashboard-actions`, review-recovery helpers in `workflow-read-model.js`).
+7. Wire `feature-poll.js` to attach `uiContract` and generate legacy fields from the projector.
+
+**Exit:** no feature action appenders remain after base derivation; `bypassMachine` count for features is zero.
+
+### Phase 3 — dashboard consumption + execution gateway
+
+8. Add the action execution gateway shared by `lib/dashboard-actions/` and `lib/dashboard-action-command.js`.
+9. Adapt the current dashboard to render the contract while retaining its current DOM and styling. Keep interaction-surface adapters in `templates/dashboard/js/actions/` generic and driven by contract metadata only.
+
+**Exit:** `actions.js` contains no feature eligibility, filtering, or primary-selection logic; browser smoke (`npm run test:browser:smoke`) passes.
+
+### Phase 4 — cleanup + generated verification
+
+10. Remove obsolete feature stage rules, action mappings, injectors, and frontend eligibility/priority logic once all callers use the new definition.
+11. Generate state/action documentation and scenario fixtures from the completed definition.
+
+Prefer a composed definition over a monolithic machine with a state for every cross-product. Keep workflow-core pure and pass runtime facts into it; collectors remain responsible only for normalized observation. Preserve the repo boundary: no Pro implementation or internal-only workflow may enter OSS. Research cards may reuse shared DSL/projector infrastructure later but are not migrated in this feature.
 
 ## Validation
 
+Per-phase: `npm run test:iterate` after each commit touching `lib/` or dashboard JS.
+
+Before `implementation-complete` / push:
+
 ```bash
-npm test
-npm run lint
-npx playwright test --config tests/dashboard-e2e/playwright.config.js state-consistency.spec.js critical-actions.spec.js keyed-card-render.spec.js close-failure-event.spec.js
+npm run test:deploy
 node -c aigon-cli.js
+```
+
+Deploy gate includes lint, integration/workflow tests, dashboard browser smoke, and test-budget check. Full Playwright (`npm run test:browser:full`) is release-triage only unless a phase explicitly changes cross-browser behavior.
+
+Targeted regression files for this feature:
+
+```bash
+npx playwright test --config tests/dashboard-e2e/playwright.config.js state-consistency.spec.js critical-actions.spec.js keyed-card-render.spec.js close-failure-event.spec.js
+node tests/integration/workflow-read-model.test.js
+node tests/integration/lifecycle.test.js
 ```
 
 ## Dependencies
@@ -203,7 +248,7 @@ node -c aigon-cli.js
 
 - The proposed dashboard visual redesign, elastic lanes, compact replacement card, or new visual language.
 - Changing feature lifecycle policy merely to simplify rendering.
-- Redesigning research, feedback, or feature-set cards, except for shared infrastructure required to avoid a feature-only dead end.
+- Migrating research, feedback, or feature-set cards to the new contract (research's parallel `appendQuotaPausedDashboardActions` / recovery path in `workflow-read-model.js` stays unchanged; shared DSL modules may be entity-agnostic but consumers ship in a follow-up).
 - Moving Pro implementation or internal release workflows into OSS.
 - Treating local component state such as expanded history, hover, focus, or open popovers as domain workflow state.
 
@@ -211,10 +256,19 @@ node -c aigon-cli.js
 
 - None. Implementation may choose the concrete DSL/module boundaries, but the single-definition, no-post-injection, server-derived-contract, and current-UI-compatibility constraints are required.
 
+## Pre-authorised
+
+- test-budget-ceiling — model-based matrix generation and golden fixture expansion may require a one-time ceiling bump with net test deletion elsewhere
+- skip-full-browser-mid-iteration — use `test:iterate` / smoke subset between phases; full browser suite only at phase boundaries
+
 ## Related
 
 - Dashboard UX proposal: `docs/proposals/dash-ux-codex/`
+- Card design contract (F650): `docs/dashboard-card-design.md`, `docs/card-design-wireframe.html`
 - Workflow rules: `lib/feature-workflow-rules.js`
 - Machine/action derivation: `lib/workflow-core/machine.js`, `lib/workflow-core/actions.js`
-- Dashboard projection: `lib/workflow-snapshot-adapter.js`, `lib/workflow-read-model.js`
-- Current frontend action rendering: `templates/dashboard/js/actions.js`, `templates/dashboard/js/pipeline.js`
+- Dashboard projection: `lib/workflow-snapshot-adapter.js`, `lib/workflow-read-model.js`, `lib/read-model/entity-view.js`
+- Presentation helpers: `lib/card-headline.js`, `lib/card-presentation.js`, `lib/close-readiness.js`, `lib/state-render-meta.js`
+- Post-injection helpers: `lib/quota-dashboard-actions.js`, `lib/feature-autonomous-dashboard-actions.js`
+- Status fingerprint: `lib/dashboard-status-version.js`
+- Current frontend action rendering: `templates/dashboard/js/actions.js`, `templates/dashboard/js/pipeline.js`, `templates/dashboard/js/card-presentation.js`
