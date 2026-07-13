@@ -25,6 +25,12 @@ RUN useradd -m -s /bin/bash dev && \
 WORKDIR /home/dev
 USER dev
 
+# A real dev machine always has a global git identity. Without it,
+# `aigon apply`'s first-run auto-commit fails with "Author identity unknown"
+# on any freshly-cloned repo. Seed a default so the clean-room mirrors reality.
+RUN git config --global user.email "dev@example.com" && \
+    git config --global user.name "Dev"
+
 # Seed two dummy git repos so the wizard has realistic repos to discover
 # (avoids it finding the bind-mounted aigon source as a project to manage)
 RUN git init /home/dev/src/acme-web && \

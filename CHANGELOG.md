@@ -9,20 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.74.0-beta.1] — 2026-07-13
+
+A large release: a new **SpecStore** storage layer with an opt-in git-branch backend and cross-repo leases, a **stable `00-specs` spec layout** with immutable numeric IDs, a rebuilt **ES-module dashboard frontend** (central store, SSE live push, view registry), hardened **feature-close integrity**, and model-catalog intelligence. Grouped by theme below.
+
 ### Added
 
-- `summary` object on `cli.modelOptions` entries — operator-facing headline, `bestFor`/`avoidFor` role verdicts, confidence, and sources. Validated by `validateModelOptions` when present; projected through `/api/agent-matrix`. Exemplars on `cc` Sonnet 4.6 and `op` Qwen3 235B (F618).
+- **SpecStore storage layer.** New spec storage foundation with a `git-branch` backend that syncs feature/research state to a dedicated branch, advisory leases for multi-machine coordination, and cross-repo reporting. `aigon storage status`/`convert` expose backend state and migrate from `local` (F573, F575/R43, F578, F609, F610). Two-clone CAS-lease regression harnesses guard the race paths.
+- **Stable `00-specs` spec layout.** Specs get a lifecycle-independent canonical home under `docs/specs/{features,research-topics}/00-specs/`; lifecycle stage folders become a generated symlink view via `aigon spec-view` (`lib/spec-view.js`). New repos default to stable; existing repos migrate with `aigon spec-layout migrate --stable` (plan/validate/apply). Full model in `docs/specstore-architecture.md` (F666–F670).
+- **Immutable entity IDs at creation.** `feature-create`/`research-create` reserve a permanent numeric `aigon_id` and bootstrap workflow state at that id, so prioritise is lifecycle-only and no longer re-keys (F667). Immutable spec-author provenance is tracked for features and research (F671).
+- **Dashboard frontend, rebuilt as ES modules.** Native `js/` ES modules (entry `js/main.js`), a central store with an optimistic-overlay engine (F624), a `ViewRegistry` view shell (F626), keyed Kanban card reconciliation (F625), vendored Alpine/marked/Chart.js/date-fns (no CDN), and CSS split into ordered `styles/` sheets served concatenated (F620–F628, F642).
+- **Live dashboard updates.** Server-side `statusVersion`/ETag on `/api/status`, debounced fs-watch status collection, and SSE live push replacing poll churn (F621, F622).
+- **`aigon preview`** — isolated per-worktree dashboard launcher for verifying UI from a worktree without colliding with the primary dashboard.
+- **Autonomous execution recovery.** `feature-autonomous-stop` for manual takeover, a first-class review-escalation engine state (F646), autonomous controller read-model/logs surfaced in the dashboard, and review-timeout recovery actions (F588).
+- **Feature-close integrity gates.** Post-merge verification gate (F644), `Pre-authorised-by:` footer validation (F645), per-criterion attestation before close (F647), and a single-blocker close-readiness projection (F658).
+- **Model-catalog intelligence.** `summary` object on `cli.modelOptions` entries — operator headline, `bestFor`/`avoidFor` role verdicts, confidence, and sources — validated by `validateModelOptions` and projected through `/api/agent-matrix` and dashboard pickers (F618). Weekly catalog-diff retire-candidate classifier for stale models.
+- **Per-machine dashboard instance isolation** so multiple machines can run dashboards without clobbering each other's routes (F600).
 
 ### Changed
 
-- **Breaking:** Removed the `git-ref` SpecStore backend. Repos with `storage.backend: "git-ref"` must run `aigon storage convert --backend=git-branch --remote=origin` before any storage-touching command succeeds. `refPrefix` is no longer a config surface.
-- `aigon storage convert` now targets `git-branch` (from `local` or legacy `git-ref`), verifies event-id superset including `stats.recorded`, migrates active advisory leases to branch lease files, and optionally deletes legacy `refs/aigon/specs/*` refs.
+- **Deprecated the feedback lifecycle** in favour of research origins; agent-discovered work routes through research.
+- Retired the Gemini (`gg`) agent — Google shut down the Gemini CLI. It no longer appears in the setup wizard or agent pickers (F592).
+- Dashboard performance: leaner done-features payload, gzip, lazy all-features loading, and perf logging (F590); tmux spawns bounded by a timeout and pending-spec-review git scans cached by HEAD so the status poll no longer starves the event loop (F637).
+- Unified agent quota state under a single poller and cache; OpenCode (`op`) models derive from live OpenRouter + opencode catalogs, with an OpenRouter provider quota layer (F615).
+- Close integrity is advisory by default; `feature-close` recovers a clean tree on auto-stash-pop conflicts and no longer leaks stashes (with `doctor` stash-hygiene cleanup).
+- Reliable server restart after `lib/*.js` merges (F652); `aigon apply`'s first-run auto-commit now behaves on freshly-cloned repos.
+- Architecture decycling: module-graph guard with baseline ratchet (86→16 cycles), config/registry cluster decoupling, telemetry provider-registry split, and `worktree.js`/`dashboard-status-collector` module decomposition (F630–F634, F643).
+
+### Fixed
+
+- Dashboard: repaired Start-Autonomously picker layout and reviewer triplets, scoped recovery-action buttons, kept feature sets intact under backlog overflow, and fixed set autonomous scheduling / reviewer-picker ESM wiring.
+- Disabled agents are hidden from the budget panel; added Amp credit patterns.
+- Remediated Dependabot advisories in the CLI and docs site.
 
 ### Removed
 
-- `lib/spec-store/git-ref-backend.js` and git-ref-only doctor/report/dashboard paths. Legacy ref reading for conversion lives import-only in `lib/spec-store/convert.js`.
 - Deprecated dashboard API shims `GET /api/budget`, `POST /api/budget/refresh`, `GET /api/quota`, and `POST /api/quota/refresh`. Use `GET /api/agent-quota` and `POST /api/agent-quota/refresh` instead.
 - `lib/quota-poller.js` compatibility re-export (consumers use `lib/agent-quota-poller.js`).
+- Dashboard `globalThis` compatibility shims retired as the ESM migration broke the classic-script poll cycles (F641).
 
 ## [2.67.0-beta.1] — 2026-06-17
 

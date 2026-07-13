@@ -78,7 +78,7 @@ Then continue with `aigon setup` exactly as the public docs describe.
 The public docs describe each step. In the container specifically:
 
 - **Step 2 (Terminal preference)** — macOS-only, auto-skips on Linux.
-- **Step 3 (Agent install)** — pick `cc gg`. Skip the auth flows when prompted (Ctrl-C the sub-prompt) — you're testing install, not login.
+- **Step 3 (Agent install)** — pick `cc cx`. Skip the auth flows when prompted (Ctrl-C the sub-prompt) — you're testing install, not login. (Gemini/`gg` and Antigravity/`ag` are both deactivated — `ag` is blocked by upstream agy auth bugs.)
 - **Step 4 (Seed clone)** — say yes.
 - **Step 5 (Repo scan)** — decline.
 - **Step 6 (Dashboard server)** — say yes.

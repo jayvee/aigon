@@ -29,10 +29,14 @@ CONTAINER_ID="$1"
 
 # ~/.claude is the full Claude Code data dir and can be many GB of conversation
 # history. Only copy the auth token file and settings — not the whole directory.
+# NOTE: .claude/settings.json is deliberately NOT in this list. It carries
+# host-specific hooks, statusLine, and interpreter paths (e.g. an fnm node path
+# and /Users/<you>/.claude/hooks/*) that do not exist in the Linux container and
+# spam every tool call with non-blocking "No such file or directory" errors.
+# It is injected separately below, sanitized (auth-irrelevant host keys stripped).
 CREDENTIAL_RELS=(
   '.claude.json'
   '.claude/.credentials.json'
-  '.claude/settings.json'
   '.gemini'
   '.codex/config.toml'
   '.config/gh'
@@ -66,5 +70,24 @@ fi
 
 tar -czf - -C "$HOME" "${paths_to_tar[@]}" 2>/dev/null \
   | docker exec -i -u dev "$CONTAINER_ID" bash -c 'set -euo pipefail; cd ~ && mkdir -p .codex .config/gh && tar -xzf -'
+
+# Inject a sanitized ~/.claude/settings.json: keep auth-neutral prefs (model,
+# theme, permissions) but strip host-specific keys that reference paths absent
+# in the container (hooks, statusLine, plugins/marketplaces). Without this the
+# agent session spams non-blocking hook errors for /Users/<host>/... paths.
+if [[ -f "$HOME/.claude/settings.json" ]]; then
+  if sanitized="$(node -e '
+      const fs = require("fs");
+      const s = JSON.parse(fs.readFileSync(process.env.HOME + "/.claude/settings.json", "utf8"));
+      for (const k of ["hooks", "statusLine", "enabledPlugins", "extraKnownMarketplaces"]) delete s[k];
+      process.stdout.write(JSON.stringify(s, null, 2));
+    ' 2>/dev/null)"; then
+    printf '%s' "$sanitized" \
+      | docker exec -i -u dev "$CONTAINER_ID" bash -c 'set -euo pipefail; mkdir -p ~/.claude && cat > ~/.claude/settings.json'
+    echo '  copied: .claude/settings.json (sanitized — hooks/statusLine/plugins stripped)'
+  else
+    echo '  skipped: .claude/settings.json (could not sanitize; agent session would inherit host hooks)'
+  fi
+fi
 
 echo 'docker-inject-creds: done.'

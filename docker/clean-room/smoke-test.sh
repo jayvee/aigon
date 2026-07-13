@@ -67,25 +67,21 @@ install_prerequisites() {
 }
 
 install_agent_clis() {
-  step "Install agent CLIs (Claude Code + Gemini)"
+  # Claude Code is the one required agent CLI. Other agents (Antigravity/ag,
+  # Codex/cx, etc.) are installed as aigon agent *configs* via `install-agent`
+  # below — that path does not need the vendor binary present. We deliberately
+  # do NOT install Gemini here: the Gemini CLI agent was retired (F-antigravity
+  # migration) and Antigravity (agy) replaced it.
+  step "Install agent CLIs (Claude Code)"
   if [[ "$PLATFORM" == "linux" ]]; then
     sudo npm i -g @anthropic-ai/claude-code 2>&1 | tail -1
-    sudo npm i -g @google/gemini-cli 2>&1 | tail -1
   else
     npm i -g @anthropic-ai/claude-code 2>&1 | tail -1
-    npm i -g @google/gemini-cli 2>&1 | tail -1
   fi
 
   check_command claude
   claude --version
   pass "claude --version works"
-
-  # Gemini CLI bug: fails if ~/.gemini/ doesn't exist on first run
-  mkdir -p ~/.gemini
-
-  check_command gemini
-  gemini --version 2>&1 | head -1
-  pass "gemini --version works"
 }
 
 install_aigon() {
@@ -196,20 +192,23 @@ clone_brewboard() {
 }
 
 install_aigon_into_repo() {
-  step "Apply aigon into the repo (first-run bootstrap)"
+  step "Apply aigon into the repo"
   cd "$BREWBOARD_DIR"
   local apply_out
   apply_out="$(aigon apply 2>&1 || true)"
   echo "$apply_out" | tail -20
-  if echo "$apply_out" | grep -q "First-time setup"; then
-    pass "aigon apply printed first-time-setup banner"
+  # brewboard-seed ships with aigon already applied (that is the whole point of
+  # a seeded demo repo), so `aigon apply` here is an UPDATE, not a first-time
+  # install. Accept either banner — what matters is a clean, committed apply.
+  if echo "$apply_out" | grep -qE "First-time setup|Aigon updated to|Committed Aigon apply"; then
+    pass "aigon apply completed and committed"
   else
-    fail "aigon apply did not print 'First-time setup' banner on a fresh repo"
+    fail "aigon apply did not print a success banner (First-time setup / Aigon updated to / Committed Aigon apply)"
   fi
 
-  step "Install agents (cc + ag)"
-  aigon install-agent cc ag --force 2>&1 || true
-  pass "aigon install-agent cc ag"
+  step "Install agents (cc + cx)"
+  aigon install-agent cc cx --force 2>&1 || true
+  pass "aigon install-agent cc cx"
 
   step "Verify board shows seeded features"
   aigon board 2>&1 | head -20
