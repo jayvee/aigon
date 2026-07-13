@@ -1,0 +1,488 @@
+<title>Aigon Dashboard — Card & Board UX Proposal</title>
+<style>
+  /* ---------- document tokens ---------- */
+  :root {
+    --paper: #f4f5f7;
+    --panel: #ffffff;
+    --ink: #1b1e24;
+    --ink-2: #5a6170;
+    --ink-3: #8a909c;
+    --rule: rgba(27, 30, 36, .12);
+    --accent: #2f6fdb;
+    --accent-soft: rgba(47, 111, 219, .1);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0d0e11;
+      --panel: #14161a;
+      --ink: #e8eaee;
+      --ink-2: #a3a9b5;
+      --ink-3: #6d7380;
+      --rule: rgba(232, 234, 238, .12);
+      --accent: #5b93ee;
+      --accent-soft: rgba(91, 147, 238, .12);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0d0e11; --panel: #14161a; --ink: #e8eaee; --ink-2: #a3a9b5; --ink-3: #6d7380;
+    --rule: rgba(232, 234, 238, .12); --accent: #5b93ee; --accent-soft: rgba(91, 147, 238, .12);
+  }
+  :root[data-theme="light"] {
+    --paper: #f4f5f7; --panel: #ffffff; --ink: #1b1e24; --ink-2: #5a6170; --ink-3: #8a909c;
+    --rule: rgba(27, 30, 36, .12); --accent: #2f6fdb; --accent-soft: rgba(47, 111, 219, .1);
+  }
+
+  /* ---------- dashboard-world tokens (mockups are always dark: the product is dark-only) ---------- */
+  :root {
+    --d-root: #0a0a0b; --d-surface: #111113; --d-elevated: #1a1a1f; --d-border: rgba(255,255,255,.09);
+    --d-border-soft: rgba(255,255,255,.05); --d-text: #ededef; --d-text-2: #a0a0a8; --d-text-3: #6b6b76;
+    --d-accent: #3b82f6; --d-green: #22c55e; --d-amber: #f59e0b; --d-red: #ef4444; --d-teal: #2dd4bf;
+    --mono: "SF Mono", "Cascadia Code", ui-monospace, Menlo, monospace;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    margin: 0;
+    padding: 0 20px 120px;
+  }
+  .sheet { max-width: 1060px; margin: 0 auto; }
+  .prose { max-width: 720px; }
+
+  h1, h2, h3 { font-family: var(--mono); letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; line-height: 1.25; font-weight: 700; margin: 18px 0 10px; }
+  h2 { font-size: 20px; font-weight: 700; margin: 0 0 14px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .85em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+  section { margin-top: 72px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px;
+  }
+  .lede { font-size: 18px; color: var(--ink-2); max-width: 680px; }
+  .meta-line { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-top: 18px; }
+  .meta-line b { color: var(--ink-2); font-weight: 600; }
+
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 20px 0; max-width: 720px; font-size: 15px;
+  }
+  .verdict {
+    border: 1px solid var(--rule); border-left: 4px solid var(--accent);
+    background: var(--panel); padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 22px 0; max-width: 720px;
+  }
+  .verdict .tag { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  ul.tight { padding-left: 22px; margin: 0 0 14px; max-width: 700px; }
+  ul.tight li { margin-bottom: 7px; }
+
+  table.plain { border-collapse: collapse; font-size: 14px; margin: 14px 0; width: 100%; max-width: 760px; }
+  table.plain th { text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--rule); }
+  table.plain td { padding: 8px 14px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  table.plain td:first-child { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+
+  /* ---------- mockup frames ---------- */
+  .frame {
+    background: var(--d-root); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 22px; margin: 22px 0; overflow-x: auto;
+  }
+  .frame-caption { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin: -8px 0 26px 4px; }
+  .frame * { box-sizing: border-box; }
+
+  /* board scaffolding inside frames */
+  .board { display: grid; gap: 10px; min-width: 860px; }
+  .bcol { background: var(--d-surface); border: 1px solid var(--d-border-soft); border-radius: 10px; min-height: 60px; padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+  .bcol-h { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--d-text-3); display: flex; justify-content: space-between; padding: 2px 4px 6px; }
+  .bcol-h .n { color: var(--d-text-2); }
+  .bcol.ghost { opacity: .55; }
+
+  /* generic mock card pieces */
+  .mc { background: rgba(255,255,255,.015); border: 1px solid var(--d-border-soft); border-radius: 8px; padding: 8px 10px; color: var(--d-text); font-family: var(--mono); }
+  .mc .id { font-size: 9px; color: var(--d-text-3); letter-spacing: .06em; }
+  .mc .nm { font: 600 13px/1.35 -apple-system, system-ui, sans-serif; color: var(--d-text); margin: 1px 0 0; }
+  .mc.dim { opacity: .62; }
+  .row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .chip { font: 600 9px/1.5 var(--mono); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--d-border); color: var(--d-text-2); white-space: nowrap; }
+  .chip.lease { color: #fcd34d; border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); }
+  .chip.auto { color: #93c5fd; border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.08); }
+  .chip.warn { color: #fca5a5; border-color: rgba(239,68,68,.4); background: rgba(239,68,68,.08); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot.g { background: var(--d-green); } .dot.a { background: var(--d-amber); } .dot.r { background: var(--d-red); } .dot.t { background: var(--d-teal); } .dot.b { background: var(--d-accent); }
+  .hl { display: flex; gap: 7px; align-items: baseline; font: 600 11px/1.5 var(--mono); border-left: 3px solid var(--d-green); background: rgba(34,197,94,.07); color: #86efac; border-radius: 4px; padding: 5px 8px; margin-top: 7px; }
+  .hl .sub { font-weight: 400; color: var(--d-text-3); font-size: 10px; }
+  .hl.warn { border-color: var(--d-red); background: rgba(239,68,68,.07); color: #fca5a5; }
+  .hl.ready { border-color: var(--d-teal); background: rgba(45,212,191,.07); color: #5eead4; }
+  .agentrow { border-left: 3px solid var(--d-border); border-radius: 4px; background: rgba(255,255,255,.02); padding: 5px 8px; margin-top: 6px; font-family: var(--mono); }
+  .agentrow .an { font: 700 11px var(--mono); color: var(--d-text); }
+  .agentrow .st { font-size: 10px; color: var(--d-green); }
+  .btn { font: 600 10px var(--mono); color: var(--d-text-2); border: 1px solid var(--d-border); background: rgba(255,255,255,.03); border-radius: 5px; padding: 3px 9px; white-space: nowrap; }
+  .btn.primary { color: #fff; background: var(--d-accent); border-color: var(--d-accent); }
+  .btn.mini { padding: 2px 7px; font-size: 9px; }
+  .tl { font: 500 10px/1.7 var(--mono); color: var(--d-text-3); margin-top: 6px; }
+  .tl .ok { color: var(--d-green); } .tl .bad { color: var(--d-red); }
+  .flag {
+    position: absolute; right: -14px; transform: translateX(100%);
+    font: 600 10.5px/1.4 var(--mono); color: var(--ink-2); background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 6px; padding: 4px 9px; width: 215px;
+  }
+  .flag b { color: var(--accent); }
+  .anno-wrap { position: relative; width: 250px; }
+
+  /* concept labels */
+  .concept-h { display: flex; align-items: baseline; gap: 12px; margin-top: 56px; }
+  .concept-h .k {
+    font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--accent);
+    border: 1.5px solid var(--accent); border-radius: 7px; padding: 3px 9px; flex-shrink: 0;
+  }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
+  .pill { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2); }
+  .pill.hi { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: start; }
+  @media (max-width: 800px) { .cols2 { grid-template-columns: 1fr; } .flag { display: none; } }
+
+  .zone-label { font: 700 9px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--d-accent); margin: 10px 0 3px; }
+
+  footer { margin-top: 90px; border-top: 1px solid var(--rule); padding-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+</style>
+
+<div class="sheet">
+
+<header style="padding-top:56px">
+  <p class="eyebrow">Design proposal · for review before spec-ing</p>
+  <h1>Decluttering the Aigon pipeline: cards that answer one question</h1>
+  <p class="lede">Four months of accreted capability has turned feature and research cards into control panels. This proposal separates <b>glancing</b> from <b>inspecting</b> from <b>acting</b>, reshapes the board around where attention is needed, and backs it with a real design-pattern reference. Five layout concepts follow — pick a direction and I'll turn it into an aigon feature set.</p>
+  <p class="meta-line">Basis: live board + e2e mock sandbox (fleet, solo, autonomous, sets, frozen mock agents) · <b>docs/card-design-wireframe.html</b> (~60 documented card states) · <code>pipeline.js</code> / <code>card-presentation</code> / <code>kanban.css</code> source review</p>
+</header>
+
+<!-- ============================ DIAGNOSIS ============================ -->
+<section>
+  <p class="eyebrow">Part 1</p>
+  <h2>Diagnosis — why cards stopped being readable</h2>
+
+  <div class="prose">
+    <p>A single in-progress card can currently stack <b>seventeen distinct section types</b>: id, title, four badge kinds (drift, escalation, lease, scheduled), spec author, headline, timeline, agent summary, dependency chain, autonomous controller panel, autonomous plan, idle badge, startup phase, nudge chips, per-agent sections (each with its own status, terminal button, peek eye, dev-server link, overflow menu), evaluation section, reviewer panels, spec-review block, review-cycle history, ready-to-close banner, GitHub section, close-failure panel, and the card action row. The F650 presentation model tamed the <em>severity</em> chaos (one dominant headline), but the <em>quantity</em> chaos remains: everything still renders inline, on a card that is often 220px wide.</p>
+  </div>
+
+  <div class="frame" style="display:flex; gap:40px; flex-wrap:wrap; justify-content:center; padding:30px 260px 30px 30px">
+    <!-- annotated "today" card -->
+    <div class="anno-wrap">
+      <div class="mc" style="width:250px">
+        <div class="id">F17</div>
+        <div class="nm">profile avatars</div>
+        <div class="row" style="margin-top:5px"><span class="chip lease">🔒 macbookpro</span></div>
+        <div class="hl">▶ Implementing <span class="sub">CC</span></div>
+        <div style="position:relative"><span class="flag" style="top:-26px"><b>1</b> Headline says "Implementing"…</span></div>
+        <div class="agentrow" style="border-left-color:var(--d-green)">
+          <div class="row"><span class="dot g"></span><span class="an">Autonomy running</span></div>
+          <div style="font-size:9px;color:var(--d-text-3)">Last update 2m ago · session live</div>
+        </div>
+        <div class="zone-label" style="color:var(--d-text-3)">Autonomous plan <span style="float:right">👁</span></div>
+        <div class="tl"><span class="ok">●</span> Implement<br><span style="opacity:.5">○</span> Close</div>
+        <div style="position:relative"><span class="flag" style="top:-60px"><b>2</b> …then three more panels repeat that it's implementing</span></div>
+        <div class="agentrow" style="border-left-color:var(--d-accent)">
+          <div class="row"><span class="dot g"></span><span class="an grow">Claude Code</span><span style="font-size:10px">👁</span><span style="font-size:10px">🌐</span></div>
+          <div class="row" style="margin-top:4px"><span class="btn mini">Open Terminal</span><span class="btn mini">⋯</span></div>
+        </div>
+        <div style="position:relative"><span class="flag" style="top:-34px"><b>3</b> 6+ click targets before the one that matters</span></div>
+        <div class="row" style="margin-top:7px"><span class="btn mini">⋯</span></div>
+      </div>
+    </div>
+    <!-- annotated set header -->
+    <div class="anno-wrap">
+      <div class="mc" style="width:250px; border-style:dashed">
+        <div class="row"><span class="dot b"></span><span class="nm grow" style="font-size:12px">ONBOARDING</span><span class="id">0/3</span></div>
+        <div class="row" style="flex-wrap:wrap; gap:5px; margin-top:7px">
+          <span class="btn mini">Review set specs</span><span class="btn mini">Start set autonomously</span><span class="btn mini">Schedule set</span>
+        </div>
+        <div class="tl">SPEC REVIEW: INACTIVE<br>CONDUCTOR: INACTIVE</div>
+        <div style="height:4px;border-radius:2px;background:rgba(128,128,128,.25);margin-top:6px"><div style="height:100%;width:30%;background:var(--d-accent);border-radius:2px"></div></div>
+        <div style="position:relative"><span class="flag" style="top:-88px"><b>4</b> This whole block repeats in <u>every column</u>, for <u>every set</u></span></div>
+        <div class="mc dim" style="margin-top:8px"><div class="id">F18</div><div class="nm" style="font-size:12px">onboarding welcome email</div></div>
+      </div>
+    </div>
+  </div>
+  <p class="frame-caption">Recreated from the live sandbox: an autonomous card (left) and a group-by-set column header (right), with the four core problems flagged.</p>
+
+  <h3>The five problems, named</h3>
+  <ul class="tight">
+    <li><b>P1 — Redundant narration.</b> Headline, controller panel, plan section, and agent rows all describe the same fact. On F650's own terms there is one dominant state — but three subordinate sections re-state it.</li>
+    <li><b>P2 — No altitude separation.</b> The card is simultaneously a glanceable tile, a history log, and a control panel. Meanwhile a full detail surface already exists (the drawer: Spec / Status / Events / Agents / Stats / Code Changes / Agent Log / Control) — the card duplicates it instead of pointing at it.</li>
+    <li><b>P3 — Uniform columns, non-uniform attention.</b> <code>grid-template-columns: repeat(5, minmax(220px, 1fr))</code> gives Inbox and an overflowing In-Progress identical width. At 1680px the Closed column literally clips off-screen while Evaluation sits empty.</li>
+    <li><b>P4 — Set chrome tax.</b> Group-by-set repeats a ~150px header block (3 buttons + 2 status rows + progress bar) per set <em>per column</em> — the chrome outweighs the cards it groups.</li>
+    <li><b>P5 — No enforced vocabulary.</b> Cards are built by string concatenation in <code>pipeline.js</code> (2,400 lines) with a parallel variant in <code>monitor.js</code>. Every new capability invents its own chip/panel/button style; nothing structurally prevents clutter from re-accreting.</li>
+  </ul>
+</section>
+
+<!-- ============================ MODEL ============================ -->
+<section>
+  <p class="eyebrow">Part 2</p>
+  <h2>The design model — glance, focus, act</h2>
+  <div class="prose">
+    <p>Every concept below applies the same rule. A pipeline card exists to answer exactly four questions in under a second:</p>
+  </div>
+  <table class="plain">
+    <tr><th>Question</th><th>Answered by</th><th>Budget</th></tr>
+    <tr><td>What is this?</td><td>ID + title + set/lease badges</td><td>2 lines</td></tr>
+    <tr><td>What's happening now?</td><td>One headline (state verb + agent + age)</td><td>1 line</td></tr>
+    <tr><td>Does it need me?</td><td>Severity color of that one headline</td><td>0 extra</td></tr>
+    <tr><td>What's my one next move?</td><td>Exactly one primary action</td><td>1 button</td></tr>
+  </table>
+  <div class="prose">
+    <p>Everything else — per-agent sessions, timelines, review history, GitHub checks, autonomous stage tracks, close blockers — is <b>focus-level</b> information. It lives one gesture away (expand, inspector, or drawer), never on the resting card. The server already computes almost all of this (<code>cardPresentation</code>, <code>closeReadiness</code>); this is a presentation-layer re-layering, not a data-model rewrite.</p>
+  </div>
+</section>
+
+<!-- ============================ CONCEPT A ============================ -->
+<section>
+  <p class="eyebrow">Part 3 · Layout concepts</p>
+  <h2>Five concepts, composable — A+B+E is the recommended core</h2>
+
+  <div class="concept-h"><span class="k">A</span><h3 style="margin:0">Attention-weighted board</h3></div>
+  <p class="pill-row"><span class="pill hi">recommended core</span><span class="pill">answers "widen the in-progress row"</span><span class="pill">low risk</span></p>
+  <div class="prose">
+    <p>Columns stop being equal. <b>In-Progress and Evaluation get 2–3× width</b> (room for full agent detail); Inbox, Backlog, and Closed collapse into narrow <b>rails</b> — a count, plus one-line micro-cards. Empty columns collapse to a labelled sliver. A rail expands to a full column on click (pinned per repo in localStorage). The board finally fits without horizontal clipping because width goes where the work is.</p>
+  </div>
+  <div class="frame">
+    <div class="board" style="grid-template-columns: 64px 170px 2.6fr 1.6fr 64px; min-width:840px">
+      <div class="bcol ghost" style="align-items:center; justify-content:flex-start">
+        <div class="bcol-h" style="writing-mode:vertical-rl; letter-spacing:.18em; padding-top:8px">INBOX · 3</div>
+      </div>
+      <div class="bcol">
+        <div class="bcol-h">Backlog <span class="n">5</span></div>
+        <div class="mc dim"><div class="id">F4</div><div class="nm" style="font-size:12px">rating system</div><div class="tl" style="margin-top:3px">after #03</div></div>
+        <div class="mc dim"><div class="id">F18</div><div class="nm" style="font-size:12px">welcome email</div></div>
+        <div class="mc dim"><div class="id">F19</div><div class="nm" style="font-size:12px">signup form</div></div>
+      </div>
+      <div class="bcol" style="border-color:rgba(59,130,246,.35)">
+        <div class="bcol-h" style="color:var(--d-text-2)">In-Progress <span class="n">3</span></div>
+        <div class="mc">
+          <div class="row"><div class="grow"><span class="id">F3</span><div class="nm">user profiles</div></div><span class="chip lease">🔒</span><span class="btn primary mini">Peek</span></div>
+          <div class="hl">▶ Implementing <span class="sub">CC + CX · 6m</span></div>
+          <div class="row" style="gap:8px; margin-top:6px">
+            <span class="agentrow grow row" style="margin:0"><span class="dot g"></span><span class="an grow">CC</span><span class="st">6m</span></span>
+            <span class="agentrow grow row" style="margin:0"><span class="dot g"></span><span class="an grow">CX</span><span class="st">6m</span></span>
+          </div>
+        </div>
+        <div class="mc">
+          <div class="row"><div class="grow"><span class="id">F17</span><div class="nm">profile avatars</div></div><span class="chip auto">✈ auto</span><span class="btn mini">⋯</span></div>
+          <div class="hl">▶ Implementing <span class="sub">CC · stage 1/2 · live 2m</span></div>
+        </div>
+        <div class="mc">
+          <div class="row"><div class="grow"><span class="id">F12</span><div class="nm">e2e solo feature</div></div><span class="btn primary mini">Review</span></div>
+          <div class="hl ready">✔ Implemented <span class="sub">awaiting review</span></div>
+        </div>
+      </div>
+      <div class="bcol">
+        <div class="bcol-h">Evaluation <span class="n">1</span></div>
+        <div class="mc">
+          <div class="row"><div class="grow"><span class="id">F9</span><div class="nm" style="font-size:12px">dark mode</div></div><span class="btn primary mini">Pick winner</span></div>
+          <div class="hl ready">⚖ Recommended: CC</div>
+        </div>
+      </div>
+      <div class="bcol ghost" style="align-items:center">
+        <div class="bcol-h" style="writing-mode:vertical-rl; letter-spacing:.18em; padding-top:8px">CLOSED · 8</div>
+      </div>
+    </div>
+  </div>
+  <p class="frame-caption">Weighted grid: rails (inbox/closed) · compact column (backlog) · wide active lanes. One CSS change (<code>--kanban-cols</code> → weighted template) plus rail rendering.</p>
+
+  <!-- ============================ CONCEPT B ============================ -->
+  <div class="concept-h"><span class="k">B</span><h3 style="margin:0">Two-state cards — collapsed by default, expand for detail</h3></div>
+  <p class="pill-row"><span class="pill hi">recommended core</span><span class="pill">your expand/contract idea</span><span class="pill">works in any board layout</span></p>
+  <div class="prose">
+    <p>Every card gets a hard two-state contract. <b>Collapsed</b> is the four-question tile — and is the <em>only</em> resting state. <b>Expanded</b> (chevron, or auto-expand when severity is error/attention) reveals the focus layer: agent sessions with terminal/peek controls, milestone timeline, review history, GitHub checks, autonomous stage track. One card expanded per column; state keyed by feature id so live reconciliation (<code>reconcileKeyedCards</code>) preserves it across polls.</p>
+  </div>
+  <div class="frame" style="display:flex; gap:34px; flex-wrap:wrap; align-items:flex-start; justify-content:center">
+    <div>
+      <div class="zone-label" style="margin-bottom:8px">Collapsed (resting)</div>
+      <div class="mc" style="width:250px">
+        <div class="row"><div class="grow"><span class="id">F3 · brewboard-data</span><div class="nm">user profiles</div></div><span style="color:var(--d-text-3);font-size:10px">▸</span></div>
+        <div class="hl">▶ Implementing <span class="sub">CC+CX · 6m</span></div>
+        <div class="row" style="margin-top:6px"><span class="tl grow" style="margin:0"><span class="ok">✓</span>✓<span style="opacity:.4">○○</span> &nbsp;2/4</span><span class="btn primary mini">Peek</span></div>
+      </div>
+      <div class="zone-label" style="margin:14px 0 8px; color:var(--d-red)">Collapsed, needs you (auto-expands)</div>
+      <div class="mc" style="width:250px; border-color:rgba(239,68,68,.3)">
+        <div class="row"><div class="grow"><span class="id">F15</span><div class="nm">close failure feature</div></div><span style="color:var(--d-text-3);font-size:10px">▸</span></div>
+        <div class="hl warn">✕ Close failed <span class="sub">2h · merge conflict</span></div>
+        <div class="row" style="margin-top:6px"><span class="grow"></span><span class="btn primary mini" style="background:var(--d-red);border-color:var(--d-red)">Recover</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="zone-label" style="margin-bottom:8px">Expanded (focus layer)</div>
+      <div class="mc" style="width:288px; border-color:rgba(59,130,246,.35)">
+        <div class="row"><div class="grow"><span class="id">F3 · brewboard-data</span><div class="nm">user profiles</div></div><span class="chip lease">🔒 macbookpro</span><span style="color:var(--d-text-3);font-size:10px">▾</span></div>
+        <div class="hl">▶ Implementing <span class="sub">CC+CX · 6m</span></div>
+        <div class="zone-label">Sessions</div>
+        <div class="agentrow" style="border-left-color:var(--d-accent); margin-top:2px">
+          <div class="row"><span class="dot g"></span><span class="an grow">Claude Code</span><span class="st">6m</span><span class="btn mini">👁</span><span class="btn mini">Terminal</span></div>
+        </div>
+        <div class="agentrow" style="border-left-color:#8b5cf6; margin-top:4px">
+          <div class="row"><span class="dot g"></span><span class="an grow">Codex</span><span class="st">6m</span><span class="btn mini">👁</span><span class="btn mini">Terminal</span></div>
+        </div>
+        <div class="zone-label">Progress</div>
+        <div class="tl" style="margin-top:0"><span class="ok">✓</span> Spec reviewed — CC, 1h<br><span class="ok">✓</span> Started fleet — 6m<br><span style="opacity:.5">○</span> Implement · <span style="opacity:.5">○</span> Eval</div>
+        <div class="zone-label">Checks</div>
+        <div class="row"><span class="chip">PR #142 ✓ checks</span><span class="chip">↑2 commits</span></div>
+        <div class="row" style="margin-top:8px"><span class="btn primary">Peek</span><span class="btn">Open Terminal</span><span class="grow"></span><span class="btn">⋯</span></div>
+      </div>
+      <div class="tl" style="font-family:var(--mono); margin-top:8px; color:var(--ink-3)">Full history / spec / logs stay in the drawer — the expanded card links to it, never mirrors it.</div>
+    </div>
+  </div>
+  <p class="frame-caption">The collapsed card is a status line, not a control panel. Severity ≥ attention auto-expands; everything else waits for the chevron.</p>
+
+  <!-- ============================ CONCEPT C ============================ -->
+  <div class="concept-h"><span class="k">C</span><h3 style="margin:0">Board + docked inspector</h3></div>
+  <p class="pill-row"><span class="pill">phase 2 candidate</span><span class="pill">reuses drawer tabs</span><span class="pill">keyboard-first</span></p>
+  <div class="prose">
+    <p>Cards shrink to one-line tiles; selecting one docks the existing drawer (Spec / Status / Events / Agents…) as a <b>persistent right panel</b> instead of a modal overlay, so you can walk the board with <code>j/k</code> and watch detail update live. This is the "mission control" pattern — strongest for operators running many autonomous features at once. It composes with A and B (the inspector replaces "expanded" on wide screens) but is a larger interaction change, so I'd sequence it after the core lands.</p>
+  </div>
+  <div class="frame">
+    <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:12px; min-width:760px">
+      <div class="board" style="grid-template-columns:1fr 1fr; min-width:0">
+        <div class="bcol">
+          <div class="bcol-h">In-Progress <span class="n">3</span></div>
+          <div class="mc row" style="border-color:rgba(59,130,246,.5); background:rgba(59,130,246,.06)"><span class="dot g"></span><span class="nm grow" style="font-size:12px">F3 user profiles</span><span class="tl" style="margin:0">▶ 6m</span></div>
+          <div class="mc row"><span class="dot g"></span><span class="nm grow" style="font-size:12px">F17 profile avatars</span><span class="chip auto">✈</span></div>
+          <div class="mc row"><span class="dot t"></span><span class="nm grow" style="font-size:12px">F12 e2e solo</span><span class="tl" style="margin:0">✔</span></div>
+        </div>
+        <div class="bcol">
+          <div class="bcol-h">Evaluation <span class="n">1</span></div>
+          <div class="mc row"><span class="dot t"></span><span class="nm grow" style="font-size:12px">F9 dark mode</span><span class="tl" style="margin:0">⚖</span></div>
+        </div>
+      </div>
+      <div class="bcol" style="border-color:rgba(59,130,246,.35)">
+        <div class="bcol-h" style="text-transform:none; font-size:12px; color:var(--d-text)">F3 · user profiles <span class="n">in-progress</span></div>
+        <div class="row" style="gap:4px; margin:2px 0 6px"><span class="chip" style="color:var(--d-accent);border-color:rgba(59,130,246,.5)">Status</span><span class="chip">Spec</span><span class="chip">Agents</span><span class="chip">Events</span><span class="chip">Log</span></div>
+        <div class="hl" style="margin:0">▶ Implementing <span class="sub">CC + CX · 6m</span></div>
+        <div class="agentrow"><div class="row"><span class="dot g"></span><span class="an grow">CC · alive 6m</span><span class="btn mini">Terminal</span></div></div>
+        <div class="agentrow"><div class="row"><span class="dot g"></span><span class="an grow">CX · alive 6m</span><span class="btn mini">Terminal</span></div></div>
+        <div class="tl">✓ Spec reviewed · ✓ Started · ○ Implement · ○ Eval<br>Lock: macbookpro · until 20:42<br>Worktree: feature-03-cc-user-profiles</div>
+        <div class="row" style="margin-top:6px"><span class="btn primary">Peek</span><span class="btn">Nudge</span><span class="btn">⋯</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="frame-caption">Selection highlights on the board; the inspector is the drawer's Status tab, docked. Cards need almost nothing on them.</p>
+
+  <!-- ============================ CONCEPT D ============================ -->
+  <div class="concept-h"><span class="k">D</span><h3 style="margin:0">Stage swimlanes (rows, not columns)</h3></div>
+  <p class="pill-row"><span class="pill">radical alternative</span><span class="pill">full-width active cards</span></p>
+  <div class="prose">
+    <p>Flip the axis: stages become horizontal lanes. The In-Progress lane renders <b>full-width row-cards</b> — a card gets the entire board width, so fleet agents, autonomous stage tracks, and close-readiness fit on one uncramped line. Inactive stages render as dense chip-rows. This solves the width problem completely and reads like a flight-status board, but it retires the kanban mental model (and column drag-and-drop) — a bigger bet than A+B. Worth prototyping behind a view toggle if the fleet/autonomous mix keeps growing.</p>
+  </div>
+  <div class="frame">
+    <div style="min-width:820px; display:flex; flex-direction:column; gap:8px">
+      <div class="bcol" style="flex-direction:row; align-items:center; gap:8px; padding:7px 10px">
+        <div class="bcol-h" style="padding:0; width:110px; flex-shrink:0">Backlog <span class="n">5</span></div>
+        <span class="chip">F4 rating system · after #03</span><span class="chip">F18 welcome email</span><span class="chip">F19 signup form</span><span class="chip">F20 activation metrics</span><span class="chip">+1</span>
+      </div>
+      <div class="bcol" style="border-color:rgba(59,130,246,.35); gap:6px">
+        <div class="bcol-h">In-Progress <span class="n">3</span></div>
+        <div class="mc row" style="gap:14px; padding:9px 12px">
+          <div style="width:150px; flex-shrink:0"><span class="id">F3</span><div class="nm">user profiles</div></div>
+          <div class="hl grow" style="margin:0">▶ Implementing <span class="sub">6m</span></div>
+          <span class="agentrow row" style="margin:0"><span class="dot g"></span><span class="an">CC</span><span class="btn mini">Terminal</span></span>
+          <span class="agentrow row" style="margin:0"><span class="dot g"></span><span class="an">CX</span><span class="btn mini">Terminal</span></span>
+          <span class="tl" style="margin:0"><span class="ok">✓✓</span>○○</span>
+          <span class="btn primary mini">Peek</span><span class="btn mini">⋯</span>
+        </div>
+        <div class="mc row" style="gap:14px; padding:9px 12px">
+          <div style="width:150px; flex-shrink:0"><span class="id">F17</span><div class="nm">profile avatars</div></div>
+          <div class="hl grow" style="margin:0">▶ Implementing <span class="sub">auto · stage 1/2</span></div>
+          <span class="chip auto">✈ conductor live · 2m</span>
+          <span class="tl" style="margin:0"><span class="ok">●</span> Implement → ○ Close</span>
+          <span class="btn primary mini">Peek</span><span class="btn mini">Stop</span>
+        </div>
+      </div>
+      <div class="bcol" style="flex-direction:row; align-items:center; gap:8px; padding:7px 10px">
+        <div class="bcol-h" style="padding:0; width:110px; flex-shrink:0">Evaluation <span class="n">1</span></div>
+        <span class="chip" style="color:#5eead4; border-color:rgba(45,212,191,.4)">F9 dark mode · ⚖ pick winner</span>
+      </div>
+    </div>
+  </div>
+  <p class="frame-caption">Active work reads like a status board; dormant stages compress to a single row each.</p>
+
+  <!-- ============================ CONCEPT E ============================ -->
+  <div class="concept-h"><span class="k">E</span><h3 style="margin:0">Set bands — group-by-set without the chrome tax</h3></div>
+  <p class="pill-row"><span class="pill hi">recommended core</span><span class="pill">fixes P4</span><span class="pill">home for autonomous-set status</span></p>
+  <div class="prose">
+    <p>A set becomes <b>one full-width band</b> spanning all stage columns. Set identity, progress, conductor/spec-review status, and set-level actions appear <em>once</em> in the band header; member cards sit in stage cells inside the band. Autonomous set runs get a proper home: the band header carries the conductor state and current stage instead of stamping "CONDUCTOR: INACTIVE" into five columns.</p>
+  </div>
+  <div class="frame">
+    <div style="min-width:820px">
+      <div class="bcol" style="border-color:rgba(59,130,246,.3); padding:0; overflow:hidden">
+        <div class="row" style="background:rgba(59,130,246,.07); padding:8px 12px; gap:10px">
+          <span class="dot b"></span><span class="nm grow">ONBOARDING</span>
+          <span class="tl" style="margin:0">1/3 done</span>
+          <span class="chip auto">✈ conductor: implementing F18</span>
+          <span class="btn mini">Review specs</span><span class="btn primary mini">Start set</span><span class="btn mini">⋯</span>
+        </div>
+        <div style="height:3px;background:rgba(128,128,128,.2)"><div style="height:100%;width:33%;background:var(--d-accent)"></div></div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 12px">
+          <div>
+            <div class="bcol-h" style="padding:0 0 5px">Backlog</div>
+            <div class="mc dim"><span class="id">F19</span><div class="nm" style="font-size:12px">signup form</div></div>
+            <div class="mc dim" style="margin-top:6px"><span class="id">F20</span><div class="nm" style="font-size:12px">activation metrics</div><div class="tl" style="margin-top:2px">after #19</div></div>
+          </div>
+          <div>
+            <div class="bcol-h" style="padding:0 0 5px">In-Progress</div>
+            <div class="mc"><span class="id">F18</span><div class="nm" style="font-size:12px">welcome email</div><div class="hl" style="font-size:10px">▶ Implementing <span class="sub">CC</span></div></div>
+          </div>
+          <div><div class="bcol-h" style="padding:0 0 5px">Evaluation</div><div class="tl" style="margin:0; opacity:.5">—</div></div>
+          <div>
+            <div class="bcol-h" style="padding:0 0 5px">Closed</div>
+            <div class="mc dim"><span class="id">F21</span><div class="nm" style="font-size:12px">plan doc</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="frame-caption">One header per set, not one per set×column. Ungrouped features keep the normal board below the bands.</p>
+</section>
+
+<!-- ============================ PATTERN DOC ============================ -->
+<section>
+  <p class="eyebrow">Part 4</p>
+  <h2>The design pattern document & reference</h2>
+  <div class="prose">
+    <p>F650's <code>dashboard-card-design.md</code> + wireframe was the right instinct but only covers cards. To stop clutter re-accreting, the pattern reference needs to become the <b>vocabulary every dashboard change is composed from</b>:</p>
+  </div>
+  <ul class="tight">
+    <li><b><code>docs/dashboard-design-system.md</code></b> — tokens (color, type, spacing, radius), the glance/focus/act altitude model, severity/tone rules, badge & chip inventory with admission criteria ("a new badge must replace one or move to focus level"), action-priority rules, motion & density rules.</li>
+    <li><b>Live component gallery</b> — evolve <code>card-design-wireframe.html</code> into a rendered gallery page (served in dev, e.g. <code>/design</code>) showing every card state built from the real CSS, so visual review of a new state is "add it to the gallery" not "reproduce it in a sandbox". The gallery page becomes the Playwright visual-regression surface.</li>
+    <li><b>Component helpers</b> — extract <code>js/components/</code> (chip, badge, headline, agent-chip, milestone-strip, action-row) used by both <code>pipeline.js</code> and <code>monitor.js</code>, killing the duplicated renderers (P5). New sections must go through the vocabulary or they don't render.</li>
+  </ul>
+</section>
+
+<!-- ============================ FEATURE SET ============================ -->
+<section>
+  <p class="eyebrow">Part 5</p>
+  <h2>Proposed feature set — <code>dash-ux</code></h2>
+  <div class="prose"><p>Sequenced so the vocabulary lands first and every later feature composes from it. Assuming direction A+B+E:</p></div>
+  <table class="plain">
+    <tr><th>#</th><th>Feature</th><th>Delivers</th><th>Depends on</th></tr>
+    <tr><td>1</td><td><b>design-system-foundation</b></td><td>dashboard-design-system.md, token audit, component gallery page, extracted <code>js/components/</code> vocabulary</td><td>—</td></tr>
+    <tr><td>2</td><td><b>card-anatomy-v2</b></td><td>Strict 4-question collapsed card; agent chips; milestone strip; single primary action; badge budget</td><td>1</td></tr>
+    <tr><td>3</td><td><b>card-expand-collapse</b></td><td>Two-state cards, chevron + severity auto-expand, persisted per feature id through keyed reconcile</td><td>2</td></tr>
+    <tr><td>4</td><td><b>attention-weighted-board</b></td><td>Weighted column grid, inbox/closed rails, empty-column collapse, rail pinning</td><td>2</td></tr>
+    <tr><td>5</td><td><b>set-bands</b></td><td>Full-width set bands with single header; conductor/autonomous status home; ungrouped fallback</td><td>2</td></tr>
+    <tr><td>6</td><td><b>monitor-pipeline-unification</b></td><td>Monitor view re-rendered from the same card components (deletes the fork)</td><td>2</td></tr>
+    <tr><td>7</td><td><b>docked-inspector</b> <span class="pill" style="font-size:10px">phase 2</span></td><td>Drawer docks as persistent panel, j/k board navigation</td><td>3, 4</td></tr>
+  </table>
+  <div class="verdict">
+    <span class="tag">Recommendation</span>
+    <p style="margin:8px 0 0">Ship <b>A + B + E</b> as the <code>dash-ux</code> set (features 1–6). They fix all five named problems, keep the kanban mental model, and are individually shippable. Hold <b>C</b> (inspector) as phase 2 once the vocabulary exists, and treat <b>D</b> (swimlanes) as a prototype behind a view toggle only if fleet/autonomous density keeps growing.</p>
+  </div>
+</section>
+
+<footer>
+  Prepared from live inspection · sandbox: e2e mock instance on :4200 (frozen mock agents) · wireframe v4 · pipeline.js @ 2,408 lines
+</footer>
+
+</div>
