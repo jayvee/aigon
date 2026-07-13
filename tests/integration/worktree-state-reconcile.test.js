@@ -102,13 +102,13 @@ test('Kimi launches bare `kimi` TUI with prompt injected via tmux send-keys skil
     // F483: km uses injectViaTmuxSkillCommand — send-keys -l instead of paste-buffer.
     // `kimi term` requires Python 3.14; bare `kimi` is the native interactive TUI.
     const cmd = buildAgentCommand({ agent: 'km', featureId: '05', path: '/tmp/aigon-km-linger-test-wt', repoPath: process.cwd() }, 'do');
-    assert.ok(/&&\s+kimi(?:\s+--[a-z-]+)?\s*$/m.test(cmd) || /&&\s+kimi(?:\s+--[a-z-]+)?\s*\n/.test(cmd), `expected bare 'kimi': ${cmd}`);
+    assert.ok(/&&\s+(?:[^&\n]*\/)?kimi(?:\s+--[a-z-]+)?\s*$/m.test(cmd) || /&&\s+(?:[^&\n]*\/)?kimi(?:\s+--[a-z-]+)?\s*\n/.test(cmd), `expected bare 'kimi': ${cmd}`);
     assert.ok(!/\bkimi\s+term\b/.test(cmd) && !cmd.includes('--print') && !cmd.includes('exec bash -l') && !cmd.includes('tmux paste-buffer'), cmd);
     assert.ok(cmd.includes('tmux send-keys') && cmd.includes('-l') && cmd.includes('/skill:aigon-feature-do 05'), cmd);
 }));
 test('Cursor CLI tmux launch uses agent command (--print/--trust removed in b80de8ed)', () => withLiveAgentMode(() => {
     const cmd = buildRawAgentCommand({ agent: 'cu', featureId: '02', path: '/tmp/aigon-cu-trust-test-wt', repoPath: process.cwd(), desc: 'trust-test' }, 'review');
-    assert.ok(cmd.includes(' agent '), `expected agent command in: ${cmd}`);
+    assert.ok(/(?:^|[\/\s])agent\s/.test(cmd), `expected agent command in: ${cmd}`);
     assert.ok(!cmd.includes('--print'), `--print removed: ${cmd}`);
 }));
 test('cc do wrapper: cleanup trap is timed, heartbeat sidecar has parent-alive + time-ceiling + tmux-session guards', () => withLiveAgentMode(() => {
@@ -169,43 +169,31 @@ test('deactivated gg cannot launch via buildRawAgentCommand', () => {
         /deactivated.*superseded by `ag`/i,
     );
 });
-test('Antigravity launches with --prompt-interactive and inline prompt file', () => withLiveAgentMode(() => {
-    // REGRESSION: agy -p/--print is one-shot; interactive launches use
-    // --prompt-interactive with $(< file) expansion (File-prompt type).
-    const cmd = buildRawAgentCommand({
-        agent: 'ag',
-        featureId: '07',
-        path: '/tmp/aigon-ag-linger-test-wt',
-        repoPath: process.cwd(),
-    }, 'do');
-    assert.ok(/\bagy\b/.test(cmd), cmd);
-    assert.ok(cmd.includes('--prompt-interactive') || /\s-i\s/.test(cmd), `expected --prompt-interactive: ${cmd}`);
-    assert.ok(cmd.includes('$(< '), `expected inline prompt file: ${cmd}`);
-    assert.ok(cmd.includes('--dangerously-skip-permissions'), cmd);
-    assert.ok(cmd.includes('--model'), cmd);
-}));
+test('deactivated ag cannot launch via buildRawAgentCommand', () => {
+    assert.throws(() => buildRawAgentCommand({ agent: 'ag', featureId: '07', path: '/tmp/aigon-ag-linger-test-wt', repoPath: process.cwd() }, 'do'), /agent `ag` is deactivated/i);
+});
 test('Fleet research inline prompt files are agent-disambiguated (no shared path)', () => {
-    // REGRESSION: Before this fix every Fleet research agent (cc/cu/ag) wrote its
+    // REGRESSION: Before this fix every Fleet research agent wrote its
     // rendered prompt to `<tmp>/aigon-inline-prompts/<repo>/research-<id>-research-do.md`
     // — a single path shared across all slots. The bash `$(< file)` substitution
     // runs asynchronously inside each tmux session, so whichever JS write happened
     // last won, and every agent read the last-writer's prompt.
     const wt = require('../../lib/worktree');
-    const cmdAg = wt.buildRawAgentCommand({ agent: 'ag', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
+    const cmdCx = wt.buildRawAgentCommand({ agent: 'cx', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const cmdCu = wt.buildRawAgentCommand({ agent: 'cu', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const cmdCc = wt.buildRawAgentCommand({ agent: 'cc', featureId: '02', entityType: 'research', repoPath: process.cwd() }, 'do');
     const fileFromCmd = (c) => (c.match(/\$\(<\s+'?([^'\s)]+)/) || [])[1];
-    const fAg = fileFromCmd(cmdAg);
+    const fCx = fileFromCmd(cmdCx);
     const fCu = fileFromCmd(cmdCu);
     const fCc = fileFromCmd(cmdCc);
-    assert.ok(fAg && fCu && fCc, `expected inline prompt files for all three agents (ag=${fAg} cu=${fCu} cc=${fCc})`);
-    assert.notStrictEqual(fAg, fCu, 'ag and cu must not share an inline prompt path');
-    assert.notStrictEqual(fAg, fCc, 'ag and cc must not share an inline prompt path');
+    assert.ok(fCx && fCu && fCc, `expected inline prompt files for all three agents (cx=${fCx} cu=${fCu} cc=${fCc})`);
+    assert.notStrictEqual(fCx, fCu, 'cx and cu must not share an inline prompt path');
+    assert.notStrictEqual(fCx, fCc, 'cx and cc must not share an inline prompt path');
     assert.notStrictEqual(fCu, fCc, 'cu and cc must not share an inline prompt path');
-    assert.ok(fAg.includes('-ag-'), `ag path should include agent id: ${fAg}`);
+    assert.ok(fCx.includes('-cx-'), `cx path should include agent id: ${fCx}`);
     assert.ok(fCu.includes('-cu-'), `cu path should include agent id: ${fCu}`);
     assert.ok(fCc.includes('-cc-'), `cc path should include agent id: ${fCc}`);
-    assert.ok(fs.readFileSync(fAg, 'utf8').includes('-ag-findings.md'), 'ag prompt must reference ag findings file');
+    assert.ok(fs.readFileSync(fCx, 'utf8').includes('-cx-findings.md'), 'cx prompt must reference cx findings file');
     assert.ok(fs.readFileSync(fCu, 'utf8').includes('-cu-findings.md'), 'cu prompt must reference cu findings file');
     assert.ok(fs.readFileSync(fCc, 'utf8').includes('-cc-findings.md'), 'cc prompt must reference cc findings file');
 });

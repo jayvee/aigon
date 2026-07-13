@@ -323,8 +323,8 @@ for (const [desc, id, setup, expectedStatuses] of [
             workflowSlug: 'solo-cc-reviewed-cx', reviewTriggered: true,
             startedAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:03:00Z',
         });
-        return [{ id: 'cc', status: 'ready' }];
-    }, ['complete', 'running', 'waiting', 'waiting']],
+        return [{ id: 'cc', status: 'ready' }, { id: 'cx', status: 'code_review_in_progress', tmuxRunning: true }];
+    }, ['complete', 'waiting', 'waiting', 'waiting']],
     ['requested revision waiting', '22', (repo, featureId) => {
         writeSpec(repo, 'features', '03-in-progress', `feature-${featureId}-rev-wait.md`);
         const snapDir = path.join(repo, '.aigon', 'workflows', 'features', featureId);
