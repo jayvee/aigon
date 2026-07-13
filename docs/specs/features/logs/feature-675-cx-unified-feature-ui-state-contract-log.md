@@ -1,3 +1,26 @@
+---
+commit_count: 11
+lines_added: 478
+lines_removed: 32
+lines_changed: 510
+files_touched: 15
+fix_commit_count: 4
+fix_commit_ratio: 0.364
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: false
+input_tokens: 6055972
+output_tokens: 24201
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 5811968
+thinking_tokens: 8326
+total_tokens: 6080173
+billable_tokens: 6088499
+cost_usd: 13.4679
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 675 - unified-feature-ui-state-contract
 Agent: cx
 
