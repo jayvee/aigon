@@ -1,6 +1,8 @@
 ---
 aigon_id: F675
 complexity: very-high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-13T14:07:49.694Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: unified-feature-ui-state-contract
