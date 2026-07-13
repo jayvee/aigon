@@ -1373,9 +1373,14 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       card.addEventListener('dragstart', (e) => {
         wasDragged = true;
         card.classList.add('dragging');
-        // Valid transitions come from state machine validActions — no hardcoded stage pairs
-        const validTransitions = (feature.validActions || []).filter(a => a.type === 'transition');
-        const validTargetStages = validTransitions.map(a => a.to);
+        // Feature drop eligibility is owned by the versioned server contract.
+        const contractDrops = feature.uiContract && Array.isArray(feature.uiContract.allowedDrops)
+          ? feature.uiContract.allowedDrops
+          : null;
+        const validTransitions = contractDrops
+          ? contractDrops.map(drop => (feature.validActions || []).find(a => a.action === drop.actionId && a.to === drop.lane)).filter(Boolean)
+          : (feature.validActions || []).filter(a => a.type === 'transition');
+        const validTargetStages = contractDrops ? contractDrops.map(drop => drop.lane) : validTransitions.map(a => a.to);
         dragState = { featureId: feature.id, featureName: feature.name, fromStage: feature.stage, repoPath, pipelineType, validTargetStages, validTransitions, winnerAgent: feature.winnerAgent || null };
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', feature.id);
