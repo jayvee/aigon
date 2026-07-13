@@ -17,7 +17,7 @@ If no name is provided, or the name doesn't match an existing topic in the inbox
 2. If a partial name was given, filter to files containing that text
 3. Present the matching topics and ask the user to choose one
 
-This assigns an ID to the research topic and moves it from `01-inbox/` to `02-backlog/`.
+This assigns or confirms the research ID, records backlog lifecycle state, and refreshes the generated view.
 
 Next step: Run `aigon-research-start <ID>` (Drive) or `aigon-research-start <ID> cc gg` (Fleet) to begin.
 

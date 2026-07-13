@@ -19,7 +19,7 @@ aigon set-prioritise $ARGUMENTS
 
 Alias: `aigon asp <slug>`.
 
-This assigns sequential feature ids and moves each member to `02-backlog/` in an order consistent with intra-set dependencies.
+This assigns sequential feature ids and prioritises each member to backlog in an order consistent with intra-set dependencies.
 
 ## Step 2: Next steps
 

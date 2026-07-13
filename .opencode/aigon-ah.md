@@ -9,7 +9,7 @@ description: Show Aigon commands (shortcut for help)
 |---------|-------------|
 | `aigon-feature-create <name>` | Create a new feature spec |
 | `aigon-feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
-| `aigon-feature-prioritise <name>` | Assign ID and move to backlog |
+| `aigon-feature-prioritise <name>` | Assign ID and prioritise to backlog |
 | `aigon-feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `aigon-feature-do <ID> [--iterate]` | Do feature work; `--iterate` enables the Autopilot retry loop |
 | `aigon-feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |
@@ -63,7 +63,6 @@ description: Show Aigon commands (shortcut for help)
 | op | OpenCode | `opencode` | Workspace-write, smart approval |
 | km | Kimi Code CLI | `kimi --yolo` | Auto-approves all |
 | am | Amp | `amp --no-ide --no-jetbrains --no-notifications --dangerously-allow-all` | --no-ide --no-jetbrains --no-notifications --dangerously-allow-all |
-| ag | Antigravity CLI | `agy --dangerously-skip-permissions` | --dangerously-skip-permissions |
 
 **Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
 
