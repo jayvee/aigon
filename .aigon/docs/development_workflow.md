@@ -22,6 +22,7 @@ All workflow state lives in `./docs/specs/`. Folders are numbered for visual ord
 ```
 docs/specs/
 ├── research-topics/
+│   ├── 00-specs/        # Canonical research specs under stable layout
 │   ├── 01-inbox/        # New research ideas
 │   ├── 02-backlog/      # Prioritised research
 │   ├── 03-in-progress/  # Active research
@@ -29,6 +30,7 @@ docs/specs/
 │   ├── 05-done/         # Completed research
 │   └── 06-paused/       # On hold
 ├── features/
+│   ├── 00-specs/        # Canonical feature specs under stable layout
 │   ├── 01-inbox/        # New feature ideas (feature-description.md)
 │   ├── 02-backlog/      # Prioritised features (feature-NN-description.md)
 │   ├── 03-in-progress/  # Active features
@@ -57,7 +59,7 @@ Research may recommend zero or more features via its `## Output` section. The ol
 | Command | Description |
 |---------|-------------|
 | `aigon feature-create <name>` | Create a new feature spec |
-| `aigon feature-prioritise <name>` | Assign ID and move to backlog |
+| `aigon feature-prioritise <name>` | Assign ID and prioritise to backlog |
 | `aigon feature-spec-review <ID>` | Pre-implementation review of the spec itself |
 | `aigon feature-start <ID> [agents...]` | Setup for solo (no agents) or arena (with agents) |
 | `aigon feature-do <ID> [--iterate]` | Implement feature; `--iterate` runs Autopilot retry loop |
@@ -71,7 +73,7 @@ Research may recommend zero or more features via its `## Output` section. The ol
 | `aigon feature-push [ID] [agent]` | Push the feature branch to `origin` for PR review |
 | `aigon feature-close <ID> [agent]` | Merge and complete (specify agent in arena mode) |
 | `aigon feature-cleanup <ID>` | Clean up arena worktrees and branches |
-| `aigon feature-reset <ID>` | Full reset back to backlog (sessions + worktrees + branches + state + spec move) |
+| `aigon feature-reset <ID>` | Full reset back to backlog (sessions + worktrees + branches + state; stable layout refreshes the lifecycle view) |
 
 ## Key Rules
 
@@ -86,7 +88,8 @@ Research may recommend zero or more features via its `## Output` section. The ol
 For features, there are two relevant layers:
 
 - The authoritative lifecycle state lives in `.aigon/workflows/features/{id}/` and is managed by Aigon's workflow engine.
-- The visible stage is still the spec folder under `docs/specs/features/`, but that folder is a projection of workflow state, not the authority.
+- Under the stable spec layout, the canonical spec file lives in `docs/specs/features/00-specs/` for its whole lifetime.
+- The visible stage folders under `docs/specs/features/` are a generated local view of workflow state, not the authority.
 - Active feature discovery should use `{{CMD_PREFIX}}feature-list --active` or workflow snapshot reads, not folder probes.
 
 ## Review Recovery
@@ -120,7 +123,7 @@ Autonomous flows do not auto-accept escalations.
 
 ## Solo Mode Workflow
 
-1. Run `aigon feature-start <ID>` to create branch and move spec to in-progress
+1. Run `aigon feature-start <ID>` to create branch/workflow state and refresh the in-progress view
 2. Run `aigon feature-do <ID>` to begin implementation (add `--iterate` for Autopilot retry loop)
 3. Read the spec path returned by `aigon feature-spec <ID>`
 4. Implement the feature according to the spec

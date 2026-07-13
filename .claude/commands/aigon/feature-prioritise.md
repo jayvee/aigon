@@ -4,7 +4,7 @@ argument-hint: "<feature-name or letter>"
 ---
 # aigon-feature-prioritise
 
-**CRITICAL:** You MUST use the CLI command below to prioritise. Do NOT manually rename or move spec files — the CLI handles ID assignment and file moves.
+**CRITICAL:** You MUST use the CLI command below to prioritise. Do NOT manually rename or move spec files or lifecycle-view links — the CLI handles ID assignment, workflow state, and view refresh.
 
 ## Argument Resolution
 
@@ -19,7 +19,7 @@ If no name is provided, or the name doesn't match an existing feature in the inb
 aigon feature-prioritise {{args}}
 ```
 
-This assigns an ID to the feature and moves it from `01-inbox/` to `02-backlog/`.
+This assigns or confirms the feature ID, records backlog lifecycle state, and refreshes the generated view.
 
 ## Step 2: Next steps
 

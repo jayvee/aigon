@@ -13,4 +13,4 @@ description: Move a backlog feature back to inbox (slug filename)
 aigon feature-unprioritise $ARGUMENTS
 ```
 
-`$ARGUMENTS` is the numeric feature id (e.g. `42`). The spec moves from `02-backlog/` to `01-inbox/` and the workflow id re-keys to the slug until you `feature-prioritise` again.
+`$ARGUMENTS` is the numeric feature id (e.g. `42`). The feature returns to inbox lifecycle state and the generated view is refreshed. Legacy-layout repos may still move the stage-folder file during the compatibility window.

@@ -18,7 +18,7 @@ aigon research-reset {{args}}
 2. Removes findings logs (`research-<id>-*-findings.md`)
 3. Removes research status files in `.aigon/state/`
 4. Removes matching heartbeat files for research agents
-5. Moves the spec back to `docs/specs/research-topics/02-backlog/`
+5. Returns the lifecycle to backlog and refreshes the generated view
 6. Removes workflow engine state in `.aigon/workflows/research/<id>/`
 
 Reset is idempotent. Running it again after cleanup is a no-op.

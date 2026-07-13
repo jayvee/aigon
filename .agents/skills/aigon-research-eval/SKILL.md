@@ -25,7 +25,7 @@ claude --model sonnet
 
 ## Step 1: Run the CLI command
 
-IMPORTANT: You MUST run this command first. It transitions the engine state to evaluating and moves the spec to the evaluation folder.
+IMPORTANT: You MUST run this command first. It transitions the engine state to evaluating and refreshes the generated lifecycle view.
 
 ```bash
 aigon research-eval $1

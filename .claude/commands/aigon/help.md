@@ -9,7 +9,7 @@ description: Show Aigon commands
 |---------|-------------|
 | `/aigon:feature-create <name>` | Create a new feature spec |
 | `/aigon:feature-now <name>` | Fast-track: inbox → prioritise → setup → implement, or create new + implement |
-| `/aigon:feature-prioritise <name>` | Assign ID and move to backlog |
+| `/aigon:feature-prioritise <name>` | Assign ID and prioritise to backlog |
 | `/aigon:feature-start <ID> [agents...]` | Setup for Drive (branch) or Fleet (worktrees) |
 | `/aigon:feature-do <ID> [--iterate]` | Do feature work; `--iterate` enables the Autopilot retry loop |
 | `/aigon:feature-spec <ID> [--json]` | Resolve the canonical visible spec path for a feature |

@@ -7,7 +7,7 @@ description: Start research <ID> [agents...] - create workspace and begin resear
 
 Prepare your workspace to conduct research in either Drive or Fleet mode.
 
-**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move topic files or create worktrees — the CLI handles committing the spec move before worktree setup, which is essential for parallel modes.
+**CRITICAL:** You MUST use the CLI command below to perform setup. Do NOT manually move topic files, lifecycle-view links, or create worktrees — the CLI records the workflow transition and prepares worktree state.
 
 ## Usage
 
@@ -39,7 +39,7 @@ The mode is determined automatically based on what the user provides:
 - **2+ agents**: Fleet mode - create parallel research worktrees/findings contexts
 
 The CLI will:
-- Move the topic from `02-backlog` to `03-in-progress`
+- Transition the topic from backlog to in-progress and refresh the generated lifecycle view
 - **Commit the topic move** before any worktree setup
 - Create findings files for agents when needed
 - Create worktree/session context for parallel research

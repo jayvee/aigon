@@ -43,7 +43,7 @@ Before starting, explore the codebase to understand the existing architecture, p
 aigon feature-prioritise <inbox-name>
 ```
 
-This assigns an ID and moves the spec from `01-inbox/` to `02-backlog/`. Note the assigned ID from the output.
+This assigns an ID and prioritises the feature to backlog. Note the assigned ID from the output.
 
 ### A3: Setup (Drive mode)
 
@@ -51,7 +51,7 @@ This assigns an ID and moves the spec from `01-inbox/` to `02-backlog/`. Note th
 aigon feature-start <ID>
 ```
 
-This moves the spec to `03-in-progress/`, creates the branch, and creates the implementation log.
+This records the in-progress lifecycle state, refreshes the generated view, creates the branch, and creates the implementation log.
 
 ### A4: Implement
 

@@ -13,7 +13,7 @@ If no ID is provided, or the ID doesn't match an existing topic in evaluation or
 2. If a partial ID or name was given, filter to matches
 3. Present the matching topics and ask the user to choose one
 
-This moves the research topic from `04-in-evaluation/` (or `03-in-progress/`) to `05-done/`.
+This records the research topic as done and refreshes the generated lifecycle view.
 
 ## Usage
 

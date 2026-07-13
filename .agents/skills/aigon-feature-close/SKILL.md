@@ -49,7 +49,7 @@ Examples:
 2. Pushes the feature branch to origin (to save work remotely)
 3. Switches to main/master branch
 4. Merges the feature branch with `--no-ff`
-5. Moves spec to `05-done/`
+5. Records done lifecycle and refreshes the generated view
 6. Moves implementation log to `logs/selected/`
 7. Deletes the local feature branch
 8. Commits the spec and log moves
@@ -59,7 +59,7 @@ Examples:
 1. Pushes the winning agent's branch to origin
 2. Switches to main/master branch
 3. Merges the winning agent's branch with `--no-ff`
-4. Moves spec to `05-done/`
+4. Records done lifecycle and refreshes the generated view
 5. Organizes logs:
    - Winning agent's log → `logs/selected/`
    - Other agents' logs → `logs/alternatives/`
@@ -77,7 +77,7 @@ Examples:
 1. Push the winning agent's branch to origin
 2. Switch to main/master branch
 3. Merge the winning agent's branch with `--no-ff`
-4. Move spec to `05-done/`, organize logs, commit
+4. Record done lifecycle, refresh the generated view, organize logs, commit any owned artifacts
 5. Remove only the **winning agent's** worktree and branch (its code is now on main)
 6. **KEEP all adopted-from agents' worktrees and branches alive**
 7. Print the raw diffs from each adopted agent

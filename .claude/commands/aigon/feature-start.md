@@ -6,7 +6,7 @@ argument-hint: "<ID> [agents...]"
 
 Prepare your workspace to implement a feature in Drive or Fleet mode.
 
-**CRITICAL:** Use the CLI command below. Do NOT manually move spec files, create branches, or create worktrees — the CLI commits the spec move before creating worktrees, which is essential for worktree modes.
+**CRITICAL:** Use the CLI command below. Do NOT manually move spec files, lifecycle-view links, create branches, or create worktrees — the CLI records the workflow transition and prepares branch/worktree state.
 
 ## Argument Resolution
 If no ID is provided or doesn't match a backlog entry, list `./docs/specs/features/02-backlog/feature-*.md`, filter to matches, and ask the user to choose.
@@ -26,9 +26,9 @@ aigon feature-start {{args}} <agent>
 aigon feature-start {{args}} <agent1> <agent2> [agent3...]
 ```
 
-Mode is determined by arg count (0 / 1 / 2+ agents). The CLI moves the spec from `02-backlog` to `03-in-progress`, commits the move (so worktrees inherit it), creates branch or worktree(s), and creates implementation log(s).
+Mode is determined by arg count (0 / 1 / 2+ agents). The CLI transitions the feature from backlog to in-progress, refreshes the generated lifecycle view (stable layout), creates branch or worktree(s), and creates implementation log(s).
 
-If the CLI reports errors about committing the spec move, resolve them before proceeding.
+If the CLI reports errors while recording or publishing the workflow transition, resolve them before proceeding.
 
 ## Step 2: Confirm setup and next steps
 
