@@ -10,9 +10,9 @@ transitions:
 
 ## Summary
 
-Complete the versioned dashboard interaction contract introduced by F675 so the server alone describes every operator-visible feature, research, feature-set, session, and autonomous-run state and action. Add a checked-in living state gallery that generates representative scenarios from those executable definitions, renders them through the production dashboard card pipeline and styles, reports contract coverage gaps, and runs independently on port 3700 via `npm run gallery`.
+Complete the versioned dashboard interaction contract introduced by F675 so executable projectors can describe every operator-visible feature, research, feature-set, session, and autonomous-run state and action. Add a checked-in living state gallery that generates representative scenarios from those definitions, renders the proposed card design in a standalone development application, reports contract coverage gaps, and runs independently on port 3700 via `npm run gallery`.
 
-This is the architectural prerequisite for the dashboard visual redesign. It must remove the temporary inference and hand-authored action adapters discovered while prototyping the redesign, without shipping that redesign or changing workflow policy.
+This is the architectural and design-validation prerequisite for a later dashboard rollout. It must remove temporary inference and hand-authored action adapters from the gallery without shipping the proposed renderer, wiring research/set contracts into `/api/status`, changing the real dashboard, or changing workflow policy.
 
 ## Problem Statement
 
@@ -33,9 +33,9 @@ The UI must never reconstruct those semantics. Durable workflow state plus norma
 
 - [ ] As an operator, I can review feature, research, set, Fleet, autonomous-run, recovery, quota, review, revision, evaluation, closing, and done cards without encountering fabricated or missing actions.
 - [ ] As an operator, every live implementation, research, review, revision, evaluation, close-recovery, autonomous, or set-conductor session exposes Peek explicitly when it is available.
-- [ ] As a dashboard designer, I can run `npm run gallery`, open one stable local URL, and inspect production cards across every supported state without creating worktrees or mutating a real repository.
+- [ ] As a dashboard designer, I can run `npm run gallery`, open one stable local URL, and inspect candidate cards across every supported state without creating worktrees or mutating a real repository.
 - [ ] As a workflow developer, adding a state or action causes contract/gallery completeness tests to fail until its metadata, handler, and representative scenario are declared.
-- [ ] As a frontend developer, I render server-owned state, actions, plans, and session affordances without interpreting lifecycle names, agent counts, session roles, or autonomous files.
+- [ ] As a frontend developer, I can validate a candidate renderer against server-owned state, actions, plans, and session affordances without interpreting lifecycle names, agent counts, session roles, or autonomous files.
 
 ## Architectural Contract
 
@@ -79,22 +79,23 @@ Every action/tool descriptor must declare a stable ID, label, group, ordering, i
 
 - Add a repository-owned gallery application and `npm run gallery` command, defaulting to `http://127.0.0.1:3700` with a configurable port.
 - The gallery is a development/test surface, not part of the production dashboard navigation or published documentation site.
-- It loads production dashboard JavaScript renderers, action rendering, icons, and styles instead of maintaining a second card renderer or copied CSS.
+- It owns the candidate card renderer and styles as a durable design artifact. Those assets are isolated from the production dashboard asset manifest and routes.
 - Its scenarios are built from canonical interaction definitions and normalized runtime-fact builders. Scenario declarations may choose valid facts and event histories, but may not hand-author `validActions`, decisions, tools, labels, primary action IDs, or arbitrary contracts.
 - It includes filters for entity and state, scenario search, action inventory, source facts, and a completeness report. Buttons are non-mutating; session Peek opens a deterministic mock console surface.
+- It includes full-dashboard Pipeline and Monitor compositions. Pipeline uses stage-aware card density and the available viewport; Monitor is a live operations surface for attention, running work, run stages, Peek, and recent events rather than a second lifecycle board.
 - The gallery server must not require a live Aigon project, tmux, Pro package, credentials, network access, or writes beneath `.aigon/`.
 
 ## Acceptance Criteria
 
-### Complete interaction contract
+### Complete gallery interaction contract
 
-- [ ] Feature, research, and feature-set rows expose versioned interaction contracts with the shared envelope on `/api/status` wherever the full dashboard payload is requested.
-- [ ] Feature autonomous plan/controller state, research workflow state/actions, feature-set member/conductor plan, and session Peek affordances are present in those contracts and affect the dashboard status fingerprint.
-- [ ] All cross-cutting quota, failover, escalation, review recovery, close recovery, spec drift/reconciliation, autonomous, infra, session, and agent-control actions are projected before the contract is frozen; collectors and frontend code do not append them afterward.
-- [ ] The four currently unmapped review continuation actions have descriptors and registered execution surfaces, or are deliberately removed from the engine definition with replacement workflow tests.
+- [ ] Feature, research, and feature-set gallery scenarios expose versioned interaction contracts with the shared envelope through the standalone gallery API.
+- [ ] Feature autonomous plan/controller state, research workflow state/actions, feature-set member/conductor plan, and session Peek affordances are present in gallery contracts without changing the production dashboard status payload or fingerprint.
+- [ ] All cross-cutting quota, failover, escalation, review recovery, close recovery, spec drift/reconciliation, autonomous, infra, session, and agent-control actions needed for design review are projected before gallery contracts are frozen; gallery code does not append them afterward.
+- [ ] Existing engine action execution remains unchanged. Agent-only lifecycle signals are explicitly classified as internal; missing operator execution mappings are reported as contract gaps rather than silently removed or activated here.
 - [ ] Contract validation rejects duplicate `{ actionId, scope/entity/agent/session identity }` entries and more than one enabled primary decision.
-- [ ] Compatibility `validActions`, feature-set action output, and legacy presentation fields are generated from the canonical projectors for non-dashboard consumers.
-- [ ] The production feature, research, and set dashboard renderers consume contracts without action eligibility, ranking, label rewriting, plan inference, or Peek inference in the browser.
+- [ ] Existing compatibility `validActions`, feature-set action output, production collectors, and legacy presentation fields remain behaviorally unchanged.
+- [ ] Production dashboard HTML, CSS, JavaScript renderers, routes, and research/set collector wiring have zero diff in this feature.
 - [ ] `done` contracts contain no mutation decisions or live-session mutation tools; observation/history may remain available.
 
 ### Required gallery coverage
@@ -112,11 +113,13 @@ Every action/tool descriptor must declare a stable ID, label, group, ordering, i
 - [ ] `npm run gallery` starts the gallery on port 3700, prints the URL, fails clearly if the port is occupied, and supports `PORT=<port>`.
 - [ ] The gallery runs independently of `aigon server`, the docs site on port 3600, and any target repo state.
 - [ ] Desktop and mobile Playwright checks verify the gallery is nonblank, cards fit without incoherent overlap, filters work, completeness is green, and mock Peek opens/closes.
-- [ ] The gallery uses the production card rendering path and production CSS; tests fail if it imports a gallery-only card renderer or duplicates action eligibility logic.
+- [ ] Pipeline fills wide desktop viewports, gives active/review stages more width than planning stages, reflows without horizontal document overflow, and becomes one ordered column on mobile.
+- [ ] Monitor presents distinct live work, attention, selected run progress, non-duplicated session Peek affordances, and recent events; its queue/detail layout stacks on mobile.
+- [ ] The gallery uses its isolated candidate card renderer and CSS while importing action eligibility only from executable contract projectors; tests fail if the gallery hand-authors action eligibility.
 
 ### Regression and documentation
 
-- [ ] Existing feature dashboard behavior from F675 remains intact while research and set rendering migrate to the same contract boundary.
+- [ ] Existing feature, research, and set dashboard rendering and action behavior remain intact; production adoption is deferred to a separate feature after UX approval.
 - [ ] Generated state/action documentation or a deterministic JSON inventory can be checked for drift in CI.
 - [ ] `AGENTS.md` documents the new contract modules, gallery command/port, and the required touchpoints when adding a state or action.
 - [ ] No Pro/internal implementation, credentials, maintainer workflow, or target-repo stack assumption enters OSS.
@@ -125,20 +128,20 @@ Every action/tool descriptor must declare a stable ID, label, group, ordering, i
 
 1. Extract a small shared interaction-envelope/action validation layer from `lib/feature-ui-contract.js`, keeping policy in the entity definitions.
 2. Extend normalized runtime facts with autonomous plans and session affordance inputs; extend the feature projector without changing its public behavior unnecessarily.
-3. Consolidate research states/actions/metadata into `RESEARCH_INTERACTION_DEFINITION`, add `buildResearchUiContract`, and generate legacy dashboard fields from it.
-4. Define the feature-set interaction model and projector around the existing derived set/conductor read model, replacing the independent action list with a compatibility projection.
+3. Add `RESEARCH_INTERACTION_DEFINITION` metadata and `buildResearchUiContract` for gallery projection without changing existing research action derivation or collector output.
+4. Define the feature-set interaction model and projector around the existing derived set/conductor read model without replacing the production `validActions` projection.
 5. Add completeness enumeration that walks every definition and verifies descriptors, handlers, reachability fixtures, unique identities, allowed mode/state combinations, and primary-action invariants.
-6. Add the standalone gallery server and fixture API. Serve production dashboard assets and a thin gallery shell that supplies generated rows to the production card pipeline. Keep filters/coverage/source-facts UI gallery-specific, not card markup.
+6. Add the standalone gallery server, fixture API, candidate renderer, and candidate styles outside the production dashboard asset manifest and route tree.
 7. Migrate the useful scenarios from `dashboard-state-card-gallery` through canonical runtime facts, deleting its hand-authored contract/action adapters rather than merging them.
-8. Wire feature, research, and feature-set production collectors/renderers to the completed contracts; update status fingerprints and compatibility projections.
+8. Verify production frontend and research/set collector files have zero diff. Record production contract adoption as a separate future feature after the gallery design is approved.
 
 ## Validation
 
 ```bash
 node tests/unit/entity-ui-contract.test.js
-node tests/unit/dashboard-state-gallery.test.js
+node tests/unit/dashboard-card-gallery.test.js
 node tests/integration/workflow-read-model.test.js
-npx playwright test --config tests/dashboard-e2e/playwright.config.js state-consistency.spec.js critical-actions.spec.js dashboard-state-gallery.spec.js
+npm run test:gallery
 npm run lint
 node scripts/check-module-graph.js
 ```
@@ -155,7 +158,8 @@ npm run test:deploy
 
 ## Out of Scope
 
-- Shipping the proposed new dashboard card visual design or merging its current styling into production.
+- Shipping the proposed new dashboard card visual design, changing the real dashboard, or merging gallery styling into production.
+- Wiring research/set gallery contracts into `/api/status`, changing production fingerprints, or migrating production renderers to the candidate contract.
 - Changing lifecycle transitions, making optional review mandatory, or adding new workflow policy solely to simplify presentation.
 - Feedback-card migration; feedback remains on its existing smaller state-query contract until separately scoped.
 - A hosted/public gallery, production dashboard navigation item, or inclusion in the end-user docs build.

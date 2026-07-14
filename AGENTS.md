@@ -9,6 +9,7 @@
 - **Template source of truth**: `templates/generic/commands/` (slash commands); **`templates/generic/cursor-rule.mdc`** (Cursor **`.cursor/rules/aigon.mdc`** on `aigon install-agent cu`). Sync via `aigon install-agent <id>` — do not treat installed `.cursor` / `.claude` paths as the edit target; they are overwritten.
 - **Working copies** (gitignored): `.claude/commands/`, `.cursor/commands/`, etc.
 - **AIGON server**: `aigon server start` serves the dashboard UI and API; restart it after any `lib/*.js` edit
+- **Dashboard state gallery**: `npm run gallery` serves the read-only feature/research/set contract gallery at `http://127.0.0.1:3700` (override with `PORT=<port>`); `npm run test:gallery` runs its desktop/mobile browser contract checks
 - **Interrupting agents**: `aigon nudge <ID> [agent] "message"` is the canonical way to message a running session — do not handcraft `tmux send-keys`
 - **Tests**: `npm test` · syntax: `node -c aigon-cli.js`
 - **Version bumps**: after every commit — `npm version patch|minor|major && git push --tags`
@@ -97,6 +98,19 @@ module.exports = function featureCommands(ctx) {
 
 Test overrides: `createAllCommands({ getCurrentBranch: () => 'mock-branch' })`.
 
+## Dashboard Contract And Gallery Guardrail
+
+The living design/contract gallery is the required review surface for any operator-visible workflow change. Before adding or changing a feature, research, feature-set, autonomous-run, agent, or session state/action:
+
+1. Update the canonical workflow/interaction definition and projector first. Do not add lifecycle-name checks, action eligibility, label rewriting, or session-role inference in browser code.
+2. Add or update generated facts in `lib/dashboard-card-gallery.js`. Scenarios may choose runtime facts, but must not hand-author decisions, primary actions, tools, or arbitrary contracts.
+3. Ensure every resting state and operator-visible action appears in at least one scenario. Mark agent-only lifecycle signals explicitly with `metadata.uiVisibility: 'internal'` rather than silently omitting them.
+4. Model session inspection through the session DTO. Running, completed, stopped, lost, and failed sessions with retained output expose `Peek`; autonomous stage-owned sessions must not be repeated in a second activity list.
+5. Run `npm run gallery` and review all three views at `http://127.0.0.1:3700`: Cards for state/action completeness, Pipeline for whole-board density, and Monitor for live operations. Check a wide desktop viewport and a 390px mobile viewport.
+6. Run `node tests/unit/dashboard-card-gallery.test.js` and `npm run test:gallery`. Contract gaps, duplicate action identities, impossible solo/Fleet combinations, missing Peek, or horizontal overflow block the change.
+
+The gallery is not production dashboard code. Approval in the gallery does not authorize modifying `templates/dashboard/`, production collectors, `/api/status`, or status fingerprints; production adoption requires its own feature/spec.
+
 ## Module Map
 Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 
@@ -143,7 +157,8 @@ Run `wc -l lib/*.js lib/commands/*.js` for live counts.
 | `lib/proxy-dns.js` | ~70 | Leaf DNS/port helpers (`sanitizeForDns`, `buildCaddyHostname`, `deriveServerIdFromBranch`, `hashBranchToPort`). Breaks `instance-identity` ↔ `proxy` cycle; `lib/proxy.js` re-exports |
 | `lib/telemetry.js` | ~5 | Thin facade → `lib/telemetry/` package (F634): `core.js` (normalized records + aggregation), `pricing.js`, `sqlite.js`, `capture.js`, `providers/{cc,gg,ag,cx,op}.js` + `registry.js` dispatch via `getTelemetryStrategy` |
 | `lib/workflow-core/` | ~1500 | **Workflow engine**: event-sourced state, XState machine, action derivation, effect lifecycle |
-| `lib/feature-ui-contract.js` / `lib/workflow-core/runtime-facts.js` | ~250 | **Versioned feature interaction read contract (F675):** pure projection of the canonical `FEATURE_INTERACTION_DEFINITION` plus immutable normalized runtime facts into server-owned state, presentation, decisions, tools, blockers, drag targets, agents, and sessions. Feature dashboard code consumes `uiContract`; compatibility fields remain generated for non-dashboard callers |
+| `lib/entity-ui-contract.js` / `lib/feature-ui-contract.js` / `lib/research-ui-contract.js` / `lib/feature-set-ui-contract.js` / `lib/workflow-core/runtime-facts.js` | ~600 | **Versioned entity interaction read contracts (F675/F677):** shared validated envelope plus entity-specific projectors for feature, research, and feature sets. Projects canonical definitions and immutable runtime facts into state, presentation, decisions, tools, blockers, drag targets, agents, inspectable sessions/Peek, autonomous plans, and nested current-set-member contracts. Only the existing feature contract is consumed by the production dashboard; F677 research/set projectors are gallery-only until a separately approved rollout feature |
+| `lib/dashboard-card-gallery.js` / `gallery/` / `scripts/start-dashboard-gallery.js` | ~1100 | **Living dashboard contract gallery (F677):** deterministic feature/research/set scenario generation from executable definitions and real UI projectors, plus full-width Pipeline and live-operations Monitor compositions. `npm run gallery` serves the isolated responsive candidate UI on port 3700 without a target repo, tmux, Pro, credentials, or `.aigon` writes. It is not in the production dashboard asset manifest or routes. Adding a resting state or operator action requires a valid generated scenario; `tests/unit/dashboard-card-gallery.test.js` and `npm run test:gallery` enforce coverage and desktop/mobile layout |
 | `lib/spec-store/` | ~400 | **Durable spec storage boundary (F573).** `createSpecStore({ repoPath })` exposes spec-shaped I/O plus lease coordination (`acquireLease`, `renewLease`, `releaseLease`, `readLeases`), pre-write sync, `aigon storage doctor|report|convert`. Local backend thin-wraps workflow-core helpers; **git-branch** backend (F609/F613) stores canonical events as a file tree on an orphan branch (`aigon-state`: `meta.json` + `specs/<KEY>/events.jsonl` + `leases/<KEY>.json`) via `git-plumbing.js` tree helpers, never checking the branch out. Legacy `git-ref` config is rejected loudly — migrate with `aigon storage convert --backend=git-branch`. Design: `docs/specstore-architecture.md` |
 | `lib/workflow-snapshot-adapter.js` | ~310 | Read adapter: workflow-core snapshots → dashboard/board formats |
 | `lib/profile-placeholders.js` | ~500 | Profile presets, detection, instruction directive resolvers, `getProfilePlaceholders()`. **Does not inject package-manager commands** — per-worktree setup is operator-declared via `.aigon/config.json` `worktreeSetup` and executed by `lib/worktree.js` after `git worktree add` |
