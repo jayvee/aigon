@@ -36,7 +36,7 @@ F677 proved the contract and gallery approach, but only the feature contract is 
 - [ ] Stage-owned worker sessions appear once in their owning autonomous stage and are not repeated as peer activity rows.
 - [ ] Internal-only workflow signals remain in contract metadata for coverage but are not exposed as operator actions.
 - [ ] `validActions`, existing stage fields, and other documented compatibility fields are generated from the same source as `uiContract`; there is no second hand-maintained action policy.
-- [ ] The status fingerprint includes every contract field whose change must repaint a card, including research, set, autonomous-stage, nested-member, and session inspection changes.
+- [ ] The status fingerprint (`computeStatusFingerprint` in `lib/dashboard-status-version.js`) includes every contract field whose change must repaint a card, including research, set, autonomous-stage, nested-member, and session inspection changes. Research and set contracts get fingerprint helpers equivalent to the existing `featureUiContractFingerprint`.
 - [ ] Malformed or incomplete contracts fail deterministically in tests and produce a diagnosable collector error rather than a partially inferred browser state.
 - [ ] Current Pipeline and Monitor visuals and action behavior remain unchanged in this feature.
 - [ ] Contract and gallery coverage includes every production resting state and every operator-visible action for feature, research, and feature-set entities.
@@ -45,7 +45,7 @@ F677 proved the contract and gallery approach, but only the feature contract is 
 
 1. Audit the F677 gallery facts against real collector payloads from `lib/dashboard-collect/feature-poll.js`, `collect-research.js`, and `set-cards.js`; add normalized runtime facts rather than gallery-specific exceptions.
 2. Project all three entity types through `feature-ui-contract`, `research-ui-contract`, and `feature-set-ui-contract` at the collector boundary.
-3. Keep compatibility DTO fields as pure projections from the same contract/action definitions. Add assertions that action IDs, target stages, agent ownership, and inspection targets cannot diverge.
+3. Keep compatibility DTO fields as pure projections from the same contract/action definitions. `buildSetValidActions` survives only as a generated projection of the set contract, per F677. Add assertions that action IDs, target stages, agent ownership, and inspection targets cannot diverge.
 4. Extend `computeStatusFingerprint` with a stable entity-contract fingerprint that covers repaint-relevant fields without hashing volatile or presentation-irrelevant data.
 5. Add fixture-driven parity tests comparing legacy action availability to the contract for every current production state. Any mismatch must be resolved in the workflow definition/projector, not patched in the browser.
 6. Preserve the F677 gallery as the exhaustive contract harness. New real-world scenarios discovered during adoption must be added as generated facts and retained permanently.
