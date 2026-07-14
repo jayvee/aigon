@@ -67,8 +67,8 @@ set -euo pipefail
 # F675: +59 LOC explicitly pre-authorised for the authoritative feature UI
 # state/action scenario matrix (ready solo, ready fleet, and terminal done).
 # F676: test-effectiveness audit removed duplicate browser paths, source-text
-# assertions, obsolete fixtures, and redundant integration layers (-1,824 LOC).
-CEILING="${CEILING:-15412}"
+# assertions, obsolete fixtures, and redundant integration layers (-1,832 LOC).
+CEILING="${CEILING:-15404}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"

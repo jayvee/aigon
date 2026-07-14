@@ -82,12 +82,19 @@ npm run test:browser:full
 - None; retain compatibility coverage unless repository policy or another test proves it redundant.
 
 ## Implementation Evidence
-- Test code: 17,164 baseline to 15,412 lines (-1,752, 10.2%). Against the post-F675 branch baseline of 17,236, the reduction is 1,824 lines (10.6%). The hard ceiling is ratcheted to 15,412.
+- Test code: 17,164 baseline to 15,404 lines (-1,760, 10.3%). Against the post-F675 branch baseline of 17,236, the reduction is 1,832 lines (10.6%). The hard ceiling is ratcheted to 15,404.
 - Browser inventory: 23 to 16 tests; the routine smoke set is 13 to 10 tests.
 - The default core suite passes all 35 unit, 52 integration, and 2 workflow files. The focused changed-test batch and all 22 retained two-clone storage scenarios pass.
 - `test-iterate-preserves-dashboard.test.js` fell from 2.445 seconds to 0.080 seconds by replacing a spawned dashboard server with a deterministic runtime-boundary test.
 - Browser smoke passed before the final removal-only pass; its remaining modified files pass syntax validation. Per operator direction, redundant full-suite reruns were skipped after focused and core validation.
 - Residual risk: live-agent browser coverage remains opt-in and was not exercised because it requires provider credentials.
+
+## Workflow-State Root Cause
+- At 08:15, `aigon feature-now` created the in-progress spec and Drive branch but did not call workflow-core. The feature therefore had no `feature.started` event or snapshot.
+- At 08:16, `agent-status implementing` wrote the legacy `feature-676-solo.json`. Because that status mapped to no workflow action, the signal bridge did not require engine state and masked the creation defect.
+- The 08:23 checkout to complete feature 675 did not remove feature 676 state; no engine state had ever been initialized.
+- `feature-now` now awaits a canonical `feature.started` event (`solo_branch`, agent `solo`) before committing/reporting readiness. Start statuses now reject missing workflow state, while session-created facts remain permitted.
+- Feature 676 was repaired only after reproducing and testing the defect, using the same canonical start event followed by its `implementation-complete` signal.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
