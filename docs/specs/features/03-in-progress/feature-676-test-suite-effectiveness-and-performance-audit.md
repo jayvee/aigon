@@ -101,3 +101,30 @@ npm run test:browser:full
 - Prior work: 2026-05-12 and 2026-07-12 test-budget reductions documented in `scripts/check-test-budget.sh`.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
+
+## Code Review
+
+**Reviewed by**: cc (Opus)
+**Date**: 2026-07-14
+
+### Fixes Applied
+- None — implementation was clean.
+
+### Validation
+- Validation not run by reviewer per policy.
+
+### Escalated Issues (exceptions only)
+- None. No correctness defects found.
+
+### Notes
+- Production changes are correct and consistent:
+  - `workflow-signal-bridge.js` — `requiresWorkflow` now folds in `START_STATUSES`; `START_STATUSES` is defined and exported, and the throw path is guarded for `waiting`/`error`/`LOST`. Covered by the updated `agent-session-workflow-signal-bridge.test.js`.
+  - `feature-now.js` / `feature.js` — `feature-now` now awaits `workflow.startFeature(cwd, id, FeatureMode.SOLO_BRANCH, ['solo'], …)`; signature matches `engine.startFeature`, `FeatureMode.SOLO_BRANCH` resolves, and both (and only) callers pass the `workflow` dep. New regression test `feature-now-workflow-state.test.js` asserts the projected snapshot.
+  - `check-test-budget.sh` — ceiling ratcheted 17236 → 15404, matching the spec target.
+- Scope: all four full deletions are test files (`.spec.js` / `.test.js`); no out-of-scope or cross-feature deletions.
+- **Residual test gaps (AC#6)** — three pure functions lose *all* direct unit coverage after the seam-test deletions:
+  - `computePendingCompletionSignal` (`lib/dashboard-collect/entity-core.js`) — branchy escape-hatch logic, now unasserted anywhere.
+  - `buildSetMemberState` (`lib/dashboard-collect/set-cards.js`) — now unasserted.
+  - `decorateDetailEvent` (`lib/dashboard-detail.js`) — the deleted `node:test` file was live (other `node:test` files still run), so this was real coverage.
+  `red-main-condition` and `collectDoneSpecs` retain integration coverage and are fine. These removals are the feature's explicit remit (remove low-value/duplicate coverage), so they are left as documented residual gaps rather than reverted — flagging in case any warrants a thin re-add later.
+- Minor, non-blocking: `runtime-facts.js` changed `structuredClone` → `global.structuredClone`. Functionally identical (both resolve to the same global) and unrelated to a test audit; left as-is since reverting inert code is pure churn.
