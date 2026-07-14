@@ -67,15 +67,84 @@
     "reviewPrompt": "feature-code-review",
     "reviewCheckPrompt": "feature-code-revise",
     "models": {
-      "research": "gpt-5.4-mini",
-      "implement": "gpt-5.5",
-      "evaluate": "gpt-5.5",
-      "review": "gpt-5.5"
+      "research": "gpt-5.6-sol",
+      "implement": "gpt-5.6-sol",
+      "evaluate": "gpt-5.6-sol",
+      "review": "gpt-5.6-sol"
     },
     "modelOptions": [
       {
         "value": null,
         "label": "Default"
+      },
+      {
+        "value": "gpt-5.6-sol",
+        "label": "GPT-5.6 Sol",
+        "pricing": {
+          "input": 5,
+          "output": 30
+        },
+        "notes": {
+          "spec_review": "Frontier GPT-5.6 model for complex requirements and edge-case analysis.",
+          "implement": "Frontier GPT-5.6 model for complex coding and professional work.",
+          "review": "Strongest GPT-5.6 option for deep code review and reasoning-heavy changes.",
+          "spec": "Best GPT-5.6 option for complex structured spec drafting.",
+          "research": "Strong GPT-5.6 option for complex synthesis and technical research."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-07-14T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.6-terra",
+        "label": "GPT-5.6 Terra",
+        "pricing": {
+          "input": 2.5,
+          "output": 15
+        },
+        "notes": {
+          "spec_review": "Balanced GPT-5.6 model for requirements review at lower cost than Sol.",
+          "implement": "Balanced GPT-5.6 model for general coding work and cost-aware implementation.",
+          "review": "Good GPT-5.6 review option when balancing depth and cost.",
+          "spec": "Balanced GPT-5.6 option for structured spec drafting.",
+          "research": "Balanced GPT-5.6 option for research synthesis and analysis."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-07-14T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.6-luna",
+        "label": "GPT-5.6 Luna",
+        "pricing": {
+          "input": 1,
+          "output": 6
+        },
+        "notes": {
+          "spec_review": "Cost-sensitive GPT-5.6 option for quick spec checks.",
+          "implement": "Cost-sensitive GPT-5.6 option for simple to mid-complexity coding tasks.",
+          "review": "Fast, cost-aware GPT-5.6 review option for straightforward changes.",
+          "spec": "Cost-sensitive GPT-5.6 option for simple spec drafting.",
+          "research": "Cost-sensitive GPT-5.6 option for targeted research and summaries."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-07-14T00:00:00.000Z"
       },
       {
         "value": "gpt-5.5",
@@ -217,19 +286,19 @@
     ],
     "complexityDefaults": {
       "low": {
-        "model": "gpt-5.4-mini",
+        "model": "gpt-5.6-sol",
         "effort": "low"
       },
       "medium": {
-        "model": "gpt-5.5",
+        "model": "gpt-5.6-sol",
         "effort": "medium"
       },
       "high": {
-        "model": "gpt-5.5",
+        "model": "gpt-5.6-sol",
         "effort": "high"
       },
       "very-high": {
-        "model": "gpt-5.5",
+        "model": "gpt-5.6-sol",
         "effort": "high"
       }
     },

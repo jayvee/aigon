@@ -74,6 +74,29 @@
         "label": "Default"
       },
       {
+        "value": "claude-fable-5",
+        "label": "Fable 5",
+        "pricing": {
+          "input": 10,
+          "output": 50
+        },
+        "notes": {
+          "spec_review": "Most capable Claude model for demanding requirements review and long-horizon reasoning.",
+          "implement": "Most capable Claude model for ambitious coding projects, large migrations, and long-running agents.",
+          "review": "Best Claude option for deep review of high-risk or architecture-heavy changes.",
+          "spec": "Best Claude option for complex spec drafting and surfacing hidden requirements.",
+          "research": "Best Claude option for complex synthesis, technical research, and long-context analysis."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-07-14T00:00:00.000Z"
+      },
+      {
         "value": "claude-haiku-4-5-20251001",
         "label": "Haiku 4.5 (fast/cheap)",
         "pricing": {
