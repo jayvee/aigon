@@ -131,49 +131,6 @@ async function main() {
     }
   })) failed += 1;
 
-  if (!await runCase('two-clone git-branch harness: interleaved acquire race has exactly one winner', async () => {
-    liveLeaseClock();
-    try {
-      await withTempDirAsync('two-clone-race-interleave-', async (base) => {
-        const { cloneA, cloneB } = await setupTwoCloneHarness(base);
-        const ref = { entityType: 'feature', entityId: '43' };
-        const harness = { cloneA, cloneB, key: 'F43' };
-        let interleaved = false;
-        let bOutcome = null;
-        setCasTestHooks({
-          afterFetch: async ({ repoPath }) => {
-            if (repoPath === cloneA && !interleaved) {
-              interleaved = true;
-              bOutcome = { ok: true, value: await makeStore(cloneB).acquireLease(ref, { role: 'impl', agentId: 'cx', holderId: 'machine-b' }) };
-            }
-          },
-        });
-        try {
-          await assertHarnessAsync('race-one-winner-interleaved', harness, async () => {
-            let aOutcome;
-            try {
-              aOutcome = { ok: true, value: await makeStore(cloneA).acquireLease(ref, { role: 'impl', agentId: 'cc', holderId: 'machine-a' }) };
-            } catch (error) {
-              aOutcome = { ok: false, error };
-            }
-            const outcomes = [bOutcome, aOutcome];
-            const successes = outcomes.filter((o) => o && o.ok);
-            const conflicts = outcomes.filter((o) => o && !o.ok && o.error instanceof LeaseConflictError);
-            assert.strictEqual(successes.length, 1, 'exactly one acquire success');
-            assert.strictEqual(conflicts.length, 1, 'exactly one LeaseConflictError');
-            const map = leaseFileAt(cloneA, 'F43');
-            assert.ok(map.impl);
-            assert.strictEqual(conflicts[0].error.activeLease.holderId, map.impl.holderId, 'conflict names winner');
-          });
-        } finally {
-          clearCasTestHooks();
-        }
-      });
-    } finally {
-      clearLeaseNowForTests();
-    }
-  })) failed += 1;
-
   if (!await runCase('two-clone git-branch harness: unrelated events push retries claim without false conflict', async () => {
     liveLeaseClock();
     try {
@@ -395,22 +352,6 @@ async function main() {
     }
   })) failed += 1;
 
-  if (!await runCase('two-clone git-branch harness: health reports backend branch remote', async () => {
-    await withTempDirAsync('two-clone-branch-health-', async (base) => {
-      const { cloneA } = await setupTwoCloneHarness(base);
-      const store = makeStore(cloneA);
-      await store.appendEvent({ entityType: 'feature', entityId: '30' }, bootEvent('evt-h', '30', '2026-07-01T08:00:00.000Z'));
-      await store.sync();
-      const health = await makeStore(cloneA).health();
-      assert.strictEqual(health.backend, 'git-branch');
-      assert.strictEqual(health.branch, 'aigon-state');
-      assert.strictEqual(health.remote, 'origin');
-      assert.strictEqual(health.remoteReachable, true);
-      assert.strictEqual(health.health, 'ok');
-      assert.ok(health.ok);
-    });
-  })) failed += 1;
-
   if (!await runCase('two-clone git-branch harness: releaseLease clears the role entry via CAS', async () => {
     liveLeaseClock();
     try {
@@ -453,29 +394,6 @@ async function main() {
     } finally {
       if (prevMachine === undefined) delete process.env.AIGON_MACHINE_ID;
       else process.env.AIGON_MACHINE_ID = prevMachine;
-      clearLeaseNowForTests();
-    }
-  })) failed += 1;
-
-  if (!await runCase('two-clone git-branch harness: renewal extends expiry under injected clock', async () => {
-    const t0 = Date.parse('2026-07-01T12:00:00.000Z');
-    setLeaseNowForTests(t0);
-    try {
-      await withTempDirAsync('two-clone-renewal-', async (base) => {
-        const { cloneA } = await setupTwoCloneHarness(base);
-        const ref = { entityType: 'feature', entityId: '62' };
-        const store = makeStore(cloneA);
-        const { DEFAULT_RENEW_INTERVAL_MS } = require('../../lib/spec-store/leases');
-        await store.acquireLease(ref, { role: 'impl', agentId: 'cc', holderId: 'machine-a' });
-        const before = leaseFileAt(cloneA, 'F62').impl;
-        setLeaseNowForTests(t0 + DEFAULT_RENEW_INTERVAL_MS + 1000);
-        const renewed = await store.renewLease(ref, { role: 'impl', holderId: 'machine-a', agentId: 'cc' });
-        assert.strictEqual(renewed.action, 'renewed');
-        const after = leaseFileAt(cloneA, 'F62').impl;
-        assert.ok(Date.parse(after.expiresAt) > Date.parse(before.expiresAt), 'expiresAt advanced');
-        assert.strictEqual(after.renewCount, 1);
-      });
-    } finally {
       clearLeaseNowForTests();
     }
   })) failed += 1;

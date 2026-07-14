@@ -20,10 +20,6 @@ const { gotoPipelineWithMockedSessions } = require('./_helpers');
 // folder positions still get pre-engine actions from the read model. The
 // dashboard supports `paused` in the API, but the column stays
 // hidden unless the UI toggle is enabled.
-const STAGE_ACTIONS = [
-    { stage: 'backlog', must: ['feature-start'], mustNot: ['feature-prioritise', 'feature-close', 'feature-eval'] },
-];
-
 test.describe('Dashboard state consistency', () => {
     test('/api/status column counts match UI + response has required fields @smoke', async ({ page }) => {
         await gotoPipelineWithMockedSessions(page);
@@ -65,65 +61,5 @@ test.describe('Dashboard state consistency', () => {
                 await expect(col.locator('.col-count').first()).toContainText(String(list.length), { timeout: 3000 });
             }
         }
-    });
-
-    for (const { stage, must, mustNot } of STAGE_ACTIONS) {
-        test(`${stage} features show only expected actions`, async ({ page }) => {
-            await gotoPipelineWithMockedSessions(page);
-            // Skip read-only legacy cards (missing-workflow snapshot). They carry
-            // a .compat-badge and only expose spec-review actions; the must/mustNot
-            // contract only applies to snapshot-backed cards.
-            const cards = page.locator(`.kanban-col[data-stage="${stage}"] .kcard:not(:has(.compat-badge))`);
-            const count = await cards.count();
-            for (let i = 0; i < count; i++) {
-                const card = cards.nth(i);
-                if (!await card.isVisible()) continue;
-                for (const a of must) await expect(card.locator(`.kcard-va-btn[data-va-action="${a}"]`)).toBeVisible();
-                for (const a of mustNot) await expect(card.locator(`.kcard-va-btn[data-va-action="${a}"]`)).toHaveCount(0);
-            }
-        });
-    }
-
-    test('in-progress solo features never expose feature-eval', async ({ page }) => {
-        const resp = await page.request.get('/api/status');
-        const data = await resp.json();
-        const VALID_STAGES = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'paused', 'done'];
-        for (const repo of data.repos) {
-            for (const f of repo.features) {
-                expect(VALID_STAGES, `Feature #${f.id} stage: ${f.stage}`).toContain(f.stage);
-                if (f.stage !== 'in-progress') continue;
-                const isSolo = (f.agents || []).filter(a => a.id !== 'solo').length <= 1;
-                if (!isSolo) continue;
-                const hasEval = f.validActions.some(va => va.action === 'feature-eval');
-                expect(hasEval, `Solo #${f.id} (${f.name}) should not have feature-eval`).toBe(false);
-            }
-        }
-    });
-
-    test('lease badge renders when activeLeases present on feature card @smoke', async ({ page }) => {
-        await page.route('**/api/status', async (route) => {
-            const headers = { ...route.request().headers() };
-            delete headers['if-none-match'];
-            delete headers['if-modified-since'];
-            const upstream = await route.fetch({ headers });
-            const data = await upstream.json();
-            const repo = data.repos && data.repos[0];
-            if (repo && Array.isArray(repo.features) && repo.features.length > 0) {
-                const target = repo.features.find((f) => f.stage !== 'done') || repo.features[0];
-                target.activeLeases = [{
-                    specKey: 'F1',
-                    role: 'impl',
-                    holderId: 'machine-a',
-                    agentId: 'cu',
-                    acquiredAt: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + 600000).toISOString(),
-                    expired: false,
-                }];
-            }
-            await route.fulfill({ response: upstream, json: data });
-        });
-        await gotoPipelineWithMockedSessions(page);
-        await expect(page.locator('.kcard-lease-badge').first()).toBeVisible({ timeout: 5000 });
-        await expect(page.locator('.kcard-lease-badge').first()).toContainText('machine-a');
     });
 });

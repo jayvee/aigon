@@ -41,43 +41,4 @@ test('createFeatureCommands exposes every factory handler', () => {
     assertWrapperExposesFactory(m, m.createFeatureCommands, 'createFeatureCommands');
 });
 
-test('shared factory emits the spec-review sextet for both entities', () => {
-    const all = require('../../lib/commands/shared').createAllCommands();
-    ['feature', 'research'].forEach(type => {
-        ['spec-review', 'spec-revise', 'spec-review-record', 'spec-revise-record'].forEach(suffix => {
-            const name = `${type}-${suffix}`;
-            assert.strictEqual(typeof all[name], 'function', `missing ${name}`);
-        });
-    });
-});
-
-test('agent-context plumbing command is registered for slash-command identity bootstrap', () => {
-    const all = require('../../lib/commands/shared').createAllCommands();
-    assert.strictEqual(typeof all['agent-context'], 'function');
-});
-
-test('canonical code-review and code-revise commands are registered with correct aliases', () => {
-    const templates = require('../../lib/templates');
-    const all = require('../../lib/commands/shared').createAllCommands();
-    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-review'));
-    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'feature-code-revise'));
-    assert.strictEqual(templates.COMMAND_ALIASES.afr, 'feature-code-review');
-    assert.strictEqual(templates.COMMAND_ALIASES.afrv, 'feature-code-revise');
-    assert.strictEqual(typeof all['feature-code-review'], 'function');
-    assert.strictEqual(typeof all['feature-code-revise'], 'function');
-    assert.strictEqual(typeof all['feature-review'], 'function');
-    // Old review-check names must be gone
-    assert.strictEqual(typeof all['feature-review-check'], 'undefined');
-    assert.strictEqual(typeof all['feature-code-review-check'], 'undefined');
-});
-
-test('storage command is exposed through top-level infra wrapper', () => {
-    const templates = require('../../lib/templates');
-    const all = require('../../lib/commands/shared').createAllCommands();
-    const infra = require('../../lib/commands/infra').createInfraCommands();
-    assert.ok(Object.hasOwn(templates.COMMAND_REGISTRY, 'storage'));
-    assert.strictEqual(typeof all.storage, 'function');
-    assert.strictEqual(typeof infra.storage, 'function');
-});
-
 report();

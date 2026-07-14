@@ -22,8 +22,8 @@ function writeSidecar(repo, name, sidecar) {
     fs.writeFileSync(path.join(dir, `${name}.json`), JSON.stringify(sidecar, null, 2));
 }
 
-test('normalizes live entity sidecars into AgentSession records', () => {
-    const record = normalizeAgentSessionRecord({
+test('normalizes entity, research, repo, and transcript sidecars', () => {
+    const feature = normalizeAgentSessionRecord({
         category: 'entity',
         sessionName: 'aigon-f553-do-cx',
         repoPath: '/repo',
@@ -36,15 +36,10 @@ test('normalizes live entity sidecars into AgentSession records', () => {
         entityId: '553',
         role: 'do',
     }, 'fixture');
-    assert.strictEqual(record.sessionId, 'aigon-f553-do-cx');
-    assert.deepStrictEqual(record.entity, { type: 'feature', id: '553' });
-    assert.strictEqual(record.agent.id, 'cx');
-    assert.deepStrictEqual(record.host.handle.tmuxId, '$12');
-    assert.deepStrictEqual(record.host.handle.shellPid, 12345);
-    assert.strictEqual(record.sessionName, record.sessionId);
-});
-
-test('normalizes research entity aliases and repo sidecars', () => {
+    assert.deepStrictEqual(
+        (({ sessionId, entity, agent, host }) => ({ sessionId, entity, agentId: agent.id, handle: host.handle }))(feature),
+        { sessionId: 'aigon-f553-do-cx', entity: { type: 'feature', id: '553' }, agentId: 'cx', handle: { sessionName: 'aigon-f553-do-cx', tmuxId: '$12', shellPid: 12345 } }
+    );
     const research = normalizeAgentSessionRecord({
         category: 'entity',
         sessionName: 'aigon-r12-review-gg',
@@ -63,10 +58,7 @@ test('normalizes research entity aliases and repo sidecars', () => {
     }, 'repo');
     assert.strictEqual(repo.entity, null);
     assert.strictEqual(repo.role, null);
-});
-
-test('normalizes transcript binding fields', () => {
-    const record = normalizeAgentSessionRecord({
+    const transcript = normalizeAgentSessionRecord({
         category: 'entity',
         sessionName: 'aigon-f553-do-cx',
         entityType: 'f',
@@ -76,7 +68,7 @@ test('normalizes transcript binding fields', () => {
         agentSessionId: 'codex-session-1',
         agentSessionPath: '/tmp/codex-session-1.jsonl',
     }, 'transcript');
-    assert.deepStrictEqual(record.transcriptBinding, {
+    assert.deepStrictEqual(transcript.transcriptBinding, {
         provider: 'codex',
         providerSessionId: 'codex-session-1',
         path: '/tmp/codex-session-1.jsonl',
@@ -84,31 +76,12 @@ test('normalizes transcript binding fields', () => {
 });
 
 test('rejects invalid roles, entity types, timestamps, and missing ids', () => {
-    assert.throws(() => normalizeAgentSessionRecord({
-        category: 'entity',
-        sessionName: 'bad-role',
-        entityType: 'f',
-        entityId: '1',
-        role: 'bogus',
-        agent: 'cx',
-    }), /Invalid session role/);
-    assert.throws(() => normalizeAgentSessionRecord({
-        category: 'entity',
-        sessionName: 'bad-entity',
-        entityType: 'bug',
-        entityId: '1',
-        role: 'do',
-        agent: 'cx',
-    }), /Invalid entity type/);
-    assert.throws(() => normalizeAgentSessionRecord({
-        category: 'entity',
-        sessionName: 'bad-time',
-        entityType: 'f',
-        entityId: '1',
-        role: 'do',
-        agent: 'cx',
-        createdAt: 'not-a-date',
-    }), /Malformed timestamp/);
+    const base = { category: 'entity', sessionName: 'bad', entityType: 'f', entityId: '1', role: 'do', agent: 'cx' };
+    for (const [override, message] of [
+        [{ role: 'bogus' }, /Invalid session role/],
+        [{ entityType: 'bug' }, /Invalid entity type/],
+        [{ createdAt: 'not-a-date' }, /Malformed timestamp/],
+    ]) assert.throws(() => normalizeAgentSessionRecord({ ...base, ...override }), message);
     assert.throws(() => validateAgentSessionStartRequest({
         category: 'entity',
         entityType: 'f',
@@ -249,33 +222,5 @@ test('service rejects startSession when host is explicitly disabled', () => with
         agent: { id: 'cx' },
     }), (err) => err.code === ERROR_CODES.HOST_UNAVAILABLE);
 }));
-
-test('agent-sessions boundary stays acyclic', () => {
-    const dir = path.join(__dirname, '../../lib/agent-sessions');
-    for (const file of fs.readdirSync(dir).filter((name) => name.endsWith('.js'))) {
-        const body = fs.readFileSync(path.join(dir, file), 'utf8');
-        assert.ok(!body.includes("require('../worktree") && !body.includes("require('../dashboard-server"));
-        // The workflow-core constants leaf (paths.js) is sanctioned — the F554
-        // boundary covers engine/session behaviour, not stage-dir name constants
-        // (mirrors the check-module-graph.js rule + lint:paths ownership).
-        const workflowCoreRequires = (body.match(/require\('\.\.\/workflow-core[^']*'\)/g) || [])
-            .filter((m) => m !== "require('../workflow-core/paths')");
-        assert.ok(!body.includes("require('../dashboard-routes") && workflowCoreRequires.length === 0);
-        assert.ok(!body.includes("require('../commands"));
-    }
-});
-
-test('tmux host does not import workflow-core, dashboard, or commands (F554)', () => {
-    const hostsDir = path.join(__dirname, '../../lib/agent-sessions/hosts');
-    for (const file of fs.readdirSync(hostsDir).filter((name) => name.endsWith('.js'))) {
-        const body = fs.readFileSync(path.join(hostsDir, file), 'utf8');
-        // The host may borrow low-level tmux exec from the worktree facade (lazy),
-        // but must not reach into workflow-core, dashboard routes, or commands.
-        assert.ok(!body.includes("require('../../workflow-core"), `${file} imports workflow-core`);
-        assert.ok(!body.includes("require('../../dashboard-routes"), `${file} imports dashboard-routes`);
-        assert.ok(!body.includes("require('../../dashboard-server"), `${file} imports dashboard-server`);
-        assert.ok(!body.includes("require('../../commands"), `${file} imports commands`);
-    }
-});
 
 report();

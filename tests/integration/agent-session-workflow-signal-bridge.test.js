@@ -120,8 +120,7 @@ testAsync('session events are persisted before workflow dispatch and duplicate c
     assert.strictEqual(events[0].status, 'implementation-complete');
 }));
 
-testAsync('agent_session.started has no workflow transition by default', () => withTempDirAsync('aigon-f555-started-', async (repo) => {
-    ensureFeatureSnapshot(repo, '01');
+testAsync('session start permits no snapshot but implementing status rejects it', () => withTempDirAsync('aigon-f555-started-', async (repo) => {
     const calls = [];
     await dispatchSessionSignal({
         entityType: 'feature',
@@ -132,6 +131,9 @@ testAsync('agent_session.started has no workflow transition by default', () => w
         source: 'test',
     }, makeDeps(repo, calls));
     assert.deepStrictEqual(calls, []);
+    await assert.rejects(() => dispatchSessionSignal({
+        entityType: 'feature', entityId: '01', agentId: 'cx', status: 'implementing',
+    }, makeDeps(repo, calls)), /workflow state is not initialized/);
 }));
 
 testAsync('integration: session task completion matches old implementation-complete ready state', () => withTempDirAsync('aigon-f555-integration-', async (repo) => {

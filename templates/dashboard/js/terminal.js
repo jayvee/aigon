@@ -116,7 +116,11 @@ import { showToast } from './utils.js';
         allowProposedApi: true,
         minimumContrastRatio: 4.5,
         scrollback: 5000,
-        convertEol: true,
+        // A live tmux attachment is a real terminal byte stream: tmux uses
+        // cursor movement and bare line-feeds while it repaints TUIs. Let
+        // xterm preserve those semantics instead of turning every LF into a
+        // CRLF, which leaves stale leading cells visible after a redraw.
+        convertEol: false,
       });
 
       // FitAddon — resize terminal to container
@@ -290,7 +294,10 @@ import { showToast } from './utils.js';
           if (typeof data.output === 'string' && data.output !== prevOutput) {
             prevOutput = data.output;
             term.reset();
-            term.write(data.output);
+            // The fallback is a capture-pane snapshot, not a terminal stream.
+            // Normalize its textual newlines here so it remains readable with
+            // xterm's raw-PTY line-feed handling above.
+            term.write(data.output.replace(/(?<!\r)\n/g, '\r\n'));
           }
         } catch (_) {}
       };

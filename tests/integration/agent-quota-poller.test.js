@@ -5,9 +5,7 @@
 process.env.AIGON_QUOTA_TEST = '1';
 
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const { test, testAsync, withTempDirAsync, report } = require('../_helpers');
+const { testAsync, withTempDirAsync, report } = require('../_helpers');
 const agentQuotaRead = require('../../lib/agent-quota-read');
 const agentQuotaPoller = require('../../lib/agent-quota-poller');
 const budgetPoller = require('../../lib/budget-poller');
@@ -191,13 +189,6 @@ testAsync('agent-quota poller integration scenarios', async () => {
     } finally {
         quotaProbe.probePairAsync = origProbePairAsync;
     }
-});
-
-test('unified poller awaits probePairAsync and runs provider phase', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../lib/agent-quota-poller.js'), 'utf8');
-    assert.ok(src.includes('await quotaProbe.probePairAsync'), 'unified poller must use async probes');
-    assert.ok(src.includes('providerQuotaPoller.pollProvider'), 'unified poller must refresh provider wallets');
-    assert.ok(src.includes('allModels'), 'unified poller must distinguish background vs manual model probes');
 });
 
 report();

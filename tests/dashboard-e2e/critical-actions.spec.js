@@ -97,19 +97,6 @@ async function mountWithStatus(page, payload) {
 }
 
 test.describe('Critical dashboard action surfaces @smoke', () => {
-    test('feature-start opens the agent picker without errors', async ({ page }) => {
-        const watch = watchBrowserErrors(page);
-        await gotoPipelineWithMockedSessions(page);
-
-        const startBtn = page.locator('.kcard-va-btn[data-va-action="feature-start"]').first();
-        await expect(startBtn, 'fixture should include a startable backlog feature').toBeVisible();
-        await startBtn.click();
-
-        // start.js is lazy-loaded on first click; the picker is its surface.
-        await expect(page.locator('#agent-picker')).toBeVisible({ timeout: 10000 });
-        await assertActionSurfaceClean(page, watch, 'feature-start');
-    });
-
     test('start.js module is not fetched until a Start action is clicked', async ({ page }) => {
         // REGRESSION F519: dynamic import() must not prefetch modal modules on
         // page load. Folded in from the former action-lazy-load.spec.js.

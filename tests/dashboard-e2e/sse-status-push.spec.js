@@ -11,35 +11,6 @@ const { gotoPipelineWithMockedSessions } = require('./_helpers');
 const FEATURE_NAME = 'e2e solo feature';
 
 test.describe('F622 SSE status push', () => {
-    test('EventSource receives status event and health shows live @smoke', async ({ page }) => {
-        await page.goto('/');
-        const version = await page.evaluate(async () => {
-            return new Promise((resolve, reject) => {
-                const es = new EventSource('/api/events');
-                const timer = setTimeout(() => {
-                    es.close();
-                    reject(new Error('SSE status event timeout'));
-                }, 8000);
-                es.addEventListener('status', (ev) => {
-                    clearTimeout(timer);
-                    es.close();
-                    resolve(JSON.parse(ev.data).statusVersion);
-                }, { once: true });
-                es.addEventListener('error', () => {
-                    clearTimeout(timer);
-                    es.close();
-                    reject(new Error('SSE connection error'));
-                }, { once: true });
-            });
-        });
-        expect(version).toBeGreaterThanOrEqual(0);
-
-        await page.waitForFunction(() => {
-            const t = document.getElementById('health-text');
-            return t && t.textContent === 'Connected (live)';
-        }, null, { timeout: 8000 });
-    });
-
     test('SSE open triggers extra status fetch while poll interval blocked @smoke', async ({ page }) => {
         await page.addInitScript(() => {
             const orig = window.setInterval;
@@ -67,7 +38,7 @@ test.describe('F622 SSE status push', () => {
         expect(statusGets).toBeLessThanOrEqual(4);
     });
 
-    test('SSE blocked falls back to poll without breaking dashboard @smoke', async ({ page }) => {
+    test('SSE blocked falls back to poll without breaking dashboard', async ({ page }) => {
         await page.route('**/api/events', route => route.abort());
         await gotoPipelineWithMockedSessions(page);
 

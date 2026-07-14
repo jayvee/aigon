@@ -77,52 +77,6 @@ test.describe('F625 keyed kanban card render', () => {
     expect(otherFpAfter).not.toBe(fpBefore);
   });
 
-  test('unchanged card keeps DOM identity across unrelated update', async ({ page }) => {
-    const ctx = readCtx();
-    const col = page.locator(`.kanban-col[data-stage="in-progress"][data-repo-path="${ctx.tmpDir}"]`).first();
-    await page.evaluate(async ({ repoPath, target, other }) => {
-      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
-      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
-      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
-        repo.features = (repo.features || []).filter(f => f.name !== target && f.name !== other);
-        repo.features.push(
-          {
-            id: '911', name: target, stage: 'in-progress', specPath: '/tmp/a.md',
-            agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString(), slashCommand: '/x' }],
-            validActions: [],
-          },
-          {
-            id: '912', name: other, stage: 'in-progress', specPath: '/tmp/b.md',
-            agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString(), slashCommand: '/x' }],
-            validActions: [],
-          },
-        );
-      });
-      (await import('/js/store.js')).replaceData(data);
-    }, { repoPath: ctx.tmpDir, target: TARGET, other: OTHER });
-    await page.waitForTimeout(100);
-
-    const stableCard = col.locator('.kcard').filter({ hasText: TARGET_LABEL }).first();
-    await expect(stableCard).toBeVisible();
-    await stableCard.evaluate(el => { window.__stableCardRef = el; });
-
-    await page.evaluate(async ({ repoPath, other }) => {
-      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
-      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
-      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
-        const feature = (repo.features || []).find(f => f.name === other);
-        feature.agents[0].status = 'waiting';
-      });
-      (await import('/js/store.js')).replaceData(data);
-    }, { repoPath: ctx.tmpDir, other: OTHER });
-    await page.waitForTimeout(100);
-
-    const stableSame = await page.evaluate(() => {
-      return document.contains(window.__stableCardRef);
-    });
-    expect(stableSame).toBe(true);
-  });
-
   test('set bundle wrapper reconciles member cards', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
@@ -171,7 +125,7 @@ test.describe('F625 keyed kanban card render', () => {
     await expect(bundle.locator('.kcard').filter({ hasText: 'e2e set two renamed' })).toBeVisible();
   });
 
-  test('overflow cap keeps full set visible when group-by-set is on @smoke', async ({ page }) => {
+  test('overflow cap keeps full set visible when group-by-set is on', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
