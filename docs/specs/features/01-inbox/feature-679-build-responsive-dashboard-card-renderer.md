@@ -23,7 +23,7 @@ Build the production feature, research, and feature-set card renderer from the i
 ## Acceptance Criteria
 
 - [ ] A shared production renderer consumes `uiContract` for feature, research, and feature-set cards; it does not derive actions or lifecycle meaning from filenames, lane names, agent count, status strings, or CSS classes.
-- [ ] The preview renderer is controlled by a documented repo or global dashboard setting, defaults off, and can be changed without migrating workflow data.
+- [ ] The preview renderer is controlled by a documented repo or global dashboard setting, defaults off, and can be changed without migrating workflow data. The setting lives in the existing dashboard settings mechanism (`lib/dashboard-settings.js` and the dashboard Settings surface), not a new config file or sidecar.
 - [ ] Preview and legacy cards dispatch through the same validated `/api/action` and session Peek boundaries. The preview renderer introduces no alternate command construction.
 - [ ] Entity titles appear once. Cards do not repeat a machine slug as a second title or add redundant labels such as `FEATURE`.
 - [ ] Small, tightly tracked uppercase phase labels such as `NOW`, `NEXT`, and `COMPLETE` are not used. State and action language is plain, specific, and sentence case.
@@ -36,7 +36,8 @@ Build the production feature, research, and feature-set card renderer from the i
 - [ ] Cards have stable responsive constraints: compact and expanded variants fit their parent, long names wrap, controls do not resize the layout, and no content overlaps at desktop or 390px mobile widths.
 - [ ] Keyboard focus order follows visual order; icon-only controls have accessible names and tooltips; action menus and Peek are operable without a pointer.
 - [ ] The living gallery can render the production card implementation, or a deliberate adapter around it, so gallery and production card behavior cannot drift silently.
-- [ ] Existing action regression tests cover the preview renderer for representative feature, research, set, Fleet, autonomous, review, recovery, failure, and completed-session scenarios.
+- [ ] Existing action regression tests cover the preview renderer for representative feature, research, set, Fleet, autonomous, review, recovery, failure, and completed-session scenarios. These tests enable the preview setting explicitly; the default-off setting must not leave the candidate renderer exercised only by the gallery.
+- [ ] Renderer modules are ES modules under `templates/dashboard/js/`; new stylesheets live in `templates/dashboard/styles/` and are listed in `styles/manifest.json`; no CDN assets (vendor under `js/vendor/`).
 
 ## Technical Approach
 
