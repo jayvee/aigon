@@ -105,6 +105,15 @@ test('feature sets cover every conductor status and derive actions from set work
     assert.strictEqual(scenario('set-paused-quota').setPlan.members.find(member => member.id === '682').status, 'quota-paused');
 });
 
+test('set spec review and revision sessions expose Peek', () => {
+    for (const key of ['set-spec-review-running', 'set-spec-revision-running']) {
+        const item = scenario(key);
+        const live = item.contract.sessions.find(session => session.running && session.inspectable);
+        assert(live, key);
+        assert.strictEqual(live.affordances[0].actionId, 'peek-session', key);
+    }
+});
+
 test('autonomous run cards show completed, current, and upcoming stages', () => {
     const soloReview = scenario('feature-autonomous-reviewing').autonomousPlan.stages.map(stage => stage.status);
     assert.deepStrictEqual(soloReview, ['complete', 'running', 'waiting', 'waiting']);

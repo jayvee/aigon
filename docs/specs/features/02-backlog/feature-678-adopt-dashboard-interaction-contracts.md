@@ -34,6 +34,7 @@ F677 proved the contract and gallery approach, but only the feature contract is 
 - [ ] Contract identity distinguishes entity title, numeric ID, entity kind, set membership, and machine slug without requiring the renderer to reconstruct or duplicate labels.
 - [ ] Contracts expose server-owned state, presentation, primary and secondary decisions, tools, blockers, allowed drops, agents, inspectable sessions, autonomous plans, and nested current-set-member detail where applicable.
 - [ ] A set autonomous run embeds the complete current member contract, including review and revision stages, instead of reducing it to a generic `working` row.
+- [ ] Feature-set contracts expose server-owned set spec-cycle facts for set-wide spec review and set-wide spec revision separately from tmux/session liveness. The contract must distinguish review status, revision status, pending feedback count, completed member count, latest relevant commit, and inspectable session references so browser code never infers completion from whether a tmux session still exists.
 - [ ] Session DTOs include a stable inspection action for retained output in running, completed, stopped, lost, and failed states. Live sessions target the live pane; ended sessions target the saved console snapshot.
 - [ ] Stage-owned worker sessions appear once in their owning autonomous stage and are not repeated as peer activity rows.
 - [ ] Internal-only workflow signals remain in contract metadata for coverage but are not exposed as operator actions.
@@ -47,7 +48,7 @@ F677 proved the contract and gallery approach, but only the feature contract is 
 
 1. Audit the F677 gallery facts against real collector payloads from `lib/dashboard-collect/feature-poll.js`, `collect-research.js`, and `set-cards.js`; add normalized runtime facts rather than gallery-specific exceptions.
 2. Project all three entity types through `feature-ui-contract`, `research-ui-contract`, and `feature-set-ui-contract` at the collector boundary.
-3. Keep compatibility DTO fields as pure projections from the same contract/action definitions. `buildSetValidActions` survives only as a generated projection of the set contract, per F677. Add assertions that action IDs, target stages, agent ownership, and inspection targets cannot diverge.
+3. Keep compatibility DTO fields as pure projections from the same contract/action definitions. `buildSetValidActions` survives only as a generated projection of the set contract, per F677. Add assertions that action IDs, target stages, agent ownership, set spec-cycle status, and inspection targets cannot diverge.
 4. Extend `computeStatusFingerprint` with a stable entity-contract fingerprint that covers repaint-relevant fields without hashing volatile or presentation-irrelevant data.
 5. Add fixture-driven parity tests comparing legacy action availability to the contract for every current production state. Any mismatch must be resolved in the workflow definition/projector, not patched in the browser.
 6. Preserve the F677 gallery as the exhaustive contract harness. New real-world scenarios discovered during adoption must be added as generated facts and retained permanently.

@@ -1715,10 +1715,14 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
           slug: setRoll.slug,
           completed: setRoll.completed,
           memberCount: setRoll.memberCount,
+          pendingSpecReviseMemberCount: setRoll.pendingSpecReviseMemberCount,
+          launchableSpecReviewMemberCount: setRoll.launchableSpecReviewMemberCount,
           scheduledRunAt: setRoll.scheduledRunAt,
           validActions: setRoll.validActions,
           autonomous: setRoll.autonomous,
           specReview: setRoll.specReview,
+          specRevision: setRoll.specRevision,
+          specCycle: setRoll.specCycle,
         } : null,
       });
     }
@@ -1730,10 +1734,14 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         roll: roll ? {
           completed: roll.completed,
           memberCount: roll.memberCount,
+          pendingSpecReviseMemberCount: roll.pendingSpecReviseMemberCount,
+          launchableSpecReviewMemberCount: roll.launchableSpecReviewMemberCount,
           scheduledRunAt: roll.scheduledRunAt,
           validActions: roll.validActions,
           autonomous: roll.autonomous,
           specReview: roll.specReview,
+          specRevision: roll.specRevision,
+          specCycle: roll.specCycle,
         } : null,
         memberKeys: members.map(m => kanbanCardKey('features', m)),
       });
@@ -1889,20 +1897,6 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         };
         row.appendChild(viewBtn);
       }
-      const specReview = roll && roll.specReview;
-      if (specReview && specReview.running && specReview.sessionName) {
-        const reviewPeek = document.createElement('button');
-        reviewPeek.type = 'button';
-        reviewPeek.className = 'kcard-peek-btn';
-        reviewPeek.setAttribute('data-spec-review-session', specReview.sessionName);
-        reviewPeek.title = 'View set spec review session';
-        reviewPeek.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg>';
-        reviewPeek.onclick = (e) => {
-          e.stopPropagation();
-          openTerminalPanel(specReview.sessionName, null, specReview.sessionName, null, null);
-        };
-        row.appendChild(reviewPeek);
-      }
       const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
       const appendSetHeaderAction = (va) => {
         if (!va || !roll) return;
@@ -1946,6 +1940,13 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         });
         activity.querySelectorAll('[data-set-spec-review-session]').forEach((btn) => {
           const sessionName = btn.getAttribute('data-set-spec-review-session');
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            openTerminalPanel(sessionName, null, sessionName, null, null);
+          };
+        });
+        activity.querySelectorAll('[data-set-spec-revision-session]').forEach((btn) => {
+          const sessionName = btn.getAttribute('data-set-spec-revision-session');
           btn.onclick = (e) => {
             e.stopPropagation();
             openTerminalPanel(sessionName, null, sessionName, null, null);

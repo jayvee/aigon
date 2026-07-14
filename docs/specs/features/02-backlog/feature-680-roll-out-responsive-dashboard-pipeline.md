@@ -36,6 +36,7 @@ The candidate Pipeline remains covered by the preview switch until F682 complete
 - [ ] Drag-and-drop derives valid targets from `uiContract.allowedDrops`; the browser does not recreate a transition table.
 - [ ] Keyboard and pointer drag paths preserve existing confirmation, API dispatch, refresh, error, and optimistic-state behavior.
 - [ ] Set rows/cards do not duplicate member cards incoherently. An active set exposes overall progress plus the complete current member, including autonomous Implement, Review, Revise, and Close stages and their session actions.
+- [ ] Set rows/cards do not duplicate set-level session controls. Set spec-review and set spec-revision status rows show completion/feedback/running state from server-owned set-cycle facts, with at most one Peek control per inspectable set-level session in the labeled row.
 - [ ] Long entity names, multiple agents, quota/recovery blockers, action menus, and detailed autonomous plans do not overlap adjacent content or change lane width unexpectedly.
 - [ ] Repo switcher, Pipeline/Monitor navigation, search/filter controls, settings, detail drawer, notifications, and Pro extension points continue to work under both legacy and preview rendering.
 - [ ] Keyed updates preserve focus, expansion, selected card, open menus where valid, and scroll position across SSE/status refreshes.

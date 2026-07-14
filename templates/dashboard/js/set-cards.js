@@ -31,34 +31,64 @@ export const AIGON_SET_CARDS = (function() {
     return 'Conductor: inactive';
   }
 
-  function specReviewActivityLabel(specReview) {
-    if (specReview && specReview.running) {
-      return specReview.label || 'Spec review: running';
+  function specCycleActivityLabel(session, fallbackActive, fallbackInactive) {
+    if (session && session.running) {
+      return session.label || fallbackActive;
     }
+    return fallbackInactive;
+  }
+
+  function specReviewInactiveLabel(set) {
+    const pending = Number(set && set.pendingSpecReviseMemberCount) || 0;
+    if (pending > 0) return 'Spec review: feedback waiting (' + pending + ')';
+    const launchable = Number(set && set.launchableSpecReviewMemberCount) || 0;
+    if (launchable > 0) return 'Spec review: ready (' + launchable + ')';
     return 'Spec review: inactive';
+  }
+
+  function cyclePillClass(status) {
+    if (status === 'running') return ' is-active';
+    if (status === 'needed' || status === 'feedback-waiting') return ' is-paused';
+    return ' is-inactive';
   }
 
   function buildSetSessionActivityHtml(setCard, options) {
     const set = setCard || {};
     const specReview = set.specReview;
+    const specRevision = set.specRevision;
+    const specCycle = set.specCycle || {};
+    const reviewCycle = specCycle.review || {};
+    const revisionCycle = specCycle.revision || {};
     const autonomous = set.autonomous;
-    const specRunning = Boolean(specReview && specReview.running);
+    const specReviewSessionRunning = Boolean(specReview && specReview.running);
+    const specRevisionSessionRunning = Boolean(specRevision && specRevision.running);
+    const specReviewRunning = reviewCycle.status ? reviewCycle.status === 'running' : specReviewSessionRunning;
+    const specRevisionRunning = revisionCycle.status ? revisionCycle.status === 'running' : specRevisionSessionRunning;
     const conductorRunning = Boolean(autonomous && (autonomous.running || autonomous.status === 'running'));
     const conductorPaused = Boolean(autonomous && (autonomous.status === 'paused-on-failure' || autonomous.status === 'paused-on-quota'));
     const renderPeek = Boolean(options && options.onPeek);
-    const specPeek = specRunning && specReview.sessionName && renderPeek
+    const specReviewPeek = specReview && specReview.sessionName && renderPeek
       ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-spec-review-session="' + escHtml(specReview.sessionName) + '" title="View set spec review session" aria-label="Peek set spec review session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
+      : '';
+    const specRevisionPeek = specRevision && specRevision.sessionName && renderPeek
+      ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-spec-revision-session="' + escHtml(specRevision.sessionName) + '" title="View set spec revision session" aria-label="Peek set spec revision session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
       : '';
     const conductorPeek = autonomous && autonomous.sessionName && renderPeek
       ? '<button type="button" class="kcard-peek-btn set-session-peek" data-set-conductor-session="' + escHtml(autonomous.sessionName) + '" title="View set autonomous conductor output" aria-label="Peek set conductor session"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
       : '';
 
     return '<div class="set-session-activity">' +
-      '<span class="set-session-pill' + (specRunning ? ' is-active' : ' is-inactive') + '">' +
-        escHtml(specReviewActivityLabel(specReview)) +
-        (specRunning && specReview.agent ? ' · ' + escHtml(specReview.agent) : '') +
-        specPeek +
+      '<span class="set-session-pill' + cyclePillClass(reviewCycle.status || (specReviewSessionRunning ? 'running' : 'inactive')) + '">' +
+        escHtml(reviewCycle.label || specCycleActivityLabel(specReview, 'Spec review: running', specReviewInactiveLabel(set))) +
+        (specReviewSessionRunning && specReview.agent ? ' · ' + escHtml(specReview.agent) : '') +
+        specReviewPeek +
       '</span>' +
+      ((revisionCycle.status && revisionCycle.status !== 'inactive') || specRevisionSessionRunning ? '<span class="set-session-pill' + cyclePillClass(revisionCycle.status || (specRevisionSessionRunning ? 'running' : 'inactive')) + '">' +
+        escHtml(revisionCycle.label || specCycleActivityLabel(specRevision, 'Spec revision: running', 'Spec revision: inactive')) +
+        (specRevisionSessionRunning && specRevision.agent ? ' · ' + escHtml(specRevision.agent) : '') +
+        specRevisionPeek +
+      '</span>'
+      : '') +
       '<span class="set-session-pill' + (conductorRunning ? ' is-active' : (conductorPaused ? ' is-paused' : ' is-inactive')) + '">' +
         escHtml(conductorActivityLabel(autonomous)) +
         conductorPeek +
@@ -148,7 +178,9 @@ export const AIGON_SET_CARDS = (function() {
     buildSetCardBodyHtml: buildSetCardBodyHtml,
     buildSetSessionActivityHtml: buildSetSessionActivityHtml,
     conductorActivityLabel: conductorActivityLabel,
-    specReviewActivityLabel: specReviewActivityLabel,
+    specReviewActivityLabel: function(specReview) {
+      return specCycleActivityLabel(specReview, 'Spec review: running', 'Spec review: inactive');
+    },
   };
 
 })();

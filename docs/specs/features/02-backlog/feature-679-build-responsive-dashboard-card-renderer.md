@@ -31,6 +31,7 @@ Build the production feature, research, and feature-set card renderer from the i
 - [ ] Small, tightly tracked uppercase phase labels such as `NOW`, `NEXT`, and `COMPLETE` are not used. State and action language is plain, specific, and sentence case.
 - [ ] Feature and research cards use the same structural primitives while retaining entity-specific actions and vocabulary.
 - [ ] Feature-set cards show the set title once, member progress, and the full current-member contract. Machine slugs are available only where operationally necessary, such as details or copyable identifiers.
+- [ ] Feature-set cards render set spec-review status and set spec-revision status from contract `specCycle` facts, not from tmux liveness. If a review/revision session is inspectable, Peek appears inside the corresponding labeled status row/pill only; cards must not show duplicate unlabeled eye buttons in the set header.
 - [ ] Autonomous controllers are visually higher-level than their stages. Worker sessions are shown inside their owning stage and are not duplicated in a separate activity list.
 - [ ] Autonomous stage rows use stable columns so state marker, stage name, agent, status, and Peek controls align across Implement, Review, Revise, and Close.
 - [ ] Every inspectable running, completed, stopped, lost, and failed agent session exposes Peek. Completed sessions open retained output rather than being treated as non-interactive history.
@@ -48,7 +49,7 @@ Build the production feature, research, and feature-set card renderer from the i
 3. Reuse the existing action execution, confirmation, detail drawer, and session Peek APIs. Centralize action-to-control rendering so the same action ID cannot acquire different behavior across cards.
 4. Add a preview setting at the dashboard shell boundary. Render legacy and candidate implementations from the same status payload; do not fork the collector.
 5. Move approved visual tokens from the gallery into production-scoped styles with explicit compact/expanded variants. Keep gallery assets isolated except for intentionally shared renderer code.
-6. Add DOM and screenshot fixtures for the complete gallery scenario matrix, including long titles, multiple agents, empty optional sections, failures, completed sessions, autonomous review/revision, and nested set members.
+6. Add DOM and screenshot fixtures for the complete gallery scenario matrix, including long titles, multiple agents, empty optional sections, failures, completed sessions, set spec-review/spec-revision complete versus running sessions, autonomous review/revision, and nested set members.
 
 ## Validation
 
