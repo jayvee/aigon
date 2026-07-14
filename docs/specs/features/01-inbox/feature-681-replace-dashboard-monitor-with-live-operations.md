@@ -27,6 +27,7 @@ The candidate Monitor remains behind the dashboard preview switch until F682 com
 - [ ] Monitor is organized around server-derived operational groups: needs attention, running, and recently completed. It is not a lane-for-lane duplicate of Pipeline.
 - [ ] Group membership and urgency come from explicit contract state/presentation metadata. Browser code does not classify entities by matching status text, action labels, lane names, or agent counts.
 - [ ] Summary metrics report actionable counts and update through the existing SSE/status path without a separate polling loop.
+- [ ] Every operational-projection field that changes group membership, urgency, queue ordering, or recently-completed inclusion is covered by `computeStatusFingerprint` (`lib/dashboard-status-version.js`) so Monitor repaints on SSE pushes without a separate refresh trigger.
 - [ ] Each queue item identifies the entity once, shows the specific current activity and responsible agent/controller, and exposes the relevant decision or Peek control.
 - [ ] Selecting an item opens a persistent detail surface containing entity context, blockers, decisions, agents, inspectable sessions, recent events, and the complete autonomous plan where present.
 - [ ] Autonomous detail shows the controller separately from its stage workers, with past, current, and future stages visually distinct.
