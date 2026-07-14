@@ -22,13 +22,14 @@ Make the contract-driven cards, responsive Pipeline, and live-operations Monitor
 ## Acceptance Criteria
 
 - [ ] Contract-driven cards, responsive Pipeline, and live-operations Monitor are the only production dashboard implementations and require no preview setting.
-- [ ] The temporary preview flag, dual-render selection logic, legacy card builders, legacy Monitor composition, superseded CSS, and browser-side lifecycle/action inference are removed.
+- [ ] The temporary preview flag (including its `lib/dashboard-settings.js` entry and Settings UI control), dual-render selection logic, legacy card builders, legacy Monitor composition, superseded CSS, and browser-side lifecycle/action inference are removed.
+- [ ] Compatibility status fields that F678 retained for the legacy renderer are audited: each is either removed or explicitly documented as still consumed by another surface (CLI, tests, Pro). No field survives solely for the deleted legacy renderer.
 - [ ] Before deletion, an automated parity audit proves that every operator-visible action ID present in supported legacy feature, research, feature-set, Fleet, autonomous, recovery, review, evaluation, quota, failure, and close states is represented and executable in the contract UI.
 - [ ] No current workflow action is hidden solely in an overflow menu when it is the state-clearing primary decision; destructive and exceptional actions retain confirmation behavior.
 - [ ] Every retained running, completed, stopped, lost, and failed session still exposes Peek, and live versus saved-output routing is tested.
 - [ ] Production cards and gallery scenarios share enough implementation or contract assertions that action/state drift cannot pass CI silently.
 - [ ] `npm run gallery` remains a standalone living design and contract artifact on port 3700. It is not removed, folded into the real dashboard, or made dependent on a target repository.
-- [ ] AGENTS and dashboard development documentation explain the required sequence for a new state/action: update canonical definition/projector, add generated gallery facts, review Cards/Pipeline/Monitor at desktop and mobile, then update production only through a feature.
+- [ ] AGENTS.md and `docs/architecture.md` (§ Dashboard Frontend) explain the required sequence for a new state/action: update canonical definition/projector, add generated gallery facts, review Cards/Pipeline/Monitor at desktop and mobile, then update production only through a feature.
 - [ ] The final Pipeline fills the operational viewport, preserves compact and expanded density, and has no document-level horizontal overflow at 390px.
 - [ ] The final Monitor presents live operations rather than duplicating Pipeline and remains usable in desktop split and mobile stacked modes.
 - [ ] SSE updates repaint all relevant contract changes without full-page refresh, duplicate cards, lost focus, stale selection, or avoidable layout shift.
