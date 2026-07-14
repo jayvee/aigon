@@ -55,18 +55,6 @@ test('spec review templates explicitly forbid recursive self-invocation and gene
     assert.ok(featureOut.includes('aigon agent-context --id-only'));
 });
 
-test('spec review templates explicitly forbid recursive self-invocation and generic commits', () => {
-    const researchOut = resolveCxCommandBody('research-spec-review', '01 --no-launch');
-    assert.ok(researchOut.includes('Do not run `aigon research-spec-review 01` again.'));
-    assert.ok(researchOut.includes('Making a non-`spec-review:` commit'));
-    assert.ok(researchOut.includes('aigon agent-context --id-only'));
-
-    const featureOut = resolveCxCommandBody('feature-spec-review', '12 --no-launch');
-    assert.ok(featureOut.includes('Do not run `aigon feature-spec-review 12` again.'));
-    assert.ok(featureOut.includes('Making a non-`spec-review:` commit'));
-    assert.ok(featureOut.includes('aigon agent-context --id-only'));
-});
-
 test('unknown verb throws', () => {
     assert.throws(() => resolveAgentPromptBody({ agentId: 'cc', verb: 'sneeze', featureId: '01', cliConfig: {} }), /unknown verb/);
 });

@@ -65,7 +65,7 @@ function writeSpec(repo, kind, stage, file) {
     fs.writeFileSync(path.join(repo, 'docs', 'specs', kind, stage, file), `# ${file}\n`);
 }
 
-function writeSnap(repo, kind, id, lifecycle) {
+function writeSnap(repo, kind, id, lifecycle, overrides = {}) {
     const dir = path.join(repo, '.aigon', 'workflows', kind, String(id));
     fs.mkdirSync(dir, { recursive: true });
     const entityType = kind === 'features' ? 'feature' : 'research';
@@ -73,6 +73,7 @@ function writeSnap(repo, kind, id, lifecycle) {
         entityType, [`${entityType}Id`]: String(id), currentSpecState: lifecycle, lifecycle,
         mode: 'solo_branch', agents: { cx: { status: 'running' } },
         createdAt: '2026-04-01T10:00:00Z', updatedAt: '2026-04-01T10:05:00Z',
+        ...overrides,
     }));
 }
 

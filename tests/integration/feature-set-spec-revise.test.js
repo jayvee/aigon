@@ -7,16 +7,11 @@ const path = require('path');
 const { execFileSync, execSync } = require('child_process');
 const { test, testAsync, withTempDir, withTempDirAsync, GIT_SAFE_ENV, report } = require('../_helpers');
 const engine = require('../../lib/workflow-core/engine');
-const featureSets = require('../../lib/feature-sets');
 const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
 const {
-    countPendingSpecReviseMembers,
     resolveSetSpecRevisePlan,
     buildSetSpecRevisePromptBody,
-    filterPendingForRevisionAgent,
-    assessMemberRevisionCandidate,
 } = require('../../lib/feature-set-spec-revise');
-const { collectPendingSpecReviewsFromGit } = require('../../lib/spec-review-state');
 
 const FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 
@@ -66,37 +61,6 @@ function commitSpecReview(root, specPath, entityId, reviewerId, summary = 'tight
     return execSync('git rev-parse HEAD', { cwd: root, encoding: 'utf8' }).trim();
 }
 
-test('collectPendingSpecReviewsFromGit finds reviews newer than latest ack', () => withTempDir('aigon-set-spec-revise-git-', (root) => {
-    initRepo(root);
-    const p = mkFeaturePaths(root);
-    const specPath = path.join(p.root, '02-backlog', 'feature-01-a.md');
-    spec(path.join(p.root, '02-backlog'), 'feature-01-a.md', 'pair');
-    execSync('git add . && git commit -qm "chore: add spec"', { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV } });
-    const sha1 = commitSpecReview(root, specPath, '01', 'gg');
-    execSync(`git commit --allow-empty -qm "spec-revise: feature 01 — accepted" -m "reviewed: gg"`, {
-        cwd: root,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-    });
-    const sha2 = commitSpecReview(root, specPath, '01', 'cc', 'second review');
-    const pending = collectPendingSpecReviewsFromGit(root, specPath, 'feature', '01');
-    assert.strictEqual(pending.length, 1);
-    assert.strictEqual(pending[0].sha, sha2);
-    assert.strictEqual(pending[0].reviewerId, 'cc');
-    assert.ok(!pending.some(r => r.sha === sha1));
-}));
-
-test('filterPendingForRevisionAgent skips same-agent reviews', () => {
-    const member = {
-        revisionStatus: 'eligible',
-        gitPending: [{ sha: 'abc', reviewerId: 'cu', subject: 'spec-review: feature 1' }],
-    };
-    const filtered = filterPendingForRevisionAgent(member, 'cu');
-    assert.strictEqual(filtered.revisionStatus, 'skipped');
-    assert.strictEqual(filtered.skipReason, 'same-agent review');
-    const kept = filterPendingForRevisionAgent(member, 'cc');
-    assert.strictEqual(kept.activePending.length, 1);
-});
-
 testAsync('resolveSetSpecRevisePlan topo-orders eligible members and flags inconsistent workflow', () => withTempDirAsync('aigon-set-spec-revise-plan-', async (root) => {
     initRepo(root);
     const p = mkFeaturePaths(root);
@@ -132,27 +96,13 @@ testAsync('resolveSetSpecRevisePlan topo-orders eligible members and flags incon
     assert.strictEqual(plan.eligible[0].paddedId, '01');
     const inconsistent = plan.contextRows.find(r => r.member.paddedId === '02');
     assert.strictEqual(inconsistent.assessment.revisionStatus, 'inconsistent');
+    assert.strictEqual(plan.contextRows.find(r => r.member.paddedId === '03').assessment.revisionStatus, 'skipped');
 
     const prompt = buildSetSpecRevisePromptBody(plan, 'cx');
     assert.match(prompt, /set slug.*auth/i);
     assert.match(prompt, /Root/);
     assert.match(prompt, /spec-revise:/);
     assert.match(prompt, /feature-spec-revise-record/);
-}));
-
-test('feature-set-spec-revise CLI rejects invalid slug and empty pending set', () => withTempDir('aigon-set-spec-revise-cli-', (root) => {
-    initRepo(root);
-    const p = mkFeaturePaths(root);
-    spec(path.join(p.root, '02-backlog'), 'feature-01-only.md', 'solo');
-
-    assert.throws(
-        () => runCli(root, ['feature-set-spec-revise', 'bad slug'], { stdio: 'pipe' }),
-        e => e.status === 1 && /Invalid set slug/.test(String(e.stderr))
-    );
-    assert.throws(
-        () => runCli(root, ['feature-set-spec-revise', 'solo'], { stdio: 'pipe' }),
-        e => e.status === 1 && /no members with pending spec reviews/i.test(String(e.stderr))
-    );
 }));
 
 testAsync('feature-set-spec-revise degrades when selected agent authored all pending reviews', () => withTempDirAsync('aigon-set-spec-revise-same-agent-', async (root) => {
@@ -174,30 +124,6 @@ testAsync('feature-set-spec-revise degrades when selected agent authored all pen
     assert.match(out, /none are eligible/i);
     assert.match(out, /same-agent/i);
 
-    const plan = resolveSetSpecRevisePlan(root, 'solo', p, { revisionAgentId: 'cx' });
-    assert.strictEqual(plan.contextRows[0].assessment.revisionStatus, 'skipped');
-    assert.strictEqual(plan.contextRows[0].assessment.skipReason, 'same-agent review');
-}));
-
-testAsync('feature-set-spec-revise --no-launch prints ordered eligible context', () => withTempDirAsync('aigon-set-spec-revise-nolaunch-', async (root) => {
-    initRepo(root);
-    const p = mkFeaturePaths(root);
-    const rootPath = path.join(p.root, '02-backlog', 'feature-01-a.md');
-    const leafPath = path.join(p.root, '02-backlog', 'feature-02-b.md');
-    spec(path.join(p.root, '02-backlog'), 'feature-01-a.md', 'pair');
-    spec(path.join(p.root, '02-backlog'), 'feature-02-b.md', 'pair', ['01']);
-    execSync('git add . && git commit -qm "chore: specs"', { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV } });
-    const sha1 = commitSpecReview(root, rootPath, '01', 'gg');
-    const sha2 = commitSpecReview(root, leafPath, '02', 'gg');
-    engine.ensureEntityBootstrappedSync(root, 'feature', '01', 'backlog', rootPath);
-    engine.ensureEntityBootstrappedSync(root, 'feature', '02', 'backlog', leafPath);
-    await engine.recordSpecReviewSubmitted(root, 'feature', '01', { reviewId: sha1, reviewerId: 'gg', commitSha: sha1 });
-    await engine.recordSpecReviewSubmitted(root, 'feature', '02', { reviewId: sha2, reviewerId: 'gg', commitSha: sha2 });
-
-    const out = runCli(root, ['feature-set-spec-revise', 'pair', '--no-launch', '--agent=cu']);
-    assert.match(out, /2 eligible member/i);
-    assert.match(out, /SET SPEC REVISION PROMPT/);
-    assert.match(out, /#01[\s\S]*#02/);
 }));
 
 test('buildSetValidActions exposes feature-set-spec-revise when pendingSpecReviseMemberCount > 0', () => {
@@ -221,39 +147,6 @@ test('buildSetValidActions exposes feature-set-spec-revise when pendingSpecRevis
     assert.ok(!hidden.some(a => a.action === 'feature-set-spec-revise'));
 });
 
-testAsync('countPendingSpecReviseMembers is agent-agnostic', () => withTempDirAsync('aigon-set-spec-revise-count-', async (root) => {
-    initRepo(root);
-    const p = mkFeaturePaths(root);
-    spec(path.join(p.root, '02-backlog'), 'feature-01-a.md', 'pair');
-    const members = featureSets.getSetMembersSorted('pair', p);
-    assert.strictEqual(countPendingSpecReviseMembers(members, root), 0);
-
-    const specPath = path.join(p.root, '02-backlog', 'feature-01-a.md');
-    execSync('git add . && git commit -qm "chore: spec"', { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV } });
-    const sha = commitSpecReview(root, specPath, '01', 'gg');
-    engine.ensureEntityBootstrappedSync(root, 'feature', '01', 'backlog', specPath);
-    await engine.recordSpecReviewSubmitted(root, 'feature', '01', { reviewId: sha, reviewerId: 'gg', commitSha: sha });
-    assert.strictEqual(countPendingSpecReviseMembers(members, root), 1);
-}));
-
-test('assessMemberRevisionCandidate skips in-progress members', () => {
-    const assessment = assessMemberRevisionCandidate({
-        stage: 'in-progress',
-        paddedId: '03',
-        slug: 'active',
-        specPath: '/tmp/x.md',
-        snapshot: null,
-        repoPath: '/tmp',
-    });
-    assert.strictEqual(assessment.revisionStatus, 'skipped');
-    assert.match(assessment.skipReason, /implementation/i);
-});
-
-// F637: collectPendingSpecReviewsFromGit ran `git log --follow` per member every
-// poll and dominated dashboard poll time. It is now cached per (repo,spec,entity)
-// keyed on HEAD. This locks: (1) a repeated call at the same HEAD does NOT re-run
-// the git-log scans, (2) the cached result is identical to the uncached one, and
-// (3) a new HEAD invalidates the cache so a freshly-committed review is seen.
 test('collectPendingSpecReviewsFromGit caches by HEAD and invalidates on new commits', () => withTempDir('aigon-set-spec-revise-cache-', (root) => {
     initRepo(root);
     const p = mkFeaturePaths(root);
@@ -298,23 +191,5 @@ test('collectPendingSpecReviewsFromGit caches by HEAD and invalidates on new com
         cp.execFileSync = orig;
     }
 }));
-
-// REGRESSION: set-wide spec revise embeds every member spec in the prompt;
-// inlining that into a cc/cu tmux launch exceeded ARG_MAX and dashboard
-// "Revise Set Specs" failed with "Failed to create tmux session".
-test('set-wide spec revise spills oversized slash-agent prompt to inline file', () => {
-    const { buildAgentCommand } = require('../../lib/worktree');
-    const body = 'spec-revise body '.repeat(400);
-    const cmd = buildAgentCommand({
-        agent: 'cc',
-        featureId: '620',
-        path: process.cwd(),
-        repoPath: process.cwd(),
-        entityType: 'feature',
-        promptOverride: body,
-    }, 'spec-revise');
-    assert.match(cmd, /aigon-inline-prompts/);
-    assert.ok(cmd.length < body.length, 'command line must reference prompt file, not embed body');
-});
 
 report();

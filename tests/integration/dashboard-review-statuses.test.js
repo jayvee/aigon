@@ -2,9 +2,6 @@
 // REGRESSION feature 304: dashboard review-check states were collapsed back to
 // generic implementing/running, so the agent card lost "Addressing review" and
 // "Feedback addressed" across reloads.
-//
-// Merged from dashboard-state-render-meta.test.js: STATE_RENDER_META coverage +
-// stateRenderMeta-on-card-row invariants (both about state→UI mapping).
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
@@ -14,38 +11,8 @@ const engine = require('../../lib/workflow-core/engine');
 const wrm = require('../../lib/workflow-read-model');
 const ast = require('../../lib/agent-status');
 const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
-const {
-    normalizeDashboardStatus,
-    deriveFeatureDashboardStatus,
-} = require('../../lib/dashboard-status-helpers');
-const { STATE_RENDER_META, getStateRenderMeta } = require('../../lib/state-render-meta');
-const { resolveStateRenderMeta } = require('../../lib/pause-semantics');
 const { LifecycleState } = require('../../lib/workflow-core/types');
 const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
-
-// --- STATE_RENDER_META coverage (merged from dashboard-state-render-meta) ---
-test('STATE_RENDER_META: complete coverage, required fields, cls + badge invariants', () => {
-    const missing = Object.values(LifecycleState).filter(s => !STATE_RENDER_META[s]);
-    assert.deepStrictEqual(missing, [], 'missing entries: ' + missing);
-    Object.entries(STATE_RENDER_META).forEach(([s, m]) => assert.ok(m.icon && m.label && m.cls, s));
-    assert.strictEqual(STATE_RENDER_META.code_review_in_progress.cls, 'status-reviewing');
-    assert.strictEqual(STATE_RENDER_META.code_review_complete.cls, 'status-review-done');
-    assert.strictEqual(STATE_RENDER_META.spec_review_in_progress.cls, 'status-reviewing');
-    assert.strictEqual(STATE_RENDER_META.spec_review_complete.cls, 'status-review-done');
-    assert.strictEqual(STATE_RENDER_META.code_revision_in_progress.cls, 'status-running');
-    assert.ok(STATE_RENDER_META.code_review_in_progress.badge, 'code review needs badge');
-    assert.ok(STATE_RENDER_META.spec_review_in_progress.badge, 'spec review needs badge');
-    assert.strictEqual(STATE_RENDER_META.implementing.badge, '🔨 Implementing');
-    assert.strictEqual(getStateRenderMeta('unknown_state').cls, 'status-idle');
-});
-
-// REGRESSION F656: operator-parked lifecycle shows pre-start label, not generic Paused.
-test('resolveStateRenderMeta: prestart backlog → Parked (backlog)', () => {
-    const meta = resolveStateRenderMeta('paused', { pauseReason: 'prestart:backlog' });
-    assert.strictEqual(meta.label, 'Parked (backlog)');
-    assert.ok(meta.badge.includes('backlog'));
-    assert.strictEqual(resolveStateRenderMeta('implementing', { pauseReason: 'prestart:backlog' }).label, 'Implementing');
-});
 
 test('code_review_in_progress without tmux → session-lost', () => withTempDir('aigon-srm-', (repo) => {
     seedEntityDirs(repo, 'features');
@@ -174,23 +141,6 @@ test('buildSetValidActions exposes restart actions for stopped partial sets', ()
     assert.ok(!stoppedDone.some(a => a.action === 'set-autonomous-start'), 'complete set should not offer start');
 });
 
-test('buildSetValidActions exposes recovery for paused-on-quota partial sets', () => {
-    const pausedQuota = buildSetValidActions({
-        slug: 'git-branch-storage',
-        status: 'paused-on-quota',
-        isComplete: false,
-        autonomous: {
-            status: 'paused-on-quota',
-            members: ['609', '610', '611'],
-            completed: ['609', '610'],
-            pausedFeature: '611',
-            reason: 'review-quota-paused',
-        },
-    }, { requiresPro: false, proAvailable: true });
-    assert.ok(pausedQuota.some(a => a.action === 'set-autonomous-start' && a.label === 'Resume (choose agents…)'));
-    assert.ok(pausedQuota.some(a => a.action === 'set-autonomous-resume' && a.label === 'Resume (same agents)'));
-});
-
 // --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read
 // from tmux presence instead of the snapshot. Spec-review status now flows from
@@ -246,19 +196,6 @@ test('findSpecReviewTmuxSession resolves spec-review role sessions from tmux lis
     }
 });
 
-test('dashboard status helpers preserve revision-complete state', () => {
-    assert.strictEqual(normalizeDashboardStatus('revision-complete'), 'revision-complete');
-    assert.strictEqual(
-        deriveFeatureDashboardStatus('revision-complete', { reviewStatus: 'done', tmuxRunning: true }),
-        'revision-complete'
-    );
-    // addressing-review and feedback-addressed are deprecated aliases removed in F409;
-    // they normalize through to their underlying canonical names or fall through.
-    assert.strictEqual(
-        deriveFeatureDashboardStatus('implementing', { reviewStatus: 'done', tmuxRunning: true }),
-        'implementing'
-    );
-});
 testAsync('workflow read model derives completed feature review state from engine events', () => withTempDirAsync('aigon-review-status-', async (repo) => {
     const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-99-review-status.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });

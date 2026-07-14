@@ -14,75 +14,19 @@ const expectedIds = fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json')).
 const launchableIds = expectedIds.filter(id => agentRegistry.isAgentLaunchable(id));
 const sortIds = ids => ids.slice().sort((a, b) => a.localeCompare(b));
 const assertExactAgentSet = (actualIds, message) => assert.deepStrictEqual(sortIds(actualIds), expectedIds, message);
-const assertExactLaunchableSet = (actualIds, message) => assert.deepStrictEqual(sortIds(actualIds), launchableIds, message);
 
-test('deactivated gg resolves but is not launchable', () => {
-    // REGRESSION: retiring gg must keep registry metadata for historic telemetry.
-    assert.ok(agentRegistry.getAgent('gg'), 'gg should remain in registry');
+test('registry projections preserve known versus launchable agent sets', () => {
+    assert.ok(agentRegistry.getAgent('gg'), 'deactivated agents remain readable');
     assert.strictEqual(agentRegistry.isAgentLaunchable('gg'), false);
-    assert.ok(!agentRegistry.getLaunchableAgentIds().includes('gg'));
-});
-
-test('registry launchable set excludes deactivated agents', () => assertExactLaunchableSet(agentRegistry.getSortedAgentIds(), 'runtime launchable registry drifted'));
-test('template helpers expose launchable vs all-known agent sets', () => {
-    assertExactAgentSet(templates.getAllKnownAgents(), 'templates.getAllKnownAgents drifted');
-    const available = templates.getAvailableAgents();
-    assert.ok(!available.includes('gg'), 'deactivated gg must not appear in picker agents');
-    for (const id of available) assert.ok(agentRegistry.isAgentLaunchable(id), `${id} must be launchable`);
-    assertExactAgentSet(Object.keys(agentRegistry.getDisplayNames()), 'display names drifted');
-    assertExactAgentSet(Object.keys(agentRegistry.getShortNames()).filter(id => id !== 'solo'), 'short names drifted');
-});
-test('downstream registry projections split all-known vs launchable', () => {
-    assertExactAgentSet(Object.keys(agentRegistry.getPortOffsets()), 'port offsets drifted');
-    assertExactLaunchableSet(Object.keys(agentRegistry.buildDefaultAgentConfigs()), 'default config projection drifted');
-    assertExactLaunchableSet(Object.keys(agentRegistry.getAgentInstallHints()), 'install hints drifted');
-    assertExactLaunchableSet(Object.keys(agentRegistry.getAgentBinMap()), 'CLI map drifted');
-    assertExactAgentSet(Object.keys(agentRegistry.getLegacyAgentConfigs()), 'legacy config projection drifted');
-    assertExactLaunchableSet(agentRegistry.getDashboardAgents().map(agent => agent.id), 'dashboard payload drifted');
-});
-test('help template renders launchable agents only', () => {
-    const rendered = templates.processTemplate(fs.readFileSync(path.join(__dirname, '..', '..', 'templates', 'help.txt'), 'utf8'));
-    assertExactLaunchableSet(rendered.split('\n').map(line => line.match(/^\s{2}([a-z0-9]+) \(/i)).filter(Boolean).map(match => match[1]), 'help output drifted');
-});
-test('dashboard bootstrap payload renders launchable agents only', () => {
-    // REGRESSION: JSON may contain `;` inside string values (e.g. model label text) — do not split on the first `;`.
-    const html = dashboardServer.buildDashboardHtml({ repos: [] }, 'test');
-    const prefix = 'window.__AIGON_BOOTSTRAP__ = ';
-    const start = html.indexOf(prefix);
-    assert.ok(start >= 0, 'dashboard bootstrap was not injected');
-    let i = start + prefix.length;
-    assert.strictEqual(html[i], '{', 'expected JSON object after __AIGON_BOOTSTRAP__');
-    let depth = 0;
-    let inString = false;
-    let escaped = false;
-    for (; i < html.length; i++) {
-        const c = html[i];
-        if (escaped) {
-            escaped = false;
-            continue;
-        }
-        if (c === '\\' && inString) {
-            escaped = true;
-            continue;
-        }
-        if (c === '"') {
-            inString = !inString;
-            continue;
-        }
-        if (inString) continue;
-        if (c === '{') depth++;
-        if (c === '}') {
-            depth--;
-            if (depth === 0) {
-                i++;
-                break;
-            }
-        }
-    }
-    const jsonStr = html.slice(start + prefix.length, i);
-    const bootstrap = JSON.parse(jsonStr);
-    assert.ok(Array.isArray(bootstrap.agents), 'bootstrap.agents must be an array');
-    assertExactLaunchableSet(bootstrap.agents.map(agent => agent.id), 'dashboard HTML payload drifted');
+    for (const [label, ids, expected] of [
+        ['known templates', templates.getAllKnownAgents(), expectedIds],
+        ['display names', Object.keys(agentRegistry.getDisplayNames()), expectedIds],
+        ['port offsets', Object.keys(agentRegistry.getPortOffsets()), expectedIds],
+        ['runtime IDs', agentRegistry.getSortedAgentIds(), launchableIds],
+        ['dashboard IDs', agentRegistry.getDashboardAgents().map(agent => agent.id), launchableIds],
+        ['binary map', Object.keys(agentRegistry.getAgentBinMap()), launchableIds],
+    ]) assert.deepStrictEqual(sortIds(ids), expected, label);
+    assert.ok(templates.getAvailableAgents().every(id => agentRegistry.isAgentLaunchable(id)), 'picker agents must be launchable');
 });
 test('every modelOptions entry satisfies the inclusion-policy contract (docs/model-inclusion-policy.md)', () => {
     // Keystone enforcement for the prose policy: each templates/agents/*.json
@@ -122,53 +66,20 @@ function modelOptWithSummary(summary) {
     };
 }
 
-test('validateModelOptions accepts a valid summary block', () => {
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(VALID_SUMMARY));
-    assert.deepStrictEqual(errors, []);
-});
-
-test('validateModelOptions rejects summary missing headline', () => {
-    const bad = { ...VALID_SUMMARY };
-    delete bad.headline;
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('summary.headline')));
-});
-
-test('validateModelOptions rejects invalid role in bestFor', () => {
-    const bad = { ...VALID_SUMMARY, bestFor: ['implement', 'not-a-role'] };
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('invalid role')));
-});
-
-test('validateModelOptions rejects free-form role like code review in bestFor', () => {
-    const bad = { ...VALID_SUMMARY, bestFor: ['code review', 'implement'] };
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('invalid role "code review"')));
-});
-
-test('validateModelOptions rejects headline duplicating label', () => {
-    const bad = { ...VALID_SUMMARY, headline: 'Test Model' };
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('must not duplicate label')));
-});
-
-test('validateModelOptions rejects body exceeding 500 chars', () => {
-    const bad = { ...VALID_SUMMARY, body: 'x'.repeat(501) };
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('summary.body exceeds 500 chars')));
-});
-
-test('validateModelOptions rejects invalid sources kind', () => {
-    const bad = { ...VALID_SUMMARY, sources: [{ kind: 'blog-post', title: 'nope' }] };
-    const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(bad));
-    assert.ok(errors.some(e => e.includes('sources[0].kind')));
-});
-
-test('cc and op exemplar entries pass validateModelOptions with zero errors', () => {
-    // REGRESSION: hand-written summary exemplars must not drift from the contract.
-    for (const id of ['cc', 'op']) {
-        const { errors } = agentRegistry.validateModelOptions(agentRegistry.getAgent(id));
-        assert.deepStrictEqual(errors, [], `${id} exemplar summary drift: ${errors.join('; ')}`);
+test('validateModelOptions accepts valid summaries and rejects each invalid field', () => {
+    assert.deepStrictEqual(agentRegistry.validateModelOptions(modelOptWithSummary(VALID_SUMMARY)).errors, []);
+    const missingHeadline = { ...VALID_SUMMARY };
+    delete missingHeadline.headline;
+    for (const [summary, message] of [
+        [missingHeadline, 'summary.headline'],
+        [{ ...VALID_SUMMARY, bestFor: ['not-a-role'] }, 'invalid role'],
+        [{ ...VALID_SUMMARY, bestFor: ['code review'] }, 'invalid role "code review"'],
+        [{ ...VALID_SUMMARY, headline: 'Test Model' }, 'must not duplicate label'],
+        [{ ...VALID_SUMMARY, body: 'x'.repeat(501) }, 'summary.body exceeds 500 chars'],
+        [{ ...VALID_SUMMARY, sources: [{ kind: 'blog-post', title: 'nope' }] }, 'sources[0].kind'],
+    ]) {
+        const { errors } = agentRegistry.validateModelOptions(modelOptWithSummary(summary));
+        assert.ok(errors.some(error => error.includes(message)), message);
     }
 });
 

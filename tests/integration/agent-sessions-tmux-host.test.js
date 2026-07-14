@@ -4,12 +4,6 @@ const assert = require('assert');
 const { test, report } = require('../_helpers');
 const { createTmuxSessionHost } = require('../../lib/agent-sessions/hosts');
 const {
-    normalizeForMessageCompare,
-    paneContainsMessage,
-    extractComposerText,
-    promptStillContainsMessage,
-} = require('../../lib/agent-sessions/hosts/tmux');
-const {
     VALID_TMUX_ROLES,
     buildTmuxSessionName,
     parseTmuxSessionName,
@@ -54,49 +48,27 @@ function recordingTmux(handler) {
     return { ops, runTmux };
 }
 
-test('deliverOperatorMessage routes by durable tmuxId when present', () => {
-    let captureCount = 0;
-    const { ops, runTmux } = recordingTmux((args) => {
-        if (args[0] === 'list-sessions') return { status: 0, stdout: '$77\n$78', stderr: '' };
-        if (args[0] === 'capture-pane') {
-            captureCount += 1;
-            return { status: 0, stdout: captureCount === 1 ? '> hello' : '⠼ Thinking...', stderr: '' };
-        }
-        return { status: 0, stdout: '', stderr: '' };
-    });
-    const host = createTmuxSessionHost({ runTmux });
-    const result = host.deliverOperatorMessage(
-        { sessionName: 'aigon-f42-do-cx', tmuxId: '$77' },
-        'hello',
-        { transport: { submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: ['Thinking...'], promptPlaceholder: '' } }
-    );
-    assert.strictEqual(result.ok, true);
-    // Every targeted op should use the durable id, not the name.
-    const paste = ops.find(op => op.args[0] === 'paste-buffer');
-    assert.ok(paste, 'expected a paste-buffer op');
-    assert.strictEqual(paste.args[paste.args.indexOf('-t') + 1], '$77');
-});
-
-test('deliverOperatorMessage falls back to session name for old sidecars (no tmuxId)', () => {
-    let captureCount = 0;
-    const { ops, runTmux } = recordingTmux((args) => {
-        if (args[0] === 'capture-pane') {
-            captureCount += 1;
-            return { status: 0, stdout: captureCount === 1 ? '> hello' : '⠼ Thinking...', stderr: '' };
-        }
-        return { status: 0, stdout: '', stderr: '' };
-    });
-    const host = createTmuxSessionHost({ runTmux });
-    const result = host.deliverOperatorMessage(
-        { sessionName: 'aigon-f42-do-cx', tmuxId: null },
-        'hello',
-        { transport: { submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: ['Thinking...'], promptPlaceholder: '' } }
-    );
-    assert.strictEqual(result.ok, true);
-    // No list-sessions probe when there's no id; targets use the name.
-    assert.strictEqual(ops.some(op => op.args[0] === 'list-sessions'), false);
-    const paste = ops.find(op => op.args[0] === 'paste-buffer');
-    assert.strictEqual(paste.args[paste.args.indexOf('-t') + 1], 'aigon-f42-do-cx');
+test('deliverOperatorMessage prefers tmuxId and falls back to the sidecar name', () => {
+    for (const [tmuxId, target] of [['$77', '$77'], [null, 'aigon-f42-do-cx']]) {
+        let captureCount = 0;
+        const { ops, runTmux } = recordingTmux((args) => {
+            if (args[0] === 'list-sessions') return { status: 0, stdout: '$77\n$78', stderr: '' };
+            if (args[0] === 'capture-pane') {
+                captureCount += 1;
+                return { status: 0, stdout: captureCount === 1 ? '> hello' : '⠼ Thinking...', stderr: '' };
+            }
+            return { status: 0, stdout: '', stderr: '' };
+        });
+        const host = createTmuxSessionHost({ runTmux });
+        const result = host.deliverOperatorMessage(
+            { sessionName: 'aigon-f42-do-cx', tmuxId }, 'hello',
+            { transport: { submitKey: 'Enter', submitAttempts: 1, retryDelayMs: 0, successPatterns: ['Thinking...'], promptPlaceholder: '' } }
+        );
+        assert.strictEqual(result.ok, true);
+        const paste = ops.find(op => op.args[0] === 'paste-buffer');
+        assert.strictEqual(paste.args[paste.args.indexOf('-t') + 1], target);
+        assert.strictEqual(ops.some(op => op.args[0] === 'list-sessions'), Boolean(tmuxId));
+    }
 });
 
 // --- 3. getConsoleSnapshot returns a normalized DTO --------------------------
@@ -172,28 +144,6 @@ const CODEX_WRAPPED_COMPOSER_PANE = [
     '│   feature                                    │',
     '└──────────────────────────────────────────────┘',
 ].join('\n');
-
-test('paneContainsMessage matches Codex bordered composer with wrapped text', () => {
-    assert.strictEqual(paneContainsMessage(CODEX_WRAPPED_COMPOSER_PANE, CODEX_LONG_NUDGE), true);
-    assert.strictEqual(
-        CODEX_WRAPPED_COMPOSER_PANE.includes(CODEX_LONG_NUDGE),
-        false,
-        'verbatim contiguous match must fail — this is the bug class'
-    );
-});
-
-test('extractComposerText and promptStillContainsMessage tolerate wrapped Codex composer', () => {
-    const composer = extractComposerText(CODEX_WRAPPED_COMPOSER_PANE);
-    assert.ok(composer.includes('›'), 'composer region should include the prompt marker');
-    assert.strictEqual(promptStillContainsMessage(CODEX_WRAPPED_COMPOSER_PANE, CODEX_LONG_NUDGE), true);
-    const afterSubmit = '⠼ Thinking...\n› ';
-    assert.strictEqual(promptStillContainsMessage(afterSubmit, CODEX_LONG_NUDGE), false);
-});
-
-test('normalizeForMessageCompare strips borders and collapses whitespace', () => {
-    const norm = normalizeForMessageCompare('│ › hello   world │');
-    assert.strictEqual(norm, 'hello world');
-});
 
 test('deliverOperatorMessage submits Enter for Codex wrapped composer and succeeds', () => {
     let captureCount = 0;

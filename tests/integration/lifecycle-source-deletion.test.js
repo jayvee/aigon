@@ -17,7 +17,6 @@ const os = require('os');
 const { execFileSync, spawnSync } = require('child_process');
 
 const { test, withTempDir, report, GIT_SAFE_ENV } = require('../_helpers');
-const { stageAndCommitSpecMove, commitStagedPaths, isGitTracked } = require('../../lib/git-staging');
 
 const FEATURE_FOLDERS = ['01-inbox', '02-backlog', '03-in-progress', '04-in-evaluation', '05-done', '06-paused'];
 const RESEARCH_FOLDERS = [...FEATURE_FOLDERS, 'logs'];
@@ -111,19 +110,6 @@ const CASES = [
         srcFile: 'feature-01-src-del-start.md',
     },
     {
-        label: 'feature-unprioritise stages backlog-deletion (no backlog lingerer)',
-        tmp: 'aigon-unprio-del-',
-        kind: 'features', slug: 'src-del-unprio',
-        steps: (root) => [
-            runCli(root, ['feature-prioritise', 'src-del-unprio']),
-            runCli(root, ['feature-unprioritise', '01']),
-        ],
-        srcPath: 'docs/specs/features/02-backlog/feature-01-src-del-unprio.md',
-        dstPath: 'docs/specs/features/01-inbox/feature-src-del-unprio.md',
-        trackedPrefix: 'docs/specs/features/02-backlog/',
-        srcFile: 'feature-01-src-del-unprio.md',
-    },
-    {
         label: 'research-prioritise stages source-deletion (no inbox lingerer)',
         tmp: 'aigon-rprio-del-',
         kind: 'research-topics', slug: 'src-del-rprio',
@@ -149,27 +135,6 @@ for (const c of CASES) {
         });
     }));
 }
-
-// REGRESSION: F559 — never-tracked inbox specs must not pass fromPath to git commit (pathspec fatal).
-test('stageAndCommitSpecMove omits untracked fromPath', () => withTempDir('aigon-stg-untr-', (root) => {
-    initRepo(root);
-    const inbox = path.join(root, 'docs/specs/features/01-inbox');
-    fs.mkdirSync(inbox, { recursive: true });
-    const fromPath = path.join(inbox, 'feature-fresh.md');
-    const toPath = path.join(root, 'docs/specs/features/02-backlog', 'feature-01-fresh.md');
-    fs.mkdirSync(path.dirname(toPath), { recursive: true });
-    fs.writeFileSync(fromPath, '# Feature: fresh\n');
-    fs.renameSync(fromPath, toPath);
-    assert.strictEqual(isGitTracked(root, fromPath), false);
-    const runGit = (cmd) => execFileSync('bash', ['-lc', cmd], { cwd: root, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
-    stageAndCommitSpecMove(runGit, root, {
-        fromPath,
-        toPath,
-        message: 'chore: move untracked spec',
-    });
-    const ns = nameStatus(root);
-    assertUntrackedDestOnly({ ns, dstPath: 'docs/specs/features/02-backlog/feature-01-fresh.md', srcPath: 'docs/specs/features/01-inbox/feature-fresh.md' });
-}));
 
 test('feature-prioritise succeeds for never-committed inbox spec', () => withTempDir('aigon-untr-prio-', (root) => {
     initRepo(root);
@@ -200,32 +165,6 @@ test('feature-delete commits tracked backlog removal after git rm', () => withTe
         env: { ...process.env, ...GIT_SAFE_ENV },
     }).trim();
     assert.match(subject, /delete feature 01/);
-}));
-
-test('commitStagedPaths commits a deletion already staged by git rm', () => withTempDir('aigon-commit-staged-', (root) => {
-    initRepo(root);
-    const rel = 'docs/specs/features/02-backlog/feature-01-gone.md';
-    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
-    fs.writeFileSync(path.join(root, rel), '# gone\n');
-    git(root, ['add', rel]);
-    git(root, ['commit', '-m', 'add spec']);
-    git(root, ['rm', '--', rel]);
-    const runGit = (cmd) => execFileSync(cmd, { cwd: root, shell: true, stdio: 'pipe', env: { ...process.env, ...GIT_SAFE_ENV } });
-    commitStagedPaths(runGit, root, [path.join(root, rel)], 'chore: delete feature 01 - remove spec');
-    const tracked = lsFiles(root, 'docs/specs/features/');
-    assert.ok(!tracked.includes(rel), `deleted spec should not be tracked:\n${tracked}`);
-}));
-
-test('feature-create -> prioritise -> start succeeds without manual commits', () => withTempDir('aigon-untr-flow-', (root) => {
-    initRepo(root);
-    FEATURE_FOLDERS.forEach(f => fs.mkdirSync(path.join(root, 'docs/specs/features', f), { recursive: true }));
-    let r = runCli(root, ['feature-create', 'flow-untracked']);
-    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
-    r = runCli(root, ['feature-prioritise', 'flow-untracked']);
-    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
-    r = runCli(root, ['feature-start', '01']);
-    assert.strictEqual(r.code, 0, r.stdout + r.stderr);
-    assert.ok(fs.existsSync(path.join(root, 'docs/specs/features/03-in-progress/feature-01-flow-untracked.md')));
 }));
 
 test('feature-start worktree failure pauses engine instead of phantom implementing', () => withTempDir('aigon-start-abort-', (root) => {

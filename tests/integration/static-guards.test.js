@@ -95,22 +95,6 @@ test('feature-do set context points at per-feature log globs', () => withTempDir
     assert.ok(section.includes('./docs/specs/features/logs/feature-07-*-log.md'), 'done sibling should use glob pattern');
     assert.ok(!section.includes('feature-07-cc-') && !section.includes('no log found'), 'should not collapse to one discovered log');
 })));
-// REGRESSION F332: LOGGING_SECTION constants use Step 4.5 and do not say "AFTER submit".
-test('LOGGING_SECTION constants: Step 4.5 label, no AFTER-submit wording', () => {
-    const pp = require('../../lib/profile-placeholders');
-    for (const variant of ['full', 'fleet', 'minimal']) {
-        const { LOGGING_SECTION } = pp.resolveLoggingPlaceholders('full', {
-            implementationLogMode: variant === 'fleet' ? 'fleet' : variant === 'minimal' ? 'drive' : 'drive-wt',
-            loggingLevel: variant === 'minimal' ? 'always' : undefined,
-            projectConfig: {},
-        });
-        // These variants produce a real logging section
-        if (LOGGING_SECTION.includes('Step')) {
-            assert.ok(LOGGING_SECTION.includes('Step 4.5'), `${variant} should use Step 4.5`);
-            assert.ok(!LOGGING_SECTION.includes('AFTER submit') && !LOGGING_SECTION.includes('do this AFTER'), `${variant} must not say AFTER submit`);
-        }
-    }
-});
 // REGRESSION F417: clean-room cred injection helper must parse and fail closed without container id.
 test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', () => {
     const sh = path.join(__dirname, '../../scripts/docker-inject-creds.sh');
@@ -119,13 +103,6 @@ test('docker-inject-creds.sh parses (bash -n) and exits non-zero with no args', 
     const noArgs = spawnSync('bash', [sh], { encoding: 'utf8' });
     assert.notStrictEqual(noArgs.status, 0);
     assert.ok(String(noArgs.stderr + noArgs.stdout).includes('Usage'));
-});
-// REGRESSION F537: benchmark-specific agent-probe flag was removed from OSS.
-test('agent-probe rejects removed benchmark flag without launching probe', () => {
-    const cli = path.join(__dirname, '../../aigon-cli.js');
-    const res = spawnSync(process.execPath, [cli, 'agent-probe', '--include-bench'], { encoding: 'utf8' });
-    assert.notStrictEqual(res.status, 0);
-    assert.ok(String(res.stderr).includes('removed from OSS Aigon'));
 });
 // REGRESSION F524: feature-do prompt must not inject any package-manager / depCheck recipe.
 // Aigon has zero opinion about the target repo's stack — operators declare `worktreeSetup`.

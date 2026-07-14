@@ -4,349 +4,166 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const { execFileSync } = require('child_process');
-const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV } = require('../_helpers');
+const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV, initGitRepo } = require('../_helpers');
 const { createDashboardRouteDispatcher } = require('../../lib/dashboard-routes');
+const { _internals: commitsInternals } = require('../../lib/dashboard-routes/commits');
 
-function gitRun(cwd, args) {
-    return execFileSync('git', args, {
-        cwd,
-        env: { ...process.env, ...GIT_SAFE_ENV },
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+const git = (cwd, ...args) => execFileSync('git', args, {
+    cwd, env: { ...process.env, ...GIT_SAFE_ENV }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+}).trim();
+
+function commitFile(repo, file, content, message) {
+    fs.writeFileSync(path.join(repo, file), content);
+    git(repo, 'add', file);
+    git(repo, 'commit', '-q', '-m', message);
+    return git(repo, 'rev-parse', 'HEAD');
 }
 
-function initRepo(dir) {
-    gitRun(dir, ['init', '-q', '-b', 'main']);
-    fs.writeFileSync(path.join(dir, 'README.md'), 'seed\n');
-    gitRun(dir, ['add', '.']);
-    gitRun(dir, ['commit', '-q', '-m', 'chore: seed']);
+function createWorktree(repo, home, branch) {
+    const dir = path.join(home, '.aigon', 'worktrees', path.basename(repo), branch);
+    fs.mkdirSync(path.dirname(dir), { recursive: true });
+    git(repo, 'worktree', 'add', '-q', '-b', branch, dir);
+    return dir;
 }
 
-
-function buildStubReqRes(reqUrl) {
-    const req = { url: reqUrl, headers: { host: 'localhost:5174' } };
-    let statusCode = null;
-    let body = null;
-    let resolveDone;
-    const done = new Promise(resolve => { resolveDone = resolve; });
-    const res = {
-        writeHead(code) { statusCode = code; },
-        end(payload) { body = payload; resolveDone(); },
-    };
-    return { req, res, done, getStatusCode: () => statusCode, getBody: () => (body ? JSON.parse(body) : null) };
+async function withHome(fn) {
+    return withTempDirAsync('aigon-home-', async (home) => {
+        const previous = process.env.HOME;
+        process.env.HOME = home;
+        try { return await fn(home); } finally { process.env.HOME = previous; }
+    });
 }
 
-function buildStubServerCtx(repoPath) {
+function serverCtx(repo) {
     return {
         state: {
-            getLatestStatus: () => null,
-            setLatestStatus: () => {},
-            getGlobalConfig: () => ({}),
-            setGlobalConfig: () => {},
-            getNotificationUnreadCount: () => 0,
-            setNotificationUnreadCount: () => {},
+            getLatestStatus: () => null, setLatestStatus: () => {}, getGlobalConfig: () => ({}),
+            setGlobalConfig: () => {}, getNotificationUnreadCount: () => 0, setNotificationUnreadCount: () => {},
         },
-        helpers: {
-            resolveRequestedRepoPathOrRespond: (_res, requested) => requested || repoPath,
-        },
-        routes: {},
-        options: {},
+        helpers: { resolveRequestedRepoPathOrRespond: (_res, requested) => requested || repo },
+        routes: {}, options: {},
     };
 }
 
-testAsync('worktree path: returns commits ahead of main', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
+async function request(repo, routePath, url = `${routePath}?repoPath=${encodeURIComponent(repo)}`) {
+    let statusCode;
+    let body;
+    let finish;
+    const done = new Promise(resolve => { finish = resolve; });
+    const req = { url, headers: { host: 'localhost:5174' } };
+    const res = {
+        writeHead(code) { statusCode = code; },
+        end(payload) { body = payload ? JSON.parse(payload) : null; finish(); },
+    };
+    const matched = createDashboardRouteDispatcher(serverCtx(repo)).dispatchOssRoute('GET', routePath, req, res);
+    await done;
+    return { matched, statusCode, body };
+}
 
-        // Simulate a worktree dir matching feature-{id}-{agent}-{desc} living
-        // under ~/.aigon/worktrees/{repoName}. We override HOME so the route's
-        // findFeatureWorktree() looks in our temp tree.
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const repoName = path.basename(repo);
-        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
-        fs.mkdirSync(worktreeBase, { recursive: true });
-        const worktreePath = path.join(worktreeBase, 'feature-77-cc-add-thing');
-        gitRun(repo, ['worktree', 'add', '-q', '-b', 'feature-77-cc-add-thing', worktreePath]);
+function mergeBranch(repo, id, agent, changes) {
+    const branch = `feature-${id}-${agent}-test`;
+    git(repo, 'checkout', '-q', '-b', branch);
+    const hashes = changes.map(([file, content, message]) => commitFile(repo, file, content, message));
+    git(repo, 'checkout', '-q', 'main');
+    git(repo, 'merge', '--no-ff', branch, '-m', `Merge feature ${id} from agent ${agent}`);
+    return hashes;
+}
 
-        // Add two commits
-        fs.writeFileSync(path.join(worktreePath, 'a.txt'), 'one\n');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: first']);
-        fs.writeFileSync(path.join(worktreePath, 'b.txt'), 'two\nthree\n');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: second']);
+testAsync('worktree route returns ordered commits and file stats', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    await withHome(async (home) => {
+        const worktree = createWorktree(repo, home, 'feature-77-cc-add-thing');
+        commitFile(worktree, 'a.txt', 'one\n', 'feat: first');
+        commitFile(worktree, 'b.txt', 'two\nthree\n', 'feat: second');
+        const { matched, statusCode, body } = await request(repo, '/api/feature/77/commits');
+        assert.strictEqual(matched, true);
+        assert.strictEqual(statusCode, 200);
+        assert.deepStrictEqual(body.commits.map(commit => commit.message), ['feat: second', 'feat: first']);
+        assert.strictEqual(body.source, 'worktree');
+        assert.strictEqual(body.commits[0].files.find(file => file.path === 'b.txt').added, 2);
+    });
+}));
 
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/77/commits?repoPath=${encodeURIComponent(repo)}`);
-            const matched = dispatcher.dispatchOssRoute('GET', '/api/feature/77/commits', req, res);
-            assert.strictEqual(matched, true);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'worktree');
-            assert.strictEqual(body.commits.length, 2);
-            assert.strictEqual(body.commits[0].message, 'feat: second');
-            assert.strictEqual(body.commits[1].message, 'feat: first');
-            // Files attached
-            const files = body.commits[0].files;
-            assert.ok(Array.isArray(files));
-            const bFile = files.find(f => f.path === 'b.txt');
-            assert.ok(bFile, 'b.txt should appear in second commit');
-            assert.strictEqual(bFile.added, 2);
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
+testAsync('diff route returns a textual worktree patch', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    await withHome(async (home) => {
+        const worktree = createWorktree(repo, home, 'feature-78-cx-show-diff');
+        commitFile(worktree, 'diff.txt', 'old\n', 'feat: add diff file');
+        const hash = commitFile(worktree, 'diff.txt', 'old\nnew\n', 'feat: update diff file');
+        const route = `/api/feature/78/commits/${hash}/diff`;
+        const result = await request(repo, route, `${route}?repoPath=${encodeURIComponent(repo)}&path=diff.txt`);
+        assert.strictEqual(result.statusCode, 200);
+        assert.deepStrictEqual(
+            (({ source, path: file, binary, truncated }) => ({ source, file, binary, truncated }))(result.body),
+            { source: 'worktree', file: 'diff.txt', binary: false, truncated: false }
+        );
+        assert.match(result.body.diff, /^@@ /m);
+        assert.match(result.body.diff, /^\+new$/m);
+    });
+}));
 
-testAsync('diff endpoint: returns a textual per-file patch from worktree commits', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
+testAsync('diff route handles binary and truncated merged files', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    const [binaryHash] = mergeBranch(repo, '909080', 'cx', [['image.bin', Buffer.from([0, 1, 2, 3, 0]), 'feat: binary']]);
+    const binaryRoute = `/api/features/909080/commits/${binaryHash}/diff`;
+    const binary = await request(repo, binaryRoute, `${binaryRoute}?repoPath=${encodeURIComponent(repo)}&path=image.bin`);
+    assert.strictEqual(binary.body.binary, true);
+    assert.strictEqual(binary.body.diff, '');
 
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const repoName = path.basename(repo);
-        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
-        fs.mkdirSync(worktreeBase, { recursive: true });
-        const worktreePath = path.join(worktreeBase, 'feature-78-cx-show-diff');
-        gitRun(repo, ['worktree', 'add', '-q', '-b', 'feature-78-cx-show-diff', worktreePath]);
+    const lines = Array.from({ length: 26000 }, (_, i) => `line-${i}`).join('\n') + '\n';
+    const [largeHash] = mergeBranch(repo, '909081', 'cx', [['large.txt', lines, 'feat: large diff']]);
+    const largeRoute = `/api/feature/909081/commits/${largeHash}/diff`;
+    const large = await request(repo, largeRoute, `${largeRoute}?repoPath=${encodeURIComponent(repo)}&path=large.txt`);
+    assert.strictEqual(large.body.truncated, true);
+    assert.ok(Buffer.byteLength(large.body.diff) <= commitsInternals.MAX_FILE_DIFF_BYTES);
+    assert.match(large.body.diff, /^@@ /m);
+}));
 
-        fs.writeFileSync(path.join(worktreePath, 'diff.txt'), 'old\n');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: add diff file']);
-        fs.writeFileSync(path.join(worktreePath, 'diff.txt'), 'old\nnew\n');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: update diff file']);
-        const hash = gitRun(worktreePath, ['rev-parse', 'HEAD']);
-
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const reqUrl = `/api/feature/78/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('diff.txt')}`;
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
-            const matched = dispatcher.dispatchOssRoute('GET', `/api/feature/78/commits/${hash}/diff`, req, res);
-            assert.strictEqual(matched, true);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'worktree');
-            assert.strictEqual(body.path, 'diff.txt');
-            assert.strictEqual(body.binary, false);
-            assert.strictEqual(body.truncated, false);
-            assert.match(body.diff, /^@@ /m);
-            assert.match(body.diff, /^\+new$/m);
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
-
-testAsync('diff endpoint: reports binary files without a textual diff body', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-
-        gitRun(repo, ['checkout', '-q', '-b', 'feature-909080-cx-binary']);
-        fs.writeFileSync(path.join(repo, 'image.bin'), Buffer.from([0, 1, 2, 3, 0]));
-        gitRun(repo, ['add', '.']);
-        gitRun(repo, ['commit', '-q', '-m', 'feat: binary']);
-        const hash = gitRun(repo, ['rev-parse', 'HEAD']);
-        gitRun(repo, ['checkout', '-q', 'main']);
-        gitRun(repo, ['merge', '--no-ff', 'feature-909080-cx-binary', '-m', 'Merge feature 909080 from agent cx']);
-
-        const ctx = buildStubServerCtx(repo);
-        const dispatcher = createDashboardRouteDispatcher(ctx);
-        const reqUrl = `/api/features/909080/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('image.bin')}`;
-        const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
-        dispatcher.dispatchOssRoute('GET', `/api/features/909080/commits/${hash}/diff`, req, res);
-        await done;
-        assert.strictEqual(getStatusCode(), 200);
-        const body = getBody();
+testAsync('merged route finds feature commits after worktree removal', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    mergeBranch(repo, '99', 'cc', [['x.txt', 'x\n', 'feat: x'], ['y.txt', 'y\n', 'feat: y']]);
+    await withHome(async () => {
+        const { statusCode, body } = await request(repo, '/api/feature/99/commits');
+        assert.strictEqual(statusCode, 200);
         assert.strictEqual(body.source, 'merged');
-        assert.strictEqual(body.binary, true);
-        assert.strictEqual(body.diff, '');
-    })
-);
+        assert.deepStrictEqual(body.commits.map(commit => commit.message).sort(), ['feat: x', 'feat: y']);
+    });
+}));
 
-testAsync('diff endpoint: caps large per-file diffs and marks them truncated', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
+testAsync('merged route ignores orphaned worktree directories', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    mergeBranch(repo, '79', 'cx', [['orphan.txt', 'merged\n', 'feat: merged work']]);
+    await withHome(async (home) => {
+        const orphan = path.join(home, '.aigon', 'worktrees', path.basename(repo), 'feature-79-cx-orphan');
+        fs.mkdirSync(orphan, { recursive: true });
+        const { body } = await request(repo, '/api/feature/79/commits');
+        assert.strictEqual(body.source, 'merged');
+        assert.deepStrictEqual(body.commits.map(commit => commit.message), ['feat: merged work']);
+    });
+}));
 
-        gitRun(repo, ['checkout', '-q', '-b', 'feature-909081-cx-large']);
-        const lines = Array.from({ length: 26000 }, (_, i) => `line-${i}`).join('\n') + '\n';
-        fs.writeFileSync(path.join(repo, 'large.txt'), lines);
-        gitRun(repo, ['add', '.']);
-        gitRun(repo, ['commit', '-q', '-m', 'feat: large diff']);
-        const hash = gitRun(repo, ['rev-parse', 'HEAD']);
-        gitRun(repo, ['checkout', '-q', 'main']);
-        gitRun(repo, ['merge', '--no-ff', 'feature-909081-cx-large', '-m', 'Merge feature 909081 from agent cx']);
+testAsync('worktree route filters Aigon-Internal commits', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    await withHome(async (home) => {
+        const worktree = createWorktree(repo, home, 'feature-88-cc-thing');
+        fs.writeFileSync(path.join(worktree, '.gitignore'), '');
+        git(worktree, 'add', '.gitignore');
+        git(worktree, 'commit', '-q', '-m', 'chore: setup', '--trailer', 'Aigon-Internal: true');
+        commitFile(worktree, 'real.txt', 'content\n', 'feat: real work');
+        const { body } = await request(repo, '/api/feature/88/commits');
+        assert.deepStrictEqual(body.commits.map(commit => commit.message), ['feat: real work']);
+    });
+}));
 
-        const ctx = buildStubServerCtx(repo);
-        const dispatcher = createDashboardRouteDispatcher(ctx);
-        const reqUrl = `/api/feature/909081/commits/${hash}/diff?repoPath=${encodeURIComponent(repo)}&path=${encodeURIComponent('large.txt')}`;
-        const { req, res, done, getStatusCode, getBody } = buildStubReqRes(reqUrl);
-        dispatcher.dispatchOssRoute('GET', `/api/feature/909081/commits/${hash}/diff`, req, res);
-        await done;
-        assert.strictEqual(getStatusCode(), 200);
-        const body = getBody();
-        assert.strictEqual(body.truncated, true);
-        assert.ok(Buffer.byteLength(body.diff, 'utf8') <= require('../../lib/dashboard-routes/commits')._internals.MAX_FILE_DIFF_BYTES);
-        assert.match(body.diff, /^@@ /m);
-    })
-);
-
-testAsync('merged path: finds commits via merge-grep when worktree is gone', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-
-        // Create a feature branch with two commits, then merge --no-ff with the
-        // canonical "Merge feature {id}" commit message.
-        gitRun(repo, ['checkout', '-q', '-b', 'feature-99-cc-thing']);
-        fs.writeFileSync(path.join(repo, 'x.txt'), 'x\n');
-        gitRun(repo, ['add', '.']);
-        gitRun(repo, ['commit', '-q', '-m', 'feat: x']);
-        fs.writeFileSync(path.join(repo, 'y.txt'), 'y\n');
-        gitRun(repo, ['add', '.']);
-        gitRun(repo, ['commit', '-q', '-m', 'feat: y']);
-
-        gitRun(repo, ['checkout', '-q', 'main']);
-        gitRun(repo, ['merge', '--no-ff', 'feature-99-cc-thing', '-m', 'Merge feature 99 from agent cc']);
-
-        // Run with a HOME that has no worktree dir, so route falls through to merged path.
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/99/commits?repoPath=${encodeURIComponent(repo)}`);
-            dispatcher.dispatchOssRoute('GET', '/api/feature/99/commits', req, res);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'merged');
-            assert.strictEqual(body.commits.length, 2);
-            const messages = body.commits.map(c => c.message).sort();
-            assert.deepStrictEqual(messages, ['feat: x', 'feat: y']);
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
-
-testAsync('merged path: ignores orphaned worktree directory without a valid .git link', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-
-        gitRun(repo, ['checkout', '-q', '-b', 'feature-79-cx-orphan']);
-        fs.writeFileSync(path.join(repo, 'orphan.txt'), 'merged\n');
-        gitRun(repo, ['add', '.']);
-        gitRun(repo, ['commit', '-q', '-m', 'feat: merged work']);
-        gitRun(repo, ['checkout', '-q', 'main']);
-        gitRun(repo, ['merge', '--no-ff', 'feature-79-cx-orphan', '-m', 'Merge feature 79 from agent cx']);
-
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const repoName = path.basename(repo);
-        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
-        const orphanPath = path.join(worktreeBase, 'feature-79-cx-orphan');
-        fs.mkdirSync(orphanPath, { recursive: true });
-        fs.writeFileSync(path.join(orphanPath, 'README.md'), 'leftover directory, not a git worktree\n');
-
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/79/commits?repoPath=${encodeURIComponent(repo)}`);
-            dispatcher.dispatchOssRoute('GET', '/api/feature/79/commits', req, res);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'merged');
-            assert.strictEqual(body.commits.length, 1);
-            assert.strictEqual(body.commits[0].message, 'feat: merged work');
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
-
-testAsync('worktree path: filters commits with Aigon-Internal: true trailer', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const repoName = path.basename(repo);
-        const worktreeBase = path.join(fakeHome, '.aigon', 'worktrees', repoName);
-        fs.mkdirSync(worktreeBase, { recursive: true });
-        const worktreePath = path.join(worktreeBase, 'feature-88-cc-thing');
-        gitRun(repo, ['worktree', 'add', '-q', '-b', 'feature-88-cc-thing', worktreePath]);
-
-        // Plumbing commit — should be hidden
-        fs.writeFileSync(path.join(worktreePath, '.gitignore'), '');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'chore: worktree setup for cc', '--trailer', 'Aigon-Internal: true']);
-
-        // Content commit — should be visible
-        fs.writeFileSync(path.join(worktreePath, 'real.txt'), 'content\n');
-        gitRun(worktreePath, ['add', '.']);
-        gitRun(worktreePath, ['commit', '-q', '-m', 'feat: real work']);
-
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const { req, res, done, getStatusCode, getBody } = buildStubReqRes(`/api/feature/88/commits?repoPath=${encodeURIComponent(repo)}`);
-            dispatcher.dispatchOssRoute('GET', '/api/feature/88/commits', req, res);
-            await done;
-            assert.strictEqual(getStatusCode(), 200);
-            const body = getBody();
-            assert.strictEqual(body.source, 'worktree');
-            assert.strictEqual(body.commits.length, 1, 'plumbing commit must be filtered out');
-            assert.strictEqual(body.commits[0].message, 'feat: real work');
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
-
-testAsync('dispatcher: rejects non-numeric ids (400) and accepts plural /api/features/:id/commits', () =>
-    withTempDirAsync(async (repo) => {
-        initRepo(repo);
-        const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-home-'));
-        const prevHome = process.env.HOME;
-        process.env.HOME = fakeHome;
-        try {
-            const ctx = buildStubServerCtx(repo);
-            const dispatcher = createDashboardRouteDispatcher(ctx);
-            const bad = buildStubReqRes(`/api/feature/abc/commits?repoPath=${encodeURIComponent(repo)}`);
-            dispatcher.dispatchOssRoute('GET', '/api/feature/abc/commits', bad.req, bad.res);
-            await bad.done;
-            assert.strictEqual(bad.getStatusCode(), 400);
-
-            const plural = buildStubReqRes(`/api/features/55/commits?repoPath=${encodeURIComponent(repo)}`);
-            const matched = dispatcher.dispatchOssRoute('GET', '/api/features/55/commits', plural.req, plural.res);
-            assert.strictEqual(matched, true);
-            await plural.done;
-            assert.strictEqual(plural.getStatusCode(), 200);
-        } finally {
-            process.env.HOME = prevHome;
-            fs.rmSync(fakeHome, { recursive: true, force: true });
-        }
-    })
-);
+testAsync('dispatcher rejects non-numeric IDs and accepts plural routes', () => withTempDirAsync(async (repo) => {
+    initGitRepo(repo, { branch: 'main' });
+    await withHome(async () => {
+        assert.strictEqual((await request(repo, '/api/feature/abc/commits')).statusCode, 400);
+        const plural = await request(repo, '/api/features/55/commits');
+        assert.strictEqual(plural.matched, true);
+        assert.strictEqual(plural.statusCode, 200);
+    });
+}));
 
 report();

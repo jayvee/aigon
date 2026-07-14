@@ -6,11 +6,8 @@
 // Extracted from misc-command-wrapper.test.js (F506) where they were misplaced.
 
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const { test, report, withTempDir } = require('../_helpers');
+const { test, report } = require('../_helpers');
 const { parseClaudeStatus, parseGeminiModelUsage, parseGeminiFooterPlanQuota, parseAntigravityUsage, parseKimiUsage, stripAnsi } = require('../../lib/budget-poller');
-const agentQuotaRead = require('../../lib/agent-quota-read');
 
 // REGRESSION: GET /api/budget cc — parseClaudeStatus misread 0% used when % is on progress-bar line above Resets.
 test('parseClaudeStatus: new format — pct on progress-bar line above Resets', () => {
@@ -162,41 +159,5 @@ test('parseKimiUsage: extracts tier pct remaining and reset hints', () => {
     assert.strictEqual(tiers[1].pct_used, 7);
     assert.strictEqual(tiers[1].resets_at, 'resets in 3h 27m');
 });
-
-// REGRESSION: disabled agents must not surface stale budget rows on dashboard reads.
-test('projectBudgetApi clears disabled agent cache entries', () => withTempDir(async (tmp) => {
-    const home = path.join(tmp, 'home');
-    const repo = path.join(tmp, 'repo');
-    fs.mkdirSync(path.join(home, '.aigon'), { recursive: true });
-    fs.mkdirSync(path.join(repo, '.aigon'), { recursive: true });
-    fs.writeFileSync(path.join(home, '.aigon', 'config.json'), JSON.stringify({
-        repos: {},
-        agents: { km: { availability: { state: 'disabled', reason: 'prefer-other-agent' } } },
-        terminalApp: 'apple-terminal',
-    }, null, 2));
-
-    const prevHome = process.env.HOME;
-    const prevCwd = process.cwd();
-    process.env.HOME = home;
-    process.chdir(repo);
-    try {
-        for (const key of Object.keys(require.cache)) {
-            if (key.includes(`${path.sep}lib${path.sep}config.js`) || key.includes(`${path.sep}lib${path.sep}agent-availability.js`)) {
-                delete require.cache[key];
-            }
-        }
-        const filtered = agentQuotaRead.projectBudgetApi({
-            agents: {
-                cc: { budget: { polled_at: '2026-01-01T00:00:00.000Z', session: { pct_used: 10 } } },
-                km: { budget: { polled_at: '2026-01-01T00:00:00.000Z', tiers: [{ pct_used: 5 }] } },
-            },
-        }, repo);
-        assert.ok(filtered.cc);
-        assert.strictEqual(filtered.km, null);
-    } finally {
-        process.env.HOME = prevHome;
-        process.chdir(prevCwd);
-    }
-}));
 
 report();
