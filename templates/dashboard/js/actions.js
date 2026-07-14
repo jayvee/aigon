@@ -152,6 +152,44 @@ function resolveCloseWithAgent(feature, storedInfo, repoPath) {
 }
 
 function renderActionButtons(feature, repoPath, pipelineType) {
+  if (pipelineType !== 'research' && feature.uiContract) {
+    const contract = feature.uiContract;
+    const decisions = (contract.decisions && contract.decisions.actions) || [];
+    const tools = contract.tools || [];
+    const cardActions = decisions.concat(tools)
+      .filter(action => action.interaction && action.interaction.surface !== 'agent');
+    // Close-failure resolution depends on client-stored failure info the
+    // server contract cannot carry — keep the resolve affordance here.
+    const closeResolveHtml = shouldShowCloseWithAgent(feature)
+      ? '<button class="btn btn-secondary kcard-close-resolve-btn">Close with agent</button>'
+      : '';
+    if (cardActions.length === 0) return closeResolveHtml;
+
+    function renderContractButton(action, cls) {
+      const unavailable = action.unavailableReason || '';
+      const title = unavailable ? ' title="' + escHtml(unavailable) + '"' : '';
+      return '<button class="' + cls + ' kcard-va-btn" data-va-action="' + escHtml(action.actionId) + '"'
+        + (action.disabled ? ' disabled' : '') + title + '>' + escHtml(action.label) + '</button>';
+    }
+
+    const primaryId = contract.decisions.primaryActionId;
+    const primary = primaryId
+      ? cardActions.find(action => action.actionId === primaryId && !action.disabled)
+      : null;
+    const overflow = cardActions.filter(action => action !== primary);
+    let html = (primary ? renderContractButton(primary, 'btn btn-primary') : '') + closeResolveHtml;
+    if (overflow.length > 0) {
+      const items = overflow.map(action => {
+        const cls = action.interaction && action.interaction.destructive
+          ? 'kcard-overflow-item kcard-va-btn btn-danger'
+          : 'kcard-overflow-item kcard-va-btn';
+        return renderContractButton(action, cls);
+      }).join('');
+      html += '<div class="kcard-overflow"><button class="btn btn-overflow kcard-overflow-toggle" type="button">⋯</button><div class="kcard-overflow-menu">' + items + '</div></div>';
+    }
+    return html;
+  }
+
   const validActions = feature.validActions || [];
   if (validActions.length === 0) return '';
   const showRecoveryActions = Boolean(
