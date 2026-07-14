@@ -69,4 +69,19 @@ test('done exposes no lifecycle or session mutation actions', () => {
     assert.deepStrictEqual(contract.tools, []);
 });
 
+test('session Peek remains a nested affordance instead of a new card action', () => {
+    const contract = buildFeatureUiContract({
+        id: '675',
+        displayKey: 'F675',
+        name: 'contract',
+        stage: 'in-progress',
+        agents: [],
+        sessions: [{ sessionName: 'feature-675-cx', status: 'running' }],
+        validActions: [],
+        cardPresentation: { severity: 'normal' },
+    }, { currentSpecState: 'implementing', lifecycle: 'implementing' });
+    assert.strictEqual(contract.sessions[0].affordances[0].actionId, 'peek-session');
+    assert(!contract.tools.some(action => action.actionId === 'peek-session'));
+});
+
 console.log(`\n${passed} passed, 0 failed`);

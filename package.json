@@ -71,6 +71,8 @@
     "test:release": "npm run test:core:full && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser:full && bash scripts/check-test-budget.sh",
     "test:ui": "npm run test:browser:smoke",
     "test:all": "npm run test:release",
+    "gallery": "node scripts/start-dashboard-gallery.js",
+    "test:gallery": "npx playwright test --config tests/gallery-e2e/playwright.config.js",
     "fixture:seed": "node scripts/setup-fixture.js",
     "fixture:reset": "node scripts/reset-fixture.js",
     "security:package-config": "node scripts/check-package-security-config.js",

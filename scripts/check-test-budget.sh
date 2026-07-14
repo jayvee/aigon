@@ -68,7 +68,10 @@ set -euo pipefail
 # state/action scenario matrix (ready solo, ready fleet, and terminal done).
 # F676: test-effectiveness audit removed duplicate browser paths, source-text
 # assertions, obsolete fixtures, and redundant integration layers (-1,832 LOC).
-CEILING="${CEILING:-15404}"
+# F677: +333 LOC explicitly approved for the living dashboard contract gallery:
+# shared-contract validation, the complete feature/research/set scenario matrix,
+# and responsive Cards/Pipeline/Monitor browser coverage.
+CEILING="${CEILING:-15737}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -88,7 +91,9 @@ OLD_CEILING=$(git diff HEAD~1..HEAD -- scripts/check-test-budget.sh 2>/dev/null 
     | grep -E '^\-CEILING=' | head -1 | sed -E 's/^\-CEILING="\$\{CEILING:-([0-9]+)\}".*/\1/' || true)
 F675_PREAUTH=false
 if [ "$OLD_CEILING" = "17177" ] && [ "$STAGED_CEILING_DELTA" = "17236" ]; then F675_PREAUTH=true; fi
-if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null && [ "$F675_PREAUTH" != true ]; then
+F677_PREAUTH=false
+if [ "$OLD_CEILING" = "15404" ] && [ "$STAGED_CEILING_DELTA" = "15737" ]; then F677_PREAUTH=true; fi
+if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null && [ "$F675_PREAUTH" != true ] && [ "$F677_PREAUTH" != true ]; then
     DELETED_TESTS=$(git diff HEAD~1..HEAD --name-only --diff-filter=D -- 'tests/**/*.test.js' 'tests/**/*.spec.js' 2>/dev/null || true)
     if [ -z "$DELETED_TESTS" ]; then
         echo "❌ Ceiling raise requires same-commit deletion of at least one test file."

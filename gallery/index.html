@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aigon card state gallery</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/icon/aigon-icon.svg" />
+  <link rel="stylesheet" href="/gallery.css?v=${AIGON_VERSION}" />
+</head>
+<body>
+  <header class="gallery-header">
+    <div class="brand-row">
+      <img src="/assets/icon/aigon-icon.svg" alt="" width="24" height="24" />
+      <strong>Aigon</strong>
+      <span class="header-divider" aria-hidden="true"></span>
+      <span>Dashboard design gallery</span>
+    </div>
+    <nav class="view-tabs" aria-label="Gallery view">
+      <button type="button" class="view-tab active" data-view="cards">Cards</button>
+      <button type="button" class="view-tab" data-view="pipeline">Pipeline</button>
+      <button type="button" class="view-tab" data-view="monitor">Monitor</button>
+    </nav>
+    <span class="back-link">Development surface · port 3700</span>
+  </header>
+
+  <main>
+    <section class="gallery-intro" aria-labelledby="gallery-title">
+      <div>
+        <h1 id="gallery-title">Feature, research, and feature set cards</h1>
+        <p id="gallery-note">Loading the interaction contracts...</p>
+      </div>
+      <button class="diagnostics-button" id="diagnostics-button" type="button">
+        Contract coverage
+        <span id="diagnostics-count" class="diagnostics-count"></span>
+      </button>
+    </section>
+
+    <section class="toolbar" id="cards-toolbar" aria-label="Gallery filters">
+      <div class="segmented" role="group" aria-label="Entity type">
+        <button type="button" class="segment active" data-entity="all">All</button>
+        <button type="button" class="segment" data-entity="feature">Features</button>
+        <button type="button" class="segment" data-entity="research">Research</button>
+        <button type="button" class="segment" data-entity="set">Feature sets</button>
+      </div>
+      <label class="search-field">
+        <span class="visually-hidden">Search states and actions</span>
+        <span aria-hidden="true">⌕</span>
+        <input id="gallery-search" type="search" placeholder="Search states or actions" autocomplete="off" />
+      </label>
+      <label class="inventory-toggle">
+        <input id="inventory-toggle" type="checkbox" checked />
+        <span>Show action inventory</span>
+      </label>
+      <span class="result-count" id="result-count" aria-live="polite"></span>
+    </section>
+
+    <div id="gallery-status" class="loading-state">Deriving cards from the workflow definitions...</div>
+    <section id="cards-view" class="gallery-view">
+      <div id="gallery-groups"></div>
+    </section>
+    <section id="pipeline-view" class="gallery-view" hidden></section>
+    <section id="monitor-view" class="gallery-view" hidden></section>
+  </main>
+
+  <div class="drawer-scrim" id="drawer-scrim" hidden></div>
+  <aside class="drawer" id="action-drawer" aria-labelledby="drawer-title" aria-modal="true" role="dialog" hidden>
+    <div class="drawer-header">
+      <div>
+        <span id="drawer-key" class="drawer-key"></span>
+        <h2 id="drawer-title">Actions</h2>
+      </div>
+      <button class="icon-button" id="drawer-close-icon" type="button" aria-label="Close action details" title="Close">
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+    <div class="drawer-footer">
+      <button class="secondary-button" id="drawer-close-button" type="button">Close</button>
+    </div>
+  </aside>
+
+  <script type="module" src="/gallery.js?v=${AIGON_VERSION}"></script>
+</body>
+</html>
