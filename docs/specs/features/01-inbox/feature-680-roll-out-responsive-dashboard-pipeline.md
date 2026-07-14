@@ -1,6 +1,6 @@
 ---
 aigon_id: F680
-complexity: very-high
+complexity: high
 set: dashboard-ui-rollout
 depends_on:
   - 679
@@ -24,7 +24,7 @@ The candidate Pipeline remains covered by the preview switch until F682 complete
 
 ## Acceptance Criteria
 
-- [ ] The Pipeline uses the available viewport width while retaining bounded gutters and readable card content; it is not capped by the old dashboard-wide content maximum.
+- [ ] The Pipeline uses the available viewport width while retaining bounded gutters and readable card content; it is not capped by the old dashboard-wide content maximum (the `.wrap` `max-width: 1400px` rule in `templates/dashboard/styles/base.css`), which is scoped away for operational views rather than deleted globally.
 - [ ] At wide desktop widths the six lifecycle lanes are simultaneously useful: compact lanes prioritize queue density and active/review lanes receive larger minimum widths.
 - [ ] At medium widths the Pipeline reflows to a stable multi-row layout instead of compressing cards below their supported width.
 - [ ] At 390px mobile width stages form one ordered vertical flow, the document has no horizontal overflow, and all card actions, menus, and Peek controls remain reachable.
@@ -44,7 +44,7 @@ The candidate Pipeline remains covered by the preview switch until F682 complete
 
 1. Separate Pipeline composition and lane layout from card rendering. Use the F679 renderer's compact/expanded contract variants rather than branching markup by lifecycle state.
 2. Scope full-width behavior to operational dashboard views so settings and other focused surfaces retain appropriate reading widths.
-3. Implement a responsive CSS grid with explicit wide, medium, and mobile tracks. Avoid nested horizontal scrollers as the primary mobile solution.
+3. Implement a responsive CSS grid with explicit wide, medium, and mobile tracks. Avoid nested horizontal scrollers as the primary mobile solution. New layout stylesheets live in `templates/dashboard/styles/` and are listed in `styles/manifest.json`.
 4. Adapt the existing keyed reconciliation and drag listeners around the new card roots. Preserve contract action IDs and stable DOM keys so status refreshes do not recreate the entire board.
 5. Add layout fixtures with realistic maximum content: long names, two or more active agents, stage-owned Peek controls, blockers, and current-member set detail.
 6. Keep the legacy Pipeline selectable through the preview setting until final cutover.
