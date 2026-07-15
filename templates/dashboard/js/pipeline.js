@@ -102,18 +102,9 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       return (lane === 'in-progress' || lane === 'in-evaluation') ? 'expanded' : 'compact';
     }
 
-    function isContractPipelinePreviewActive(repos) {
-      return (repos || []).some(repo => repo && repo.contractCardsPreview === true);
-    }
-
-    function syncKanbanResponsiveClass(repos) {
-      const visibleRepos = repos || [];
+    function syncKanbanResponsiveClass() {
       document.querySelectorAll('#pipeline-view .kanban').forEach(board => {
-        const col = board.querySelector('.kanban-col[data-repo-path]');
-        const repoPath = col ? col.getAttribute('data-repo-path') : null;
-        const needle = normalizeKanbanRepoPath(repoPath);
-        const repo = visibleRepos.find(r => r && normalizeKanbanRepoPath(r.path) === needle);
-        board.classList.toggle('kanban--responsive', !!(repo && repo.contractCardsPreview === true));
+        board.classList.add('kanban--responsive');
       });
     }
 
@@ -1094,228 +1085,31 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       card.dataset.stage = feature.stage;
       card.dataset.repoPath = repoPath || '';
 
-      const pres = feature.cardPresentation || {};
-      const suppress = pres.suppress || {};
-      feature.__showRecoveryActions = Boolean(pres.showRecoveryActions);
-
-      const agents = feature.agents || [];
-      const validActions = feature.validActions || [];
       const repoStorage = repoMeta && repoMeta.storage ? repoMeta.storage : null;
-      const autonomousSessionRunning = feature.autonomousSession
-        && feature.autonomousSession.sessionName
-        && (feature.autonomousSession.sessionRunning === true || feature.autonomousSession.running === true);
-      const autonomousPeekBtn = autonomousSessionRunning && canShowSessionPeek(feature, repoStorage, { sessionRunning: true })
-        ? '<button class="kcard-peek-btn" data-peek-session="' + escHtml(feature.autonomousSession.sessionName) + '" title="Peek at autonomous controller output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>'
-        : '';
-      const autonomousControllerHtml = buildAutonomousControllerStatusHtml(feature);
-      const autonomousPlanHtml = buildAutonomousPlanSectionHtml(feature, autonomousPeekBtn);
-      // Done cards are clean — just ID and name, no agent sections, no actions
-      const isDone = feature.stage === 'done';
-      // Drive mode (branch): solo agent with no tmux session — skip agent sections
-      const isSoloDriveBranch = agents.length === 1 && agents[0].id === 'solo' && !agents[0].tmuxSession;
-      const hasAgentSections = !isDone && agents.length > 0 && !isSoloDriveBranch;
-
-      const reviews = feature.reviewSessionSummary || feature.reviewSessions || [];
-
-      const hasNumericId = /^\d+$/.test(String(feature.id || ''));
-
-      const nudgeChipsHtml = feature.stage !== 'done' && Array.isArray(feature.nudges) && feature.nudges.length > 0
-        ? '<div class="kcard-nudges">' + feature.nudges.slice(-3).map(nudge => {
-          const label = (nudge.agentId || 'agent') + ': ' + String(nudge.text || '').replace(/\s+/g, ' ').trim();
-          const trimmed = label.length > 42 ? label.slice(0, 39) + '…' : label;
-          const title = (nudge.atISO ? new Date(nudge.atISO).toLocaleString() + ' — ' : '') + label;
-          return '<button class="kcard-nudge-chip" type="button" data-open-nudge-modal title="' + escHtml(title) + '">' + escHtml(trimmed) + '</button>';
-        }).join('') + '</div>'
-        : '';
-      const blockedByHtml = (feature.stage === 'backlog' && feature.blockedBy && feature.blockedBy.length > 0)
-        ? (function() {
-          const bits = ['<div class="kcard-dep-chain" role="note">',
-            '<span class="kcard-dep-chain-label">after</span>',
-            '<div class="kcard-dep-wires" aria-hidden="true">'];
-          feature.blockedBy.forEach((d, i) => {
-            if (i > 0) bits.push('<span class="kcard-dep-wire"></span>');
-            const n = formatFeatureIdForDisplay(d.id);
-            const st = escHtml(String(d.stage || '').replace(/-/g, ' '));
-            bits.push('<span class="kcard-dep-chip" title="Feature #' + escHtml(n) + ' (' + st + ')">#' + escHtml(n) + '</span>');
-          });
-          bits.push('</div></div>');
-          return bits.join('');
-        })()
-        : '';
-      let innerHtml =
-        (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
-        '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + buildSpecDriftBadgeHtml(feature) + buildEscalationBadgeHtml(feature) + buildLeaseBadgeHtml(feature, repoMeta && repoMeta.storage) + (buildScheduledGlyphHtml(feature) || buildFeatureSetScheduledGlyphHtml(feature, repoMeta)) + '</div>' +
-        buildSpecAuthorHtml(feature) +
-        buildCardHeadlineHtml(feature) +
-        buildCardTimelineHtml(feature) +
-        buildCardAgentSummaryHtml(feature) +
-        blockedByHtml +
-        (suppress.autonomousController ? '' : autonomousControllerHtml) +
-        autonomousPlanHtml +
-        buildWorkflowIdleBadgeHtml(feature) +
-        buildStartupPhaseHtml(feature) +
-        nudgeChipsHtml;
-
-      if (hasAgentSections) {
-        if (pres.compactAgents && pres.agentSummary) {
-          // Agent detail collapsed — summary rendered above; card-level actions only.
-        } else {
-        // --- Evaluation verdict layout (pick-winner state) ---
-        // Agent sections — same layout as in-progress (filter out select-winner from per-agent actions)
-        agents.forEach(agent => {
-          const agentActions = validActions.filter(va => va.agentId === agent.id && va.action !== 'select-winner');
-          innerHtml += buildAgentSectionHtml(agent, agentActions, feature, repoPath, pipelineType, repoStorage);
-        });
-        }
-
-        // Evaluation section — consolidated eval status, session, and close action
-        if (feature.evalStatus || (feature.evalSession && feature.evalSession.running)) {
-          const recommended = feature.winnerAgent;
-          const recommendedDisplay = recommended ? (AGENT_DISPLAY_NAMES[recommended] || recommended) : null;
-          const viewEvalAction = validActions.find(va => va.action === 'view-eval' && !va.agentId);
-          const openEvalAction = validActions.find(va => va.action === 'open-eval-session' && !va.agentId);
-          const evalSess = feature.evalSession;
-          const evalRunning = evalSess && evalSess.running;
-
-          innerHtml += '<div class="kcard-eval-section">';
-          innerHtml += '<div class="kcard-eval-section-header">';
-          innerHtml += '<span class="kcard-eval-section-title">Evaluation</span>';
-          if (evalRunning && evalSess.session && canShowSessionPeek(feature, repoStorage, { sessionRunning: true })) {
-            innerHtml += '<button class="kcard-peek-btn" data-peek-session="' + escHtml(evalSess.session) + '" title="Peek at live eval output"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="2"/></svg></button>';
-          }
-          innerHtml += '</div>';
-
-          // (Static research-eval workflow guidance removed — the action
-          // hint in the headline detail ('→ Open eval terminal to respond'
-          // for Needs you state) carries the directive without duplicating
-          // the workflow inside the eval section.)
-          // Action buttons on their own row so they always have full width
-          const hasEvalActions = (evalRunning && evalSess.session && openEvalAction) || viewEvalAction;
-          if (hasEvalActions) {
-            innerHtml += '<div class="kcard-eval-actions">';
-            if (evalRunning && evalSess.session && openEvalAction) {
-              innerHtml += '<button class="btn btn-secondary btn-xs kcard-eval-view" data-eval-session="' + escHtml(evalSess.session) + '">Open Terminal</button>';
-            }
-            if (viewEvalAction) {
-              innerHtml += '<button class="btn btn-secondary btn-xs kcard-verdict-btn" data-view-eval>View report</button>';
-            }
-            innerHtml += '</div>';
-          }
-
-          // Status + winner recommendation. Frame as 'Recommended:' (not
-          // 'Winner:') because nothing is finalised until the user clicks
-          // through the Pick & Close modal — the recommendation is
-          // preliminary, the user can override and/or adopt changes from
-          // the loser before merging.
-          if (feature.evalStatus === 'pick winner') {
-            innerHtml += '<div class="kcard-eval-detail">' +
-              (recommendedDisplay
-                ? 'Recommended: <strong>' + escHtml(recommendedDisplay) + '</strong>'
-                : 'Ready to pick winner') +
-              '</div>';
-          } else if (feature.evalStatus) {
-            // Sentence case for the status label so it matches the
-            // capitalised 'Implemented' / 'Reviewing' etc. used elsewhere
-            // on the card. Source field is lowercase ('evaluating',
-            // 'pick winner') so we transform on render.
-            const evalStatusLabel = String(feature.evalStatus).charAt(0).toUpperCase() + String(feature.evalStatus).slice(1);
-            innerHtml += '<div class="kcard-eval-detail">' +
-              '<span class="eval-badge">' + escHtml(evalStatusLabel) + '</span>' +
-              '</div>';
-          }
-
-          innerHtml += '</div>';
-        }
-
-        // Review section — dedicated block between agents and actions
-        if (!suppress.reviewerPanels && reviews.length > 0) {
-          reviews.forEach(r => {
-            innerHtml += buildReviewerSectionHtml('Review', r, { feature, repoStorage });
-          });
-        }
-        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
-        if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
-        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
-        innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
-        if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
-        // Card-level actions (non-per-agent: close, eval, review, etc.)
-        const cardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        if (cardActionsHtml) {
-          innerHtml += '<div class="kcard-transitions">' + cardActionsHtml + '</div>';
-        }
-      } else if (isSoloDriveBranch) {
-        // Drive mode (branch): same visual structure as agent sections but labeled "Drive"
-        const soloAgent = agents[0];
-        const soloStatus = buildAgentStatusHtml(soloAgent, { showDevLink: true });
-        const soloDevLink = buildDevServerLinkHtml(soloStatus.devServerUrl);
-        const soloDevSlot = soloDevLink ? '<span class="kcard-dev-slot">' + soloDevLink + '</span>' : '';
-        const driveToolId = feature.driveToolAgentId || null;
-        const driveAgentSpan = driveToolId
-          ? '<span class="kcard-agent-triplet">' + escHtml(AGENT_DISPLAY_NAMES[driveToolId] || driveToolId) + '</span>'
-          : '';
-        innerHtml += '<div class="kcard-agent agent-solo">' +
-          '<div class="kcard-agent-header"><span class="kcard-agent-name">Drive</span>' + driveAgentSpan + soloDevSlot + '</div>' +
-          '<div class="kcard-agent-status-row"><span class="kcard-agent-status ' + soloStatus.cls + '">' + soloStatus.icon + ' ' + soloStatus.label + '</span></div>' +
-          '</div>';
-        // Review section for solo mode
-        if (reviews.length > 0 && !suppress.reviewerPanels) {
-          reviews.forEach(r => {
-            innerHtml += buildReviewerSectionHtml('Review', r, { feature, repoStorage });
-          });
-        }
-        innerHtml += buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
-        if (!suppress.reviewCycleHistory) innerHtml += buildReviewCycleHistoryHtml(feature);
-        if (!suppress.readyToClose) innerHtml += buildReadyToCloseHtml(feature, agents, reviews);
-        innerHtml += buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType);
-        if (!suppress.closeFailurePanel) innerHtml += buildCloseFailureHtml(feature);
-        // Card-level actions (close, review — no session controls)
-        const soloCardActionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        if (soloCardActionsHtml) {
-          innerHtml += '<div class="kcard-transitions">' + soloCardActionsHtml + '</div>';
-        }
-      } else {
-        // Legacy layout for cards without active agents (inbox, backlog, done, research, feedback)
-        if (!isDone) {
-          const agentBadgesHtml = buildAgentBadgesHtml(agents);
-          const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-          let evalStatusHtml = '';
-          if (feature.evalStatus) {
-            let evalStatusRow = '<span class="kcard-status-label">Status</span><span class="eval-badge' + (feature.evalStatus === 'pick winner' ? ' pick-winner' : '') + '">' + escHtml(feature.evalStatus) + '</span>';
-            if (feature.evalStatus === 'pick winner' && feature.winnerAgent) {
-              evalStatusRow += '<span class="kcard-winner">Winner: ' + escHtml(feature.winnerAgent) + '</span>';
-            }
-            evalStatusHtml = '<div class="kcard-status">' + evalStatusRow + '</div>';
-            const legacyViewEval = validActions.find(va => va.action === 'view-eval' && !va.agentId);
-            if (legacyViewEval) {
-              evalStatusHtml += '<button class="btn btn-secondary kcard-eval-btn" data-view-eval>View Eval</button>';
-            }
-          }
-          const specReviewHtml = buildSpecReviewBlockHtml(feature, validActions, pipelineType, repoStorage);
-          innerHtml +=
-            (agentBadgesHtml ? '<div class="kcard-agents">' + agentBadgesHtml + '</div>' : '') +
-            evalStatusHtml +
-            specReviewHtml +
-            buildReviewCycleHistoryHtml(feature) +
-            buildGitHubSectionHtml(feature, repoPath, repoMeta, pipelineType) +
-            (actionsHtml ? '<div class="kcard-actions">' + actionsHtml + '</div>' : '');
-        }
-      }
-
-      // F679 preview: contract-driven card body behind dashboard.contractCards.
-      // Same card element, same wiring below — only the body markup changes, so
-      // actions still dispatch through handleFeatureAction → /api/action and
-      // Peek through openTerminalPanel. Done rows ship no contract (lean shape)
-      // and keep the legacy body by construction.
-      if (repoMeta && repoMeta.contractCardsPreview && feature.uiContract) {
+      let innerHtml;
+      if (feature.uiContract) {
         card.classList.add('kcard-contract');
         const compactStage = contractCardDensity(feature.stage, pipelineType) === 'compact';
         innerHtml = renderContractCardBody(feature.uiContract, {
           density: compactStage ? 'compact' : 'expanded',
           badgeLabel: feature.mode === 'fleet' ? 'Fleet' : null,
-          // Two-machine boundary: sessions held by another machine never offer
-          // Peek here, exactly as canShowSessionPeek gates the legacy body.
           canPeekSession: () => !isEntityHeldByOtherMachine(feature, repoStorage),
         });
+      } else if (feature.stage === 'done') {
+        const hasNumericId = /^\d+$/.test(String(feature.id || ''));
+        innerHtml =
+          (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
+          '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+      } else {
+        const hasNumericId = /^\d+$/.test(String(feature.id || ''));
+        innerHtml =
+          (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
+          '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
+          buildCardHeadlineHtml(feature) +
+          buildCardTimelineHtml(feature) +
+          buildCardAgentSummaryHtml(feature);
+        const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
+        if (actionsHtml) innerHtml += '<div class="kcard-actions">' + actionsHtml + '</div>';
       }
       card.innerHTML = innerHtml;
 
@@ -1752,8 +1546,6 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
         prStatus: feature.prStatus,
         repoGithubRemote: repo.githubRemote,
         repoStorage: repo.storage,
-        // F679: preview renderer toggle + contract identity must repaint the card.
-        contractCardsPreview: repo.contractCardsPreview === true,
         uiContract: feature.uiContract || null,
         setRollup: setRoll ? {
           slug: setRoll.slug,
@@ -1771,14 +1563,12 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       });
     }
 
-    function setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, contractPreview) {
+    function setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, useContractHeader) {
       return JSON.stringify({
         setSlug,
         isSetPaused,
-        // F679: toggling the preview renderer, or a contract change, rebuilds
-        // the set header.
-        contractPreview: contractPreview === true,
-        uiContract: (contractPreview && roll && roll.uiContract) || null,
+        useContractHeader: useContractHeader === true,
+        uiContract: (useContractHeader && roll && roll.uiContract) || null,
         roll: roll ? {
           completed: roll.completed,
           memberCount: roll.memberCount,
@@ -2066,11 +1856,11 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
       const isSetPaused = isPausedOnFailure || isPausedOnQuota;
       bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
-      const setContractPreview = Boolean(repo && repo.contractCardsPreview && roll && roll.uiContract);
-      const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, setContractPreview);
+      const useContractHeader = Boolean(roll && roll.uiContract);
+      const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, useContractHeader);
       let header = bundle.querySelector(':scope > .kanban-set-bundle-head, :scope > .kanban-set-header');
       if (!header || header.dataset.kanbanFp !== headerFp) {
-        const freshHeader = setContractPreview
+        const freshHeader = useContractHeader
           ? buildContractSetHeader(setSlug, roll, repo)
           : buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota);
         freshHeader.dataset.kanbanFp = headerFp;
@@ -2084,7 +1874,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       const prioVa = setValid.find(a => a.action === 'set-prioritise');
       // Contract preview renders set-prioritise in the contract action bar —
       // the legacy banner strip would duplicate it.
-      if (prioVa && roll && !setContractPreview) {
+      if (prioVa && roll && !useContractHeader) {
         if (!strip) {
           strip = document.createElement('div');
           strip.className = 'kanban-set-prioritise-strip';
@@ -2341,7 +2131,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       _lastKanbanReconcileStats.created += stats.created;
       _lastKanbanReconcileStats.updated += stats.updated;
       _lastKanbanReconcileStats.removed += stats.removed;
-      syncKanbanResponsiveClass(repos);
+      syncKanbanResponsiveClass();
       if (typeof globalThis.__aigonKanbanReconcileHook === 'function') {
         globalThis.__aigonKanbanReconcileHook(stats);
       }

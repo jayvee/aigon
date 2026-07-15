@@ -81,22 +81,16 @@ test.describe('Close failure event dashboard rendering @smoke', () => {
         await forceRefresh(page);
         // Find the card in in-progress
         const inProgressCol = page.locator('.kanban-col[data-stage="in-progress"]');
-        const card = inProgressCol.locator('.kcard').filter({ hasText: FEATURE_NAME }).first();
+        const card = inProgressCol.locator(`.kcard[data-feature-name="${FEATURE_DESC}"]`).first();
         await expect(card).toBeVisible({ timeout: 8000 });
-        // Should have "Resolve & close" button, not plain "Close"
         const resolveBtn = card.locator('.kcard-va-btn[data-va-action="feature-resolve-and-close"]');
         await expect(resolveBtn).toBeVisible({ timeout: 5000 });
         await expect(resolveBtn).toContainText('Resolve & close');
-        // REGRESSION: client fallback must not duplicate server-owned resolve action.
         await expect(card.locator('.kcard-close-resolve-btn')).toHaveCount(0);
-        // Should NOT have a plain "feature-close" action button
         const closeBtn = card.locator('.kcard-va-btn[data-va-action="feature-close"]');
         await expect(closeBtn).toHaveCount(0);
-        // F650: one dominant failure headline — conflict detail in context, not a second red panel
-        const headline = card.locator('.kcard-headline');
-        await expect(headline).toBeVisible({ timeout: 3000 });
-        await expect(headline).toContainText('Close failed');
-        await expect(card.locator('.kcard-headline-context, .kcard-headline-detail')).toContainText('lib/commands/setup.js');
-        await expect(card.locator('.kcard-close-failure')).toHaveCount(0);
+        await expect(card.locator('.ccard-state-text')).toContainText('Close failed');
+        await expect(card.locator('.ccard-context')).toContainText('lib/commands/setup.js');
+        await expect(card.locator('.kcard-close-failure, .kcard-headline')).toHaveCount(0);
     });
 });

@@ -55,11 +55,9 @@ Compatibility fields (`validActions`, `cardHeadline`, `cardPresentation`, and
 `closeReadiness`) remain available during migration. They are not the feature
 dashboard's eligibility or primary-action authority.
 
-The browser side of this contract is the F679 preview renderer
+The browser side of this contract is the production renderer
 (`templates/dashboard/js/contract-cards/`): pure contract → HTML modules shared
-verbatim by the production pipeline and the design gallery, enabled per repo by
-the `dashboard.contractCards` setting (default off; the switch is temporary and
-is removed by F682). It renders identity once, one dominant state line, agent
+verbatim by the production pipeline and the design gallery. It renders identity once, one dominant state line, agent
 and session rows, plan stages in stable columns, and actions partitioned from
 `decisions.primaryActionId` — and it dispatches through the same validated
 `/api/action` and session Peek boundaries as the legacy card builder.

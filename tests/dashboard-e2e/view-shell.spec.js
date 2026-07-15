@@ -9,7 +9,7 @@ const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
 const VIEW_TABS = [
-  { id: 'monitor', container: '#monitor-view', sidebar: true, header: true, alpine: true },
+  { id: 'monitor', container: '#monitor-view', sidebar: true, header: true, alpine: false },
   { id: 'pipeline', container: '#pipeline-view', sidebar: true, header: true, alpine: true },
   { id: 'sessions', container: '#sessions-view', sidebar: true, header: false, alpine: false },
   { id: 'statistics', container: '#statistics-view', sidebar: true, header: false, alpine: false },
@@ -20,13 +20,12 @@ const VIEW_TABS = [
 ];
 
 async function expectViewVisible(page, tab) {
+  const el = page.locator(tab.container);
   if (tab.alpine) {
-    await expect(page.locator(tab.container)).toBeVisible({ timeout: 8000 });
-  } else {
-    await expect(page.locator(tab.container)).toBeVisible({ timeout: 8000 });
-    const display = await page.locator(tab.container).evaluate(el => getComputedStyle(el).display);
-    expect(display).not.toBe('none');
+    await expect(el).toBeVisible({ timeout: 8000 });
+    return;
   }
+  await expect.poll(async () => el.evaluate(node => getComputedStyle(node).display), { timeout: 8000 }).not.toBe('none');
 }
 
 async function expectViewHidden(page, tab) {

@@ -1,4 +1,4 @@
-    /* F680 — responsive Pipeline layout (preview: dashboard.contractCards).
+    /* F680 — responsive Pipeline layout (production default F682).
        Weighted lifecycle lanes at wide desktop; stable multi-row reflow at
        medium widths; single-column vertical flow on mobile. Full viewport
        width is scoped to operational views via .wrap.wrap--operational. */

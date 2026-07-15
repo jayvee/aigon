@@ -3,7 +3,7 @@
  * Alpine binding boundary (F640) — the ONLY module that wires markup-visible surface.
  *
  * Registered surface (complete list):
- * - Alpine.data: monitorView, pipelineView (component factories for x-data)
+ * - Alpine.data: pipelineView (component factory for x-data)
  * - window.aigon: formatters/constants referenced directly in index.html expressions
  * - $store.dashboard: registered in store.js on alpine:init
  *
@@ -12,7 +12,6 @@
  * are registered before Alpine evaluates x-data on the DOM.
  */
 import { AGENT_DISPLAY_NAMES } from './actions-picker.js';
-import { monitorView } from './monitor.js';
 import {
   agentDisplayName,
   buildAgentStatusSpan,
@@ -50,8 +49,7 @@ function createStrictBindings(bindings) {
 globalThis.aigon = createStrictBindings(AIGON_ALPINE_MARKUP_BINDINGS);
 
 document.addEventListener('alpine:init', () => {
-  Alpine.data('monitorView', monitorView);
   Alpine.data('pipelineView', pipelineView);
 });
 
-export { monitorView, pipelineView };
+export { pipelineView };

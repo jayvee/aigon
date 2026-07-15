@@ -33,11 +33,10 @@ test('classifyOperationalGroup — running active work', () => {
     assert.equal(group, 'running');
 });
 
-test('buildMonitorOperationalProjection — groups preview-repo entities only', () => {
+test('buildMonitorOperationalProjection — groups entities with contracts from all repos', () => {
     const now = Date.now();
     const payload = buildMonitorOperationalProjection([{
         path: '/tmp/repo',
-        contractCardsPreview: true,
         features: [{
             id: '10',
             updatedAt: new Date(now).toISOString(),
@@ -49,7 +48,6 @@ test('buildMonitorOperationalProjection — groups preview-repo entities only', 
         sets: [],
     }, {
         path: '/tmp/other',
-        contractCardsPreview: false,
         features: [{
             id: '11',
             updatedAt: new Date(now).toISOString(),
@@ -60,16 +58,16 @@ test('buildMonitorOperationalProjection — groups preview-repo entities only', 
     }]);
 
     assert.equal(payload.summary.needsAttention, 1);
-    assert.equal(payload.summary.running, 0);
+    assert.equal(payload.summary.running, 1);
     assert.equal(payload.groups.needsAttention.length, 1);
     assert.equal(payload.groups.needsAttention[0].entityId, '10');
+    assert.equal(payload.groups.running[0].entityId, '11');
 });
 
 test('monitorOperationalFingerprint bumps when group membership changes', () => {
     const now = Date.now();
     const base = buildMonitorOperationalProjection([{
         path: '/tmp/repo',
-        contractCardsPreview: true,
         features: [{
             id: '1',
             updatedAt: new Date(now).toISOString(),
@@ -80,7 +78,6 @@ test('monitorOperationalFingerprint bumps when group membership changes', () => 
     }]);
     const changed = buildMonitorOperationalProjection([{
         path: '/tmp/repo',
-        contractCardsPreview: true,
         features: [{
             id: '1',
             updatedAt: new Date(now).toISOString(),

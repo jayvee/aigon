@@ -19,20 +19,12 @@ function liveRoot() {
   return document.getElementById('monitor-live-root');
 }
 
-function legacyRoot() {
-  return document.getElementById('monitor-legacy-root');
-}
-
 function ensureClickBinding() {
   if (clickBound) return;
   const host = document.getElementById('monitor-view');
   if (!host) return;
   clickBound = true;
   host.addEventListener('click', handleLiveMonitorClick);
-}
-
-function hasLiveMonitorPreview(data) {
-  return (data && data.repos || []).some(repo => repo && repo.contractCardsPreview === true);
 }
 
 function filterProjection(data) {
@@ -324,25 +316,6 @@ function handleLiveMonitorClick(event) {
 }
 
 export function syncLiveMonitor(data) {
-  const enabled = hasLiveMonitorPreview(data);
-  const legacy = legacyRoot();
-  const legacyToolbar = document.querySelector('#monitor-view .monitor-toolbar');
-  const legacySummary = document.getElementById('monitor-summary');
-  if (legacy) legacy.hidden = enabled;
-  if (legacyToolbar) legacyToolbar.hidden = enabled;
-  if (legacySummary) legacySummary.style.display = enabled ? 'none' : '';
-
-  const root = liveRoot();
-  if (!enabled) {
-    if (root) {
-      root.hidden = true;
-      root.innerHTML = '';
-    }
-    return;
-  }
+  ensureClickBinding();
   renderLiveMonitor(data);
-}
-
-export function isLiveMonitorEnabled(data) {
-  return hasLiveMonitorPreview(data);
 }
