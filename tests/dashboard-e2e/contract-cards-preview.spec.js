@@ -23,6 +23,7 @@
 const { test, expect } = require('@playwright/test');
 const { watchBrowserErrors, assertActionSurfaceClean } = require('./_helpers');
 const { buildDashboardCardGallery } = require('../../lib/dashboard-card-gallery');
+const { buildMonitorOperationalProjection } = require('../../lib/monitor-operational-projection');
 
 const REPO_PATH = '/tmp/aigon-f679-mock-repo';
 const gallery = buildDashboardCardGallery();
@@ -66,20 +67,22 @@ function baseRow(id, scenarioItem, overrides = {}) {
 }
 
 function buildPayload({ features = [], research = [], sets = [], contractCardsPreview = true } = {}) {
+    const repos = [{
+        path: REPO_PATH,
+        displayPath: '/tmp/mock',
+        name: 'mock',
+        githubRemote: false,
+        contractCardsPreview,
+        features,
+        research,
+        feedback: [],
+        sets,
+    }];
     return {
         generatedAt: new Date().toISOString(),
         summary: { implementing: features.length, waiting: 0, complete: 0, error: 0, total: features.length },
-        repos: [{
-            path: REPO_PATH,
-            displayPath: '/tmp/mock',
-            name: 'mock',
-            githubRemote: false,
-            contractCardsPreview,
-            features,
-            research,
-            feedback: [],
-            sets,
-        }],
+        repos,
+        monitorOperational: buildMonitorOperationalProjection(repos),
     };
 }
 
@@ -92,6 +95,17 @@ async function mountPreview(page, payload) {
     await page.goto('/');
     await page.click('#tab-pipeline');
     await page.waitForSelector('.kanban', { timeout: 10000 });
+}
+
+async function mountMonitor(page, payload) {
+    await page.route('**/api/status', route => route.fulfill({ json: payload }));
+    await page.route('**/api/sessions', route => route.fulfill({ json: { sessions: [] } }));
+    await page.route('**/api/session/**', route => route.fulfill({ json: { ok: true, pid: 0 } }));
+    await page.route('**/api/settings**', route => route.fulfill({ json: { settings: [] } }));
+    await page.route('**/api/recommendation/**', route => route.fulfill({ json: { resolved: null, ranked: [] } }));
+    await page.goto('/');
+    await page.click('#tab-monitor');
+    await page.waitForSelector('#monitor-live-root:not([hidden])', { timeout: 10000 });
 }
 
 test.describe('Contract card preview renderer @smoke', () => {
@@ -281,6 +295,48 @@ test.describe('Contract card preview renderer @smoke', () => {
         await expect(page.locator('.kanban--responsive')).toHaveCount(1);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
         expect(overflow).toBe(false);
-        await expect(page.locator('.kcard-peek-btn, .ccard-peek').first()).toBeVisible();
+        await expect(page.locator('.kanban-set-header-contract .ccard-stage .kcard-peek-btn').first()).toBeVisible();
+    });
+
+    test('live monitor renders operational groups behind preview @smoke', async ({ page }) => {
+        await mountMonitor(page, buildPayload({
+            features: [
+                baseRow('920', scenario('feature-agent-needs-attention')),
+                baseRow('921', scenario('feature-autonomous-fleet-running')),
+            ],
+        }));
+        await expect(page.locator('#monitor-legacy-root')).toBeHidden();
+        await expect(page.locator('.monitor-item.attention')).toHaveCount(1);
+        await expect(page.locator('.monitor-section-label', { hasText: 'RUNNING' })).toBeVisible();
+        await expect(page.locator('.monitor-focus .ccard-run, .monitor-focus .ccard-rows')).toHaveCount(1, { timeout: 5000 });
+        await expect(page.locator('.monitor-summary .monitor-stat')).toHaveCount(4);
+    });
+
+    test('live monitor has no horizontal overflow at 390px @smoke', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await mountMonitor(page, buildPayload({
+            features: [baseRow('922', scenario('feature-autonomous-running'))],
+        }));
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+        expect(overflow).toBe(false);
+        await page.locator('.monitor-item').first().click();
+        await expect(page.locator('.monitor-focus')).toBeVisible();
+        await page.locator('[data-monitor-back]').click();
+        await expect(page.locator('.monitor-queue')).toBeVisible();
+    });
+
+    test('monitor preview off keeps legacy layout', async ({ page }) => {
+        await page.route('**/api/status', route => route.fulfill({
+            json: buildPayload({
+                features: [baseRow('923', scenario('feature-fleet-in-progress'))],
+                contractCardsPreview: false,
+            }),
+        }));
+        await page.route('**/api/sessions', route => route.fulfill({ json: { sessions: [] } }));
+        await page.route('**/api/settings**', route => route.fulfill({ json: { settings: [] } }));
+        await page.goto('/');
+        await page.click('#tab-monitor');
+        await expect(page.locator('#monitor-live-root')).toBeHidden();
+        await expect(page.locator('#monitor-legacy-root')).toBeVisible();
     });
 });

@@ -18,6 +18,7 @@ import './api.js';
 import './sidebar.js';
 import './set-cards.js';
 import './monitor.js';
+import './live-monitor.js';
 import './autonomous-plan.js';
 import './pipeline.js';
 import '/js/benchmark-matrix.js';

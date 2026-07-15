@@ -51,6 +51,8 @@
 
         <!-- ── Monitor view — Alpine component ──────────────────────────────── -->
         <div id="monitor-view" x-data="monitorView" x-cloak x-show="$store.dashboard.view === 'monitor'" x-on:click.passive="handleMonitorClick($event)">
+          <div id="monitor-live-root" class="monitor-live-root" hidden></div>
+          <div id="monitor-legacy-root">
           <!-- Monitor type toggle -->
           <div class="pipeline-toolbar monitor-toolbar">
             <div class="pipeline-type-toggle">
@@ -174,6 +176,7 @@
                 </div>
               </section>
             </template>
+          </div>
           </div>
         </div>
 
