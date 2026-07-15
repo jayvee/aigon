@@ -334,6 +334,16 @@
 .ccard-overflow .kcard-overflow-item.btn-danger { color: var(--cc-danger); }
 .ccard-overflow .kcard-overflow-item[disabled] { opacity: 0.45; cursor: not-allowed; }
 
+/* Contract set header hosted in the kanban set bundle: plain sentence-case
+ * language — the legacy header's uppercase treatment does not apply. */
+.kanban-set-bundle-head.kanban-set-header-contract {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 10px 10px 9px;
+}
+
 /* ── Density and responsiveness ──────────────────────────────────────────── */
 .ccard.is-compact { gap: 8px; }
 .ccard.is-compact .ccard-actions { padding-top: 7px; }
