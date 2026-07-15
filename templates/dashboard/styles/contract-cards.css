@@ -1,0 +1,349 @@
+/* F679 contract card renderer (preview) — production-scoped styles.
+ *
+ * Visual tokens moved from the approved F677 gallery. Base surfaces and text
+ * inherit the host theme (dashboard tokens.css); the semantic accents that
+ * define the approved card language are pinned here so gallery and production
+ * cannot drift. One dominant state per card (F650): severity paints the state
+ * dot and blocker line only — never competing filled panels.
+ */
+
+.ccard {
+  --cc-border: var(--border-default, #30343a);
+  --cc-border-subtle: var(--border-subtle, #24272c);
+  --cc-surface: var(--bg-surface, #131518);
+  --cc-surface-2: var(--bg-elevated, #181b1f);
+  --cc-text: var(--text-primary, #f1f2f4);
+  --cc-text-muted: var(--text-secondary, #9da3ad);
+  --cc-text-faint: var(--text-tertiary, #737a84);
+  /* Approved gallery accents: active work, ready, attention, failure, inspect */
+  --cc-running: #65c6b4;
+  --cc-ready: #8cd59b;
+  --cc-warn: #e9bd68;
+  --cc-warn-bg: rgba(233, 189, 104, 0.1);
+  --cc-danger: #f08378;
+  --cc-info: #8db7dd;
+  --cc-primary-border: #397f73;
+  --cc-primary-bg: #1e6257;
+  --cc-primary-bg-hover: #267568;
+  --cc-primary-text: #eafffb;
+
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--cc-text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Optional frame for hosts without card chrome (the gallery). */
+.ccard-frame {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--border-default, #30343a);
+  border-radius: 7px;
+  background: var(--bg-surface, #131518);
+  padding: 14px 14px 12px 17px;
+  overflow: hidden;
+}
+.ccard-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #65c6b4;
+}
+.ccard-frame.is-research::before { background: #8db7dd; }
+.ccard-frame.is-set::before { background: #e9bd68; }
+.ccard-frame:has(.ccard.is-severity-error)::before { background: #f08378; }
+.ccard-frame:has(.ccard.is-severity-warning)::before { background: #e9bd68; }
+
+/* ── Identity: id + title once; no slug echo, no entity-type label ───────── */
+.ccard-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ccard-identity { min-width: 0; }
+.ccard-key {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--cc-text-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+.ccard-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 620;
+  color: var(--cc-text);
+}
+.ccard.is-expanded .ccard-title { font-size: 14px; }
+.ccard-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid var(--cc-border);
+  border-radius: 5px;
+  color: var(--cc-text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* ── One dominant state line ─────────────────────────────────────────────── */
+.ccard-state {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 590;
+  color: var(--cc-text);
+}
+.ccard-state-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--cc-running);
+  box-shadow: 0 0 0 3px rgba(101, 198, 180, 0.12);
+}
+.ccard.is-severity-error .ccard-state-dot { background: var(--cc-danger); box-shadow: 0 0 0 3px rgba(240, 131, 120, 0.12); }
+.ccard.is-severity-warning .ccard-state-dot { background: var(--cc-warn); box-shadow: 0 0 0 3px rgba(233, 189, 104, 0.12); }
+.ccard-context { margin: -4px 0 0 14px; color: var(--cc-text-muted); }
+
+/* ── Blockers: the single quiet attention line ───────────────────────────── */
+.ccard-blockers {
+  margin-left: 14px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--cc-warn);
+  background: var(--cc-warn-bg);
+  color: var(--cc-warn);
+}
+
+/* ── Agent / session activity rows ───────────────────────────────────────── */
+.ccard-rows { display: grid; gap: 5px; margin-left: 14px; }
+.ccard-row {
+  min-height: 26px;
+  display: grid;
+  grid-template-columns: 8px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  color: var(--cc-text-muted);
+}
+.ccard-row-name { color: var(--cc-text); font-weight: 600; }
+.ccard-row-note { min-width: 0; overflow-wrap: anywhere; }
+.ccard-row-tools { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.ccard-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cc-text-faint); }
+.ccard-dot.is-ready { background: var(--cc-ready); }
+.ccard-dot.is-running { background: var(--cc-running); }
+.ccard-dot.is-failed { background: var(--cc-danger); }
+.ccard-dot.is-paused { background: var(--cc-warn); }
+
+.ccard-peek,
+.ccard-row-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid var(--cc-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ccard-peek { color: var(--cc-info); }
+.ccard-peek:hover, .ccard-peek:focus-visible { border-color: var(--cc-info); color: var(--cc-text); }
+.ccard-row-action:hover, .ccard-row-action:focus-visible { border-color: var(--cc-text-faint); color: var(--cc-text); }
+
+/* ── Autonomous run: controller above stages, one stable stage grid ──────── */
+.ccard-run {
+  margin-left: 14px;
+  padding-top: 9px;
+  border-top: 1px solid var(--cc-border-subtle);
+}
+.ccard-run-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--cc-text-muted);
+}
+.ccard-run-head strong { color: var(--cc-text); font-weight: 600; }
+.ccard-run-controller { display: inline-flex; align-items: center; gap: 8px; }
+.ccard-run-status { color: var(--cc-running); }
+.ccard-run-status.is-stopped, .ccard-run-status.is-paused-on-quota, .ccard-run-status.is-paused-on-failure { color: var(--cc-warn); }
+.ccard-run-status.is-failed { color: var(--cc-danger); }
+
+.ccard-stages { display: grid; gap: 1px; }
+.ccard-stage {
+  min-height: 30px;
+  display: grid;
+  /* marker · stage · agent · status · Peek — fixed so rows align */
+  grid-template-columns: 16px minmax(0, 1fr) minmax(30px, auto) 74px 58px;
+  align-items: center;
+  column-gap: 7px;
+  color: var(--cc-text-faint);
+}
+.ccard-stage.is-complete { color: var(--cc-text-muted); }
+.ccard-stage.is-running { color: var(--cc-text); }
+.ccard-stage.is-failed { color: var(--cc-danger); }
+.ccard-stage-marker { width: 16px; text-align: center; font-size: 12px; }
+.ccard-stage-name { min-width: 0; overflow-wrap: anywhere; font-weight: 560; }
+.ccard-stage-agent { color: var(--cc-text-faint); font-size: 10px; text-align: right; }
+.ccard-stage-status { font-size: 10px; text-align: right; }
+.ccard-stage-tools { display: flex; justify-content: flex-end; }
+
+/* ── Feature-set plan ────────────────────────────────────────────────────── */
+.ccard-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.ccard-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  color: var(--cc-text-faint);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.ccard-pill.is-active { border-color: rgba(101, 198, 180, 0.55); color: var(--cc-running); }
+.ccard-pill.is-paused { border-color: rgba(233, 189, 104, 0.55); color: var(--cc-warn); }
+.ccard-pill .ccard-peek { min-height: 18px; padding: 0 5px; border: 0; }
+
+.ccard-set-plan { display: grid; gap: 8px; }
+.ccard-set-progress { color: var(--cc-text-muted); }
+.ccard-set-track { height: 3px; overflow: hidden; background: var(--cc-border); border-radius: 2px; }
+.ccard-set-track span { display: block; height: 100%; background: var(--cc-warn); }
+.ccard-members { display: grid; gap: 2px; }
+.ccard-member {
+  min-height: 26px;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  color: var(--cc-text-faint);
+}
+.ccard-member.is-complete { color: var(--cc-text-muted); }
+.ccard-member.is-running, .ccard-member.is-current { color: var(--cc-text); }
+.ccard-member.is-failed { color: var(--cc-danger); }
+.ccard-member-copy {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ccard-member-name { min-width: 0; overflow-wrap: anywhere; font-weight: 560; }
+.ccard-member-name b { font-weight: 620; }
+.ccard-member-status { flex: 0 0 auto; color: var(--cc-text-faint); font-size: 10px; }
+
+.ccard-set-current {
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 6px;
+  background: var(--cc-surface-2);
+}
+.ccard-set-current-head { display: grid; gap: 2px; margin-bottom: 8px; }
+.ccard-set-current-head span { color: var(--cc-text-faint); font-size: 10px; }
+.ccard-set-current-head strong { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.ccard-set-current .ccard-rows,
+.ccard-set-current .ccard-run,
+.ccard-set-current .ccard-context { margin-left: 0; }
+
+/* ── Actions: one primary, quiet secondaries, overflow menu ──────────────── */
+.ccard-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 1px solid var(--cc-border-subtle);
+}
+.ccard-action {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ccard-action:hover, .ccard-action:focus-visible { border-color: var(--cc-text-faint); color: var(--cc-text); }
+.ccard-action.is-primary {
+  border-color: var(--cc-primary-border);
+  background: var(--cc-primary-bg);
+  color: var(--cc-primary-text);
+}
+.ccard-action.is-primary:hover, .ccard-action.is-primary:focus-visible { background: var(--cc-primary-bg-hover); }
+.ccard-action.is-danger { color: var(--cc-danger); }
+.ccard-action[disabled] { opacity: 0.45; cursor: not-allowed; }
+.ccard-actions .ccard-overflow { margin-left: auto; }
+
+/* Overflow menu — mirrors the shared kcard menu so open/positioning wiring
+ * applies; duplicated here so the gallery renders it without kanban.css. */
+.ccard-overflow { position: relative; display: inline-flex; }
+.ccard-overflow .btn-overflow {
+  min-height: 28px;
+  padding: 2px 9px;
+  border: 1px solid var(--cc-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cc-text-faint);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ccard-overflow .btn-overflow:hover, .ccard-overflow .btn-overflow:focus-visible { color: var(--cc-text); }
+.ccard-overflow .kcard-overflow-menu {
+  display: none;
+  position: fixed;
+  z-index: 200;
+  min-width: 150px;
+  padding: 3px;
+  border: 1px solid var(--cc-border);
+  border-radius: 6px;
+  background: var(--cc-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.ccard-overflow .kcard-overflow-menu.open { display: block; }
+.ccard-overflow .kcard-overflow-item {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ccard-overflow .kcard-overflow-item:hover,
+.ccard-overflow .kcard-overflow-item:focus-visible { background: rgba(255, 255, 255, 0.06); color: var(--cc-text); }
+.ccard-overflow .kcard-overflow-item.btn-danger { color: var(--cc-danger); }
+.ccard-overflow .kcard-overflow-item[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Density and responsiveness ──────────────────────────────────────────── */
+.ccard.is-compact { gap: 8px; }
+.ccard.is-compact .ccard-actions { padding-top: 7px; }
+
+@media (max-width: 480px) {
+  .ccard-stage { grid-template-columns: 16px minmax(0, 1fr) minmax(24px, auto) 60px 52px; }
+  .ccard-context, .ccard-rows, .ccard-run, .ccard-blockers { margin-left: 8px; }
+}
+
+.ccard button:focus-visible {
+  outline: 2px solid var(--cc-info);
+  outline-offset: 1px;
+}
