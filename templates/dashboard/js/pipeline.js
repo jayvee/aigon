@@ -107,9 +107,13 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
     }
 
     function syncKanbanResponsiveClass(repos) {
-      const active = isContractPipelinePreviewActive(repos);
+      const visibleRepos = repos || [];
       document.querySelectorAll('#pipeline-view .kanban').forEach(board => {
-        board.classList.toggle('kanban--responsive', active);
+        const col = board.querySelector('.kanban-col[data-repo-path]');
+        const repoPath = col ? col.getAttribute('data-repo-path') : null;
+        const needle = normalizeKanbanRepoPath(repoPath);
+        const repo = visibleRepos.find(r => r && normalizeKanbanRepoPath(r.path) === needle);
+        board.classList.toggle('kanban--responsive', !!(repo && repo.contractCardsPreview === true));
       });
     }
 
