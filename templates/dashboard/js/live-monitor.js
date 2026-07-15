@@ -118,14 +118,14 @@ function queueItemHtml(item, active) {
   const identity = item.entityType === 'feature-set'
     ? escHtml(item.identity.name)
     : escHtml(item.identity.displayKey + ' ' + item.identity.name);
-  return '<button type="button" class="monitor-item' + (attention ? ' attention' : '') + (active ? ' active' : '')
+  return '<div role="button" tabindex="0" class="monitor-item' + (attention ? ' attention' : '') + (active ? ' active' : '')
     + '" data-monitor-key="' + escHtml(item.key) + '">'
     + '<span class="monitor-item-dot"></span>'
     + '<span class="monitor-item-copy"><strong>' + identity + '</strong><span>'
     + escHtml(item.activityLine) + '</span></span>'
     + '<span class="monitor-item-tools">' + queueActionHtml(item) + queuePeekHtml(item)
     + '<span class="monitor-item-time">' + escHtml(relTime(item.updatedAt)) + '</span></span>'
-    + '</button>';
+    + '</div>';
 }
 
 function eventsHtml(item) {
@@ -285,14 +285,6 @@ function handleLiveMonitorClick(event) {
     return;
   }
 
-  const queueItem = event.target.closest('[data-monitor-key]');
-  if (queueItem && queueItem.classList.contains('monitor-item')) {
-    selectedKey = queueItem.getAttribute('data-monitor-key');
-    if (window.matchMedia(MOBILE_DETAIL_MQ).matches) mobileDetailOpen = true;
-    renderLiveMonitor(state.data);
-    return;
-  }
-
   const peekBtn = event.target.closest('.kcard-peek-btn');
   if (peekBtn) {
     event.stopPropagation();
@@ -302,24 +294,33 @@ function handleLiveMonitorClick(event) {
   }
 
   const actionBtn = event.target.closest('.kcard-va-btn');
-  if (!actionBtn) return;
-  event.stopPropagation();
-  const container = actionBtn.closest('.monitor-item');
-  const key = container && container.getAttribute('data-monitor-key');
-  const projection = filterProjection(state.data);
-  const item = key ? findItem(projection, key) : (selectedKey ? findItem(projection, selectedKey) : null);
-  if (!item) return;
+  if (actionBtn) {
+    event.stopPropagation();
+    const container = actionBtn.closest('.monitor-item');
+    const key = container && container.getAttribute('data-monitor-key');
+    const projection = filterProjection(state.data);
+    const item = key ? findItem(projection, key) : (selectedKey ? findItem(projection, selectedKey) : null);
+    if (!item) return;
 
-  const { repo, entity, pipelineType } = findEntityRow(item);
-  if (!repo || !entity) return;
-  const vaAction = actionBtn.getAttribute('data-va-action') || '';
-  const vaAgentId = actionBtn.getAttribute('data-agent') || null;
-  const actions = (item.contract.decisions && item.contract.decisions.actions || []).concat(item.contract.tools || []);
-  const va = actions.find(action => action.actionId === vaAction && (action.agentId || null) === vaAgentId)
-    || { actionId: vaAction, agentId: vaAgentId, label: actionBtn.textContent };
-  actionBtn._origText = actionBtn.textContent;
-  if (item.entityType === 'feature-set') handleSetAction(va, entity, repo.path, actionBtn);
-  else handleFeatureAction(va, entity, repo.path, actionBtn, pipelineType);
+    const { repo, entity, pipelineType } = findEntityRow(item);
+    if (!repo || !entity) return;
+    const vaAction = actionBtn.getAttribute('data-va-action') || '';
+    const vaAgentId = actionBtn.getAttribute('data-agent') || null;
+    const va = (entity.validActions || []).find(a => a.action === vaAction && (a.agentId || null) === vaAgentId)
+      || { action: vaAction, agentId: vaAgentId, label: actionBtn.textContent };
+    actionBtn._origText = actionBtn.textContent;
+    if (item.entityType === 'feature-set') handleSetAction(va, entity, repo.path, actionBtn);
+    else handleFeatureAction(va, entity, repo.path, actionBtn, pipelineType);
+    return;
+  }
+
+  const queueItem = event.target.closest('[data-monitor-key]');
+  if (queueItem && queueItem.classList.contains('monitor-item')) {
+    selectedKey = queueItem.getAttribute('data-monitor-key');
+    if (window.matchMedia(MOBILE_DETAIL_MQ).matches) mobileDetailOpen = true;
+    renderLiveMonitor(state.data);
+    return;
+  }
 }
 
 export function syncLiveMonitor(data) {
