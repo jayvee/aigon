@@ -21,3 +21,23 @@ F680: render through `renderContractCardBody` with `density: 'compact' | 'expand
 
 ## Test Coverage
 `tests/dashboard-e2e/contract-cards-preview.spec.js` (@smoke, 7 tests incl. default-off pin); gallery e2e updated to production markup (6 tests incl. new labeled-pill Peek test); unit 37/37; iterate gate green.
+
+## Code Review
+
+**Reviewed by**: cu
+**Date**: 2026-07-15
+
+### Fixes Applied
+- None — implementation was clean
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Contract renderer modules are pure contract→HTML with legacy dispatch hooks; pipeline and set-header wiring correctly reuse `handleFeatureAction`, `handleSetAction`, and `openTerminalPanel`.
+- Preview toggle (`dashboard.contractCards`, default off) is wired through settings, collector (`contractCardsPreview`), and status fingerprint — toggling repaints cards as required.
+- Gallery imports production modules with an adapter for drawers; set gallery fixtures now emit production-shaped `specCycle` facts.
+- Deferred items in the implementation log (dead-session Peek, legacy builder removal in F682) are appropriately scoped and documented.
