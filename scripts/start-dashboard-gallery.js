@@ -20,8 +20,21 @@ const staticFiles = new Map([
     ['/', ['gallery/index.html', 'text/html; charset=utf-8']],
     ['/gallery.css', ['gallery/gallery.css', 'text/css; charset=utf-8']],
     ['/gallery.js', ['gallery/gallery.js', 'text/javascript; charset=utf-8']],
+    // F679: the gallery renders cards through the production renderer modules
+    // and stylesheet so gallery and production card behavior cannot drift.
+    ['/contract-cards.css', ['templates/dashboard/styles/contract-cards.css', 'text/css; charset=utf-8']],
     ['/assets/icon/aigon-icon.svg', ['assets/icon/aigon-icon.svg', 'image/svg+xml']],
 ]);
+
+const CONTRACT_CARDS_DIR = path.join(ROOT, 'templates', 'dashboard', 'js', 'contract-cards');
+
+function resolveContractCardsModule(pathname) {
+    if (!pathname.startsWith('/js/contract-cards/')) return null;
+    const base = path.basename(pathname);
+    if (!/^[a-z0-9-]+\.js$/.test(base)) return null;
+    const file = path.join(CONTRACT_CARDS_DIR, base);
+    return fs.existsSync(file) ? file : null;
+}
 
 function send(res, status, contentType, body) {
     res.writeHead(status, {
@@ -44,6 +57,11 @@ const server = http.createServer((req, res) => {
         } catch (error) {
             send(res, 500, 'application/json; charset=utf-8', JSON.stringify({ error: error.message }));
         }
+        return;
+    }
+    const moduleFile = resolveContractCardsModule(pathname);
+    if (moduleFile) {
+        send(res, 200, 'text/javascript; charset=utf-8', fs.readFileSync(moduleFile));
         return;
     }
     const entry = staticFiles.get(pathname);

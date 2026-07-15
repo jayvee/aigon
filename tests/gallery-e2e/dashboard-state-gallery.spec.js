@@ -3,6 +3,10 @@
 
 const { test, expect } = require('@playwright/test');
 
+// F679: the gallery Cards and Pipeline views render through the production
+// contract card renderer (templates/dashboard/js/contract-cards), so these
+// assertions exercise the exact markup the dashboard preview renderer ships.
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-scenario-key="feature-autonomous-running"]')).toBeVisible();
@@ -13,34 +17,46 @@ test('contracts render autonomous and set hierarchy without duplicate activity',
   await expect(page.locator('[data-scenario-key]')).toHaveCount(66);
 
   const implementing = page.locator('[data-scenario-key="feature-autonomous-running"]');
-  await expect(implementing.locator('.activity-row')).toHaveCount(0);
-  await expect(implementing.locator('.run-stage')).toHaveCount(4);
-  await expect(implementing.locator('.peek-button')).toHaveCount(2);
+  await expect(implementing.locator('.ccard-row')).toHaveCount(0);
+  await expect(implementing.locator('.ccard-stage')).toHaveCount(4);
+  await expect(implementing.locator('.ccard-peek')).toHaveCount(2);
 
   const reviewing = page.locator('[data-scenario-key="feature-autonomous-reviewing"]');
-  const completedStage = reviewing.locator('.run-stage.complete').first();
-  await expect(completedStage.locator('.peek-button')).toBeVisible();
-  const positions = await reviewing.locator('.run-stage-agent').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().x));
-  expect(new Set(positions.map(value => Math.round(value))).size).toBe(1);
+  const completedStage = reviewing.locator('.ccard-stage.is-complete').first();
+  await expect(completedStage.locator('.ccard-peek')).toBeVisible();
+  const positions = await reviewing.locator('.ccard-stage-status').evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().right)));
+  expect(new Set(positions).size).toBe(1);
 
   const set = page.locator('[data-scenario-key="set-running"]');
-  await expect(set.locator('.set-current-run')).toContainText('F682 Recover interrupted runs');
-  await expect(set.locator('.set-current-run .run-stage')).toHaveCount(4);
-  await expect(set.locator('.set-current-run .activity-row')).toHaveCount(0);
+  await expect(set.locator('.ccard-set-current')).toContainText('F682 Recover interrupted runs');
+  await expect(set.locator('.ccard-set-current .ccard-stage')).toHaveCount(4);
+  await expect(set.locator('.ccard-set-current .ccard-row')).toHaveCount(0);
 
-  const setHeader = page.locator('[data-scenario-key="set-ready"] .card-title-row');
-  await expect(setHeader.locator('.card-key')).toHaveCount(0);
-  await expect(setHeader.locator('.mode-badge')).toHaveText('3 features');
+  const setHeader = page.locator('[data-scenario-key="set-ready"] .ccard-head');
+  await expect(setHeader.locator('.ccard-key')).toHaveCount(0);
+  await expect(setHeader.locator('.ccard-badge')).toHaveText('3 features');
+});
+
+test('set spec cycle status renders labeled pills with Peek inside', async ({ page }) => {
+  const reviewRunning = page.locator('[data-scenario-key="set-spec-review-running"]');
+  const activePill = reviewRunning.locator('.ccard-pill.is-active').first();
+  await expect(activePill).toContainText('Spec review');
+  await expect(activePill.locator('.ccard-peek')).toBeVisible();
+  // No bare unlabeled Peek buttons outside a labeled pill, stage, or row.
+  const barePeeks = await reviewRunning
+    .locator('.ccard-peek:not(.ccard-pill .ccard-peek):not(.ccard-stage .ccard-peek):not(.ccard-row .ccard-peek):not(.ccard-run-head .ccard-peek)')
+    .count();
+  expect(barePeeks).toBe(0);
 });
 
 test('Peek opens deterministic live and saved session output', async ({ page }) => {
   const reviewing = page.locator('[data-scenario-key="feature-autonomous-reviewing"]');
-  await reviewing.locator('.run-stage.complete .peek-button').click();
+  await reviewing.locator('.ccard-stage.is-complete .ccard-peek').first().click();
   await expect(page.locator('#drawer-title')).toHaveText('Session output');
   await expect(page.locator('.session-console-meta')).toContainText('Saved session output');
   await page.locator('#drawer-close-button').click();
 
-  await reviewing.locator('.run-stage.running .peek-button').click();
+  await reviewing.locator('.ccard-stage.is-running .ccard-peek').click();
   await expect(page.locator('.session-console-meta')).toContainText('Live session');
 });
 
@@ -59,6 +75,7 @@ test('Pipeline fills the viewport and adapts card density to lifecycle stage', a
   await expect(page.locator('.pipeline-column')).toHaveCount(6);
   await expect(page.locator('[data-pipeline-column="backlog"] .pipeline-card.compact')).toHaveCount(3);
   await expect(page.locator('[data-pipeline-column="in-progress"] .pipeline-card:not(.compact)')).toHaveCount(2);
+  await expect(page.locator('[data-pipeline-column="in-progress"] .ccard.is-expanded').first()).toBeVisible();
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
   expect(fits).toBe(true);
 });
