@@ -71,7 +71,15 @@ set -euo pipefail
 # F677: +333 LOC explicitly approved for the living dashboard contract gallery:
 # shared-contract validation, the complete feature/research/set scenario matrix,
 # and responsive Cards/Pipeline/Monitor browser coverage.
-CEILING="${CEILING:-15737}"
+# F678: 15737→16000 explicitly approved for contract adoption guardrails, after
+# trimming redundant scaffolding (-45 LOC) and deleting a superseded Peek test.
+# The suite was already 9 LOC over the old ceiling at F678's branch point.
+# Covers what the spec mandates: the resting-state parity sweep, research/set
+# fingerprint repaint coverage, session inspection, and deterministic failure on
+# malformed contracts. The parity test earned its keep immediately — it caught
+# two PAUSE_FEATURE candidates sharing an inbox/backlog guard, which had every
+# inbox and backlog card rendering two identical Pause buttons.
+CEILING="${CEILING:-16000}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
