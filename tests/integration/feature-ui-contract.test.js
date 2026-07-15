@@ -153,6 +153,25 @@ test('contract projects the same card buttons the legacy browser filter produced
     });
 });
 
+// F678: the collector must hand the contract a lifecycle. Rows that carry a
+// snapshot state but project state.lifecycle = null leave the renderer with no
+// server-owned state to read (and leave computeStatusFingerprint's
+// `f.currentSpecState` component empty). Only F294 snapshotless rows may be null.
+test('a row carrying a snapshot lifecycle projects it as contract state', () => {
+    const contract = buildFeatureUiContract({
+        id: '678',
+        displayKey: 'F678',
+        name: 'contract',
+        stage: 'backlog',
+        currentSpecState: 'backlog',
+        agents: [],
+        validActions: [],
+        cardPresentation: { severity: 'normal' },
+    }, {});
+    assert.strictEqual(contract.state.lifecycle, 'backlog');
+    assert.strictEqual(contract.state.lane, 'backlog');
+});
+
 // Identity is server-owned: the renderer must never rebuild these.
 test('contract identity carries kind, numeric id, machine slug, and set membership', () => {
     const contract = buildFeatureUiContract({
