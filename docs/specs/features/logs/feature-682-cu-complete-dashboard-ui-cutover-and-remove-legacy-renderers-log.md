@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 225
+lines_removed: 893
+lines_changed: 1118
+files_touched: 22
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 682 - complete-dashboard-ui-cutover-and-remove-legacy-renderers
 Agent: cu
 
