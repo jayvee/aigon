@@ -54,7 +54,9 @@ function contextHtml(contract) {
 export function renderContractCardBody(contract, options = {}) {
   const compact = options.density === 'compact';
   const inner = [
-    headHtml(contract, options),
+    // suppressIdentity: the host already names this entity (e.g. a set's
+    // "Current feature" heading) — titles appear exactly once.
+    options.suppressIdentity ? '' : headHtml(contract, options),
     stateLineHtml(contract),
     compact ? '' : contextHtml(contract),
     blockersHtml(contract),
@@ -87,6 +89,7 @@ export function renderSetContractCardBody(contract, options = {}) {
         badgeLabel: null,
         density: 'expanded',
         suppressActions: true,
+        suppressIdentity: true,
       }),
     }),
     options.suppressActions ? '' : actionBarHtml(contract, {}),
