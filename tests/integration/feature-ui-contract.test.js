@@ -125,6 +125,34 @@ test('every resting feature state projects a contract with unique action identit
     });
 });
 
+// F678: inbox/backlog cards moved from the legacy browser render path to the
+// contract path. The contract must project the same buttons the legacy filter
+// produced, or adoption silently changes what operators can click.
+test('contract projects the same card buttons the legacy browser filter produced', () => {
+    ['inbox', 'backlog'].forEach((lifecycle) => {
+        const context = {
+            entityType: 'feature', featureId: '675', currentSpecState: lifecycle, lifecycle,
+            mode: 'solo_worktree', agents: {}, tmuxSessionStates: {},
+            updatedAt: '2026-07-14T00:00:00.000Z',
+        };
+        const validActions = snapshotToDashboardActions('feature', '675', context, lifecycle).validActions;
+        // Mirror of renderActionButtons' legacy filter in templates/dashboard/js/actions.js.
+        const legacy = validActions
+            .filter(va => !va.disabled && !va.agentId && va.category !== 'infra' && va.category !== 'view')
+            .filter(va => !(va.metadata && va.metadata.recovery))
+            .map(va => va.action);
+        const contract = contractFor(context);
+        const rendered = contract.decisions.actions.concat(contract.tools)
+            .filter(action => action.interaction.surface !== 'agent' && !action.disabled)
+            .map(action => action.actionId);
+        assert.deepStrictEqual(
+            rendered.slice().sort(),
+            [...new Set(legacy)].sort(),
+            `${lifecycle} button parity drifted between legacy and contract`,
+        );
+    });
+});
+
 // Identity is server-owned: the renderer must never rebuild these.
 test('contract identity carries kind, numeric id, machine slug, and set membership', () => {
     const contract = buildFeatureUiContract({

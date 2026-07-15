@@ -59,6 +59,7 @@ Duplicate or malformed contracts fail deterministically at the collector, which
 raises the entity id rather than shipping a row the browser has to guess about.
 Divergence between the legacy action source and the contract must be fixed in
 the workflow definition or the projector — never deduped or patched in the
-browser. F678's parity sweep found two `PAUSE_FEATURE` candidates sharing an
-inbox/backlog guard, which had rendered two identical Pause buttons on every
-inbox and backlog card.
+browser. F678 found two `PAUSE_FEATURE` candidates sharing an inbox/backlog
+guard. Operators never saw a second Pause button, because the legacy browser
+path deduped on `action + agentId` and hid the producer defect — the exact
+patching this contract removes. Validation surfaced it immediately.
