@@ -93,6 +93,30 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       return [repoPath || '', pipelineType || 'features', stage || ''].join('::');
     }
 
+    /** F680: contract renderer density follows lifecycle column, not ad-hoc markup. */
+    function contractCardDensity(stage, pipelineType) {
+      const lane = String(stage || '');
+      if (pipelineType === 'feedback') {
+        return lane === 'actionable' ? 'expanded' : 'compact';
+      }
+      return (lane === 'in-progress' || lane === 'in-evaluation') ? 'expanded' : 'compact';
+    }
+
+    function isContractPipelinePreviewActive(repos) {
+      return (repos || []).some(repo => repo && repo.contractCardsPreview === true);
+    }
+
+    function syncKanbanResponsiveClass(repos) {
+      const visibleRepos = repos || [];
+      document.querySelectorAll('#pipeline-view .kanban').forEach(board => {
+        const col = board.querySelector('.kanban-col[data-repo-path]');
+        const repoPath = col ? col.getAttribute('data-repo-path') : null;
+        const needle = normalizeKanbanRepoPath(repoPath);
+        const repo = visibleRepos.find(r => r && normalizeKanbanRepoPath(r.path) === needle);
+        board.classList.toggle('kanban--responsive', !!(repo && repo.contractCardsPreview === true));
+      });
+    }
+
     function getDoneFolderPath(repoPath, pipelineType) {
       const specsRoot = (repoPath || '') + '/docs/specs';
       if (pipelineType === 'research') return specsRoot + '/research-topics/05-done';
@@ -1284,7 +1308,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       // and keep the legacy body by construction.
       if (repoMeta && repoMeta.contractCardsPreview && feature.uiContract) {
         card.classList.add('kcard-contract');
-        const compactStage = isDone || feature.stage === 'inbox' || feature.stage === 'backlog' || feature.stage === 'paused';
+        const compactStage = contractCardDensity(feature.stage, pipelineType) === 'compact';
         innerHtml = renderContractCardBody(feature.uiContract, {
           density: compactStage ? 'compact' : 'expanded',
           badgeLabel: feature.mode === 'fleet' ? 'Fleet' : null,
@@ -2317,6 +2341,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       _lastKanbanReconcileStats.created += stats.created;
       _lastKanbanReconcileStats.updated += stats.updated;
       _lastKanbanReconcileStats.removed += stats.removed;
+      syncKanbanResponsiveClass(repos);
       if (typeof globalThis.__aigonKanbanReconcileHook === 'function') {
         globalThis.__aigonKanbanReconcileHook(stats);
       }

@@ -210,7 +210,7 @@
               </div>
               <div class="kanban" :style="'--kanban-cols:' + currentStages.length">
                 <template x-for="stage in currentStages" :key="stage">
-                  <div class="kanban-col" :data-stage="stage" :data-repo-path="repo.path"
+                  <div class="kanban-col" :data-stage="stage" :data-pipeline-column="stage" :data-repo-path="repo.path"
                        x-on:dragover.prevent="onDragOver($event, stage)"
                        x-on:dragleave="onDragLeave($event)"
                        x-on:drop.prevent="onDrop($event, stage, repo.path)">
