@@ -38,3 +38,25 @@ F682: drop the preview gate, make live Monitor unconditional, and delete `#monit
 
 ## Visual check vs gallery
 Composition matches gallery Monitor (summary stats, three queue sections, focus detail with run progress + events). Intentional divergence: production queue rows inline the server primary action and Peek; gallery uses static demo timestamps and hard-coded event prose.
+
+## Code Review
+
+**Reviewed by**: op
+**Date**: 2026-07-15
+
+### Fixes Applied
+- `1d7058bb5` fix(review): action dispatch, nested buttons, and click order in live monitor
+  - Action dispatch was broken: `va` was looked up from `item.contract.decisions.actions` (whose objects carry `actionId`, not `action`), then passed to `handleFeatureAction` / `handleSetAction` which read `va.action`. Every action-button click in the queue and detail dispatched `requestAction(undefined, ...)`. Fixed by looking up `va` from `entity.validActions` by `.action`, mirroring `pipeline.js`.
+  - Queue items rendered a `<button class="monitor-item">` wrapping action/peek `<button>` elements — invalid nested buttons that browsers auto-close, breaking layout and event delegation. Changed to `<div role="button" tabindex="0">`.
+  - Click handler order: queue-item select ran before peek/action checks, so clicking a button inside a queue item selected the item and returned instead of dispatching. Reordered to check peek/action first.
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- `handleFeatureAction` / `handleSetAction` are async but called without `await` in `handleLiveMonitorClick` — consistent with legacy `monitor.js`, so not changed. Unhandled rejections would surface in console.
+- The `@smoke` tests don't click action buttons in the live monitor, so the dispatch bug wasn't caught. F682 (cutover) should add an action-click smoke test before removing the preview gate.
+
