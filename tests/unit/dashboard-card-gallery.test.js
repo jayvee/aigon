@@ -4,6 +4,7 @@
 const assert = require('assert');
 const { test, report } = require('../_helpers');
 const { buildDashboardCardGallery } = require('../../lib/dashboard-card-gallery');
+const { ENTITY_UI_CONTRACT_VERSION } = require('../../lib/entity-ui-contract');
 
 const gallery = buildDashboardCardGallery();
 
@@ -30,7 +31,7 @@ test('covers every resting feature and research state', () => {
 
 test('all entity scenarios consume the completed versioned contract', () => {
     gallery.scenarios.forEach(item => {
-        assert.strictEqual(item.contract.contractVersion, 2, item.key);
+        assert.strictEqual(item.contract.contractVersion, ENTITY_UI_CONTRACT_VERSION, item.key);
     });
 });
 

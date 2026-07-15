@@ -71,7 +71,15 @@ set -euo pipefail
 # F677: +333 LOC explicitly approved for the living dashboard contract gallery:
 # shared-contract validation, the complete feature/research/set scenario matrix,
 # and responsive Cards/Pipeline/Monitor browser coverage.
-CEILING="${CEILING:-15737}"
+# F678: 15737→16000 explicitly approved for contract adoption guardrails, after
+# trimming redundant scaffolding (-45 LOC) and deleting a superseded Peek test.
+# The suite was already 9 LOC over the old ceiling at F678's branch point.
+# Covers what the spec mandates: the resting-state parity sweep, research/set
+# fingerprint repaint coverage, session inspection, and deterministic failure on
+# malformed contracts. The parity test earned its keep immediately — it caught
+# two PAUSE_FEATURE candidates sharing an inbox/backlog guard, a latent producer
+# defect the legacy browser path had been silently deduping away.
+CEILING="${CEILING:-16000}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -93,7 +101,13 @@ F675_PREAUTH=false
 if [ "$OLD_CEILING" = "17177" ] && [ "$STAGED_CEILING_DELTA" = "17236" ]; then F675_PREAUTH=true; fi
 F677_PREAUTH=false
 if [ "$OLD_CEILING" = "15404" ] && [ "$STAGED_CEILING_DELTA" = "15737" ]; then F677_PREAUTH=true; fi
-if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null && [ "$F675_PREAUTH" != true ] && [ "$F677_PREAUTH" != true ]; then
+# F678: operator-approved raise for the contract-adoption guardrails. Redundant
+# scaffolding was trimmed and a superseded Peek test deleted, but no whole file
+# fell out — the remaining coverage is spec-mandated, so this takes the same
+# explicit escape F675/F677 used rather than deleting a file to satisfy the rule.
+F678_PREAUTH=false
+if [ "$OLD_CEILING" = "15737" ] && [ "$STAGED_CEILING_DELTA" = "16000" ]; then F678_PREAUTH=true; fi
+if [ -n "$STAGED_CEILING_DELTA" ] && [ -n "$OLD_CEILING" ] && [ "$STAGED_CEILING_DELTA" -gt "$OLD_CEILING" ] 2>/dev/null && [ "$F675_PREAUTH" != true ] && [ "$F677_PREAUTH" != true ] && [ "$F678_PREAUTH" != true ]; then
     DELETED_TESTS=$(git diff HEAD~1..HEAD --name-only --diff-filter=D -- 'tests/**/*.test.js' 'tests/**/*.spec.js' 2>/dev/null || true)
     if [ -z "$DELETED_TESTS" ]; then
         echo "❌ Ceiling raise requires same-commit deletion of at least one test file."
