@@ -589,6 +589,15 @@ Rules that follow from this design:
 
 Feature/research cards use a server-owned presentation model (`lib/card-presentation.js` → `entity.cardPresentation` on poll rows) layered on `lib/card-headline.js`. The model supplies timeline items, a single context line, suppression flags for duplicate legacy panels, compact agent summary on failures, and `showRecoveryActions` for the action row. Rules and examples: **`docs/dashboard-card-design.md`**; visual reference: **`docs/card-design-wireframe.html`**. Client HTML: `templates/dashboard/js/card-presentation.js` (shared by pipeline + monitor).
 
+### Contract card preview renderer (F679)
+
+`templates/dashboard/js/contract-cards/` renders feature, research, and feature-set card bodies purely from the versioned `uiContract` (F678): `card.js` composes `html.js` / `actions-view.js` / `activity-view.js` / `plan-view.js`, all pure contract→HTML functions with no dashboard-singleton imports. The pipeline enables it per repo when `/api/status` carries `contractCardsPreview: true` — resolved each collect from the **`dashboard.contractCards`** setting (`lib/dashboard-settings.js`, default **off**, removed by F682 after validation). Rules:
+
+- The renderer emits the **legacy dispatch hooks** (`kcard-va-btn`/`data-va-action`/`data-agent`, `kcard-peek-btn`/`data-peek-session`, `kcard-overflow-toggle`), so preview and legacy cards share the same `handleFeatureAction` / `handleSetAction` → `/api/action` and `openTerminalPanel` boundaries. Never add an alternate command path in the renderer.
+- Options passed to the renderer are **view concerns only** (density, badge text, a session-Peek machine gate) — workflow policy stays in the contract.
+- Styles live in `styles/contract-cards.css` (manifest-listed); the semantic accent tokens there are the approved F677 gallery values so gallery and production cannot drift.
+- The design gallery (`npm run gallery`, `gallery/gallery.js`) imports these same modules for its Cards and Pipeline views — it is a deliberate adapter that routes action/Peek clicks into deterministic drawers. Renderer changes are exercised by `npm run test:gallery` and `tests/dashboard-e2e/contract-cards-preview.spec.js` (@smoke, enables the preview flag explicitly and pins default-off to the legacy body).
+
 ### Known deferred debt (from the dash-arch logs)
 
 - F623 waves 2–3: real `import`s replacing `globalThis` shims, breaking the `state↔api↔init` cycles, deleting the eslint `dashboardAppGlobals` allowlist and `typeof fn === 'function'` guards.

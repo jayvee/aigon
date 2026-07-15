@@ -55,6 +55,15 @@ Compatibility fields (`validActions`, `cardHeadline`, `cardPresentation`, and
 `closeReadiness`) remain available during migration. They are not the feature
 dashboard's eligibility or primary-action authority.
 
+The browser side of this contract is the F679 preview renderer
+(`templates/dashboard/js/contract-cards/`): pure contract → HTML modules shared
+verbatim by the production pipeline and the design gallery, enabled per repo by
+the `dashboard.contractCards` setting (default off; the switch is temporary and
+is removed by F682). It renders identity once, one dominant state line, agent
+and session rows, plan stages in stable columns, and actions partitioned from
+`decisions.primaryActionId` — and it dispatches through the same validated
+`/api/action` and session Peek boundaries as the legacy card builder.
+
 Duplicate or malformed contracts fail deterministically at the collector, which
 raises the entity id rather than shipping a row the browser has to guess about.
 Divergence between the legacy action source and the contract must be fixed in

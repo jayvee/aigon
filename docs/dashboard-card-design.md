@@ -5,7 +5,8 @@ Internal maintainer guidance for editing feature/research dashboard cards. **Tar
 Visual reference: [`card-design-wireframe.html`](./card-design-wireframe.html)  
 Headline precedence (server): `lib/card-headline.js`  
 Presentation model (server): `lib/card-presentation.js`  
-Pipeline render: `templates/dashboard/js/pipeline.js` + `card-presentation.js`
+Pipeline render: `templates/dashboard/js/pipeline.js` + `card-presentation.js`  
+Contract preview render (F679, `dashboard.contractCards` default off): `templates/dashboard/js/contract-cards/` — consumes `uiContract` only; see `docs/feature-interaction-contract.md`
 
 ## Card hierarchy (top → bottom)
 

@@ -1,3 +1,10 @@
+// F679: the Cards and Pipeline views render through the production contract
+// card renderer (templates/dashboard/js/contract-cards). The gallery is a
+// deliberate adapter around it: production markup and styles, with action and
+// Peek clicks routed into the gallery's deterministic drawers instead of the
+// live dashboard dispatch.
+import { renderContractCardBody, renderSetContractCardBody } from '/js/contract-cards/card.js';
+
 const state = {
   data: null,
   view: 'cards',
@@ -76,11 +83,6 @@ function actionDisplayLabel(action, scenario) {
 function actionLabel(action, scenario) {
   const suffix = action.agentId ? ` · ${String(action.agentId).toUpperCase()}` : '';
   return `${actionDisplayLabel(action, scenario)}${suffix}`;
-}
-
-function cardIdentityHtml(scenario) {
-  if (scenario.entityType === 'set') return '';
-  return `<span class="card-key">${escapeHtml(scenario.contract.entity.displayKey)}</span>`;
 }
 
 function cardBadgeLabel(scenario) {
@@ -181,35 +183,27 @@ function setPlanHtml(scenario) {
   </div>`;
 }
 
+// Production card body for one gallery scenario — the same modules the
+// dashboard pipeline renders behind dashboard.contractCards.
+function productionCardHtml(scenario, options = {}) {
+  const contract = scenario.contract;
+  const body = scenario.entityType === 'set'
+    ? renderSetContractCardBody(contract, {})
+    : renderContractCardBody(contract, {
+      badgeLabel: scenario.modeLabel,
+      density: options.density || 'expanded',
+    });
+  const frameKind = scenario.entityType === 'research' ? ' is-research' : (scenario.entityType === 'set' ? ' is-set' : '');
+  return `<div class="ccard-frame${frameKind}">${body}</div>`;
+}
+
 function cardHtml(scenario) {
   const contract = scenario.contract;
   const decisions = dedupeActions(contract.decisions.actions);
   const tools = dedupeActions(contract.tools);
-  const primary = decisions.find(action => action.actionId === contract.decisions.primaryActionId && !action.agentId) || null;
-  const secondary = decisions.filter(action => action !== primary && !action.agentId && action.intent !== 'danger');
-  const visibleSecondary = secondary.slice(0, primary ? 1 : 2);
-  const hiddenCount = decisions.length + tools.length - (primary ? 1 : 0) - visibleSecondary.length;
-  const severity = contract.state.severity || 'normal';
-  const context = contract.presentation.contextLine || scenario.detail || '';
   const allInventory = [...decisions, ...tools];
   const unmapped = scenario.unmappedEngineActions || [];
   const duplicateCount = (scenario.duplicateActions || []).reduce((sum, item) => sum + item.count - 1, 0);
-
-  const agentHtml = activityHtml(scenario);
-
-  const blockerHtml = (contract.blockers || []).length
-    ? `<div class="blocker-line">${escapeHtml(contract.blockers.map(blocker => blocker.label || blocker.reason || blocker.id || blocker.kind).join(' · '))}</div>`
-    : '';
-
-  let footerHtml = '';
-  if (primary) {
-    footerHtml += `<button type="button" class="card-action primary" data-open-scenario="${escapeHtml(scenario.key)}">${escapeHtml(actionDisplayLabel(primary, scenario))}</button>`;
-  }
-  footerHtml += visibleSecondary.map(action => `<button type="button" class="card-action ${action.intent === 'danger' ? 'danger' : ''}" data-open-scenario="${escapeHtml(scenario.key)}">${escapeHtml(actionDisplayLabel(action, scenario))}</button>`).join('');
-  if (!primary && visibleSecondary.length === 0 && hiddenCount <= 0) footerHtml += '<span class="no-actions">No actions available</span>';
-  if (hiddenCount > 0) {
-    footerHtml += `<button type="button" class="card-action icon-only" data-open-scenario="${escapeHtml(scenario.key)}" aria-label="Show ${hiddenCount} more actions" title="More actions">…</button>`;
-  }
 
   const inventoryHtml = `<div class="action-inventory">
     <div class="inventory-heading">
@@ -229,24 +223,7 @@ function cardHtml(scenario) {
       <strong>${escapeHtml(scenario.scenario)}</strong>
       <span>${escapeHtml(scenario.entityType)} · ${escapeHtml(scenario.state)}</span>
     </div>
-    <div class="entity-card ${escapeHtml(scenario.entityType)}-card severity-${escapeHtml(severity)}">
-      <div class="card-main">
-        <div class="card-title-row">
-          <div class="card-identity">
-            ${cardIdentityHtml(scenario)}
-            <h3 class="card-title">${escapeHtml(contract.entity.name)}</h3>
-          </div>
-          <span class="mode-badge">${escapeHtml(cardBadgeLabel(scenario))}</span>
-        </div>
-        <div class="state-line"><span class="state-dot"></span><span>${escapeHtml((contract.presentation.headline && contract.presentation.headline.verb) || contract.state.label)}</span></div>
-        ${context ? `<p class="card-context">${escapeHtml(context)}</p>` : '<p class="card-context"></p>'}
-        ${agentHtml}
-        ${autonomousPlanHtml(scenario)}
-        ${setPlanHtml(scenario)}
-        ${blockerHtml}
-      </div>
-      <div class="card-footer">${footerHtml}</div>
-    </div>
+    ${productionCardHtml(scenario)}
     ${inventoryHtml}
   </article>`;
 }
@@ -281,21 +258,8 @@ function cardButtonsHtml(scenario, limit = 2) {
 function pipelineCardHtml(key, options = {}) {
   const scenario = scenarioByKey(key);
   if (!scenario) return '';
-  const contract = scenario.contract;
-  const headline = contract.presentation.headline && contract.presentation.headline.verb || contract.state.label;
-  const context = contract.presentation.contextLine || scenario.detail || '';
-  const content = options.compact ? '' : `${activityHtml(scenario)}${autonomousPlanHtml(scenario)}${setPlanHtml(scenario)}`;
   return `<article class="pipeline-card ${options.compact ? 'compact' : ''} ${options.muted ? 'muted' : ''}" data-pipeline-scenario="${escapeHtml(key)}">
-    <div class="pipeline-card-main">
-      <div class="pipeline-card-heading">
-        <div>${scenario.entityType === 'set' ? '' : `<span class="pipeline-card-key">${escapeHtml(contract.entity.displayKey)}</span>`}<h3>${escapeHtml(contract.entity.name)}</h3></div>
-        <span class="mode-badge">${escapeHtml(cardBadgeLabel(scenario))}</span>
-      </div>
-      <div class="pipeline-card-state"><span class="state-dot"></span><span>${escapeHtml(headline)}</span></div>
-      ${context ? `<p class="pipeline-card-context">${escapeHtml(context)}</p>` : ''}
-      ${content}
-    </div>
-    <div class="pipeline-card-footer">${cardButtonsHtml(scenario, options.compact ? 1 : 2) || '<span class="no-actions">No actions available</span>'}</div>
+    <div class="pipeline-card-main">${productionCardHtml(scenario, { density: options.compact ? 'compact' : 'expanded' })}</div>
   </article>`;
 }
 
@@ -541,9 +505,18 @@ function openCoverageDrawer() {
   document.getElementById('drawer-close-icon').focus();
 }
 
+function findScenarioSession(contract, sessionId) {
+  if (!contract) return null;
+  const direct = (contract.sessions || []).find(item => item.sessionId === sessionId);
+  if (direct) return direct;
+  // Embedded current-member contracts own their stage sessions.
+  const embedded = contract.plan && contract.plan.currentFeatureContract;
+  return embedded ? findScenarioSession(embedded, sessionId) : null;
+}
+
 function openSessionDrawer(scenarioKey, sessionId) {
   const scenario = state.view === 'monitor' ? monitorScenario(scenarioKey) : scenarioByKey(scenarioKey);
-  const session = scenario && (scenario.contract.sessions || []).find(item => item.sessionId === sessionId);
+  const session = scenario && findScenarioSession(scenario.contract, sessionId);
   if (!scenario || !session) return;
   const status = session.status || (session.running ? 'running' : 'complete');
   const mode = session.running ? 'Live session' : 'Saved session output';
@@ -594,6 +567,40 @@ function bindEvents() {
     if (monitorItem) {
       state.monitorKey = monitorItem.dataset.monitorKey;
       renderMonitor();
+      return;
+    }
+    // Production-renderer hooks (Cards + Pipeline views): route the shared
+    // dispatch classes into the gallery's deterministic drawers.
+    const scenarioKeyFor = (el) => {
+      const host = el.closest('[data-scenario-key], [data-pipeline-scenario]');
+      return host ? (host.dataset.scenarioKey || host.dataset.pipelineScenario) : null;
+    };
+    const peekBtn = event.target.closest('.kcard-peek-btn[data-peek-session]');
+    if (peekBtn) {
+      const key = scenarioKeyFor(peekBtn);
+      if (key) openSessionDrawer(key, peekBtn.dataset.peekSession);
+      return;
+    }
+    const overflowToggle = event.target.closest('.kcard-overflow-toggle');
+    if (overflowToggle) {
+      const menu = overflowToggle.parentElement.querySelector('.kcard-overflow-menu');
+      const isOpen = menu && menu.classList.contains('open');
+      document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+      if (menu && !isOpen) {
+        menu.classList.add('open');
+        const rect = overflowToggle.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.left = `${Math.max(8, rect.right - menu.getBoundingClientRect().width)}px`;
+      }
+      return;
+    }
+    if (!event.target.closest('.kcard-overflow-menu')) {
+      document.querySelectorAll('.kcard-overflow-menu.open').forEach(m => m.classList.remove('open'));
+    }
+    const vaBtn = event.target.closest('.kcard-va-btn');
+    if (vaBtn) {
+      const key = scenarioKeyFor(vaBtn);
+      if (key) openScenarioDrawer(key);
       return;
     }
     const target = event.target.closest('[data-open-scenario]');

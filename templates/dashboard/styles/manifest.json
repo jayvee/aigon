@@ -4,6 +4,7 @@
     "base.css",
     "monitor.css",
     "kanban.css",
+    "contract-cards.css",
     "components.css",
     "settings.css",
     "drawer.css",

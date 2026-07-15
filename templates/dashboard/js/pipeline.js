@@ -13,8 +13,9 @@ import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
 import { clearCloseFailure, getCloseFailure, isDevServerPokePending, setExpandedPipelineColumn, setPipelineGroupBySet as applyPipelineGroupBySet, setPipelineType as applyPipelineType, subscribeDataChange } from './store.js';
 import { openResearchFindingsPeek, openTerminalPanel } from './terminal.js';
-import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, canShowSessionPeek, escHtml, formatFeatureIdForDisplay, isCompleteStatus, logsDateFmt, showToast } from './utils.js';
+import { _formatHeadlineAge, buildCardHeadlineHtml, buildEscalationBadgeHtml, buildLeaseBadgeHtml, buildScheduledGlyphHtml, buildSpecDriftBadgeHtml, canShowSessionPeek, escHtml, formatFeatureIdForDisplay, isCompleteStatus, isEntityHeldByOtherMachine, logsDateFmt, showToast } from './utils.js';
 import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-presentation.js';
+import { renderContractCardBody, renderSetContractCardBody } from './contract-cards/card.js';
     // ── Pipeline / Kanban view ─────────────────────────────────────────────────
 
     const STAGE_ORDER = ['inbox', 'backlog', 'in-progress', 'in-evaluation', 'done'];
@@ -1276,6 +1277,22 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         }
       }
 
+      // F679 preview: contract-driven card body behind dashboard.contractCards.
+      // Same card element, same wiring below — only the body markup changes, so
+      // actions still dispatch through handleFeatureAction → /api/action and
+      // Peek through openTerminalPanel. Done rows ship no contract (lean shape)
+      // and keep the legacy body by construction.
+      if (repoMeta && repoMeta.contractCardsPreview && feature.uiContract) {
+        card.classList.add('kcard-contract');
+        const compactStage = isDone || feature.stage === 'inbox' || feature.stage === 'backlog' || feature.stage === 'paused';
+        innerHtml = renderContractCardBody(feature.uiContract, {
+          density: compactStage ? 'compact' : 'expanded',
+          badgeLabel: feature.mode === 'fleet' ? 'Fleet' : null,
+          // Two-machine boundary: sessions held by another machine never offer
+          // Peek here, exactly as canShowSessionPeek gates the legacy body.
+          canPeekSession: () => !isEntityHeldByOtherMachine(feature, repoStorage),
+        });
+      }
       card.innerHTML = innerHtml;
 
       // Advisory-only warning style on Close button when last PR check is non-merged.
@@ -1711,6 +1728,9 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
         prStatus: feature.prStatus,
         repoGithubRemote: repo.githubRemote,
         repoStorage: repo.storage,
+        // F679: preview renderer toggle + contract identity must repaint the card.
+        contractCardsPreview: repo.contractCardsPreview === true,
+        uiContract: feature.uiContract || null,
         setRollup: setRoll ? {
           slug: setRoll.slug,
           completed: setRoll.completed,
@@ -1727,10 +1747,14 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       });
     }
 
-    function setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused) {
+    function setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, contractPreview) {
       return JSON.stringify({
         setSlug,
         isSetPaused,
+        // F679: toggling the preview renderer, or a contract change, rebuilds
+        // the set header.
+        contractPreview: contractPreview === true,
+        uiContract: (contractPreview && roll && roll.uiContract) || null,
         roll: roll ? {
           completed: roll.completed,
           memberCount: roll.memberCount,
@@ -1974,15 +1998,57 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       return header;
     }
 
+    // F679 preview: set header rendered from the versioned set contract. Set
+    // decisions dispatch through the same handleSetAction path as the legacy
+    // header buttons; spec-review / spec-revision / conductor Peek lives inside
+    // its labeled pill and opens the shared terminal panel.
+    function buildContractSetHeader(setSlug, roll, repo) {
+      const header = document.createElement('div');
+      header.className = 'kanban-set-header kanban-set-bundle-head kanban-set-header-contract';
+      header.innerHTML = renderSetContractCardBody(roll.uiContract, {
+        canPeekSession: () => !isEntityHeldByOtherMachine(roll, repo && repo.storage),
+      });
+      header.querySelectorAll('.kcard-va-btn[data-va-action]').forEach((btn) => {
+        const vaAction = btn.getAttribute('data-va-action');
+        const va = (roll.validActions || []).find(a => a.action === vaAction);
+        if (!va || va.disabled || btn.disabled) return;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          closeAllKcardOverflowMenus();
+          handleSetAction(va, roll, repo.path, btn);
+        };
+      });
+      header.querySelectorAll('.kcard-overflow-toggle').forEach((toggle) => {
+        toggle.onclick = (e) => {
+          e.stopPropagation();
+          const menu = toggle.parentElement.querySelector('.kcard-overflow-menu');
+          const isOpen = menu && menu.classList.contains('open');
+          closeAllKcardOverflowMenus();
+          if (!isOpen && menu) positionKcardOverflowMenu(menu, toggle);
+        };
+      });
+      header.querySelectorAll('.kcard-peek-btn[data-peek-session]').forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const sessionName = btn.getAttribute('data-peek-session');
+          if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
+        };
+      });
+      return header;
+    }
+
     function upsertSetBundle(bundle, setSlug, members, roll, repo, pType, stats) {
       const isPausedOnFailure = roll && roll.autonomous && roll.autonomous.status === 'paused-on-failure';
       const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
       const isSetPaused = isPausedOnFailure || isPausedOnQuota;
       bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
-      const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused);
+      const setContractPreview = Boolean(repo && repo.contractCardsPreview && roll && roll.uiContract);
+      const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, setContractPreview);
       let header = bundle.querySelector(':scope > .kanban-set-bundle-head, :scope > .kanban-set-header');
       if (!header || header.dataset.kanbanFp !== headerFp) {
-        const freshHeader = buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota);
+        const freshHeader = setContractPreview
+          ? buildContractSetHeader(setSlug, roll, repo)
+          : buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota);
         freshHeader.dataset.kanbanFp = headerFp;
         if (header) header.replaceWith(freshHeader);
         else bundle.insertBefore(freshHeader, bundle.firstChild);
@@ -1992,7 +2058,9 @@ import { buildCardAgentSummaryHtml, buildCardTimelineHtml } from './card-present
       let strip = bundle.querySelector(':scope > .kanban-set-prioritise-strip');
       const setValid = roll && Array.isArray(roll.validActions) ? roll.validActions : [];
       const prioVa = setValid.find(a => a.action === 'set-prioritise');
-      if (prioVa && roll) {
+      // Contract preview renders set-prioritise in the contract action bar —
+      // the legacy banner strip would duplicate it.
+      if (prioVa && roll && !setContractPreview) {
         if (!strip) {
           strip = document.createElement('div');
           strip.className = 'kanban-set-prioritise-strip';
