@@ -21,3 +21,23 @@ F681: apply the same `wrap--operational` full-width pattern to Monitor; reuse ga
 
 ## Test Coverage
 `tests/dashboard-e2e/contract-cards-preview.spec.js` — two new `@smoke` cases (wide density + 390px overflow); `npm run test:iterate` green (19 smoke). Gallery unit 22/22. Intentional divergence from gallery Pipeline: production uses existing `.kanban`/`.kanban-col` DOM (not `.pipeline-board`) so drag/keyed reconcile wiring is unchanged.
+
+## Code Review
+
+**Reviewed by**: op
+**Date**: 2026-07-15
+
+### Fixes Applied
+- `2b145e1e3` fix(review): toggle kanban--responsive per-board, not globally — `syncKanbanResponsiveClass` applied `kanban--responsive` to ALL pipeline boards when any repo had `contractCardsPreview` on. A repo with preview off got its legacy kanban grid replaced by the weighted responsive grid, contradicting the spec ("Legacy kanban unchanged when preview is off"). Each board now resolves its own repo from the first column's `data-repo-path` and toggles based on that repo's preview flag.
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- `contractCardDensity` correctly maps pipeline stages to compact/expanded density. The `paused` stage returns compact, matching the original F679 behavior. Done features don't reach the contract renderer (no `uiContract`), so removing `isDone` from the density check is safe.
+- The `--kanban-cols:4` CSS selector is dead code — no pipeline type produces 4 columns (features/research: 5 or 6; feedback: 5). Not harmful; left as defensive fallback.
+- `data-pipeline-column` duplicates `data-stage` on `.kanban-col`. Used only by test selectors to avoid collisions with existing `data-stage` usage in reconciliation. Acceptable.
+- Feedback pipeline column widths are positional (inbox=compact, triaged=queue, actionable=active, done=review, wont-fix=compact). The `done` column gets `review` width (268px) which is wider than needed, but this is a layout optimization, not a correctness issue, and feedback is a secondary pipeline type.
