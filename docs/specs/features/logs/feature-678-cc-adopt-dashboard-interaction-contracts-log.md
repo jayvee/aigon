@@ -1,3 +1,26 @@
+---
+commit_count: 12
+lines_added: 715
+lines_removed: 60
+lines_changed: 775
+files_touched: 17
+fix_commit_count: 5
+fix_commit_ratio: 0.417
+rework_thrashing: true
+rework_fix_cascade: false
+rework_scope_creep: true
+input_tokens: 706
+output_tokens: 239004
+cache_creation_input_tokens: 741617
+cache_read_input_tokens: 59529213
+thinking_tokens: 0
+total_tokens: 60510540
+billable_tokens: 239710
+cost_usd: 40.6997
+sessions: 2
+model: "claude-fable-5"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 678 - adopt-dashboard-interaction-contracts
 Agent: cc
 
