@@ -10,6 +10,9 @@ const {
     createStatusSnapshotStore,
     ifNoneMatchSatisfied,
 } = require('../../lib/dashboard-status-version');
+const { buildResearchUiContract } = require('../../lib/research-ui-contract');
+const { buildFeatureSetUiContract } = require('../../lib/feature-set-ui-contract');
+const { buildFeatureUiContract } = require('../../lib/feature-ui-contract');
 
 function buildStatus(overrides = {}) {
     return {
@@ -92,6 +95,98 @@ test('F671: computeStatusFingerprint bumps when spec revision sessions change', 
     done.repos[0].features[0].specRevisionSessions = [];
     assert.notStrictEqual(computeStatusFingerprint(base), computeStatusFingerprint(revising));
     assert.notStrictEqual(computeStatusFingerprint(revising), computeStatusFingerprint(done));
+});
+
+// F678: research and set contracts must repaint cards like feature contracts do.
+// Each case mutates one contract fact and asserts the fingerprint moves — a
+// field left out of the fingerprint would silently stop pushing updates.
+function statusWithContracts() {
+    const status = buildStatus();
+    status.repos[0].research = [{
+        id: '204',
+        stage: 'in-progress',
+        currentSpecState: 'implementing',
+        agents: [],
+        uiContract: buildResearchUiContract({
+            id: '204', displayKey: 'R204', name: 'Retrieval', stage: 'in-progress',
+            agents: [], validActions: [], cardPresentation: { severity: 'normal' },
+        }, { currentSpecState: 'implementing', lifecycle: 'implementing' }),
+    }];
+    return status;
+}
+
+function setStatus(setCard) {
+    const status = buildStatus();
+    status.repos[0].sets = [{ slug: setCard.slug, uiContract: buildFeatureSetUiContract(setCard) }];
+    return status;
+}
+
+function baseSetCard(overrides = {}) {
+    return {
+        slug: 'dashboard-ui-rollout',
+        goal: 'Ship the dashboard',
+        status: 'running',
+        validActions: [],
+        progress: { merged: 1, total: 3, percent: 33 },
+        depGraph: { nodes: [{ featureId: '677', label: 'a', state: 'done' }], edges: [] },
+        specCycle: {
+            review: { status: 'complete', pendingCount: 0, memberCount: 3, commitSha: 'abc123' },
+            revision: { status: 'inactive', pendingCount: 0, memberCount: 0, commitSha: null },
+        },
+        ...overrides,
+    };
+}
+
+test('F678: fingerprint bumps when a research contract action changes', () => {
+    const base = statusWithContracts();
+    const started = statusWithContracts();
+    started.repos[0].research[0].uiContract = buildResearchUiContract({
+        id: '204', displayKey: 'R204', name: 'Retrieval', stage: 'in-progress', agents: [],
+        validActions: [{ action: 'research-close', label: 'Close' }],
+        cardPresentation: { severity: 'normal' },
+    }, { currentSpecState: 'implementing', lifecycle: 'implementing' });
+    assert.notStrictEqual(computeStatusFingerprint(base), computeStatusFingerprint(started));
+});
+
+test('F678: fingerprint bumps when set spec-cycle status changes without a session change', () => {
+    const before = setStatus(baseSetCard());
+    const after = setStatus(baseSetCard({
+        specCycle: {
+            review: { status: 'feedback-waiting', pendingCount: 2, memberCount: 3, commitSha: 'abc123' },
+            revision: { status: 'needed', pendingCount: 2, memberCount: 0, commitSha: null },
+        },
+    }));
+    assert.notStrictEqual(computeStatusFingerprint(before), computeStatusFingerprint(after));
+});
+
+test('F678: fingerprint bumps when set member progress changes', () => {
+    const before = setStatus(baseSetCard());
+    const after = setStatus(baseSetCard({
+        depGraph: { nodes: [{ featureId: '677', label: 'a', state: 'in-progress' }], edges: [] },
+    }));
+    assert.notStrictEqual(computeStatusFingerprint(before), computeStatusFingerprint(after));
+});
+
+test('F678: fingerprint bumps when the nested current-member contract changes', () => {
+    const member = lifecycle => buildFeatureUiContract({
+        id: '678', displayKey: 'F678', name: 'member', stage: 'in-progress', agents: [],
+        validActions: [], cardPresentation: { severity: 'normal' },
+    }, { currentSpecState: lifecycle, lifecycle });
+    const card = lifecycle => baseSetCard({
+        currentFeature: { id: '678', label: 'member', stage: 'in-progress' },
+        currentFeatureContract: member(lifecycle),
+    });
+    assert.notStrictEqual(
+        computeStatusFingerprint(setStatus(card('implementing'))),
+        computeStatusFingerprint(setStatus(card('code_review_in_progress'))),
+    );
+});
+
+test('F678: fingerprint is stable when nothing repaint-relevant changed', () => {
+    assert.strictEqual(
+        computeStatusFingerprint(setStatus(baseSetCard())),
+        computeStatusFingerprint(setStatus(baseSetCard())),
+    );
 });
 
 test('F620: replaceLatestStatus bumps version only when fingerprint changes', () => {
