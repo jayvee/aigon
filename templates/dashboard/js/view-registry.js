@@ -52,7 +52,14 @@ function updateSidebarToggle(viewId) {
   btn.classList.toggle('is-hidden', !!state.sidebarHidden);
 }
 
+function updateOperationalWrap(viewId) {
+  const wrap = document.querySelector('.wrap');
+  if (!wrap) return;
+  wrap.classList.toggle('wrap--operational', viewId === 'pipeline' || viewId === 'monitor');
+}
+
 function applyChromeVisibility(viewId) {
+  updateOperationalWrap(viewId);
   const entry = VIEW_REGISTRY.find(v => v.id === viewId);
   if (!entry) return;
 

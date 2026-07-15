@@ -1,0 +1,56 @@
+    /* F680 — responsive Pipeline layout (preview: dashboard.contractCards).
+       Weighted lifecycle lanes at wide desktop; stable multi-row reflow at
+       medium widths; single-column vertical flow on mobile. Full viewport
+       width is scoped to operational views via .wrap.wrap--operational. */
+
+    .wrap.wrap--operational {
+    max-width:none;
+    }
+
+    .kanban.kanban--responsive {
+    --kanban-track-compact:minmax(168px,.62fr);
+    --kanban-track-queue:minmax(200px,.76fr);
+    --kanban-track-active:minmax(300px,1.28fr);
+    --kanban-track-review:minmax(268px,1.08fr);
+    display:grid;
+    grid-template-columns:var(--kanban-track-compact) var(--kanban-track-queue) var(--kanban-track-active) var(--kanban-track-review) var(--kanban-track-compact);
+    align-items:start;
+    gap:10px;
+    overflow-x:hidden;
+    padding-bottom:8px;
+    min-width:0;
+    }
+
+    .kanban.kanban--responsive[style*="--kanban-cols:6"] {
+    grid-template-columns:var(--kanban-track-compact) var(--kanban-track-queue) var(--kanban-track-active) var(--kanban-track-review) var(--kanban-track-queue) var(--kanban-track-compact);
+    }
+
+    .kanban.kanban--responsive[style*="--kanban-cols:4"] {
+    grid-template-columns:var(--kanban-track-compact) var(--kanban-track-queue) var(--kanban-track-active) var(--kanban-track-compact);
+    }
+
+    .kanban.kanban--responsive .kanban-col {
+    min-width:0;
+    }
+
+    @media (max-width:1500px) {
+    .kanban.kanban--responsive {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    }
+
+    @media (max-width:1024px) {
+    .kanban.kanban--responsive {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    }
+
+    @media (max-width:760px) {
+    .kanban.kanban--responsive {
+    grid-template-columns:1fr;
+    gap:8px;
+    }
+    .kanban.kanban--responsive .kanban-col {
+    overflow:visible;
+    }
+    }

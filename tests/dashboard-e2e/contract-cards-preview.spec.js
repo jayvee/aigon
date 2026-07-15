@@ -236,5 +236,51 @@ test.describe('Contract card preview renderer @smoke', () => {
         await expect(page.locator('.kcard[data-feature-id="907"]')).toBeVisible();
         await expect(page.locator('.kcard-contract')).toHaveCount(0);
         await expect(page.locator('.ccard')).toHaveCount(0);
+        await expect(page.locator('.kanban--responsive')).toHaveCount(0);
+    });
+
+    test('responsive pipeline fills the viewport and matches stage density @smoke', async ({ page }) => {
+        await page.setViewportSize({ width: 1728, height: 1000 });
+        await mountPreview(page, buildPayload({
+            features: [
+                baseRow('910', scenario('feature-inbox-solo_worktree'), { stage: 'inbox' }),
+                baseRow('911', scenario('feature-backlog-blocked'), { stage: 'backlog' }),
+                baseRow('912', scenario('feature-autonomous-running'), { stage: 'in-progress' }),
+            ],
+        }));
+        await expect(page.locator('.kanban--responsive')).toHaveCount(1);
+        await expect(page.locator('.kanban-col[data-pipeline-column="backlog"] .ccard.is-compact')).toHaveCount(1);
+        await expect(page.locator('.kanban-col[data-pipeline-column="in-progress"] .ccard.is-expanded')).toHaveCount(1);
+        const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+        expect(fits).toBe(true);
+        const wrap = page.locator('.wrap');
+        await expect(wrap).toHaveClass(/wrap--operational/);
+    });
+
+    test('responsive pipeline has no horizontal overflow at 390px mobile @smoke', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await mountPreview(page, buildPayload({
+            features: [
+                baseRow('913', scenario('feature-autonomous-running'), { stage: 'in-progress' }),
+                baseRow('914', scenario('set-running'), { stage: 'in-progress', set: 'autonomous-recovery' }),
+            ],
+            sets: [{
+                slug: 'autonomous-recovery',
+                goal: 'Autonomous recovery',
+                status: 'running',
+                isComplete: false,
+                completed: 1,
+                memberCount: 3,
+                progress: { merged: 1, total: 3, percent: 33 },
+                validActions: scenario('set-running').dashboardActions,
+                autonomous: { status: 'running', running: true, sessionName: 'set-autonomous-recovery-auto' },
+                uiContract: scenario('set-running').contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+        await expect(page.locator('.kanban--responsive')).toHaveCount(1);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+        expect(overflow).toBe(false);
+        await expect(page.locator('.kcard-peek-btn, .ccard-peek').first()).toBeVisible();
     });
 });
