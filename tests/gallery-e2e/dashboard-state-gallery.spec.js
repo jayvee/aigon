@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 
 test('contracts render autonomous and set hierarchy without duplicate activity', async ({ page }) => {
   await expect(page.locator('#diagnostics-count')).toHaveText('Complete');
-  await expect(page.locator('[data-scenario-key]')).toHaveCount(66);
+  await expect(page.locator('[data-scenario-key]')).toHaveCount(67);
 
   const implementing = page.locator('[data-scenario-key="feature-autonomous-running"]');
   await expect(implementing.locator('.ccard-row')).toHaveCount(0);
