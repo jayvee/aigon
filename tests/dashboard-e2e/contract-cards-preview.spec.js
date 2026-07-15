@@ -2,17 +2,14 @@
 'use strict';
 
 /**
- * E2E: F679 contract card preview renderer (dashboard.contractCards).
+ * E2E: F682 production contract card renderer.
  *
  * Mounts /api/status payloads whose rows carry REAL contracts from the gallery
- * builder (lib/dashboard-card-gallery) with the repo's `contractCardsPreview`
- * flag enabled — exactly the field the collector ships when the setting is on.
- * The preview setting defaults off, so these tests enable it explicitly; the
- * final test pins the default-off path to the legacy body.
+ * builder (lib/dashboard-card-gallery) — the same shape the collector ships.
  *
  * Boundary guarantees under test:
- *  - preview action buttons resolve through the same validActions lookup and
- *    handleFeatureAction dispatch as legacy cards (agent picker opens);
+ *  - action buttons resolve through the same validActions lookup and
+ *    handleFeatureAction dispatch as before (agent picker opens);
  *  - session Peek (live and completed/snapshot) opens the shared terminal
  *    panel — no alternate session path;
  *  - set headers render from the set contract: title once, spec-cycle status
@@ -66,13 +63,12 @@ function baseRow(id, scenarioItem, overrides = {}) {
     };
 }
 
-function buildPayload({ features = [], research = [], sets = [], contractCardsPreview = true } = {}) {
+function buildPayload({ features = [], research = [], sets = [] } = {}) {
     const repos = [{
         path: REPO_PATH,
         displayPath: '/tmp/mock',
         name: 'mock',
         githubRemote: false,
-        contractCardsPreview,
         features,
         research,
         feedback: [],
@@ -108,7 +104,7 @@ async function mountMonitor(page, payload) {
     await page.waitForSelector('#monitor-live-root:not([hidden])', { timeout: 10000 });
 }
 
-test.describe('Contract card preview renderer @smoke', () => {
+test.describe('Contract card production renderer @smoke', () => {
     test('renders contract bodies once per entity with plain language', async ({ page }) => {
         const watch = watchBrowserErrors(page);
         await mountPreview(page, buildPayload({
@@ -242,17 +238,6 @@ test.describe('Contract card preview renderer @smoke', () => {
         await page.click('#panel-close');
     });
 
-    test('default-off keeps the legacy card body', async ({ page }) => {
-        await mountPreview(page, buildPayload({
-            features: [baseRow('907', scenario('feature-fleet-in-progress'))],
-            contractCardsPreview: false,
-        }));
-        await expect(page.locator('.kcard[data-feature-id="907"]')).toBeVisible();
-        await expect(page.locator('.kcard-contract')).toHaveCount(0);
-        await expect(page.locator('.ccard')).toHaveCount(0);
-        await expect(page.locator('.kanban--responsive')).toHaveCount(0);
-    });
-
     test('responsive pipeline fills the viewport and matches stage density @smoke', async ({ page }) => {
         await page.setViewportSize({ width: 1728, height: 1000 });
         await mountPreview(page, buildPayload({
@@ -298,14 +283,14 @@ test.describe('Contract card preview renderer @smoke', () => {
         await expect(page.locator('.kanban-set-header-contract .ccard-stage .kcard-peek-btn').first()).toBeVisible();
     });
 
-    test('live monitor renders operational groups behind preview @smoke', async ({ page }) => {
+    test('live monitor renders operational groups @smoke', async ({ page }) => {
         await mountMonitor(page, buildPayload({
             features: [
                 baseRow('920', scenario('feature-agent-needs-attention')),
                 baseRow('921', scenario('feature-autonomous-fleet-running')),
             ],
         }));
-        await expect(page.locator('#monitor-legacy-root')).toBeHidden();
+        await expect(page.locator('#monitor-live-root')).toBeVisible();
         await expect(page.locator('.monitor-item.attention')).toHaveCount(1);
         await expect(page.locator('.monitor-section-label', { hasText: 'RUNNING' })).toBeVisible();
         await expect(page.locator('.monitor-focus .ccard-run, .monitor-focus .ccard-rows')).toHaveCount(1, { timeout: 5000 });
@@ -319,24 +304,20 @@ test.describe('Contract card preview renderer @smoke', () => {
         }));
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
         expect(overflow).toBe(false);
-        await page.locator('.monitor-item').first().click();
+        await page.locator('.monitor-item .monitor-item-copy').first().click();
+        await expect(page.locator('.monitor-live-root')).toHaveAttribute('data-mobile-detail', 'true');
         await expect(page.locator('.monitor-focus')).toBeVisible();
         await page.locator('[data-monitor-back]').click();
         await expect(page.locator('.monitor-queue')).toBeVisible();
     });
 
-    test('monitor preview off keeps legacy layout', async ({ page }) => {
-        await page.route('**/api/status', route => route.fulfill({
-            json: buildPayload({
-                features: [baseRow('923', scenario('feature-fleet-in-progress'))],
-                contractCardsPreview: false,
-            }),
+    test('live monitor queue action dispatches through validActions @smoke', async ({ page }) => {
+        await mountMonitor(page, buildPayload({
+            features: [baseRow('924', scenario('feature-implementing-ready-fleet'))],
         }));
-        await page.route('**/api/sessions', route => route.fulfill({ json: { sessions: [] } }));
-        await page.route('**/api/settings**', route => route.fulfill({ json: { settings: [] } }));
-        await page.goto('/');
-        await page.click('#tab-monitor');
-        await expect(page.locator('#monitor-live-root')).toBeHidden();
-        await expect(page.locator('#monitor-legacy-root')).toBeVisible();
+        const actionBtn = page.locator('.monitor-item .ccard-action[data-va-action="feature-eval"]').first();
+        await expect(actionBtn).toBeVisible({ timeout: 5000 });
+        await actionBtn.click();
+        await expect(page.locator('#agent-picker')).toBeVisible({ timeout: 10000 });
     });
 });

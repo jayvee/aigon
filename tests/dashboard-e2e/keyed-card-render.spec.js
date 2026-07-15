@@ -33,12 +33,20 @@ test.describe('F625 keyed kanban card render', () => {
           {
             id: '901', name: target, stage: 'in-progress', specPath: '/tmp/a.md',
             agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString(), slashCommand: '/x' }],
-            validActions: [{ action: 'feature-stop', label: 'End Session', agentId: 'cc', type: 'workflow' }],
+            validActions: [
+              { action: 'feature-stop', label: 'End Session', type: 'workflow' },
+              { action: 'feature-pause', label: 'Pause', type: 'workflow' },
+              { action: 'feature-nudge', label: 'Nudge', type: 'workflow' },
+              { action: 'drop-agent', label: 'Skip', type: 'workflow' },
+            ],
           },
           {
             id: '902', name: other, stage: 'in-progress', specPath: '/tmp/b.md',
             agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString(), slashCommand: '/x' }],
-            validActions: [{ action: 'feature-stop', label: 'End Session', agentId: 'cc', type: 'workflow' }],
+            validActions: [
+              { action: 'feature-stop', label: 'End Session', type: 'workflow' },
+              { action: 'feature-pause', label: 'Pause', type: 'workflow' },
+            ],
           },
         );
       });
@@ -46,12 +54,12 @@ test.describe('F625 keyed kanban card render', () => {
     }, { repoPath: ctx.tmpDir, target: TARGET, other: OTHER });
     await page.waitForTimeout(100);
 
-    const targetCard = col.locator('.kcard').filter({ hasText: TARGET_LABEL }).first();
+    const targetCard = col.locator(`.kcard[data-feature-name="${TARGET}"]`).first();
     await expect(targetCard).toBeVisible({ timeout: 5000 });
     const toggle = targetCard.locator('.kcard-overflow-toggle').first();
     await expect(toggle).toBeVisible();
     await targetCard.evaluate(el => { window.__menuCardRef = el; });
-    const otherCard = col.locator('.kcard').filter({ hasText: OTHER_LABEL }).first();
+    const otherCard = col.locator(`.kcard[data-feature-name="${OTHER}"]`).first();
     await page.evaluate(el => { window.__otherFpBefore = el.dataset.kanbanFp; }, await otherCard.elementHandle());
     await toggle.click();
     await expect(targetCard.locator('.kcard-overflow-menu.open')).toBeVisible();

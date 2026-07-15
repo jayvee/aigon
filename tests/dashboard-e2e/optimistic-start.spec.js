@@ -13,6 +13,7 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
+const FEATURE_SLUG = 'e2e-solo-feature';
 const FEATURE_NAME = 'e2e solo feature';
 
 async function columnRepoPath(card) {
@@ -32,8 +33,9 @@ function kanbanCol(page, stage, repoPath) {
 
 async function findBacklogCard(page) {
     const backlogCol = page.locator('.kanban-col[data-stage="backlog"]').first();
-    await expect(backlogCol).toContainText(FEATURE_NAME, { timeout: 8000 });
-    return backlogCol.locator('.kcard').filter({ hasText: FEATURE_NAME }).first();
+    const card = backlogCol.locator(`.kcard[data-feature-name="${FEATURE_SLUG}"]`).first();
+    await expect(card).toBeVisible({ timeout: 8000 });
+    return card;
 }
 
 async function openAgentPicker(page, card) {
@@ -67,7 +69,7 @@ test.describe('F525 optimistic feature-start re-renders kanban', () => {
         const clickStart = Date.now();
         await page.click('#agent-picker-submit');
 
-        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
+        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator(`.kcard[data-feature-name="${FEATURE_SLUG}"]`);
         await expect(inProgressCard).toBeVisible({ timeout: 250 });
         const elapsed = Date.now() - clickStart;
         expect(elapsed, `card moved in ${elapsed}ms`).toBeLessThan(500);
@@ -91,12 +93,12 @@ test.describe('F525 optimistic feature-start re-renders kanban', () => {
         await page.click('#agent-picker-submit');
 
         // First: optimistic move puts it in in-progress.
-        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
+        const inProgressCard = kanbanCol(page, 'in-progress', repoPath).locator(`.kcard[data-feature-name="${FEATURE_SLUG}"]`);
         await expect(inProgressCard).toBeVisible({ timeout: 500 });
 
         // Then: after the 500 response + rollback, it should be back in backlog.
-        const backlogCard = kanbanCol(page, 'backlog', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME });
+        const backlogCard = kanbanCol(page, 'backlog', repoPath).locator(`.kcard[data-feature-name="${FEATURE_SLUG}"]`);
         await expect(backlogCard).toBeVisible({ timeout: 3000 });
-        await expect(kanbanCol(page, 'in-progress', repoPath).locator('.kcard').filter({ hasText: FEATURE_NAME })).toHaveCount(0);
+        await expect(kanbanCol(page, 'in-progress', repoPath).locator(`.kcard[data-feature-name="${FEATURE_SLUG}"]`)).toHaveCount(0);
     });
 });

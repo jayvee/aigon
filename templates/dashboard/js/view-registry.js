@@ -107,7 +107,7 @@ const VIEW_REGISTRY = [
     elementId: 'monitor-view',
     usesRepoSidebar: true,
     usesRepoHeader: true,
-    alpineVisibility: true,
+    alpineVisibility: false,
     mount() { renderRepoChrome(state.data); syncLiveMonitor(state.data); },
     update(data) { renderRepoChrome(data); syncLiveMonitor(data); },
     unmount() {},

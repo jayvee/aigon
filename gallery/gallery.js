@@ -184,7 +184,7 @@ function setPlanHtml(scenario) {
 }
 
 // Production card body for one gallery scenario — the same modules the
-// dashboard pipeline renders behind dashboard.contractCards.
+// Production pipeline imports the same contract-card modules as the gallery.
 function productionCardHtml(scenario, options = {}) {
   const contract = scenario.contract;
   const body = scenario.entityType === 'set'
