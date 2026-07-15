@@ -3,6 +3,7 @@
     "tokens.css",
     "base.css",
     "monitor.css",
+    "monitor-live.css",
     "kanban.css",
     "pipeline-responsive.css",
     "contract-cards.css",

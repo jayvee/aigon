@@ -2,6 +2,7 @@
 
 import { renderAllItemsView, renderLogs, renderStatistics } from './logs.js';
 import { renderUpdateBadge, setHealth, updateTitleAndFavicon, updateViewTabs } from './monitor.js';
+import { syncLiveMonitor } from './live-monitor.js';
 import { renderRepoHeader, renderSidebar } from './sidebar.js';
 import { renderSettings } from './settings.js';
 import { setView, state } from './store.js';
@@ -107,8 +108,8 @@ const VIEW_REGISTRY = [
     usesRepoSidebar: true,
     usesRepoHeader: true,
     alpineVisibility: true,
-    mount() { renderRepoChrome(state.data); },
-    update(data) { renderRepoChrome(data); },
+    mount() { renderRepoChrome(state.data); syncLiveMonitor(state.data); },
+    update(data) { renderRepoChrome(data); syncLiveMonitor(data); },
     unmount() {},
   },
   {
