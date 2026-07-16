@@ -20,6 +20,7 @@ export function cardSurfaceActions(contract) {
   const tools = contract.tools || [];
   return decisions.concat(tools)
     .filter(action => !action.interaction || action.interaction.surface !== 'agent')
+    .filter(action => action.scope !== 'agent' && action.scope !== 'session')
     .slice()
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
@@ -53,14 +54,17 @@ export function agentSurfaceActions(contract, agentId = null) {
 }
 
 /**
- * Solo cards have one card-level overflow beside Peek. It owns both the
- * single agent's session tools and card actions that did not earn a visible
- * primary/secondary slot.
+ * Solo status rows own agent actions plus feature-level tools explicitly
+ * scoped to the active session. Card decisions remain in the footer.
  */
-export function soloOverflowActions(contract, options = {}) {
-  const compact = options.compact === true || options.density === 'compact';
-  const { overflow } = partitionCardActions(contract, { compact });
-  return agentSurfaceActions(contract).concat(overflow);
+export function soloSessionActions(contract) {
+  const decisions = (contract.decisions && contract.decisions.actions) || [];
+  const tools = contract.tools || [];
+  const sessionActions = decisions.concat(tools)
+    .filter(action => action.scope === 'session' && action.interaction && action.interaction.surface !== 'agent');
+  return agentSurfaceActions(contract).concat(sessionActions)
+    .slice()
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
 export function actionButtonHtml(action, cls) {
@@ -80,13 +84,13 @@ export function actionButtonHtml(action, cls) {
  * existing toggle wiring, fixed-position menu, and outside-click dismissal
  * apply to preview cards without new code paths.
  */
-export function overflowMenuHtml(actions) {
+export function overflowMenuHtml(actions, label = 'More actions') {
   if (!actions.length) return '';
   const items = actions
     .map(action => actionButtonHtml(action, 'kcard-overflow-item' + (isDanger(action) ? ' btn-danger' : '')))
     .join('');
   return '<div class="kcard-overflow ccard-overflow">'
-    + '<button class="btn btn-overflow kcard-overflow-toggle" type="button" aria-label="More actions" title="More actions">⋯</button>'
+    + '<button class="btn btn-overflow kcard-overflow-toggle" type="button" aria-label="' + escHtml(label) + '" title="' + escHtml(label) + '">⋯</button>'
     + '<div class="kcard-overflow-menu">' + items + '</div></div>';
 }
 
@@ -95,7 +99,7 @@ export function actionBarHtml(contract, options = {}) {
   let html = '';
   if (primary) html += actionButtonHtml(primary, 'ccard-action is-primary');
   html += secondary.map(action => actionButtonHtml(action, 'ccard-action')).join('');
-  if (!options.suppressOverflow) html += overflowMenuHtml(overflow);
+  if (!options.suppressOverflow) html += overflowMenuHtml(overflow, 'More card actions');
   if (!html) return '';
   return '<div class="ccard-actions kcard-transitions">' + html + '</div>';
 }

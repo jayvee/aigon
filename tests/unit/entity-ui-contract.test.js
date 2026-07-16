@@ -55,12 +55,36 @@ test('running, completed, stopped, lost, and failed sessions all expose inspecti
     );
     assert.ok(contract.sessions.every(session => session.inspection.available));
     assert.deepStrictEqual(
+        contract.sessions.map(session => session.affordances.map(action => action.actionId)),
+        [
+            ['peek-session', 'open-session'],
+            ['peek-session'],
+            ['peek-session'],
+            ['peek-session'],
+            ['peek-session'],
+        ],
+    );
+    assert.deepStrictEqual(
         contract.sessions.map(session => session.inspection.target),
         ['live-pane', 'console-snapshot', 'console-snapshot', 'console-snapshot', 'console-snapshot'],
     );
     assert.deepStrictEqual(
         contract.sessions.map(session => session.affordances[0].interaction.mode),
         ['live', 'snapshot', 'snapshot', 'snapshot', 'snapshot'],
+    );
+});
+
+test('code review sessions expose active and outcome wording from the contract', () => {
+    const contract = buildEntityUiContract(base({
+        sessions: [
+            { sessionName: 'active-review', role: 'code-review', status: 'running', label: 'code review' },
+            { sessionName: 'approved-review', role: 'code-review', status: 'complete', requestRevision: false },
+            { sessionName: 'revision-review', role: 'code-review', status: 'complete', requestRevision: true },
+        ],
+    }));
+    assert.deepStrictEqual(
+        contract.sessions.map(session => session.presentationLabel),
+        ['Reviewing code', 'Implementation approved', 'Changes requested'],
     );
 });
 

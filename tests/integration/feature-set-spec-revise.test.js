@@ -136,7 +136,7 @@ test('buildSetValidActions exposes feature-set-spec-revise when pendingSpecRevis
     });
     const revise = actions.find(a => a.action === 'feature-set-spec-revise');
     assert.ok(revise);
-    assert.strictEqual(revise.label, 'Revise Set Specs');
+    assert.strictEqual(revise.label, 'Revise specs');
     assert.strictEqual(revise.requiresInput, 'agentPicker');
     const hidden = buildSetValidActions({
         slug: 'auth',

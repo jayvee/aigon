@@ -11,7 +11,7 @@
 
 import { escHtml } from './html.js';
 import { actionBarHtml } from './actions-view.js';
-import { activityHtml, blockersHtml, soloStatusBarAgent, statusBarHtml } from './activity-view.js';
+import { activityHtml, blockersHtml, dependenciesHtml, soloStatusBarAgent, statusBarHtml } from './activity-view.js';
 import { runPlanHtml, setCyclePillsHtml, setPlanHtml } from './plan-view.js';
 
 function severityOf(contract) {
@@ -67,12 +67,12 @@ export function renderContractCardBody(contract, options = {}) {
     options.suppressIdentity ? '' : headHtml(contract, options),
     idleStack ? '' : (soloAgent ? statusBarHtml(contract, options) : stateLineHtml(contract)),
     idleStack ? '' : (compact ? '' : contextHtml(contract)),
-    idleStack ? '' : blockersHtml(contract),
+    idleStack ? dependenciesHtml(contract) : blockersHtml(contract),
     idleStack || compact ? '' : activityHtml(contract, options),
     idleStack || compact ? '' : runPlanHtml(contract, options),
-    (idleStack || options.suppressActions) ? '' : actionBarHtml(contract, {
-      compact,
-      suppressOverflow: Boolean(soloAgent),
+    options.suppressActions ? '' : actionBarHtml(contract, {
+      compact: idleStack || compact,
+      suppressOverflow: false,
     }),
   ].filter(Boolean).join('');
   return '<div class="ccard ccard-' + escHtml((contract.entity && contract.entity.kind) || 'feature')

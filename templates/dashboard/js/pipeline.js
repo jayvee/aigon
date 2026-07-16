@@ -5,7 +5,7 @@ import { filterSetStackMembers, isSetStackIdleMember } from './set-bundle-member
 import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
 import { handleFeatureAction, handleSetAction, renderActionButtons, resolveCloseWithAgent, shouldShowCloseWithAgent, showNudgeModal } from './actions.js';
-import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestRefresh, requestSpecReconcile } from './api.js';
+import { fetchPrStatus, postMarkComplete, requestAction, requestAgentDevServerPoke, requestAgentFlagAction, requestFeatureOpen, requestRefresh, requestSessionView, requestSpecReconcile } from './api.js';
 import { applyView } from './view-registry.js';
 import { agents, defaultAgent } from './injected.js';
 import { getVisibleRepos } from './monitor.js';
@@ -1420,19 +1420,13 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
         };
       });
 
-      card.querySelectorAll('.kcard-review-open').forEach(btn => {
+      card.querySelectorAll('.kcard-review-open, .ccard-session-open').forEach(btn => {
         btn.onclick = async (e) => {
           e.stopPropagation();
-          const sessionName = btn.getAttribute('data-review-session');
+          const sessionName = btn.getAttribute('data-review-session') || btn.getAttribute('data-session-name');
           if (!sessionName) return;
           try {
-            const res = await fetch('/api/session/view', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ sessionName, repoPath }),
-            });
-            const payload = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+            const payload = await requestSessionView(sessionName, repoPath);
             showToast(payload.message || 'Session opened in terminal');
           } catch (err) {
             showToast('Could not open session: ' + err.message, null, null, { error: true });
@@ -1860,6 +1854,19 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
           e.stopPropagation();
           const sessionName = btn.getAttribute('data-peek-session');
           if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
+        };
+      });
+      header.querySelectorAll('.ccard-session-open[data-session-name]').forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const sessionName = btn.getAttribute('data-session-name');
+          if (!sessionName) return;
+          try {
+            const payload = await requestSessionView(sessionName, repo.path);
+            showToast(payload.message || 'Session opened in terminal');
+          } catch (err) {
+            showToast('Could not open session: ' + err.message, null, null, { error: true });
+          }
         };
       });
       return header;

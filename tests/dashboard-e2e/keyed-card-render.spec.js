@@ -8,11 +8,26 @@
 
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions, readCtx, forceRefresh } = require('./_helpers');
+const { buildFeatureUiContract } = require('../../lib/feature-ui-contract');
 
 const TARGET = 'e2e-keyed-menu';
 const OTHER = 'e2e-keyed-other';
 const TARGET_LABEL = 'e2e keyed menu';
 const OTHER_LABEL = 'e2e keyed other';
+
+function idleSetMemberContract(id, name, blockedBy = []) {
+  return buildFeatureUiContract({
+    id,
+    displayKey: `F${id}`,
+    name,
+    stage: 'backlog',
+    currentSpecState: 'backlog',
+    blockedBy,
+    agents: [],
+    validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+    cardPresentation: { severity: 'normal' },
+  }, { currentSpecState: 'backlog', lifecycle: 'backlog' });
+}
 
 test.describe('F625 keyed kanban card render', () => {
   test.beforeEach(async ({ page }) => {
@@ -87,9 +102,13 @@ test.describe('F625 keyed kanban card render', () => {
 
   test('pre-start set bundle renders a distinct header and compact clickable members', async ({ page }) => {
     const ctx = readCtx();
+    const memberContracts = {
+      one: idleSetMemberContract('1', 'e2e-set-one'),
+      two: idleSetMemberContract('2', 'e2e-set-two', [{ id: '1', displayKey: 'F1', name: 'e2e-set-one' }]),
+    };
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
-    await page.evaluate(async ({ repoPath }) => {
+    await page.evaluate(async ({ repoPath, contracts }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
       const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
       (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
@@ -98,15 +117,17 @@ test.describe('F625 keyed kanban card render', () => {
           {
             id: '1', name: 'e2e-set-one', stage: 'backlog', set: 'e2e-set', specPath: '/tmp/1.md',
             agents: [], validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+            uiContract: contracts.one,
           },
           {
             id: '2', name: 'e2e-set-two', stage: 'backlog', set: 'e2e-set', specPath: '/tmp/2.md',
             agents: [], validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+            uiContract: contracts.two,
           },
         ];
       });
       (await import('/js/store.js')).replaceData(data);
-    }, { repoPath: ctx.tmpDir });
+    }, { repoPath: ctx.tmpDir, contracts: memberContracts });
     await page.waitForTimeout(100);
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
@@ -120,6 +141,13 @@ test.describe('F625 keyed kanban card render', () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(bundle.locator('.kanban-set-stack .kcard').first()).toBeVisible();
+    const firstMember = bundle.locator('.kanban-set-stack .kcard[data-feature-id="1"]');
+    await expect(firstMember.locator('[data-va-action="feature-start"]')).toHaveText('Start');
+    await expect(firstMember.locator('[data-va-action="feature-start"]')).toBeEnabled();
+    const dependent = bundle.locator('.kanban-set-stack .kcard[data-feature-id="2"]');
+    await expect(dependent.locator('[data-va-action="feature-start"]')).toBeDisabled();
+    await expect(dependent.locator('.ccard-dependencies')).toContainText('Depends on');
+    await expect(dependent.locator('.ccard-dependency-key')).toHaveText('F1');
     await bundle.evaluate(el => { window.__bundleRef = el; });
 
     await page.evaluate(async ({ repoPath }) => {

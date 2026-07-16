@@ -1,6 +1,7 @@
 /* dashboard-esm-processed */
 
 import { handleFeatureAction, handleSetAction } from './actions.js';
+import { requestSessionView } from './api.js';
 import { partitionCardActions, actionButtonHtml } from './contract-cards/actions-view.js';
 import { activityHtml, blockersHtml } from './contract-cards/activity-view.js';
 import { escHtml, peekButtonHtml, statusLabel, agentDisplay } from './contract-cards/html.js';
@@ -8,7 +9,7 @@ import { runPlanHtml, setPlanHtml } from './contract-cards/plan-view.js';
 import { renderContractCardBody } from './contract-cards/card.js';
 import { state } from './state.js';
 import { openTerminalPanel } from './terminal.js';
-import { relTime } from './utils.js';
+import { relTime, showToast } from './utils.js';
 
 const MOBILE_DETAIL_MQ = '(max-width: 760px)';
 let selectedKey = null;
@@ -267,7 +268,7 @@ function renderLiveMonitor(data) {
   ensureClickBinding();
 }
 
-function handleLiveMonitorClick(event) {
+async function handleLiveMonitorClick(event) {
   const root = liveRoot();
   if (!root || root.hidden) return;
   const back = event.target.closest('[data-monitor-back]');
@@ -282,6 +283,24 @@ function handleLiveMonitorClick(event) {
     event.stopPropagation();
     const sessionName = peekBtn.getAttribute('data-peek-session') || '';
     if (sessionName) openTerminalPanel(sessionName, null, sessionName, null, null);
+    return;
+  }
+
+  const openSessionBtn = event.target.closest('.ccard-session-open[data-session-name]');
+  if (openSessionBtn) {
+    event.stopPropagation();
+    const sessionName = openSessionBtn.getAttribute('data-session-name') || '';
+    const container = openSessionBtn.closest('.monitor-item');
+    const key = container && container.getAttribute('data-monitor-key');
+    const item = key ? findItem(filterProjection(state.data), key) : null;
+    const { repo } = item ? findEntityRow(item) : {};
+    if (!sessionName || !repo) return;
+    try {
+      const payload = await requestSessionView(sessionName, repo.path);
+      showToast(payload.message || 'Session opened in terminal');
+    } catch (err) {
+      showToast('Could not open session: ' + err.message, null, null, { error: true });
+    }
     return;
   }
 

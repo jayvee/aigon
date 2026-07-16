@@ -64,6 +64,7 @@ test('buildSetValidActions exposes feature-set-spec-review when reviewableMember
     });
     const review = actions.find(a => a.action === 'feature-set-spec-review');
     assert.ok(review);
+    assert.strictEqual(review.label, 'Review specs');
     assert.strictEqual(review.requiresInput, 'agentPicker');
     const hidden = buildSetValidActions({
         slug: 'auth',
@@ -100,7 +101,9 @@ test('buildSetValidActions hides set autonomous start while inbox members remain
         isComplete: false,
         inboxMemberCount: 0,
     });
-    assert.ok(backlogReady.some(a => a.action === 'set-autonomous-start'));
+    const autonomousStart = backlogReady.find(a => a.action === 'set-autonomous-start');
+    assert.ok(autonomousStart);
+    assert.strictEqual(autonomousStart.label, 'Start autonomous');
 });
 
 test('resolveSetLifecycle and set contract label inbox sets before start', () => {

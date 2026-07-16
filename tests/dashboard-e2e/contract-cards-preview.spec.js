@@ -151,16 +151,84 @@ test.describe('Contract card production renderer @smoke', () => {
         await assertActionSurfaceClean(page, watch, 'contract feature-eval');
     });
 
-    test('solo implementing card has one Peek and one overflow without an empty footer', async ({ page }) => {
+    test('solo implementing card separates live session tools from card actions', async ({ page }) => {
         await mountPreview(page, buildPayload({
             features: [baseRow('925', scenario('feature-implementing-solo_worktree'))],
         }));
         const card = page.locator('.kcard[data-feature-id="925"]');
         await expect(card.locator('.ccard-status-bar')).toHaveCount(1);
         await expect(card.locator('.ccard-peek')).toHaveCount(1);
-        await expect(card.locator('.ccard-overflow')).toHaveCount(1);
-        await expect(card.locator('.ccard-actions')).toHaveCount(0);
+        await expect(card.locator('.ccard-status-tools .ccard-session-open')).toHaveCount(1);
+        await expect(card.locator('.ccard-overflow')).toHaveCount(2);
+        await expect(card.locator('.ccard-actions')).toHaveCount(1);
         await expect(card.locator('.kcard-overflow-item')).toHaveCount(4);
+        await expect(card.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(1);
+        await expect(card.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(1);
+    });
+
+    test('closing renders as card state rather than implementation-agent status', async ({ page }) => {
+        await mountPreview(page, buildPayload({
+            features: [baseRow('928', scenario('feature-closing-solo_worktree'))],
+        }));
+        const card = page.locator('.kcard[data-feature-id="928"]');
+        await expect(card.locator('.ccard-state')).toHaveText('Closing');
+        await expect(card.locator('.ccard-status-bar')).toHaveCount(0);
+        await expect(card.locator('.ccard-blockers')).toHaveCount(0);
+    });
+
+    test('completed review row reports its outcome and aligns with primary status', async ({ page }) => {
+        let openedSession = null;
+        page.on('request', request => {
+            if (request.url().endsWith('/api/session/view')) {
+                openedSession = request.postDataJSON().sessionName;
+            }
+        });
+        await mountPreview(page, buildPayload({
+            features: [baseRow('926', scenario('feature-implementing-ready-solo'))],
+        }));
+        const card = page.locator('.kcard[data-feature-id="926"]');
+        const review = card.locator('.ccard-row').filter({ hasText: 'OP' });
+        const outcome = review.locator('.ccard-row-note');
+        await expect(outcome).toHaveText('Implementation approved');
+        expect(await outcome.evaluate(node => node.scrollWidth <= node.clientWidth && node.scrollHeight <= node.clientHeight)).toBe(true);
+        await expect(review.locator('.ccard-dot')).toHaveClass(/is-ready/);
+        await expect(review.locator('.ccard-peek')).toBeVisible();
+        await expect(review.locator('.ccard-session-open')).toHaveAttribute('data-session-name', 'feature-implementing-ready-solo-review');
+        await review.locator('.ccard-session-menu-toggle').click();
+        await review.locator('.ccard-session-open').click();
+        await expect.poll(() => openedSession).toBe('feature-implementing-ready-solo-review');
+        await expect(card.locator('.ccard-status-main .ccard-row-name')).toHaveText('CC');
+        await expect(review.locator('.ccard-row-name')).toHaveText('OP');
+        const agentLefts = await card.locator('.ccard-status-main .ccard-row-name, .ccard-row .ccard-row-name').evaluateAll(nodes => (
+            nodes.map(node => Math.round(node.getBoundingClientRect().left))
+        ));
+        const statusLefts = await card.locator('.ccard-status-label, .ccard-row-note').evaluateAll(nodes => (
+            nodes.map(node => Math.round(node.getBoundingClientRect().left))
+        ));
+        expect(new Set(agentLefts).size).toBe(1);
+        expect(new Set(statusLefts).size).toBe(1);
+        const lefts = await card.locator('.ccard-state-dot, .ccard-row .ccard-dot').evaluateAll(nodes => (
+            nodes.map(node => Math.round(node.getBoundingClientRect().left))
+        ));
+        expect(new Set(lefts).size).toBe(1);
+        await expect(card.locator('.ccard-actions .ccard-action.is-primary')).toHaveText('Close');
+        await expect(card.locator('.ccard-actions .ccard-action:not(.is-primary)')).toHaveText('Address review');
+        await expect(card.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-code-review"]')).toHaveCount(1);
+        await expect(card.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(1);
+        await expect(card.locator('.ccard-status-tools .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(0);
+        await expect(card.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(1);
+        await expect(card.locator('.ccard-status-tools .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(0);
+    });
+
+    test('active review row names the in-progress work consistently', async ({ page }) => {
+        await mountPreview(page, buildPayload({
+            features: [baseRow('927', scenario('feature-code_review_in_progress-solo_worktree'))],
+        }));
+        const card = page.locator('.kcard[data-feature-id="927"]');
+        const review = card.locator('.ccard-row').filter({ hasText: 'CX' });
+        await expect(review.locator('.ccard-row-note')).toHaveText('Reviewing code');
+        await expect(review).not.toContainText('code review');
+        expect(await review.locator('.ccard-dot').evaluate(node => getComputedStyle(node).animationName)).toBe('ccard-active-pulse');
     });
 
     test('recovery scenario promotes the recovery action to primary', async ({ page }) => {
@@ -278,15 +346,45 @@ test.describe('Contract card production renderer @smoke', () => {
 
         const bundle = page.locator('.kanban-set-bundle').filter({ hasText: 'Autonomous recovery' }).first();
         await expect(bundle.locator('.ccard-kind')).toHaveText('Feature set');
-        await expect(bundle.locator('.ccard-action.is-primary')).toHaveText('Prioritise set');
+        const setActions = bundle.locator(':scope > .kanban-set-bundle-head .ccard-feature-set > .ccard-actions');
+        await expect(setActions.locator('.ccard-action.is-primary')).toHaveText('Prioritise set');
         await expect(bundle.locator('.kanban-set-toggle')).toHaveAttribute('aria-expanded', 'false');
         const metrics = await bundle.evaluate((element) => ({
             titleHeight: element.querySelector('.ccard-title').getBoundingClientRect().height,
-            actionTops: [...element.querySelectorAll('.ccard-actions > *')]
+            actionTops: [...element.querySelector(':scope > .kanban-set-bundle-head .ccard-feature-set > .ccard-actions').children]
                 .map(node => Math.round(node.getBoundingClientRect().top)),
         }));
         expect(metrics.titleHeight).toBeLessThan(40);
         expect(new Set(metrics.actionTops).size).toBe(1);
+    });
+
+    test('manual set member is visible from the grouped in-progress header', async ({ page }) => {
+        const setScenario = scenario('set-manual-running');
+        await mountPreview(page, buildPayload({
+            features: [baseRow('682', scenario('feature-implementing-solo_worktree'), {
+                stage: 'in-progress',
+                set: 'autonomous-recovery',
+            })],
+            sets: [{
+                slug: 'autonomous-recovery',
+                goal: 'Autonomous recovery',
+                status: 'running',
+                isComplete: false,
+                completed: 1,
+                memberCount: 3,
+                currentFeature: { id: '682', label: 'Recover interrupted runs', stage: 'in-progress' },
+                validActions: setScenario.dashboardActions,
+                uiContract: setScenario.contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+
+        const bundle = page.locator('.kanban-set-bundle').filter({ hasText: 'Autonomous recovery' }).first();
+        await expect(bundle.locator('.ccard-feature-set > .ccard-state')).toHaveText('In progress');
+        await expect(bundle.locator('.ccard-set-current')).toContainText('F682');
+        await expect(bundle.locator('.ccard-set-current')).toContainText('Implementing');
+        await expect(bundle.locator('[data-va-action="set-autonomous-start"]')).toHaveCount(0);
+        await expect(bundle.locator('[data-va-action="set-autonomous-stop"]')).toHaveCount(0);
     });
 
     test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {

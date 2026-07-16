@@ -194,7 +194,12 @@ function productionCardHtml(scenario, options = {}) {
       density: options.density || 'expanded',
     });
   const frameKind = scenario.entityType === 'research' ? ' is-research' : (scenario.entityType === 'set' ? ' is-set' : '');
-  return `<div class="ccard-frame${frameKind}">${body}</div>`;
+  const memberStack = scenario.entityType === 'set' && scenario.showExpandedMembers
+    ? `<div class="gallery-set-stack" aria-label="Expanded feature set members">${(scenario.memberContracts || []).map(member => (
+      `<div class="gallery-set-member">${renderContractCardBody(member, { density: 'compact', setStackIdle: true })}</div>`
+    )).join('')}</div>`
+    : '';
+  return `<div class="ccard-frame${frameKind}">${body}${memberStack}</div>`;
 }
 
 function cardHtml(scenario) {

@@ -25,6 +25,10 @@ export const PEEK_ICON_SVG = '<svg width="12" height="12" viewBox="0 0 16 16" fi
 // gallery where the dashboard icon runtime is not loaded.
 export const DEPENDENCY_ICON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg>';
 
+// Lucide Clock 3. The clock makes the compact value read as elapsed duration,
+// rather than as the age of an unlabeled status update.
+export const ELAPSED_ICON_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+
 export function agentDisplay(agentId) {
   return agentId ? String(agentId).toUpperCase() : 'Aigon';
 }

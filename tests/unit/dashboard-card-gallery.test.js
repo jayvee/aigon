@@ -38,8 +38,37 @@ test('all entity scenarios consume the completed versioned contract', () => {
 test('completed solo feature makes Close primary and keeps review available', () => {
     const item = scenario('feature-implementing-ready-solo');
     assert.strictEqual(item.contract.decisions.primaryActionId, 'feature-close');
+    assert(actionIds(item).includes('feature-code-revise'));
     assert(actionIds(item).includes('feature-code-review'));
+    assert.strictEqual(
+        item.contract.decisions.actions.find(action => action.actionId === 'feature-code-review').label,
+        'Review code',
+    );
+    assert(item.contract.decisions.actions.find(action => action.actionId === 'feature-code-revise').order
+        <= item.contract.decisions.actions.find(action => action.actionId === 'feature-code-review').order);
+    assert.strictEqual(item.contract.tools.find(action => action.actionId === 'feature-nudge').scope, 'feature');
     assert(!JSON.stringify(item.contract).includes('Not assigned'));
+});
+
+test('manual review revision has distinct active and completed decisions', () => {
+    const active = scenario('feature-review-addressing');
+    assert.strictEqual(active.contract.presentation.headline.verb, 'Addressing review');
+    assert(!actionIds(active).includes('feature-code-revise'));
+    assert(!actionIds(active).includes('feature-close'));
+
+    const complete = scenario('feature-review-addressed');
+    assert.strictEqual(complete.contract.presentation.headline.verb, 'Revision complete');
+    assert.strictEqual(complete.contract.presentation.contextLine, null);
+    assert(!actionIds(complete).includes('feature-code-revise'));
+    assert(actionIds(complete).includes('feature-close'));
+    assert(actionIds(complete).includes('feature-code-review'));
+});
+
+test('active code review uses an explicit, consistently capitalised status', () => {
+    const item = scenario('feature-code_review_in_progress-solo_worktree');
+    const review = item.contract.sessions.find(session => session.role === 'code-review');
+    assert(review, 'active review session missing');
+    assert.strictEqual(review.presentationLabel, 'Reviewing code');
 });
 
 test('completed Fleet feature offers evaluation without solo close or review', () => {
@@ -100,9 +129,26 @@ test('automatic states are documented but never rendered as card scenarios', () 
 test('feature sets cover every conductor status and derive actions from set workflow rules', () => {
     assert.deepStrictEqual(gallery.coverage.set.coveredStates.slice().sort(), gallery.coverage.set.restingStates.slice().sort());
     assert(scenario('set-running').contract.decisions.actions.some(action => action.actionId === 'set-autonomous-stop'));
+    const manual = scenario('set-manual-running');
+    assert.strictEqual(manual.contract.state.label, 'In progress');
+    assert.strictEqual(manual.contract.plan.currentFeature.id, '682');
+    assert(manual.contract.plan.currentFeatureContract);
+    assert(!actionIds(manual).includes('set-autonomous-start'));
+    assert(!actionIds(manual).includes('set-autonomous-stop'));
     assert(scenario('set-paused-failure').contract.decisions.actions.some(action => action.actionId === 'set-autonomous-resume'));
     assert(scenario('set-complete').setPlan.members.every(member => member.status === 'complete'));
     assert.strictEqual(scenario('set-ready').setPlan.progress.complete, 0);
+    assert.strictEqual(scenario('set-ready').showExpandedMembers, true);
+    assert.deepStrictEqual(
+        scenario('set-ready').memberContracts.find(member => member.entity.id === '683').blockers,
+        [{ kind: 'dependency', id: '682', displayKey: 'F682', label: 'Recover interrupted runs' }],
+    );
+    const firstMember = scenario('set-ready').memberContracts.find(member => member.entity.id === '681');
+    assert.strictEqual(firstMember.decisions.primaryActionId, 'feature-start');
+    assert.strictEqual(firstMember.decisions.actions.find(action => action.actionId === 'feature-start').label, 'Start');
+    const blockedMember = scenario('set-ready').memberContracts.find(member => member.entity.id === '682');
+    assert.strictEqual(blockedMember.decisions.actions.find(action => action.actionId === 'feature-start').disabled, true);
+    assert.strictEqual(blockedMember.decisions.primaryActionId, null);
     assert.strictEqual(scenario('set-paused-quota').setPlan.members.find(member => member.id === '682').status, 'quota-paused');
 });
 

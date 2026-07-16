@@ -12,7 +12,7 @@ const wrm = require('../../lib/workflow-read-model');
 const ast = require('../../lib/agent-status');
 const { collectRepoStatus, clearTierCache } = require('../../lib/dashboard-status-collector');
 const { LifecycleState } = require('../../lib/workflow-core/types');
-const { buildSetValidActions } = require('../../lib/feature-set-workflow-rules');
+const { buildSetValidActions, resolveSetLifecycle } = require('../../lib/feature-set-workflow-rules');
 
 test('code_review_in_progress without tmux → session-lost', () => withTempDir('aigon-srm-', (repo) => {
     seedEntityDirs(repo, 'features');
@@ -100,6 +100,25 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
     });
     const gatedSchedule = gated.find(a => a.action === 'set-autonomous-schedule');
     assert.ok(gatedSchedule && gatedSchedule.disabled, 'expected set schedule action to be Pro-gated');
+});
+
+test('manual member activity drives set lifecycle without conductor controls', () => {
+    const state = {
+        slug: 'manual-set',
+        isComplete: false,
+        autonomous: null,
+        activeMemberCount: 1,
+        inboxMemberCount: 0,
+        reviewableMemberCount: 0,
+        launchableSpecReviewMemberCount: 0,
+        pendingSpecReviseMemberCount: 0,
+    };
+    assert.strictEqual(resolveSetLifecycle(state), 'running');
+    const actionIds = buildSetValidActions(state, { requiresPro: false, proAvailable: true })
+        .map(action => action.action);
+    assert(!actionIds.includes('set-autonomous-start'));
+    assert(!actionIds.includes('set-autonomous-stop'));
+    assert(!actionIds.includes('set-autonomous-reset'));
 });
 
 // REGRESSION: user-stopped set with partial progress must expose restart/resume, not only Reset.
@@ -216,6 +235,11 @@ testAsync('collectRepoStatus surfaces revision-complete from per-agent status fi
     fs.mkdirSync(path.dirname(specPath), { recursive: true });
     fs.writeFileSync(specPath, '# fb\n');
     await engine.startFeature(repo, '77', 'solo_branch', ['cc']);
+    await engine.signalAgentReady(repo, '77', 'cc');
+    await engine.recordCodeReviewStarted(repo, 'feature', '77', { reviewerId: 'op' });
+    await engine.recordCodeReviewCompleted(repo, 'feature', '77', { reviewerId: 'op', requestRevision: false });
+    await engine.recordCodeRevisionStarted(repo, 'feature', '77', { revisionAgentId: 'cc' });
+    await engine.recordCodeRevisionCompleted(repo, 'feature', '77', { revisionAgentId: 'cc' });
     // Per-agent file is the source of truth for `revision-complete` — the workflow
     // snapshot reports engine states (idle/running/...), so the dashboard must
     // read the status file rather than collapse to the snapshot value.
@@ -228,6 +252,30 @@ testAsync('collectRepoStatus surfaces revision-complete from per-agent status fi
     const cc = feature.agents.find(a => a.id === 'cc');
     assert.ok(cc, 'cc agent missing from feature 77');
     assert.strictEqual(cc.status, 'revision-complete', `expected revision-complete, got ${cc.status}`);
+    const actions = feature.uiContract.decisions.actions.map(action => action.actionId);
+    assert(!actions.includes('feature-code-revise'));
+    assert(actions.includes('feature-close'));
+    assert.strictEqual(feature.uiContract.presentation.contextLine, null);
+}));
+testAsync('collectRepoStatus projects active code revision and suppresses competing decisions', () => withTempDirAsync('aigon-revision-active-', async (repo) => {
+    const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-78-revision-active.md');
+    fs.mkdirSync(path.dirname(specPath), { recursive: true });
+    fs.writeFileSync(specPath, '# active revision\n');
+    await engine.startFeature(repo, '78', 'solo_branch', ['cc']);
+    await engine.signalAgentReady(repo, '78', 'cc');
+    await engine.recordCodeReviewStarted(repo, 'feature', '78', { reviewerId: 'op' });
+    await engine.recordCodeReviewCompleted(repo, 'feature', '78', { reviewerId: 'op', requestRevision: false });
+    await engine.recordCodeRevisionStarted(repo, 'feature', '78', { revisionAgentId: 'cc' });
+    ast.writeAgentStatusAt(repo, '78', 'cc', { status: 'addressing-code-review' }, 'feature');
+    clearTierCache(repo);
+    const response = { summary: { implementing: 0, waiting: 0, complete: 0, error: 0, total: 0 } };
+    const st = collectRepoStatus(repo, response);
+    const feature = st.features.find(f => String(f.id) === '78');
+    assert.ok(feature, 'feature 78 missing from dashboard payload');
+    assert.strictEqual(feature.cardHeadline.verb, 'Addressing review');
+    const actions = feature.uiContract.decisions.actions.map(action => action.actionId);
+    assert(!actions.includes('feature-code-revise'));
+    assert(!actions.includes('feature-close'));
 }));
 // REGRESSION: spec-review-check author selection should default from workflow bootstrap state.
 testAsync('collectRepoStatus includes authorAgentId for backlog research items', () => withTempDirAsync('aigon-author-agent-dashboard-', async (repo) => {

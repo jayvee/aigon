@@ -555,6 +555,17 @@ import { escHtml, refreshTimestamps, showToast } from './utils.js';
 
     // ── Session execution ─────────────────────────────────────────────────────
 
+    async function requestSessionView(sessionName, repoPath) {
+      const res = await fetch('/api/session/view', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionName, repoPath: repoPath || null })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || ('HTTP ' + res.status));
+      return payload;
+    }
+
     async function executeNextAction(command, mode, repoPath, btn) {
       if (!command) return;
       const origText = btn ? btn.textContent : '';
@@ -648,6 +659,7 @@ export {
   requestRefresh,
   requestRepoMainDevServerStart,
   requestResearchNudge,
+  requestSessionView,
   requestSpecReconcile,
   requestSpecReviewLaunch,
   syncDashboardHiddenRepos,

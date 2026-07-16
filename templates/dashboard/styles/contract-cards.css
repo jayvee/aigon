@@ -116,7 +116,8 @@
   flex-wrap: wrap;
 }
 .ccard-status-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7px 2.25rem minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   min-width: 0;
@@ -124,8 +125,23 @@
   font-weight: 590;
   color: var(--cc-text);
 }
+.ccard-status-label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
 .ccard-status-sep { color: var(--cc-text-faint); font-weight: 400; }
-.ccard-status-age { color: var(--cc-text-muted); font-weight: 500; }
+.ccard-status-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--cc-text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ccard-status-age svg { flex: 0 0 auto; }
 .ccard-agent-chip {
   display: inline-flex;
   align-items: center;
@@ -205,6 +221,8 @@
 
 /* ── Agent / session activity rows (fleet / multi-agent) ─────────────────── */
 .ccard-rows { display: grid; gap: 5px; margin-left: 14px; }
+.ccard:has(.ccard-status-bar) > .ccard-rows { margin-left: 0; }
+.ccard:has(> .ccard-state) > .ccard-rows { margin-left: 0; }
 .ccard-row {
   min-height: 26px;
   display: flex;
@@ -215,7 +233,8 @@
   color: var(--cc-text-muted);
 }
 .ccard-row-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7px 2.25rem minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   min-width: 0;
@@ -224,10 +243,9 @@
 .ccard-row-name { color: var(--cc-text); font-weight: 600; white-space: nowrap; }
 .ccard-row-note {
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 9rem;
+  flex: 1 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .ccard-row-tools {
   display: inline-flex;
@@ -241,6 +259,21 @@
 .ccard-dot.is-ready { background: var(--cc-ready); }
 .ccard-dot.is-running { background: var(--cc-running); }
 .ccard-dot.is-failed { background: var(--cc-danger); }
+.ccard-dot.is-running,
+.ccard-state-dot.is-running {
+  animation: ccard-active-pulse 1.6s ease-out infinite;
+}
+@keyframes ccard-active-pulse {
+  0% { box-shadow: 0 0 0 2px rgba(101, 198, 180, 0.3); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(101, 198, 180, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ccard-dot.is-running,
+  .ccard-state-dot.is-running {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(101, 198, 180, 0.16);
+  }
+}
 .ccard-dot.is-paused { background: var(--cc-warn); }
 
 .ccard-peek,
@@ -261,6 +294,32 @@
 .ccard-peek { color: var(--cc-info); }
 .ccard-peek:hover, .ccard-peek:focus-visible { border-color: var(--cc-info); color: var(--cc-text); }
 .ccard-row-action:hover, .ccard-row-action:focus-visible { border-color: var(--cc-text-faint); color: var(--cc-text); }
+
+.ccard-session-control {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--cc-border);
+  border-radius: 5px;
+}
+.ccard-session-control .ccard-peek {
+  border: 0;
+  border-radius: 4px 0 0 4px;
+}
+.ccard-session-menu { border-left: 1px solid var(--cc-border); }
+.ccard-session-menu-toggle {
+  width: 24px;
+  min-height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0 4px 4px 0;
+  background: transparent;
+  color: var(--cc-text-muted);
+  cursor: pointer;
+}
+.ccard-session-menu-toggle:hover,
+.ccard-session-menu-toggle:focus-visible { color: var(--cc-text); background: var(--cc-surface-hover); }
 
 /* ── Autonomous run: controller above stages, one stable stage grid ──────── */
 .ccard-run {
@@ -391,13 +450,32 @@
 .ccard-action.is-danger { color: var(--cc-danger); }
 .ccard-action[disabled] { opacity: 0.45; cursor: not-allowed; }
 .ccard-actions .ccard-overflow { margin-left: auto; }
-.ccard-feature-set .ccard-actions { flex-wrap: nowrap; }
-.ccard-feature-set .ccard-actions .ccard-action { min-width: 0; }
-.ccard-feature-set .ccard-actions .ccard-action.is-primary {
-  flex: 1 1 auto;
-  white-space: normal;
+.ccard-feature-set { container: set-card / inline-size; }
+.ccard-feature-set .ccard-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
 }
-.ccard-feature-set .ccard-actions .ccard-overflow { flex: 0 0 auto; }
+.ccard-feature-set .ccard-actions:has(.ccard-action:not(.is-primary)) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+.ccard-feature-set .ccard-actions .ccard-action {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ccard-feature-set .ccard-actions .ccard-overflow {
+  justify-self: end;
+  margin-left: 0;
+}
+
+@container set-card (max-width: 260px) {
+  .ccard-feature-set .ccard-actions:has(.ccard-action:not(.is-primary)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ccard-feature-set .ccard-actions:has(.ccard-action:not(.is-primary)) .ccard-action.is-primary { grid-column: 1 / -1; }
+}
 
 /* Overflow menu — mirrors the shared kcard menu so open/positioning wiring
  * applies; duplicated here so the gallery renders it without kanban.css. */

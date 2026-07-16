@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 
 test('contracts render autonomous and set hierarchy without duplicate activity', async ({ page }) => {
   await expect(page.locator('#diagnostics-count')).toHaveText('Complete');
-  await expect(page.locator('[data-scenario-key]')).toHaveCount(67);
+  await expect(page.locator('[data-scenario-key]')).toHaveCount(71);
 
   const implementing = page.locator('[data-scenario-key="feature-autonomous-running"]');
   await expect(implementing.locator('.ccard-row')).toHaveCount(0);
@@ -32,10 +32,40 @@ test('contracts render autonomous and set hierarchy without duplicate activity',
   await expect(set.locator('.ccard-set-current .ccard-stage')).toHaveCount(4);
   await expect(set.locator('.ccard-set-current .ccard-row')).toHaveCount(0);
 
-  const setHeader = page.locator('[data-scenario-key="set-ready"] .ccard-head');
+  const setHeader = page.locator('[data-scenario-key="set-ready"] .ccard-feature-set > .ccard-head');
   await expect(setHeader.locator('.ccard-key')).toHaveCount(0);
   await expect(setHeader.locator('.ccard-kind')).toHaveText('Feature set');
   await expect(setHeader.locator('.ccard-badge')).toHaveText('3 features');
+});
+
+test('expanded set reference shows member dependencies and stable actions', async ({ page }) => {
+  const readySet = page.locator('[data-scenario-key="set-ready"]');
+  await expect(readySet.locator('.gallery-set-member')).toHaveCount(3);
+  const members = readySet.locator('.gallery-set-member');
+  await expect(members.nth(0).locator('[data-va-action="feature-start"]')).toHaveText('Start');
+  await expect(members.nth(0).locator('[data-va-action="feature-start"]')).toBeEnabled();
+  await expect(members.nth(1).locator('[data-va-action="feature-start"]')).toBeDisabled();
+  const dependent = readySet.locator('.gallery-set-member').filter({ hasText: 'Expose recovery controls' });
+  await expect(dependent.locator('.ccard-dependencies')).toContainText('Depends on');
+  await expect(dependent.locator('.ccard-dependency-key')).toHaveText('F682');
+  await expect(dependent.locator('.ccard-dependency-name')).toHaveText('Recover interrupted runs');
+  const setActions = readySet.locator('.ccard-feature-set > .ccard-actions');
+  await expect(setActions.locator('.ccard-action.is-primary')).toHaveText('Review specs');
+  await expect(setActions.locator('.ccard-action:not(.is-primary)')).toHaveText('Start autonomous');
+  const actionBoxes = await setActions.locator(':scope > *').evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect();
+    return { left: box.left, right: box.right, top: box.top };
+  }));
+  expect(actionBoxes.every((box, index) => index === 0 || box.left >= actionBoxes[index - 1].right)).toBe(true);
+});
+
+test('manual member work keeps the set in progress and surfaces the current card', async ({ page }) => {
+  const set = page.locator('[data-scenario-key="set-manual-running"]');
+  await expect(set.locator('.ccard-feature-set > .ccard-state')).toHaveText('In progress');
+  await expect(set.locator('.ccard-set-current')).toContainText('F682');
+  await expect(set.locator('.ccard-set-current')).toContainText('Implementing');
+  await expect(set.locator('[data-va-action="set-autonomous-start"]')).toHaveCount(0);
+  await expect(set.locator('[data-va-action="set-autonomous-stop"]')).toHaveCount(0);
 });
 
 test('inbox set cards identify the set and keep actions on one row', async ({ page }) => {
@@ -70,19 +100,96 @@ test('dependencies read as neutral relationships rather than warnings', async ({
   expect(colors.color).not.toBe(colors.warning);
 });
 
-test('solo active cards use one Peek, one overflow, and no empty action footer', async ({ page }) => {
+test('solo active cards separate session tools from card actions', async ({ page }) => {
   const implementing = page.locator('[data-scenario-key="feature-implementing-solo_worktree"]');
   await expect(implementing.locator('.ccard-status-bar')).toHaveCount(1);
   await expect(implementing.locator('.ccard-peek')).toHaveCount(1);
-  await expect(implementing.locator('.ccard-overflow')).toHaveCount(1);
-  await expect(implementing.locator('.ccard-actions')).toHaveCount(0);
+  await expect(implementing.locator('.ccard-overflow')).toHaveCount(2);
+  await expect(implementing.locator('.ccard-actions')).toHaveCount(1);
   await expect(implementing.locator('.kcard-overflow-item')).toHaveCount(4);
+  await expect(implementing.locator('.ccard-status-tools .ccard-session-open')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-status-tools .ccard-session-menu-toggle')).toHaveAttribute('aria-label', 'Session options');
+  await expect(implementing.locator('.ccard-status-tools .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(0);
+  await expect(implementing.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-actions .kcard-overflow-toggle')).toHaveAttribute('aria-label', 'More card actions');
+  await expect(implementing.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-status-age')).toHaveText('9m');
+  await expect(implementing.locator('.ccard-status-age')).toHaveAttribute('title', 'Implementation running for 9m');
 
   const ready = page.locator('[data-scenario-key="feature-ready-solo_worktree"]');
   await expect(ready.locator('.ccard-overflow')).toHaveCount(1);
-  await expect(ready.locator('.ccard-status-tools .ccard-overflow')).toHaveCount(1);
-  await expect(ready.locator('.ccard-actions .ccard-overflow')).toHaveCount(0);
+  await expect(ready.locator('.ccard-status-tools .ccard-overflow')).toHaveCount(0);
+  await expect(ready.locator('.ccard-actions .ccard-overflow')).toHaveCount(1);
   await expect(ready.locator('.ccard-actions .ccard-action.is-primary')).toHaveText('Close');
+});
+
+test('card-level closing state is not attached to an agent row', async ({ page }) => {
+  const closing = page.locator('[data-scenario-key="feature-closing-solo_worktree"]');
+  await expect(closing.locator('.ccard-state')).toHaveText('Closing');
+  await expect(closing.locator('.ccard-status-bar')).toHaveCount(0);
+  await expect(closing.locator('.ccard-blockers')).toHaveCount(0);
+});
+
+test('peer review activity aligns with the primary status row', async ({ page }) => {
+  const review = page.locator('[data-scenario-key="feature-review-session-lost"]');
+  const lefts = await review.locator('.ccard-state-dot, .ccard-row .ccard-dot').evaluateAll(nodes => (
+    nodes.map(node => Math.round(node.getBoundingClientRect().left))
+  ));
+  expect(lefts.length).toBeGreaterThan(1);
+  expect(new Set(lefts).size).toBe(1);
+});
+
+test('active code review states what is happening in consistent sentence case', async ({ page }) => {
+  const card = page.locator('[data-scenario-key="feature-code_review_in_progress-solo_worktree"]');
+  const review = card.locator('.ccard-row').filter({ hasText: 'CX' });
+  await expect(review.locator('.ccard-row-note')).toHaveText('Reviewing code');
+  await expect(review).not.toContainText('code review');
+  expect(await review.locator('.ccard-dot').evaluate(node => getComputedStyle(node).animationName)).toBe('ccard-active-pulse');
+});
+
+test('completed code review is labeled by outcome and remains inspectable', async ({ page }) => {
+  const ready = page.locator('[data-scenario-key="feature-implementing-ready-solo"]');
+  const review = ready.locator('.ccard-row').filter({ hasText: 'OP' });
+  const outcome = review.locator('.ccard-row-note');
+  await expect(outcome).toHaveText('Implementation approved');
+  expect(await outcome.evaluate(node => node.scrollWidth <= node.clientWidth && node.scrollHeight <= node.clientHeight)).toBe(true);
+  await expect(review).not.toContainText('OP code review');
+  await expect(review.locator('.ccard-dot')).toHaveClass(/is-ready/);
+  await expect(review.locator('.ccard-peek')).toBeVisible();
+  await expect(review.locator('.ccard-session-open')).toHaveAttribute('data-session-name', 'feature-implementing-ready-solo-review');
+  await expect(ready.locator('.ccard-status-main .ccard-row-name')).toHaveText('CC');
+  await expect(review.locator('.ccard-row-name')).toHaveText('OP');
+  const agentLefts = await ready.locator('.ccard-status-main .ccard-row-name, .ccard-row .ccard-row-name').evaluateAll(nodes => (
+    nodes.map(node => Math.round(node.getBoundingClientRect().left))
+  ));
+  const statusLefts = await ready.locator('.ccard-status-label, .ccard-row-note').evaluateAll(nodes => (
+    nodes.map(node => Math.round(node.getBoundingClientRect().left))
+  ));
+  expect(new Set(agentLefts).size).toBe(1);
+  expect(new Set(statusLefts).size).toBe(1);
+  await expect(ready.locator('.ccard-actions .ccard-action.is-primary')).toHaveText('Close');
+  await expect(ready.locator('.ccard-actions .ccard-action:not(.is-primary)')).toHaveText('Address review');
+  await expect(ready.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-code-review"]')).toHaveCount(1);
+  await expect(ready.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(1);
+  await expect(ready.locator('.ccard-status-tools .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(0);
+  await expect(ready.locator('.ccard-actions .kcard-overflow-item[data-va-action="feature-nudge"]')).toHaveCount(1);
+  await expect(ready.locator('.ccard-status-tools .kcard-overflow-item[data-va-action="feature-reset"]')).toHaveCount(0);
+});
+
+test('address review changes the implementer row and consumes the action', async ({ page }) => {
+  const active = page.locator('[data-scenario-key="feature-review-addressing"]');
+  await expect(active.locator('.ccard-status-main')).toContainText('CC');
+  await expect(active.locator('.ccard-status-label')).toHaveText('Addressing review');
+  expect(await active.locator('.ccard-state-dot').evaluate(node => getComputedStyle(node).animationName)).toBe('ccard-active-pulse');
+  expect(await active.locator('.ccard-row .ccard-dot').evaluate(node => getComputedStyle(node).animationName)).toBe('none');
+  await expect(active.locator('[data-va-action="feature-code-revise"]')).toHaveCount(0);
+  await expect(active.locator('[data-va-action="feature-close"]')).toHaveCount(0);
+
+  const complete = page.locator('[data-scenario-key="feature-review-addressed"]');
+  await expect(complete.locator('.ccard-status-label')).toHaveText('Revision complete');
+  await expect(complete.locator('.ccard-context')).toHaveCount(0);
+  await expect(complete.locator('[data-va-action="feature-code-revise"]')).toHaveCount(0);
+  await expect(complete.locator('.ccard-action.is-primary')).toHaveAttribute('data-va-action', 'feature-close');
 });
 
 test('set spec cycle status renders labeled pills with Peek inside', async ({ page }) => {

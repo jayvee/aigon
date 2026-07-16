@@ -233,6 +233,10 @@ h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; font-weight: 650; }
 
 .blocker-line { margin: 13px 0 0 16px; padding: 8px 10px; border-left: 2px solid var(--warning); color: var(--warning); background: var(--warning-bg); font-size: 12px; line-height: 1.4; }
 
+.gallery-set-stack { display: grid; gap: 6px; margin: 10px 12px 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.gallery-set-member { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-2); }
+.gallery-set-member .ccard-dependencies { margin-left: 0; }
+
 .card-footer {
   min-height: 58px;
   display: flex;

@@ -11,8 +11,10 @@
 // Solo active cards fold state + agent + tools into one status bar (wireframe B1)
 // so the dominant state line is not repeated in a cramped second row.
 
-import { agentDisplay, DEPENDENCY_ICON_SVG, escHtml, formatHeadlineAge, peekButtonHtml, statusDotClass, statusLabel } from './html.js';
-import { agentSurfaceActions, overflowMenuHtml, soloOverflowActions } from './actions-view.js';
+import { agentDisplay, DEPENDENCY_ICON_SVG, ELAPSED_ICON_SVG, escHtml, formatHeadlineAge, peekButtonHtml, statusDotClass, statusLabel } from './html.js';
+import { actionButtonHtml, agentSurfaceActions, overflowMenuHtml, soloSessionActions } from './actions-view.js';
+
+const SESSION_MENU_ICON_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
 function freeSessions(contract) {
   const sessions = contract.sessions || [];
@@ -32,25 +34,51 @@ export function soloStatusBarAgent(contract) {
   const headline = contract.presentation && contract.presentation.headline;
   if (!headline || !(headline.verb || headline.label)) return null;
   const agent = agents[0];
-  if (headline.owner && String(headline.owner).toLowerCase() !== String(agent.id).toLowerCase()) return null;
+  // Compact only agent-owned work into the agent row. Card-level lifecycle
+  // states such as Closing must remain a distinct state line.
+  if (!headline.owner) return null;
+  if (String(headline.owner).toLowerCase() !== String(agent.id).toLowerCase()) return null;
   return agent;
 }
 
-/** Peek stays visible; agent session controls (Open Terminal, Stop, …) tuck into ⋯. */
+function sessionMenuHtml(session, actions) {
+  const open = session && (session.affordances || []).find(action => action.actionId === 'open-session');
+  const items = [];
+  if (open) {
+    items.push('<button type="button" class="kcard-overflow-item ccard-session-open" data-session-name="'
+      + escHtml(session.sessionId) + '">' + escHtml(open.label) + '</button>');
+  }
+  items.push(...actions.map(action => actionButtonHtml(action, 'kcard-overflow-item')));
+  if (!items.length) return '';
+  return '<div class="kcard-overflow ccard-overflow ccard-session-menu">'
+    + '<button class="kcard-overflow-toggle ccard-session-menu-toggle" type="button" aria-label="Session options" title="Session options">'
+    + SESSION_MENU_ICON_SVG + '</button>'
+    + '<div class="kcard-overflow-menu">' + items.join('') + '</div></div>';
+}
+
+function sessionControlHtml(peek, menu) {
+  if (!peek) return menu;
+  return '<span class="ccard-session-control">' + peek + menu + '</span>';
+}
+
+/** Peek stays visible; secondary controls share its compact session menu. */
 function agentRowToolsHtml(contract, agentId, options) {
   const inspectable = inspectableForAgent(contract, agentId);
-  const agentActions = agentSurfaceActions(contract, agentId);
+  const agentActions = agentSurfaceActions(contract, agentId)
+    .filter(action => action.actionId !== 'open-session');
   const peek = inspectable ? peekButtonHtml(inspectable, options) : '';
-  const overflow = overflowMenuHtml(agentActions);
-  if (!peek && !overflow) return '';
-  return peek + overflow;
+  const menu = sessionMenuHtml(inspectable, agentActions);
+  if (!peek && !menu) return '';
+  return sessionControlHtml(peek, menu);
 }
 
 function soloToolsHtml(contract, agent, options) {
   const inspectable = inspectableForAgent(contract, agent.id);
   const peek = inspectable ? peekButtonHtml(inspectable, options) : '';
-  const overflow = overflowMenuHtml(soloOverflowActions(contract, options));
-  return peek + overflow;
+  const sessionActions = soloSessionActions(contract)
+    .filter(action => action.actionId !== 'open-session');
+  const menu = sessionMenuHtml(inspectable, sessionActions);
+  return sessionControlHtml(peek, menu);
 }
 
 /**
@@ -64,21 +92,20 @@ export function statusBarHtml(contract, options = {}) {
   const text = (headline && (headline.verb || headline.label))
     || (contract.state && contract.state.label) || '';
   if (!text) return '';
-  const age = formatHeadlineAge(headline && headline.age);
+  const age = headline && headline.ageLabel ? formatHeadlineAge(headline.age) : '';
   const tools = soloToolsHtml(contract, agent, options);
+  const elapsedTitle = age ? headline.ageLabel + ' ' + age : '';
+  const activeDotClass = headline && headline.tone === 'running' ? ' is-running' : '';
   const ageHtml = age
-    ? '<span class="ccard-status-sep" aria-hidden="true">·</span><span class="ccard-status-age">' + escHtml(age) + '</span>'
+    ? '<span class="ccard-status-sep" aria-hidden="true">·</span>'
+      + '<span class="ccard-status-age" title="' + escHtml(elapsedTitle) + '" aria-label="' + escHtml(elapsedTitle) + '">'
+      + ELAPSED_ICON_SVG + '<span>' + escHtml(age) + '</span></span>'
     : '';
   return '<div class="ccard-status-bar">'
     + '<div class="ccard-status-main">'
-    + '<span class="ccard-state-dot" aria-hidden="true"></span>'
-    + '<span class="ccard-state-text">' + escHtml(text) + '</span>'
-    + '<span class="ccard-status-sep" aria-hidden="true">·</span>'
-    + '<span class="ccard-agent-chip">'
-    + '<span class="ccard-dot ' + statusDotClass(agent.status) + '" aria-hidden="true"></span>'
-    + '<span>' + escHtml(agentDisplay(agent.id)) + '</span>'
-    + '</span>'
-    + ageHtml
+    + '<span class="ccard-state-dot' + activeDotClass + '" aria-hidden="true"></span>'
+    + '<span class="ccard-row-name">' + escHtml(agentDisplay(agent.id)) + '</span>'
+    + '<span class="ccard-status-label"><span class="ccard-state-text">' + escHtml(text) + '</span>' + ageHtml + '</span>'
     + '</div>'
     + (tools ? '<div class="ccard-status-tools">' + tools + '</div>' : '')
     + '</div>';
@@ -95,7 +122,7 @@ function agentRowNote(agent, contract) {
 }
 
 function sessionRowNote(session, contract) {
-  const note = session.label || statusLabel(session.role);
+  const note = session.presentationLabel || session.label || statusLabel(session.role);
   if (!note) return '';
   const lifecycle = String((contract.state && contract.state.lifecycle) || '').toLowerCase();
   const normalized = note.toLowerCase();
@@ -161,12 +188,10 @@ export function activityHtml(contract, options = {}) {
   return '<div class="ccard-rows" role="list">' + rows.join('') + '</div>';
 }
 
-export function blockersHtml(contract) {
+export function dependenciesHtml(contract) {
   const blockers = contract.blockers || [];
-  if (!blockers.length) return '';
   const dependencies = blockers.filter(blocker => blocker.kind === 'dependency');
-  const attention = blockers.filter(blocker => blocker.kind !== 'dependency');
-  const dependencyHtml = dependencies.length
+  return dependencies.length
     ? '<div class="ccard-dependencies" role="note" aria-label="Dependencies">'
       + '<span class="ccard-dependencies-label">' + DEPENDENCY_ICON_SVG + 'Depends on</span>'
       + '<span class="ccard-dependency-targets">'
@@ -179,6 +204,13 @@ export function blockersHtml(contract) {
       )).join('')
       + '</span></div>'
     : '';
+}
+
+export function blockersHtml(contract) {
+  const blockers = contract.blockers || [];
+  if (!blockers.length) return '';
+  const dependencyHtml = dependenciesHtml(contract);
+  const attention = blockers.filter(blocker => blocker.kind !== 'dependency');
   const text = attention
     .map(blocker => blocker.label || blocker.detail || blocker.reason || (blocker.id ? 'Blocked by #' + blocker.id : blocker.kind))
     .filter(Boolean)
