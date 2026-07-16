@@ -92,7 +92,7 @@
   white-space: nowrap;
 }
 
-/* ── One dominant state line ─────────────────────────────────────────────── */
+/* ── One dominant state line (solo: full status bar with inline agent) ───── */
 .ccard-state {
   display: flex;
   align-items: center;
@@ -100,6 +100,44 @@
   font-weight: 590;
   color: var(--cc-text);
 }
+.ccard-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.ccard-status-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1 1 12rem;
+  font-weight: 590;
+  color: var(--cc-text);
+}
+.ccard-status-sep { color: var(--cc-text-faint); font-weight: 400; }
+.ccard-status-age { color: var(--cc-text-muted); font-weight: 500; }
+.ccard-agent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--cc-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ccard-status-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: auto;
+}
+.ccard-status-tools .ccard-overflow,
+.ccard-row-tools .ccard-overflow { margin-left: 0; }
 .ccard-state-dot {
   width: 7px;
   height: 7px;
@@ -121,19 +159,40 @@
   color: var(--cc-warn);
 }
 
-/* ── Agent / session activity rows ───────────────────────────────────────── */
+/* ── Agent / session activity rows (fleet / multi-agent) ─────────────────── */
 .ccard-rows { display: grid; gap: 5px; margin-left: 14px; }
 .ccard-row {
   min-height: 26px;
-  display: grid;
-  grid-template-columns: 8px auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
   color: var(--cc-text-muted);
 }
-.ccard-row-name { color: var(--cc-text); font-weight: 600; }
-.ccard-row-note { min-width: 0; overflow-wrap: anywhere; }
-.ccard-row-tools { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.ccard-row-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.ccard-row-name { color: var(--cc-text); font-weight: 600; white-space: nowrap; }
+.ccard-row-note {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 9rem;
+}
+.ccard-row-tools {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
 .ccard-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cc-text-faint); }
 .ccard-dot.is-ready { background: var(--cc-ready); }
 .ccard-dot.is-running { background: var(--cc-running); }
@@ -357,6 +416,10 @@
 @media (max-width: 480px) {
   .ccard-stage { grid-template-columns: 16px minmax(0, 1fr) minmax(24px, auto) 60px 52px; }
   .ccard-context, .ccard-rows, .ccard-run, .ccard-blockers { margin-left: 8px; }
+  .ccard-status-tools .ccard-row-action,
+  .ccard-row-tools .ccard-row-action { padding: 2px 6px; font-size: 10px; }
+  .ccard-peek-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .ccard-peek { padding: 2px 6px; }
 }
 
 .ccard button:focus-visible {

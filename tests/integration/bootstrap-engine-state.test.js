@@ -149,6 +149,17 @@ test('entityDelete removes a backlog research topic and its workflow snapshot', 
     assert.ok(!fs.existsSync(specPath));
     assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/research/02')));
 }));
+// REGRESSION: dashboard delete must succeed when workflow snapshot exists but the
+// spec file was already removed from inbox/backlog/paused folders.
+test('entityDelete removes orphan backlog workflow when spec file is missing', () => withTempDir('aigon-feature-delete-orphan-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-660-orphan.md');
+    fs.writeFileSync(specPath, '# Feature: orphan\n');
+    engine.ensureEntityBootstrappedSync(repo, 'feature', '660', 'backlog', specPath);
+    fs.unlinkSync(specPath);
+    runEntityChild(repo, "await entity.entityDelete(entity.FEATURE_DEF, '660', ctx);");
+    assert.ok(!fs.existsSync(path.join(repo, '.aigon/workflows/features/660')));
+}));
 // REGRESSION: deleting a feature must fail loudly when other specs still depend on it.
 test('entityDelete blocks deleting a feature that other specs depend on', () => withTempDir('aigon-feature-delete-deps-', (repo) => {
     seedEntityDirs(repo, 'features');

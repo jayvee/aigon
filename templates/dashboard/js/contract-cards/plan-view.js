@@ -101,13 +101,17 @@ export function setPlanHtml(contract, options = {}) {
   if (!plan || !Array.isArray(plan.members)) return '';
   const progress = plan.progress || { complete: 0, total: plan.members.length };
   const percent = progress.total ? Math.round((Number(progress.complete) / Number(progress.total)) * 100) : 0;
+  const showProgress = options.suppressProgress !== true;
   const members = options.suppressMemberList ? '' : plan.members.map((member) => {
     const status = String(member.status || 'waiting');
+    const statusHtml = options.suppressMemberStatus
+      ? ''
+      : '<span class="ccard-member-status">' + escHtml(statusLabel(status)) + '</span>';
     return '<div class="ccard-member is-' + escHtml(status) + (member.isCurrent ? ' is-current' : '') + '" role="listitem">'
       + '<span class="ccard-stage-marker" aria-hidden="true">' + stageMarker(memberMarkerStatus(status)) + '</span>'
       + '<span class="ccard-member-copy">'
       + memberNameHtml(member)
-      + '<span class="ccard-member-status">' + escHtml(statusLabel(status)) + '</span>'
+      + statusHtml
       + '</span>'
       + '</div>';
   }).join('');
@@ -119,9 +123,13 @@ export function setPlanHtml(contract, options = {}) {
       + options.renderEmbedded(current)
       + '</div>'
     : '';
+  const progressHtml = showProgress
+    ? '<div class="ccard-set-progress"><span>' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' complete</span></div>'
+      + '<div class="ccard-set-track" role="img" aria-label="' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' member features complete"><span style="width:' + percent + '%"></span></div>'
+    : '';
+  if (!progressHtml && !members && !embedded) return '';
   return '<div class="ccard-set-plan">'
-    + '<div class="ccard-set-progress"><span>' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' complete</span></div>'
-    + '<div class="ccard-set-track" role="img" aria-label="' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' member features complete"><span style="width:' + percent + '%"></span></div>'
+    + progressHtml
     + (members ? '<div class="ccard-members" role="list" aria-label="Set member features">' + members + '</div>' : '')
     + embedded
     + '</div>';
@@ -150,31 +158,45 @@ function cyclePillHtml(kind, side, contract, options) {
     + '<span class="ccard-pill-label">' + escHtml(label) + '</span>' + peek + '</span>';
 }
 
+function shouldShowConductorPill(contract) {
+  const controller = contract && contract.plan && contract.plan.controller;
+  if (!controller) return false;
+  const controllerStatus = String(controller.status || '');
+  if (controller.running || controllerStatus === 'running') return true;
+  if (controllerStatus === 'paused-on-failure' || controllerStatus === 'paused-on-quota') return true;
+  if (controllerStatus === 'stopped' || controllerStatus === 'done' || controllerStatus === 'failed') return true;
+  return Boolean(controller.sessionName);
+}
+
 /**
  * Set status pills: spec review, spec revision, conductor. Status comes from
- * contract `state.specCycle` facts — never from tmux liveness. The revision
- * pill renders only once revision is a live concern, mirroring the approved
- * gallery design.
+ * contract `state.specCycle` facts — never from tmux liveness. Inactive review
+ * and never-started conductor pills are omitted (same rule as spec revision).
  */
 export function setCyclePillsHtml(contract, options = {}) {
   const specCycle = contract && contract.state && contract.state.specCycle;
   const controller = contract && contract.plan && contract.plan.controller;
   const parts = [];
   if (specCycle) {
-    parts.push(cyclePillHtml('Spec review', specCycle.review, contract, options));
+    const review = specCycle.review;
+    if (review && review.status && review.status !== 'inactive') {
+      parts.push(cyclePillHtml('Spec review', review, contract, options));
+    }
     const revision = specCycle.revision;
     if (revision && revision.status && revision.status !== 'inactive') {
       parts.push(cyclePillHtml('Spec revision', revision, contract, options));
     }
   }
-  const controllerStatus = String(controller && controller.status || '');
-  const conductorActive = Boolean(controller && (controller.running || controllerStatus === 'running'));
-  const conductorPaused = controllerStatus === 'paused-on-failure' || controllerStatus === 'paused-on-quota';
-  const conductorSession = sessionById(contract, (contract.plan && contract.plan.controllerSessionId)
-    || (controller && controller.sessionName) || null);
-  parts.push('<span class="ccard-pill' + (conductorActive ? ' is-active' : (conductorPaused ? ' is-paused' : ' is-inactive')) + '">'
-    + '<span class="ccard-pill-label">Conductor: ' + (conductorActive ? 'running' : (conductorPaused ? 'paused' : 'inactive')) + '</span>'
-    + peekButtonHtml(conductorSession, options) + '</span>');
+  if (shouldShowConductorPill(contract)) {
+    const controllerStatus = String(controller && controller.status || '');
+    const conductorActive = Boolean(controller && (controller.running || controllerStatus === 'running'));
+    const conductorPaused = controllerStatus === 'paused-on-failure' || controllerStatus === 'paused-on-quota';
+    const conductorSession = sessionById(contract, (contract.plan && contract.plan.controllerSessionId)
+      || (controller && controller.sessionName) || null);
+    parts.push('<span class="ccard-pill' + (conductorActive ? ' is-active' : (conductorPaused ? ' is-paused' : ' is-inactive')) + '">'
+      + '<span class="ccard-pill-label">Conductor: ' + (conductorActive ? 'running' : (conductorPaused ? 'paused' : 'inactive')) + '</span>'
+      + peekButtonHtml(conductorSession, options) + '</span>');
+  }
   const rendered = parts.filter(Boolean).join('');
   return rendered ? '<div class="ccard-pills">' + rendered + '</div>' : '';
 }

@@ -34,7 +34,32 @@ test('contracts render autonomous and set hierarchy without duplicate activity',
 
   const setHeader = page.locator('[data-scenario-key="set-ready"] .ccard-head');
   await expect(setHeader.locator('.ccard-key')).toHaveCount(0);
-  await expect(setHeader.locator('.ccard-badge')).toHaveText('3 features');
+  await expect(setHeader.locator('.ccard-badge')).toHaveCount(0);
+});
+
+test('inbox set cards stay minimal — title and action only', async ({ page }) => {
+  const inboxSet = page.locator('[data-scenario-key="set-inbox-members"]');
+  await expect(inboxSet.locator('.ccard-title')).toHaveText('Autonomous recovery');
+  await expect(inboxSet.locator('.ccard-state')).toHaveCount(0);
+  await expect(inboxSet.locator('.ccard-set-progress')).toHaveCount(0);
+  await expect(inboxSet.locator('.ccard-member')).toHaveCount(0);
+  await expect(inboxSet.locator('.ccard-pill')).toHaveCount(0);
+  await expect(inboxSet.locator('.kcard-va-btn[data-va-action="set-prioritise"]')).toBeVisible();
+});
+
+test('solo active cards use one Peek, one overflow, and no empty action footer', async ({ page }) => {
+  const implementing = page.locator('[data-scenario-key="feature-implementing-solo_worktree"]');
+  await expect(implementing.locator('.ccard-status-bar')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-peek')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-overflow')).toHaveCount(1);
+  await expect(implementing.locator('.ccard-actions')).toHaveCount(0);
+  await expect(implementing.locator('.ccard-overflow-item')).toHaveCount(4);
+
+  const ready = page.locator('[data-scenario-key="feature-ready-solo_worktree"]');
+  await expect(ready.locator('.ccard-overflow')).toHaveCount(1);
+  await expect(ready.locator('.ccard-status-tools .ccard-overflow')).toHaveCount(1);
+  await expect(ready.locator('.ccard-actions .ccard-overflow')).toHaveCount(0);
+  await expect(ready.locator('.ccard-actions .ccard-action.is-primary')).toHaveText('Close');
 });
 
 test('set spec cycle status renders labeled pills with Peek inside', async ({ page }) => {

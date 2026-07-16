@@ -42,6 +42,27 @@ export function partitionCardActions(contract, options = {}) {
   return { primary, secondary, overflow };
 }
 
+export function agentSurfaceActions(contract, agentId = null) {
+  const decisions = (contract.decisions && contract.decisions.actions) || [];
+  const tools = contract.tools || [];
+  return decisions.concat(tools)
+    .filter(action => action.interaction && action.interaction.surface === 'agent')
+    .filter(action => agentId == null || action.agentId === agentId)
+    .slice()
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+/**
+ * Solo cards have one card-level overflow beside Peek. It owns both the
+ * single agent's session tools and card actions that did not earn a visible
+ * primary/secondary slot.
+ */
+export function soloOverflowActions(contract, options = {}) {
+  const compact = options.compact === true || options.density === 'compact';
+  const { overflow } = partitionCardActions(contract, { compact });
+  return agentSurfaceActions(contract).concat(overflow);
+}
+
 export function actionButtonHtml(action, cls) {
   const classes = [cls, 'kcard-va-btn'];
   if (isDanger(action)) classes.push('is-danger');
@@ -74,7 +95,7 @@ export function actionBarHtml(contract, options = {}) {
   let html = '';
   if (primary) html += actionButtonHtml(primary, 'ccard-action is-primary');
   html += secondary.map(action => actionButtonHtml(action, 'ccard-action')).join('');
-  html += overflowMenuHtml(overflow);
+  if (!options.suppressOverflow) html += overflowMenuHtml(overflow);
   if (!html) return '';
   return '<div class="ccard-actions kcard-transitions">' + html + '</div>';
 }

@@ -82,3 +82,56 @@ test('buildSetValidActions exposes feature-set-spec-review when reviewableMember
     });
     assert.ok(!inboxOnly.some(a => a.action === 'feature-set-spec-review'));
 });
+
+test('buildSetValidActions hides set autonomous start while inbox members remain', () => {
+    const inboxSet = buildSetValidActions({
+        slug: 'deepen-create',
+        status: 'idle',
+        isComplete: false,
+        inboxMemberCount: 4,
+    });
+    assert.ok(inboxSet.some(a => a.action === 'set-prioritise'));
+    assert.ok(!inboxSet.some(a => a.action === 'set-autonomous-start'));
+    assert.ok(!inboxSet.some(a => a.action === 'set-autonomous-schedule'));
+
+    const backlogReady = buildSetValidActions({
+        slug: 'deepen-create',
+        status: 'idle',
+        isComplete: false,
+        inboxMemberCount: 0,
+    });
+    assert.ok(backlogReady.some(a => a.action === 'set-autonomous-start'));
+});
+
+test('resolveSetLifecycle and set contract label inbox sets before start', () => {
+    const { resolveSetLifecycle } = require('../../lib/feature-set-workflow-rules');
+    const { buildFeatureSetUiContract } = require('../../lib/feature-set-ui-contract');
+
+    assert.strictEqual(resolveSetLifecycle({
+        status: 'idle',
+        isComplete: false,
+        inboxMemberCount: 4,
+    }), 'inbox');
+
+    const contract = buildFeatureSetUiContract({
+        slug: 'deepen-create',
+        goal: 'deepen create',
+        status: 'inbox',
+        inboxMemberCount: 4,
+        isComplete: false,
+        validActions: buildSetValidActions({
+            slug: 'deepen-create',
+            status: 'idle',
+            isComplete: false,
+            inboxMemberCount: 4,
+        }),
+        depGraph: { nodes: [], edges: [] },
+        progress: { merged: 0, total: 4, percent: 0 },
+    });
+    assert.strictEqual(contract.state.lifecycle, 'inbox');
+    assert.strictEqual(contract.state.label, 'In inbox');
+    assert.strictEqual(contract.decisions.primaryActionId, 'set-prioritise');
+    assert.strictEqual(contract.presentation.suppressStateLine, true);
+    assert.strictEqual(contract.plan.presentation.suppressProgress, true);
+    assert.strictEqual(contract.plan.presentation.suppressMemberList, true);
+});

@@ -151,6 +151,18 @@ test.describe('Contract card production renderer @smoke', () => {
         await assertActionSurfaceClean(page, watch, 'contract feature-eval');
     });
 
+    test('solo implementing card has one Peek and one overflow without an empty footer', async ({ page }) => {
+        await mountPreview(page, buildPayload({
+            features: [baseRow('925', scenario('feature-implementing-solo_worktree'))],
+        }));
+        const card = page.locator('.kcard[data-feature-id="925"]');
+        await expect(card.locator('.ccard-status-bar')).toHaveCount(1);
+        await expect(card.locator('.ccard-peek')).toHaveCount(1);
+        await expect(card.locator('.ccard-overflow')).toHaveCount(1);
+        await expect(card.locator('.ccard-actions')).toHaveCount(0);
+        await expect(card.locator('.ccard-overflow-item')).toHaveCount(4);
+    });
+
     test('recovery scenario promotes the recovery action to primary', async ({ page }) => {
         await mountPreview(page, buildPayload({
             features: [baseRow('905', scenario('feature-autonomous-review-failed'))],
@@ -227,8 +239,8 @@ test.describe('Contract card production renderer @smoke', () => {
             .count();
         expect(barePeeks, 'no unlabeled eye buttons in the set header').toBe(0);
 
-        // Member list lives in the stack; header keeps progress + embedded current member.
-        await expect(header.locator('.ccard-member')).toHaveCount(0);
+        // Member list in the header plus full stack cards beneath.
+        await expect(header.locator('.ccard-member').count()).resolves.toBeGreaterThan(0);
         await expect(header.locator('.ccard-set-progress')).toContainText('1 of 3');
         await expect(header.locator('.ccard-set-current')).toContainText('F682');
         await expect(header.locator('.ccard-set-current .ccard-stage')).toHaveCount(4);

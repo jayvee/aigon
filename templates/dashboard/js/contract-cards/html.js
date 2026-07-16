@@ -28,7 +28,10 @@ export function agentDisplay(agentId) {
 // Plain, sentence-case status language. No machine underscores, no shouting.
 const AGENT_STATUS_LABELS = {
   running: 'working',
+  implementing: 'working',
   researching: 'researching',
+  reviewing: 'reviewing',
+  'addressing-code-review': 'revising',
   'quota-paused': 'quota paused',
   ready: 'complete',
   complete: 'complete',
@@ -48,10 +51,20 @@ export function statusLabel(status) {
 export function statusDotClass(status) {
   const raw = String(status || '');
   if (raw === 'ready' || raw === 'complete' || raw === 'completed') return 'is-ready';
-  if (raw === 'running' || raw === 'idle' || raw === 'waiting' || raw === 'researching') return 'is-running';
+  if (raw === 'running' || raw === 'idle' || raw === 'waiting' || raw === 'researching'
+    || raw === 'implementing' || raw === 'reviewing' || raw === 'addressing-code-review') return 'is-running';
   if (raw === 'failed' || raw === 'lost' || raw === 'needs_attention') return 'is-failed';
   if (raw === 'quota-paused' || raw === 'stopped') return 'is-paused';
   return 'is-neutral';
+}
+
+/** Headline age chip — mirrors dashboard utils without importing singletons. */
+export function formatHeadlineAge(sec) {
+  if (sec == null || !Number.isFinite(sec)) return '';
+  if (sec < 60) return sec + 's';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h';
+  return Math.floor(sec / 86400) + 'd';
 }
 
 /**

@@ -85,7 +85,7 @@ test.describe('F625 keyed kanban card render', () => {
     expect(otherFpAfter).not.toBe(fpBefore);
   });
 
-  test('pre-start set bundle renders clickable idle member cards', async ({ page }) => {
+  test('pre-start set bundle renders clickable member cards in header and stack', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
@@ -111,9 +111,8 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
-    await expect(bundle.locator('.kanban-set-header-contract .ccard-member')).toHaveCount(0);
+    await expect(bundle.locator('.kanban-set-header-contract .ccard-member').count()).resolves.toBeGreaterThan(0);
     await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(2);
-    await expect(bundle.locator('.kanban-set-stack .kcard-set-stack-idle')).toHaveCount(2);
     await bundle.evaluate(el => { window.__bundleRef = el; });
 
     await page.evaluate(async ({ repoPath }) => {
