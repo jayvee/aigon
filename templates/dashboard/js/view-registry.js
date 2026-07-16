@@ -197,8 +197,6 @@ function switchViewLifecycle(nextId) {
 
   if (prevEntry && typeof prevEntry.unmount === 'function') prevEntry.unmount();
   activeViewId = nextId;
-  applyChromeVisibility(nextId);
-  updateSidebarToggle(nextId);
   updateViewTabs();
   if (nextEntry && typeof nextEntry.mount === 'function') nextEntry.mount();
   return true;
@@ -207,6 +205,9 @@ function switchViewLifecycle(nextId) {
 export function applyView(options) {
   const opts = options || {};
   const viewId = state.view;
+
+  applyChromeVisibility(viewId);
+  updateSidebarToggle(viewId);
 
   const switched = switchViewLifecycle(viewId);
   if (!switched && !opts.forceUpdate) {

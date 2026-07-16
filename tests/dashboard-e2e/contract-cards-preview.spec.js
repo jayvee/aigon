@@ -227,8 +227,9 @@ test.describe('Contract card production renderer @smoke', () => {
             .count();
         expect(barePeeks, 'no unlabeled eye buttons in the set header').toBe(0);
 
-        // Member progress and the embedded current-member contract render.
-        await expect(header.locator('.ccard-member')).toHaveCount(3);
+        // Member list lives in the stack; header keeps progress + embedded current member.
+        await expect(header.locator('.ccard-member')).toHaveCount(0);
+        await expect(header.locator('.ccard-set-progress')).toContainText('1 of 3');
         await expect(header.locator('.ccard-set-current')).toContainText('F682');
         await expect(header.locator('.ccard-set-current .ccard-stage')).toHaveCount(4);
 
@@ -236,6 +237,26 @@ test.describe('Contract card production renderer @smoke', () => {
         await conductorPill.locator('.kcard-peek-btn').click();
         await expect(page.locator('#terminal-panel')).toBeVisible({ timeout: 5000 });
         await page.click('#panel-close');
+    });
+
+    test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await mountPreview(page, buildPayload({
+            features: [
+                baseRow('915', scenario('feature-inbox-solo_worktree'), { stage: 'inbox' }),
+                baseRow('916', scenario('feature-backlog-blocked'), { stage: 'backlog' }),
+                baseRow('917', scenario('feature-autonomous-running'), { stage: 'in-progress' }),
+                baseRow('918', scenario('feature-evaluation-session-running'), { stage: 'in-evaluation' }),
+                baseRow('919', scenario('feature-implementing-ready-solo'), { stage: 'done' }),
+            ],
+        }));
+        const layout = await page.locator('.kanban').first().evaluate((board) => {
+            const cols = [...board.querySelectorAll('.kanban-col')];
+            if (cols.length < 2) return { ok: false, colCount: cols.length };
+            const tops = cols.map((c) => Math.round(c.getBoundingClientRect().top));
+            return { ok: new Set(tops).size === 1, colCount: cols.length };
+        });
+        expect(layout.ok, `expected ${layout.colCount} columns on one row`).toBe(true);
     });
 
     test('responsive pipeline fills the viewport and matches stage density @smoke', async ({ page }) => {

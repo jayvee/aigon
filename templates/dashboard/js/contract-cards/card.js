@@ -53,19 +53,21 @@ function contextHtml(contract) {
  */
 export function renderContractCardBody(contract, options = {}) {
   const compact = options.density === 'compact';
+  const idleStack = options.setStackIdle === true;
   const inner = [
     // suppressIdentity: the host already names this entity (e.g. a set's
     // "Current feature" heading) — titles appear exactly once.
     options.suppressIdentity ? '' : headHtml(contract, options),
-    stateLineHtml(contract),
-    compact ? '' : contextHtml(contract),
-    blockersHtml(contract),
-    compact ? '' : activityHtml(contract, options),
-    compact ? '' : runPlanHtml(contract, options),
-    options.suppressActions ? '' : actionBarHtml(contract, { compact }),
+    idleStack ? '' : stateLineHtml(contract),
+    idleStack ? '' : (compact ? '' : contextHtml(contract)),
+    idleStack ? '' : blockersHtml(contract),
+    idleStack || compact ? '' : activityHtml(contract, options),
+    idleStack || compact ? '' : runPlanHtml(contract, options),
+    (idleStack || options.suppressActions) ? '' : actionBarHtml(contract, { compact }),
   ].filter(Boolean).join('');
   return '<div class="ccard ccard-' + escHtml((contract.entity && contract.entity.kind) || 'feature')
     + ' is-severity-' + severityOf(contract)
+    + (idleStack ? ' is-set-stack-idle' : '')
     + ' is-' + (compact ? 'compact' : 'expanded') + '">' + inner + '</div>';
 }
 
@@ -84,6 +86,7 @@ export function renderSetContractCardBody(contract, options = {}) {
     blockersHtml(contract),
     setPlanHtml(contract, {
       ...options,
+      suppressMemberList: options.suppressMemberList === true,
       renderEmbedded: embedded => renderContractCardBody(embedded, {
         ...options,
         badgeLabel: null,

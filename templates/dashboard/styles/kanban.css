@@ -71,6 +71,7 @@
     .kanban-set-progress-fill{height:100%;width:0;background:var(--accent,#3b82f6);border-radius:2px;transition:width .2s ease}
     .kanban-set-bundle--paused .kanban-set-progress-fill{background:linear-gradient(90deg,#e57c2a,#fb923c)}
     /* Stacked members; single accent spine is .kanban-set-bundle border-left only */
+    .kanban-set-stack.is-collapsed{display:none}
     .kanban-set-stack{
     margin:8px 10px 2px 10px;
     padding:2px 0 4px 0;

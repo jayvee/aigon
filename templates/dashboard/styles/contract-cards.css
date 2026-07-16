@@ -344,6 +344,12 @@
   padding: 10px 10px 9px;
 }
 
+.ccard.is-set-stack-idle { gap: 4px; }
+.ccard.is-set-stack-idle .ccard-head { margin: 0; }
+.ccard.is-set-stack-idle .ccard-title { font-size: 12px; font-weight: 560; }
+.kcard-set-stack-idle { cursor: pointer; padding: 7px 9px; }
+.kcard-set-stack-idle:hover { background: var(--bg-elevated); }
+
 /* ── Density and responsiveness ──────────────────────────────────────────── */
 .ccard.is-compact { gap: 8px; }
 .ccard.is-compact .ccard-actions { padding-top: 7px; }

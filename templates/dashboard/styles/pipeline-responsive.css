@@ -1,7 +1,8 @@
     /* F680 — responsive Pipeline layout (production default F682).
-       Weighted lifecycle lanes at wide desktop; stable multi-row reflow at
-       medium widths; single-column vertical flow on mobile. Full viewport
-       width is scoped to operational views via .wrap.wrap--operational. */
+       Weighted lifecycle lanes in a single horizontal row; the board scrolls
+       horizontally when lanes exceed the viewport. Mobile uses one vertical
+       column. Full viewport width is scoped to operational views via
+       .wrap.wrap--operational. */
 
     .wrap.wrap--operational {
     max-width:none;
@@ -16,9 +17,10 @@
     grid-template-columns:var(--kanban-track-compact) var(--kanban-track-queue) var(--kanban-track-active) var(--kanban-track-review) var(--kanban-track-compact);
     align-items:start;
     gap:10px;
-    overflow-x:hidden;
+    overflow-x:auto;
     padding-bottom:8px;
     min-width:0;
+    width:100%;
     }
 
     .kanban.kanban--responsive[style*="--kanban-cols:6"] {
@@ -33,22 +35,11 @@
     min-width:0;
     }
 
-    @media (max-width:1500px) {
-    .kanban.kanban--responsive {
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    }
-    }
-
-    @media (max-width:1024px) {
-    .kanban.kanban--responsive {
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-    }
-
     @media (max-width:760px) {
     .kanban.kanban--responsive {
     grid-template-columns:1fr;
     gap:8px;
+    overflow-x:visible;
     }
     .kanban.kanban--responsive .kanban-col {
     overflow:visible;

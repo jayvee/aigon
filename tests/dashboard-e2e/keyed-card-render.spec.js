@@ -85,7 +85,7 @@ test.describe('F625 keyed kanban card render', () => {
     expect(otherFpAfter).not.toBe(fpBefore);
   });
 
-  test('set bundle wrapper reconciles member cards', async ({ page }) => {
+  test('pre-start set bundle renders clickable idle member cards', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
@@ -111,9 +111,10 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
+    await expect(bundle.locator('.kanban-set-header-contract .ccard-member')).toHaveCount(0);
+    await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(2);
+    await expect(bundle.locator('.kanban-set-stack .kcard-set-stack-idle')).toHaveCount(2);
     await bundle.evaluate(el => { window.__bundleRef = el; });
-    const cardTwo = bundle.locator('.kcard').filter({ hasText: 'e2e set two' });
-    await cardTwo.evaluate(el => { window.__cardTwoRef = el; });
 
     await page.evaluate(async ({ repoPath }) => {
       const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
@@ -127,10 +128,90 @@ test.describe('F625 keyed kanban card render', () => {
     await page.waitForTimeout(100);
 
     const bundleSame = await page.evaluate(() => document.contains(window.__bundleRef));
-    const cardTwoReplaced = await page.evaluate(() => !document.contains(window.__cardTwoRef));
     expect(bundleSame).toBe(true);
-    expect(cardTwoReplaced).toBe(true);
-    await expect(bundle.locator('.kcard').filter({ hasText: 'e2e set two renamed' })).toBeVisible();
+    await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(2);
+  });
+
+  test('in-progress set member renders a stack card', async ({ page }) => {
+    const ctx = readCtx();
+    const col = page.locator(`.kanban-col[data-stage="in-progress"][data-repo-path="${ctx.tmpDir}"]`).first();
+    await page.click('.pipeline-group-toggle');
+    await page.evaluate(async ({ repoPath }) => {
+      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
+      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
+      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
+        repo.sets = [{ slug: 'active-set', memberCount: 2, completed: 0, validActions: [] }];
+        repo.features = [
+          {
+            id: '1', name: 'active-set-one', stage: 'in-progress', set: 'active-set', specPath: '/tmp/1.md',
+            currentSpecState: 'implementing',
+            agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString() }],
+            validActions: [{ action: 'feature-stop', label: 'End Session', type: 'workflow' }],
+          },
+          {
+            id: '2', name: 'active-set-two', stage: 'backlog', set: 'active-set', specPath: '/tmp/2.md',
+            agents: [], validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+          },
+        ];
+      });
+      (await import('/js/store.js')).replaceData(data);
+    }, { repoPath: ctx.tmpDir });
+    await page.waitForTimeout(100);
+
+    const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'active-set' }).first();
+    await expect(bundle).toBeVisible({ timeout: 5000 });
+    await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(1);
+    await expect(bundle.locator('.kanban-set-stack .kcard')).toContainText('active set one');
+  });
+
+  test('set bundle wrapper reconciles active member cards', async ({ page }) => {
+    const ctx = readCtx();
+    const col = page.locator(`.kanban-col[data-stage="in-progress"][data-repo-path="${ctx.tmpDir}"]`).first();
+    await page.click('.pipeline-group-toggle');
+    await page.evaluate(async ({ repoPath }) => {
+      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
+      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
+      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
+        repo.sets = [{ slug: 'e2e-set', memberCount: 2, completed: 0, validActions: [] }];
+        repo.features = [
+          {
+            id: '1', name: 'e2e-set-one', stage: 'in-progress', set: 'e2e-set', specPath: '/tmp/1.md',
+            currentSpecState: 'implementing',
+            agents: [{ id: 'cc', status: 'implementing', updatedAt: new Date().toISOString() }],
+            validActions: [{ action: 'feature-stop', label: 'End Session', type: 'workflow' }],
+          },
+          {
+            id: '2', name: 'e2e-set-two', stage: 'backlog', set: 'e2e-set', specPath: '/tmp/2.md',
+            agents: [], validActions: [{ action: 'feature-start', label: 'Start', type: 'transition', to: 'in-progress' }],
+          },
+        ];
+      });
+      (await import('/js/store.js')).replaceData(data);
+    }, { repoPath: ctx.tmpDir });
+    await page.waitForTimeout(100);
+
+    const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
+    await expect(bundle).toBeVisible({ timeout: 5000 });
+    await bundle.evaluate(el => { window.__bundleRef = el; });
+    const cardOne = bundle.locator('.kanban-set-stack .kcard').filter({ hasText: 'e2e set one' });
+    await cardOne.evaluate(el => { window.__cardOneRef = el; });
+
+    await page.evaluate(async ({ repoPath }) => {
+      const data = JSON.parse(JSON.stringify(window.Alpine.store('dashboard').data));
+      const needle = String(repoPath).replace(/^\/private\/var\//, '/var/');
+      (data.repos || []).filter(r => r && String(r.path).replace(/^\/private\/var\//, '/var/') === needle).forEach((repo) => {
+        const feature = (repo.features || []).find(f => f.name === 'e2e-set-one');
+        feature.name = 'e2e-set-one-renamed';
+      });
+      (await import('/js/store.js')).replaceData(data);
+    }, { repoPath: ctx.tmpDir });
+    await page.waitForTimeout(100);
+
+    const bundleSame = await page.evaluate(() => document.contains(window.__bundleRef));
+    const cardOneReplaced = await page.evaluate(() => !document.contains(window.__cardOneRef));
+    expect(bundleSame).toBe(true);
+    expect(cardOneReplaced).toBe(true);
+    await expect(bundle.locator('.kanban-set-stack .kcard').filter({ hasText: 'e2e set one renamed' })).toBeVisible();
   });
 
   test('overflow cap keeps full set visible when group-by-set is on', async ({ page }) => {
@@ -167,6 +248,7 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'overflow-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
-    await expect(bundle.locator('.kcard')).toHaveCount(5);
+    await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(5);
+    await expect(bundle.locator('.kanban-set-count')).toContainText('5');
   });
 });

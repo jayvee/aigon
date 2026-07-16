@@ -77,6 +77,19 @@ function memberMarkerStatus(status) {
   return status;
 }
 
+function memberNameHtml(member) {
+  const id = member.id && member.id !== 'new' ? String(member.id) : '';
+  const label = String(member.label || member.name || '');
+  const slugFromLabel = label.replace(/\s+/g, '-').toLowerCase();
+  const idIsRedundantSlug = id && (id === slugFromLabel || id.replace(/-/g, ' ') === label);
+  if (idIsRedundantSlug) {
+    return '<span class="ccard-member-name">' + escHtml(label || id) + '</span>';
+  }
+  return '<span class="ccard-member-name">'
+    + (id ? '<b>#' + escHtml(id) + '</b> ' : '')
+    + escHtml(label) + '</span>';
+}
+
 /**
  * Set plan: member progress plus the embedded current-member contract. The
  * caller supplies `renderEmbedded(contract)` so the current member renders
@@ -88,13 +101,12 @@ export function setPlanHtml(contract, options = {}) {
   if (!plan || !Array.isArray(plan.members)) return '';
   const progress = plan.progress || { complete: 0, total: plan.members.length };
   const percent = progress.total ? Math.round((Number(progress.complete) / Number(progress.total)) * 100) : 0;
-  const members = plan.members.map((member) => {
+  const members = options.suppressMemberList ? '' : plan.members.map((member) => {
     const status = String(member.status || 'waiting');
     return '<div class="ccard-member is-' + escHtml(status) + (member.isCurrent ? ' is-current' : '') + '" role="listitem">'
       + '<span class="ccard-stage-marker" aria-hidden="true">' + stageMarker(memberMarkerStatus(status)) + '</span>'
       + '<span class="ccard-member-copy">'
-      + '<span class="ccard-member-name">' + (member.id && member.id !== 'new' ? '<b>#' + escHtml(member.id) + '</b> ' : '')
-      + escHtml(member.label || member.name || '') + '</span>'
+      + memberNameHtml(member)
       + '<span class="ccard-member-status">' + escHtml(statusLabel(status)) + '</span>'
       + '</span>'
       + '</div>';
@@ -110,7 +122,7 @@ export function setPlanHtml(contract, options = {}) {
   return '<div class="ccard-set-plan">'
     + '<div class="ccard-set-progress"><span>' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' complete</span></div>'
     + '<div class="ccard-set-track" role="img" aria-label="' + escHtml(progress.complete) + ' of ' + escHtml(progress.total) + ' member features complete"><span style="width:' + percent + '%"></span></div>'
-    + '<div class="ccard-members" role="list" aria-label="Set member features">' + members + '</div>'
+    + (members ? '<div class="ccard-members" role="list" aria-label="Set member features">' + members + '</div>' : '')
     + embedded
     + '</div>';
 }

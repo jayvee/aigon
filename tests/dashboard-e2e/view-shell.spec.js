@@ -84,6 +84,21 @@ test.describe('F626 view shell unification', () => {
     }
   });
 
+  test('sidebar toggle hides and shows repo list on sidebar views @smoke', async ({ page }) => {
+    await page.click('#tab-pipeline');
+    const sidebar = page.locator('#repo-sidebar');
+    const toggle = page.locator('#sidebar-toggle-btn');
+
+    await expect(toggle).toBeVisible();
+    await expect(sidebar).toBeVisible();
+
+    await toggle.click();
+    await expect.poll(async () => sidebar.evaluate(el => el.style.display)).toBe('none');
+
+    await toggle.click();
+    await expect.poll(async () => sidebar.evaluate(el => el.style.display)).not.toBe('none');
+  });
+
   test('localStorage restores last valid view and invalid falls back to pipeline', async ({ page }) => {
     await page.click('#tab-sessions');
     await expect(page.locator('#sessions-view')).toBeVisible({ timeout: 5000 });
