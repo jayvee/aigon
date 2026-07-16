@@ -160,7 +160,7 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(card.locator('.ccard-peek')).toHaveCount(1);
         await expect(card.locator('.ccard-overflow')).toHaveCount(1);
         await expect(card.locator('.ccard-actions')).toHaveCount(0);
-        await expect(card.locator('.ccard-overflow-item')).toHaveCount(4);
+        await expect(card.locator('.kcard-overflow-item')).toHaveCount(4);
     });
 
     test('recovery scenario promotes the recovery action to primary', async ({ page }) => {
@@ -230,6 +230,9 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(header).toHaveCount(1);
         await expect(header.locator('.ccard-title')).toHaveCount(1);
         await expect(header.locator('.ccard-title')).toHaveText('Autonomous recovery');
+        await expect(header.locator('.ccard-kind')).toHaveText('Feature set');
+        await expect(header.locator('.ccard-badge')).toHaveText('3');
+        await expect(header.locator('.ccard-badge')).toHaveAttribute('aria-label', '3 features');
 
         // Conductor Peek lives inside its labeled pill; no bare unlabeled eyes.
         const conductorPill = header.locator('.ccard-pill.is-active').filter({ hasText: 'Conductor' });
@@ -239,8 +242,8 @@ test.describe('Contract card production renderer @smoke', () => {
             .count();
         expect(barePeeks, 'no unlabeled eye buttons in the set header').toBe(0);
 
-        // Member list in the header plus full stack cards beneath.
-        await expect(header.locator('.ccard-member').count()).resolves.toBeGreaterThan(0);
+        // The header summarizes the set; member cards live in the stack.
+        await expect(header.locator('.ccard-member')).toHaveCount(0);
         await expect(header.locator('.ccard-set-progress')).toContainText('1 of 3');
         await expect(header.locator('.ccard-set-current')).toContainText('F682');
         await expect(header.locator('.ccard-set-current .ccard-stage')).toHaveCount(4);
@@ -249,6 +252,41 @@ test.describe('Contract card production renderer @smoke', () => {
         await conductorPill.locator('.kcard-peek-btn').click();
         await expect(page.locator('#terminal-panel')).toBeVisible({ timeout: 5000 });
         await page.click('#panel-close');
+    });
+
+    test('inbox set stays compact in a narrow lane', async ({ page }) => {
+        const setScenario = scenario('set-inbox-members');
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await mountPreview(page, buildPayload({
+            features: [
+                baseRow('931', scenario('feature-inbox-solo_worktree'), { stage: 'inbox', set: 'autonomous-recovery' }),
+                baseRow('932', scenario('feature-inbox-solo_worktree'), { stage: 'inbox', set: 'autonomous-recovery' }),
+            ],
+            sets: [{
+                slug: 'autonomous-recovery',
+                goal: 'Autonomous recovery',
+                status: 'inbox',
+                isComplete: false,
+                completed: 0,
+                memberCount: 3,
+                progress: { merged: 0, total: 3, percent: 0 },
+                validActions: setScenario.dashboardActions,
+                uiContract: setScenario.contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+
+        const bundle = page.locator('.kanban-set-bundle').filter({ hasText: 'Autonomous recovery' }).first();
+        await expect(bundle.locator('.ccard-kind')).toHaveText('Feature set');
+        await expect(bundle.locator('.ccard-action.is-primary')).toHaveText('Prioritise set');
+        await expect(bundle.locator('.kanban-set-toggle')).toHaveAttribute('aria-expanded', 'false');
+        const metrics = await bundle.evaluate((element) => ({
+            titleHeight: element.querySelector('.ccard-title').getBoundingClientRect().height,
+            actionTops: [...element.querySelectorAll('.ccard-actions > *')]
+                .map(node => Math.round(node.getBoundingClientRect().top)),
+        }));
+        expect(metrics.titleHeight).toBeLessThan(40);
+        expect(new Set(metrics.actionTops).size).toBe(1);
     });
 
     test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {

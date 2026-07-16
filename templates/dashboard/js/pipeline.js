@@ -1,6 +1,7 @@
 /* dashboard-esm-processed */
 
 import { AIGON_SET_CARDS } from './set-cards.js';
+import { filterSetStackMembers, isSetStackIdleMember } from './set-bundle-members.js';
 import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
 import { handleFeatureAction, handleSetAction, renderActionButtons, resolveCloseWithAgent, shouldShowCloseWithAgent, showNudgeModal } from './actions.js';
@@ -1076,7 +1077,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       return buildScheduledGlyphHtml(setRollup, 'Set scheduled');
     }
 
-    function buildKanbanCard(feature, repoPath, pipelineType, repoMeta) {
+    function buildKanbanCard(feature, repoPath, pipelineType, repoMeta, renderOptions = {}) {
       const card = document.createElement('div');
       card.className = 'kcard';
       card.draggable = true;
@@ -1086,12 +1087,18 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       card.dataset.repoPath = repoPath || '';
 
       const repoStorage = repoMeta && repoMeta.storage ? repoMeta.storage : null;
+      const inSetStack = renderOptions.host === 'set-stack';
+      const setRoll = inSetStack && feature.set && repoMeta && Array.isArray(repoMeta.sets)
+        ? repoMeta.sets.find(set => set && set.slug === feature.set)
+        : null;
+      const setStackIdle = inSetStack && isSetStackIdleMember(feature, setRoll);
       let innerHtml;
       if (feature.uiContract) {
         card.classList.add('kcard-contract');
         const compactStage = contractCardDensity(feature.stage, pipelineType) === 'compact';
         innerHtml = renderContractCardBody(feature.uiContract, {
-          density: compactStage ? 'compact' : 'expanded',
+          density: setStackIdle ? 'compact' : (compactStage ? 'compact' : 'expanded'),
+          setStackIdle,
           badgeLabel: feature.mode === 'fleet' ? 'Fleet' : null,
           canPeekSession: () => !isEntityHeldByOtherMachine(feature, repoStorage),
         });
@@ -1104,13 +1111,16 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
         const hasNumericId = /^\d+$/.test(String(feature.id || ''));
         innerHtml =
           (hasNumericId ? '<div class="kcard-id">' + escHtml(feature.displayKey || formatFeatureIdForDisplay(feature.id, feature.displayKey)) + '</div>' : '') +
-          '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>' +
-          buildCardHeadlineHtml(feature) +
-          buildCardTimelineHtml(feature) +
-          buildCardAgentSummaryHtml(feature);
-        const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
-        if (actionsHtml) innerHtml += '<div class="kcard-actions">' + actionsHtml + '</div>';
+          '<div class="kcard-name">' + escHtml(feature.name.replace(/-/g, ' ')) + '</div>';
+        if (!setStackIdle) {
+          innerHtml += buildCardHeadlineHtml(feature) +
+            buildCardTimelineHtml(feature) +
+            buildCardAgentSummaryHtml(feature);
+          const actionsHtml = renderActionButtons(feature, repoPath, pipelineType);
+          if (actionsHtml) innerHtml += '<div class="kcard-actions">' + actionsHtml + '</div>';
+        }
       }
+      if (setStackIdle) card.classList.add('kcard-set-stack-idle');
       card.innerHTML = innerHtml;
 
       // Advisory-only warning style on Close button when last PR check is non-merged.
@@ -1819,7 +1829,11 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
     function buildContractSetHeader(setSlug, roll, repo) {
       const header = document.createElement('div');
       header.className = 'kanban-set-header kanban-set-bundle-head kanban-set-header-contract';
+      const memberCount = Number(roll.memberCount)
+        || (roll.uiContract.plan && roll.uiContract.plan.members || []).length;
       header.innerHTML = renderSetContractCardBody(roll.uiContract, {
+        badgeLabel: memberCount ? String(memberCount) : null,
+        badgeTitle: memberCount ? memberCount + ' feature' + (memberCount === 1 ? '' : 's') : null,
         canPeekSession: () => !isEntityHeldByOtherMachine(roll, repo && repo.storage),
       });
       header.querySelectorAll('.kcard-va-btn[data-va-action]').forEach((btn) => {
@@ -1849,6 +1863,40 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
         };
       });
       return header;
+    }
+
+    function syncSetBundleToggle(button, stack) {
+      const collapsed = stack.classList.contains('is-collapsed');
+      button.textContent = collapsed ? '▸' : '▾';
+      button.setAttribute('aria-expanded', String(!collapsed));
+      button.setAttribute('aria-label', collapsed ? 'Expand feature set' : 'Collapse feature set');
+      button.title = collapsed ? 'Expand feature set' : 'Collapse feature set';
+    }
+
+    function wireSetBundleToggle(header, stack, hasMembers) {
+      if (!hasMembers) {
+        header.querySelector('.kanban-set-toggle')?.remove();
+        stack.classList.add('is-collapsed');
+        return;
+      }
+      if (!stack.dataset.collapseReady) {
+        stack.dataset.collapseReady = 'true';
+        stack.classList.add('is-collapsed');
+      }
+      const host = header.querySelector('.ccard-head') || header.querySelector('.kanban-set-header-row') || header;
+      let button = host.querySelector('.kanban-set-toggle');
+      if (!button) {
+        button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'kanban-set-toggle';
+        host.appendChild(button);
+      }
+      syncSetBundleToggle(button, stack);
+      button.onclick = (event) => {
+        event.stopPropagation();
+        stack.classList.toggle('is-collapsed');
+        syncSetBundleToggle(button, stack);
+      };
     }
 
     function upsertSetBundle(bundle, setSlug, members, roll, repo, pType, stats) {
@@ -1898,15 +1946,15 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       } else if (strip) {
         strip.remove();
       }
-      const stackMembers = members;
+      const stackMembers = filterSetStackMembers(members, roll);
       let stack = bundle.querySelector(':scope > .kanban-set-stack');
       if (!stack) {
         stack = document.createElement('div');
         stack.className = 'kanban-set-stack';
         bundle.appendChild(stack);
       }
-      stack.classList.remove('is-collapsed');
-      reconcileKeyedCards(stack, stackMembers, repo, pType, stats);
+      reconcileKeyedCards(stack, stackMembers, repo, pType, stats, { host: 'set-stack' });
+      wireSetBundleToggle(header, stack, stackMembers.length > 0);
     }
 
     function buildUngroupedHeader(count) {

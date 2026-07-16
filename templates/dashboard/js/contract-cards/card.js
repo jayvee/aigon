@@ -24,11 +24,17 @@ function severityOf(contract) {
 function headHtml(contract, options) {
   const entity = contract.entity || {};
   const showKey = entity.kind !== 'feature-set' && entity.displayKey;
+  const kind = entity.kind === 'feature-set'
+    ? '<span class="ccard-kind">Feature set</span>'
+    : '';
   const badge = options.badgeLabel
-    ? '<span class="ccard-badge">' + escHtml(options.badgeLabel) + '</span>'
+    ? '<span class="ccard-badge"'
+      + (options.badgeTitle ? ' title="' + escHtml(options.badgeTitle) + '" aria-label="' + escHtml(options.badgeTitle) + '"' : '')
+      + '>' + escHtml(options.badgeLabel) + '</span>'
     : '';
   return '<div class="ccard-head">'
     + '<div class="ccard-identity">'
+    + kind
     + (showKey ? '<span class="ccard-key">' + escHtml(entity.displayKey) + '</span>' : '')
     + '<h3 class="ccard-title">' + escHtml(entity.title || entity.name || entity.id) + '</h3>'
     + '</div>' + badge + '</div>';
@@ -82,8 +88,11 @@ export function renderContractCardBody(contract, options = {}) {
 export function renderSetContractCardBody(contract, options = {}) {
   const pres = contract.presentation || {};
   const planPres = contract.plan && contract.plan.presentation;
+  const memberCount = (contract.plan && contract.plan.members || []).length;
+  const badgeLabel = options.badgeLabel
+    || (memberCount ? memberCount + ' feature' + (memberCount === 1 ? '' : 's') : null);
   const inner = [
-    headHtml(contract, options),
+    headHtml(contract, { ...options, badgeLabel }),
     pres.suppressStateLine ? '' : stateLineHtml(contract),
     setCyclePillsHtml(contract, options),
     blockersHtml(contract),

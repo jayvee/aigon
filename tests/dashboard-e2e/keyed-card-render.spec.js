@@ -85,7 +85,7 @@ test.describe('F625 keyed kanban card render', () => {
     expect(otherFpAfter).not.toBe(fpBefore);
   });
 
-  test('pre-start set bundle renders clickable member cards in header and stack', async ({ page }) => {
+  test('pre-start set bundle renders a distinct header and compact clickable members', async ({ page }) => {
     const ctx = readCtx();
     const col = page.locator(`.kanban-col[data-stage="backlog"][data-repo-path="${ctx.tmpDir}"]`).first();
     await page.click('.pipeline-group-toggle');
@@ -111,8 +111,15 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
-    await expect(bundle.locator('.kanban-set-header-contract .ccard-member').count()).resolves.toBeGreaterThan(0);
+    await expect(bundle.locator('.kanban-set-bundle-head')).toBeVisible();
     await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(2);
+    await expect(bundle.locator('.kanban-set-stack .kcard-set-stack-idle')).toHaveCount(2);
+    const toggle = bundle.locator('.kanban-set-toggle');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(bundle.locator('.kanban-set-stack')).toHaveClass(/is-collapsed/);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(bundle.locator('.kanban-set-stack .kcard').first()).toBeVisible();
     await bundle.evaluate(el => { window.__bundleRef = el; });
 
     await page.evaluate(async ({ repoPath }) => {
@@ -160,6 +167,7 @@ test.describe('F625 keyed kanban card render', () => {
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'active-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
     await expect(bundle.locator('.kanban-set-stack .kcard')).toHaveCount(1);
+    await bundle.locator('.kanban-set-toggle').click();
     await expect(bundle.locator('.kanban-set-stack .kcard')).toContainText('active set one');
   });
 
@@ -191,6 +199,7 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
+    await bundle.locator('.kanban-set-toggle').click();
     await bundle.evaluate(el => { window.__bundleRef = el; });
     const cardOne = bundle.locator('.kanban-set-stack .kcard').filter({ hasText: 'e2e set one' });
     await cardOne.evaluate(el => { window.__cardOneRef = el; });

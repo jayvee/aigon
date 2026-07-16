@@ -4,7 +4,7 @@
  * inherit the host theme (dashboard tokens.css); the semantic accents that
  * define the approved card language are pinned here so gallery and production
  * cannot drift. One dominant state per card (F650): severity paints the state
- * dot and blocker line only — never competing filled panels.
+ * dot and attention line only. Dependencies use a neutral relationship row.
  */
 
 .ccard {
@@ -54,7 +54,7 @@
   background: #65c6b4;
 }
 .ccard-frame.is-research::before { background: #8db7dd; }
-.ccard-frame.is-set::before { background: #e9bd68; }
+.ccard-frame.is-set::before { background: #65c6b4; }
 .ccard-frame:has(.ccard.is-severity-error)::before { background: #f08378; }
 .ccard-frame:has(.ccard.is-severity-warning)::before { background: #e9bd68; }
 
@@ -66,6 +66,13 @@
   gap: 10px;
 }
 .ccard-identity { min-width: 0; }
+.ccard-kind {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--cc-running);
+  font-size: 10px;
+  font-weight: 650;
+}
 .ccard-key {
   display: block;
   margin-bottom: 3px;
@@ -149,6 +156,43 @@
 .ccard.is-severity-error .ccard-state-dot { background: var(--cc-danger); box-shadow: 0 0 0 3px rgba(240, 131, 120, 0.12); }
 .ccard.is-severity-warning .ccard-state-dot { background: var(--cc-warn); box-shadow: 0 0 0 3px rgba(233, 189, 104, 0.12); }
 .ccard-context { margin: -4px 0 0 14px; color: var(--cc-text-muted); }
+
+/* ── Dependencies: structure, not warning state ─────────────────────────── */
+.ccard-dependencies {
+  display: grid;
+  gap: 5px;
+  margin-left: 14px;
+  padding-top: 1px;
+  color: var(--cc-text-muted);
+}
+.ccard-dependencies-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--cc-text-faint);
+  font-size: 10px;
+}
+.ccard-dependencies-label svg { flex: 0 0 auto; }
+.ccard-dependency-targets { display: grid; gap: 4px; }
+.ccard-dependency-target {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding-left: 18px;
+}
+.ccard-dependency-key {
+  color: var(--cc-text-faint);
+  font: 500 10px/1.35 var(--mono, monospace);
+}
+.ccard-dependency-name {
+  min-width: 0;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 
 /* ── Blockers: the single quiet attention line ───────────────────────────── */
 .ccard-blockers {
@@ -347,6 +391,13 @@
 .ccard-action.is-danger { color: var(--cc-danger); }
 .ccard-action[disabled] { opacity: 0.45; cursor: not-allowed; }
 .ccard-actions .ccard-overflow { margin-left: auto; }
+.ccard-feature-set .ccard-actions { flex-wrap: nowrap; }
+.ccard-feature-set .ccard-actions .ccard-action { min-width: 0; }
+.ccard-feature-set .ccard-actions .ccard-action.is-primary {
+  flex: 1 1 auto;
+  white-space: normal;
+}
+.ccard-feature-set .ccard-actions .ccard-overflow { flex: 0 0 auto; }
 
 /* Overflow menu — mirrors the shared kcard menu so open/positioning wiring
  * applies; duplicated here so the gallery renders it without kanban.css. */
@@ -401,6 +452,65 @@
   font-weight: 400;
   font-size: 12px;
   padding: 10px 10px 9px;
+  background: color-mix(in srgb, var(--cc-running) 8%, var(--bg-surface));
+}
+.kanban-set-bundle:has(.kanban-set-header-contract) {
+  border-color: color-mix(in srgb, var(--cc-running) 52%, var(--border-default));
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--cc-running) 5%, var(--bg-surface));
+}
+.kanban-set-header-contract .ccard-badge {
+  border-color: color-mix(in srgb, var(--cc-running) 48%, var(--cc-border));
+  color: var(--cc-running);
+}
+.kanban-set-header-contract .ccard-feature-set .ccard-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 4px;
+}
+.kanban-set-header-contract .ccard-feature-set .ccard-identity { display: contents; }
+.kanban-set-header-contract .ccard-feature-set .ccard-kind {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  margin: 0;
+  font-size: 8.5px;
+  white-space: nowrap;
+}
+.kanban-set-header-contract .ccard-feature-set .ccard-title {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.kanban-set-header-contract .ccard-feature-set .ccard-badge {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 1px 4px;
+  font-size: 9px;
+}
+.kanban-set-toggle {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--cc-border, var(--border-default));
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cc-text-muted, var(--text-secondary));
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.kanban-set-header-contract .kanban-set-toggle {
+  grid-column: 3;
+  grid-row: 1;
+}
+.kanban-set-toggle:hover,
+.kanban-set-toggle:focus-visible {
+  border-color: var(--cc-running, var(--accent));
+  color: var(--cc-text, var(--text-primary));
 }
 
 .ccard.is-set-stack-idle { gap: 4px; }
@@ -415,7 +525,7 @@
 
 @media (max-width: 480px) {
   .ccard-stage { grid-template-columns: 16px minmax(0, 1fr) minmax(24px, auto) 60px 52px; }
-  .ccard-context, .ccard-rows, .ccard-run, .ccard-blockers { margin-left: 8px; }
+  .ccard-context, .ccard-rows, .ccard-run, .ccard-blockers, .ccard-dependencies { margin-left: 8px; }
   .ccard-status-tools .ccard-row-action,
   .ccard-row-tools .ccard-row-action { padding: 2px 6px; font-size: 10px; }
   .ccard-peek-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }

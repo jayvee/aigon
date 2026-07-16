@@ -132,6 +132,6 @@ test('resolveSetLifecycle and set contract label inbox sets before start', () =>
     assert.strictEqual(contract.state.label, 'In inbox');
     assert.strictEqual(contract.decisions.primaryActionId, 'set-prioritise');
     assert.strictEqual(contract.presentation.suppressStateLine, true);
-    assert.strictEqual(contract.plan.presentation.suppressProgress, true);
+    assert.strictEqual(contract.plan.presentation.suppressProgress, false);
     assert.strictEqual(contract.plan.presentation.suppressMemberList, true);
 });

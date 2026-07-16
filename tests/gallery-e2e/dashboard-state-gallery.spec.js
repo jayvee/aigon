@@ -34,17 +34,40 @@ test('contracts render autonomous and set hierarchy without duplicate activity',
 
   const setHeader = page.locator('[data-scenario-key="set-ready"] .ccard-head');
   await expect(setHeader.locator('.ccard-key')).toHaveCount(0);
-  await expect(setHeader.locator('.ccard-badge')).toHaveCount(0);
+  await expect(setHeader.locator('.ccard-kind')).toHaveText('Feature set');
+  await expect(setHeader.locator('.ccard-badge')).toHaveText('3 features');
 });
 
-test('inbox set cards stay minimal — title and action only', async ({ page }) => {
+test('inbox set cards identify the set and keep actions on one row', async ({ page }) => {
   const inboxSet = page.locator('[data-scenario-key="set-inbox-members"]');
   await expect(inboxSet.locator('.ccard-title')).toHaveText('Autonomous recovery');
+  await expect(inboxSet.locator('.ccard-kind')).toHaveText('Feature set');
+  await expect(inboxSet.locator('.ccard-badge')).toHaveText('3 features');
   await expect(inboxSet.locator('.ccard-state')).toHaveCount(0);
-  await expect(inboxSet.locator('.ccard-set-progress')).toHaveCount(0);
+  await expect(inboxSet.locator('.ccard-set-progress')).toContainText('0 of 3');
   await expect(inboxSet.locator('.ccard-member')).toHaveCount(0);
   await expect(inboxSet.locator('.ccard-pill')).toHaveCount(0);
   await expect(inboxSet.locator('.kcard-va-btn[data-va-action="set-prioritise"]')).toBeVisible();
+  const actionTops = await inboxSet.locator('.ccard-actions > *').evaluateAll(nodes => (
+    nodes.map(node => Math.round(node.getBoundingClientRect().top))
+  ));
+  expect(new Set(actionTops).size).toBe(1);
+});
+
+test('dependencies read as neutral relationships rather than warnings', async ({ page }) => {
+  const blocked = page.locator('[data-scenario-key="feature-backlog-blocked"]');
+  const dependency = blocked.locator('.ccard-dependencies');
+  await expect(dependency).toContainText('Depends on');
+  await expect(dependency.locator('.ccard-dependency-key')).toHaveText('F672');
+  await expect(dependency.locator('.ccard-dependency-name')).toHaveText('Dashboard security boundary');
+  await expect(blocked.locator('.ccard-blockers')).toHaveCount(0);
+  const colors = await dependency.evaluate((element) => ({
+    color: getComputedStyle(element).color,
+    background: getComputedStyle(element).backgroundColor,
+    warning: getComputedStyle(element.closest('.ccard')).getPropertyValue('--cc-warn').trim(),
+  }));
+  expect(colors.background).toBe('rgba(0, 0, 0, 0)');
+  expect(colors.color).not.toBe(colors.warning);
 });
 
 test('solo active cards use one Peek, one overflow, and no empty action footer', async ({ page }) => {
@@ -53,7 +76,7 @@ test('solo active cards use one Peek, one overflow, and no empty action footer',
   await expect(implementing.locator('.ccard-peek')).toHaveCount(1);
   await expect(implementing.locator('.ccard-overflow')).toHaveCount(1);
   await expect(implementing.locator('.ccard-actions')).toHaveCount(0);
-  await expect(implementing.locator('.ccard-overflow-item')).toHaveCount(4);
+  await expect(implementing.locator('.kcard-overflow-item')).toHaveCount(4);
 
   const ready = page.locator('[data-scenario-key="feature-ready-solo_worktree"]');
   await expect(ready.locator('.ccard-overflow')).toHaveCount(1);

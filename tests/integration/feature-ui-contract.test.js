@@ -192,6 +192,25 @@ test('contract identity carries kind, numeric id, machine slug, and set membersh
     assert.strictEqual(contract.entity.title, 'Adopt dashboard interaction contracts');
 });
 
+test('dependency blockers retain target identity for relationship rendering', () => {
+    const contract = buildFeatureUiContract({
+        id: '3',
+        displayKey: 'F3',
+        name: 'User profiles',
+        stage: 'backlog',
+        blockedBy: [{ id: '2', displayKey: 'F2', name: 'Brewery import' }],
+        agents: [],
+        validActions: [],
+        cardPresentation: { severity: 'normal' },
+    }, { currentSpecState: 'backlog', lifecycle: 'backlog' });
+    assert.deepStrictEqual(contract.blockers, [{
+        kind: 'dependency',
+        id: '2',
+        displayKey: 'F2',
+        label: 'Brewery import',
+    }]);
+});
+
 // Pre-F667 slug-keyed inbox specs legitimately have no number: null, not NaN.
 test('slug-keyed legacy feature yields a null numericId rather than NaN', () => {
     const contract = buildFeatureUiContract({

@@ -11,7 +11,7 @@
 // Solo active cards fold state + agent + tools into one status bar (wireframe B1)
 // so the dominant state line is not repeated in a cramped second row.
 
-import { agentDisplay, escHtml, formatHeadlineAge, peekButtonHtml, statusDotClass, statusLabel } from './html.js';
+import { agentDisplay, DEPENDENCY_ICON_SVG, escHtml, formatHeadlineAge, peekButtonHtml, statusDotClass, statusLabel } from './html.js';
 import { agentSurfaceActions, overflowMenuHtml, soloOverflowActions } from './actions-view.js';
 
 function freeSessions(contract) {
@@ -164,9 +164,27 @@ export function activityHtml(contract, options = {}) {
 export function blockersHtml(contract) {
   const blockers = contract.blockers || [];
   if (!blockers.length) return '';
-  const text = blockers
+  const dependencies = blockers.filter(blocker => blocker.kind === 'dependency');
+  const attention = blockers.filter(blocker => blocker.kind !== 'dependency');
+  const dependencyHtml = dependencies.length
+    ? '<div class="ccard-dependencies" role="note" aria-label="Dependencies">'
+      + '<span class="ccard-dependencies-label">' + DEPENDENCY_ICON_SVG + 'Depends on</span>'
+      + '<span class="ccard-dependency-targets">'
+      + dependencies.map((dependency) => (
+        '<span class="ccard-dependency-target">'
+        + (dependency.displayKey ? '<span class="ccard-dependency-key">' + escHtml(dependency.displayKey) + '</span>' : '')
+        + '<span class="ccard-dependency-name">'
+        + escHtml(dependency.label || dependency.detail || dependency.reason || dependency.id || 'Dependency')
+        + '</span></span>'
+      )).join('')
+      + '</span></div>'
+    : '';
+  const text = attention
     .map(blocker => blocker.label || blocker.detail || blocker.reason || (blocker.id ? 'Blocked by #' + blocker.id : blocker.kind))
     .filter(Boolean)
     .join(' · ');
-  return '<div class="ccard-blockers" role="note">' + escHtml(text) + '</div>';
+  const attentionHtml = text
+    ? '<div class="ccard-blockers" role="note">' + escHtml(text) + '</div>'
+    : '';
+  return dependencyHtml + attentionHtml;
 }
