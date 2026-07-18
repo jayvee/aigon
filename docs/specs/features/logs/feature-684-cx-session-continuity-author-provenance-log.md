@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 967
+lines_removed: 21
+lines_changed: 988
+files_touched: 35
+fix_commit_count: 3
+fix_commit_ratio: 0.429
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: true
+input_tokens: 11414844
+output_tokens: 41148
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 11177216
+thinking_tokens: 13881
+total_tokens: 11455992
+billable_tokens: 11469873
+cost_usd: 25.3943
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 684 - session-continuity-author-provenance
 Agent: cx
 
