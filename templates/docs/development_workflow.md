@@ -163,7 +163,7 @@ or (faster, when your stack tolerates it):
 { "worktreeSetup": "<your faster local setup command>" }
 ```
 
-**When it runs:** after `git worktree add` writes `.env.local`, before the agent launches. One execution per worktree.
+**When it runs:** after worktree creation configures the agent port, before the agent launches. One execution per worktree.
 
 **Where to set it:** `.aigon/config.json` (project scope). Use `&&` to compose multiple commands on one line.
 
