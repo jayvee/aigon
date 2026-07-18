@@ -3,6 +3,7 @@ complexity: medium
 research: 46
 set: deepen-create
 transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-18T05:43:37.949Z", actor: "cli/feature-prioritise" }
   - { from: "inbox", to: "backlog", at: "2026-04-29T23:21:51.440Z", actor: "cli/feature-prioritise" }
 ---
 
