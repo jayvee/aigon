@@ -58,6 +58,34 @@ test('ready fleet exposes Evaluate without solo close or review', () => {
     assert(!contract.decisions.actions.some(action => action.actionId === 'feature-code-review'));
 });
 
+test('pending spec feedback makes Revise Spec the visible decision, not unprioritise', () => {
+    const context = {
+        entityType: 'feature', featureId: '675', currentSpecState: 'backlog', lifecycle: 'backlog',
+        mode: null, agents: {}, tmuxSessionStates: {},
+        specReview: { pendingReviews: [{ reviewId: 'review-1', reviewerId: 'cx' }], pendingCount: 1 },
+        pendingSpecReviews: [{ reviewId: 'review-1', reviewerId: 'cx' }],
+        updatedAt: '2026-07-18T00:00:00.000Z',
+    };
+    const validActions = snapshotToDashboardActions('feature', '675', context, 'backlog').validActions;
+    const contract = buildFeatureUiContract({
+        id: '675', displayKey: 'F675', name: 'contract', stage: 'backlog', agents: [], validActions,
+        specReviewSessions: [{ status: 'pending', agent: 'cx' }], cardPresentation: { severity: 'normal' },
+    }, context);
+    assert.strictEqual(contract.decisions.primaryActionId, 'feature-spec-revise');
+    assert.strictEqual(contract.presentation.headline.label, 'Spec revision needed');
+    assert.strictEqual(contract.presentation.contextLine, 'Review feedback is ready to apply.');
+});
+
+test('an active spec revision projects its machine-owned status', () => {
+    const contract = contractFor({
+        entityType: 'feature', featureId: '675', currentSpecState: 'spec_revision_in_progress',
+        lifecycle: 'spec_revision_in_progress', mode: null, agents: {}, tmuxSessionStates: {},
+        updatedAt: '2026-07-18T00:00:00.000Z',
+    });
+    assert.strictEqual(contract.state.label, 'Spec revision');
+    assert.strictEqual(contract.state.phase, 'spec-revision');
+});
+
 test('done exposes no lifecycle or session mutation actions', () => {
     const contract = contractFor({
         entityType: 'feature', featureId: '675', currentSpecState: 'done', lifecycle: 'done',
