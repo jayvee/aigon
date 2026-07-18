@@ -19,6 +19,8 @@ agent: cx
 # set: my-slug  # optional — ONLY when creating 2+ inbox peers to ship together.
 #              #   Run `aigon set list` / `aigon set show <slug>` first. NEVER tag into
 #              #   a completed set (all members done). Follow-up work: standalone + depends_on.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-18T01:03:55.764Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: session-continuity-author-provenance
