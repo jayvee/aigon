@@ -387,6 +387,46 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(bundle.locator('[data-va-action="set-autonomous-stop"]')).toHaveCount(0);
     });
 
+    // REGRESSION: a feature set spanning backlog and in-progress must not
+    // duplicate its active-run summary in the backlog lane.
+    test('set summary appears only in its authoritative workflow lane', async ({ page }) => {
+        const setScenario = scenario('set-running');
+        await mountPreview(page, buildPayload({
+            features: [
+                baseRow('681', scenario('feature-backlog-blocked'), {
+                    stage: 'backlog',
+                    set: 'autonomous-recovery',
+                }),
+                baseRow('682', scenario('feature-autonomous-running'), {
+                    stage: 'in-progress',
+                    set: 'autonomous-recovery',
+                }),
+            ],
+            sets: [{
+                slug: 'autonomous-recovery',
+                goal: 'Autonomous recovery',
+                status: 'running',
+                isComplete: false,
+                completed: 1,
+                memberCount: 3,
+                progress: { merged: 1, total: 3, percent: 33 },
+                currentFeature: { id: '682', label: 'Recover interrupted runs', stage: 'in-progress' },
+                validActions: setScenario.dashboardActions,
+                autonomous: { status: 'running', running: true, sessionName: 'set-autonomous-recovery-auto' },
+                uiContract: setScenario.contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+
+        const backlog = page.locator('.col-body[data-stage="backlog"] .kanban-set-bundle');
+        const inProgress = page.locator('.col-body[data-stage="in-progress"] .kanban-set-bundle');
+        await expect(backlog.locator('.kanban-set-lane-header')).toHaveCount(1);
+        await expect(backlog.locator('.ccard-set-progress, .ccard-set-current, .ccard-pill')).toHaveCount(0);
+        await expect(inProgress.locator('.kanban-set-header-contract')).toHaveCount(1);
+        await expect(inProgress.locator('.ccard-set-progress')).toContainText('1 of 3');
+        await expect(inProgress.locator('.ccard-set-current')).toContainText('F682');
+    });
+
     test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 900 });
         await mountPreview(page, buildPayload({

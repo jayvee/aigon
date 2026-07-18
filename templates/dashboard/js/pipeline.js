@@ -1589,6 +1589,27 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       });
     }
 
+    // A set can have members in several workflow lanes. Only the set's own
+    // contract lane gets its complete summary; other lanes need a local label
+    // for their member stack, not a second copy of the active run.
+    function shouldRenderSetSummaryInLane(roll, members) {
+      const summaryLane = roll && roll.uiContract && roll.uiContract.state && roll.uiContract.state.lane;
+      const memberLane = members[0] && members[0].stage;
+      return !summaryLane || !memberLane || String(summaryLane) === String(memberLane);
+    }
+
+    function buildSetLaneHeader(setSlug, members) {
+      const header = document.createElement('div');
+      header.className = 'kanban-set-header kanban-set-bundle-head kanban-set-lane-header';
+      const count = Array.isArray(members) ? members.length : 0;
+      header.innerHTML = '<div class="kanban-set-lane-header-row">'
+        + '<span class="kanban-set-lane-kind">Feature set</span>'
+        + '<span class="kanban-set-lane-title">' + escHtml(setSlug) + '</span>'
+        + '<span class="kanban-set-lane-count">' + escHtml(count) + '</span>'
+        + '</div>';
+      return header;
+    }
+
     function sortColumnCards(unsorted, stage) {
       if (stage === 'done') {
         return unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
@@ -1911,13 +1932,16 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       const isPausedOnQuota = roll && roll.autonomous && roll.autonomous.status === 'paused-on-quota';
       const isSetPaused = isPausedOnFailure || isPausedOnQuota;
       bundle.className = 'kanban-set-bundle' + (isSetPaused ? ' kanban-set-bundle--paused' : '');
-      const useContractHeader = Boolean(roll && roll.uiContract);
+      const useContractHeader = Boolean(roll && roll.uiContract)
+        && shouldRenderSetSummaryInLane(roll, members);
       const headerFp = setBundleHeaderFingerprint(setSlug, roll, members, isSetPaused, useContractHeader);
       let header = bundle.querySelector(':scope > .kanban-set-bundle-head, :scope > .kanban-set-header');
       if (!header || header.dataset.kanbanFp !== headerFp) {
         const freshHeader = useContractHeader
           ? buildContractSetHeader(setSlug, roll, repo)
-          : buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota);
+          : (roll && roll.uiContract
+            ? buildSetLaneHeader(setSlug, members)
+            : buildSetBundleHeader(setSlug, members, roll, repo, isSetPaused, isPausedOnFailure, isPausedOnQuota));
         freshHeader.dataset.kanbanFp = headerFp;
         if (header) header.replaceWith(freshHeader);
         else bundle.insertBefore(freshHeader, bundle.firstChild);

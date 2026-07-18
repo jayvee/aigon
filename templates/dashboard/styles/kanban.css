@@ -62,6 +62,11 @@
     border:none;border-bottom:1px solid var(--border-subtle);
     border-radius:10px 10px 0 0;
     }
+    .kanban-set-lane-header{padding:7px 10px!important}
+    .kanban-set-lane-header-row{display:flex;align-items:center;gap:6px;min-width:0}
+    .kanban-set-lane-kind{font-size:9px;color:var(--text-tertiary);letter-spacing:.05em;white-space:nowrap}
+    .kanban-set-lane-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none;letter-spacing:0;color:var(--text-secondary)}
+    .kanban-set-lane-count{margin-left:auto;font-size:10px;color:var(--text-tertiary);font-variant-numeric:tabular-nums}
     .kanban-set-bundle-head--paused{
     background:rgba(229,124,42,.09);
     border-bottom-color:rgba(229,124,42,.35);
