@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 128
+lines_removed: 7
+lines_changed: 135
+files_touched: 5
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 1788623
+output_tokens: 10284
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 1699584
+thinking_tokens: 3616
+total_tokens: 1798907
+billable_tokens: 1802523
+cost_usd: 3.9994
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 Shipped default-on `deepen.enabled` config resolution and valueless `--quick` stripping for both create parsers, covered by `tests/integration/deepen-create-controls.test.js`.
 
 ## Code Review
