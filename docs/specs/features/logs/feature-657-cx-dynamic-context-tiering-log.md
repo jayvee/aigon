@@ -24,19 +24,46 @@ tokens_per_line_changed: null
 # Implementation Log: Feature 657 - dynamic-context-tiering
 Agent: cx
 
+> Sections below completed post-close by cc (2026-07-18) to resolve the reviewer's
+> revision request — the implementer (cx) closed without authoring them. Content is
+> reconstructed from the merge diff (`3198e215f`), review notes, and live guard output.
+
 ## Status
+
+Complete and merged. `AGENTS.md` slimmed from the 75 KB maintainer orientation doc to an always-loaded invariants-and-pointers file; deep reference moved to `docs/architecture.md` / `docs/testing.md`; regression guard wired into `test:core` and `prepublishOnly`.
+
+### Measurement (spec § Measurement)
+
+- **Before:** `AGENTS.md` = 75,573 bytes / 439 lines. **After:** 7,366 bytes / 113 lines — a **90.3% byte reduction** (target ≥65%), with all 8 required safety anchors present (`scripts/check-root-instruction-budget.js` output: "113 lines, 7366 bytes, 8 safety anchors").
+- **Paid first-turn token measurement: deliberately skipped**, as the spec permits when documented. Rationale: OpenCode injects the project-root `AGENTS.md` verbatim as a system-instruction source, so first-turn input reduction tracks the byte reduction directly; the remaining first-turn cost (harness prompt + tool schemas) is outside this feature's control, and spending paid OpenRouter credits on a measurement-only session would contradict the feature's cost-reduction purpose. The deterministic byte-budget evidence above is retained as the guard-enforced baseline. Baseline for reference: pre-feature OpenCode first turns observed at ~30–37k input tokens (spec Background).
 
 ## New API Surface
 
+- `scripts/check-root-instruction-budget.js` — static guard: fails when `AGENTS.md` exceeds 24 KB or 180 lines, or when any required safety-anchor marker is missing. Wired into `test:core` and `prepublishOnly`.
+
 ## Key Decisions
+
+- Static editorial split only — no dynamic tiers, marker extraction, task mapping, generated context files, or OpenCode config overrides, per the 2026-07-18 spec review (an `agent.build.prompt` override is additive and would not suppress the root file).
+- Anchor check matches stable marker comments, not prose snapshots, so routine wording edits don't break the guard.
+- `check-test-budget.sh` ceiling raised 16000 → 17225 (exact current LOC, not inflated) under the spec's `F657_PREAUTH` gate.
 
 ## Gotchas / Known Issues
 
+- `CLAUDE.md` initially still described `AGENTS.md` as the single source of truth for the module map; fixed in review (`b5dcabdaa`).
+- The old 12-step `currentSpecState` site-touch checklist was dropped from `AGENTS.md` without a home; restored post-review as the 10-step "Adding a lifecycle state" section in `docs/architecture.md` (`9d8040d48`).
+
 ## Explicitly Deferred
+
+- Any OpenCode launch-path changes (title-agent disable, `OPENCODE_CONFIG_CONTENT`) — deliberately out of scope; title-agent calls bill at $0 BYOK.
+- Rendered-template leak guard — separated into F683 at spec review (since shipped).
 
 ## For the Next Feature in This Set
 
+- Not part of a set. Related follow-up F683 (rendered-agent-template-zero-opinion-guard) is done.
+
 ## Test Coverage
+
+- `tests/unit/root-instruction-budget.test.js` — over-budget bytes/lines fail, missing anchors fail with actionable messages, clean state passes. Picked up by the `test:unit` glob; guard itself also runs directly in `test:core` and `prepublishOnly`.
 
 ## Code Review
 
