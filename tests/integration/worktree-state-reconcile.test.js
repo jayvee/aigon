@@ -172,6 +172,14 @@ test('deactivated gg cannot launch via buildRawAgentCommand', () => {
 test('deactivated ag cannot launch via buildRawAgentCommand', () => {
     assert.throws(() => buildRawAgentCommand({ agent: 'ag', featureId: '07', path: '/tmp/aigon-ag-linger-test-wt', repoPath: process.cwd() }, 'do'), /agent `ag` is deactivated/i);
 });
+
+test('Codex resume pins the resumed author thread to the implementation worktree', () => {
+    const cmd = buildRawAgentCommand({
+        agent: 'cx', featureId: '11', path: '/tmp/aigon-cx-resume-worktree',
+        repoPath: process.cwd(), desc: 'resume-test', resumeProviderSessionId: 'original-codex-thread',
+    }, 'do');
+    assert.match(cmd, /'resume' '--cd' '\/tmp\/aigon-cx-resume-worktree' 'original-codex-thread'/);
+});
 test('Fleet research inline prompt files are agent-disambiguated (no shared path)', () => {
     // REGRESSION: Before this fix every Fleet research agent wrote its
     // rendered prompt to `<tmp>/aigon-inline-prompts/<repo>/research-<id>-research-do.md`
