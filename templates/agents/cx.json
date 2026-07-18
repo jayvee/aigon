@@ -43,7 +43,8 @@
     "sessionStrategy": "codex-sessions",
     "telemetryStrategy": "codex-transcript",
     "trustInstallScope": "all-existing-worktrees",
-    "resume": { "kind": "subcommand", "args": ["resume"] }
+    "resume": { "kind": "subcommand", "args": ["resume"] },
+    "continuity": { "resumeById": true, "taskDelivery": "initial-argument" }
   },
   "quota": {
     "errorPatterns": [

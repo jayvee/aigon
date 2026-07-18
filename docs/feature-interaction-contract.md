@@ -38,6 +38,14 @@ running set embeds its current member's complete feature contract at
 `plan.currentFeatureContract`, review and revision stages intact, rather than
 flattening it to a generic working row.
 
+Entity detail payloads also expose the redacted continuity projection:
+`specAuthor`, `authorAgentId`, `originSession` capture/source facts,
+`authorHandoff`, and `latestContinuityDecision`. The projection may say whether
+a native session exists, but it omits native provider IDs, transcript contents,
+and provider-local paths entirely. Browser code renders the returned strategy
+and reasons; it does not re-run attach/resume/fresh policy. Gallery scenarios
+cover unavailable origin provenance and checkpoint fallback as distinct facts.
+
 Anything that must repaint a card belongs in `entityUiContractFingerprint`,
 which `computeStatusFingerprint` (`lib/dashboard-status-version.js`) folds in for
 features, research, and sets — including nested member contracts. It hashes

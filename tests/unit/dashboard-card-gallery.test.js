@@ -94,6 +94,19 @@ test('active review and revision work carries a live session for Peek', () => {
     }
 });
 
+// REGRESSION: F684 — gallery must cover unavailable origins and checkpoint fallback without provider-local data.
+test('continuity gallery facts cover fresh handoff and checkpoint fallback', () => {
+    const unavailable = scenario('feature-continuity-origin-unavailable');
+    assert.strictEqual(unavailable.continuity.latestContinuityDecision.strategy, 'fresh-with-handoff');
+    assert.deepStrictEqual(unavailable.continuity.latestContinuityDecision.reasons, ['origin-unavailable']);
+    const fallback = scenario('feature-continuity-checkpoint-fallback');
+    assert(fallback.continuity.latestContinuityDecision.reasons.includes('context-conflict'));
+    assert.strictEqual(fallback.contract.sessions.some(session => session.running), true);
+    const encoded = JSON.stringify([unavailable.continuity, fallback.continuity]);
+    assert(!encoded.includes('transcriptPath'));
+    assert(!encoded.includes('providerSessionId'));
+});
+
 test('quota-paused scenarios do not present both agents as ready', () => {
     for (const key of ['feature-quota-paused', 'research-quota-paused']) {
         const statuses = scenario(key).contract.agents.map(agent => agent.status);

@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 const engine = require('../../lib/workflow-core/engine');
+const entityContext = require('../../lib/entity-context');
 const { testAsync, withTempDirAsync, report, GIT_SAFE_ENV } = require('../_helpers');
 const CLI_PATH = path.join(__dirname, '..', '..', 'aigon-cli.js');
 const write = (root, rel, body) => { const file = path.join(root, rel); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, body); };
@@ -46,6 +47,27 @@ testAsync('explicit feature agent-status implementation-complete works from main
     assert.strictEqual(r.status, 0, r.stderr || r.stdout);
     assert.strictEqual(readEvents(repo, '.aigon/workflows/features/01/events.jsonl', 'signal.agent_ready').length, 1);
     assert.deepStrictEqual(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents.cc.status, 'ready');
+}));
+
+testAsync('continuation checkpoint uses agent-status sidecar and records one fresh fallback', () => withTempDirAsync('aigon-continuation-signal-', async (repo) => {
+    // REGRESSION: F684 — checkpoint transport must remain the canonical agent-status/session signal surface.
+    await initFeatureRepo(repo);
+    git(repo, 'git checkout -q main');
+    entityContext.recordContinuityDecision(repo, 'feature', '01', {
+        strategy: 'resume-origin', selectedAgent: 'cc', currentSessionId: 'continuation-01', reasons: ['phase-prefers-author'],
+    });
+    const r = await cli([
+        'agent-status', 'continuation-fallback', '01', 'cc',
+        '--session=continuation-01', '--reason=context-conflict',
+    ], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    assert.strictEqual(r.status, 0, r.stderr || r.stdout);
+    const state = readJson(repo, '.aigon/state/feature-01-cc.json');
+    assert.deepStrictEqual(state.continuityCheckpoint, {
+        state: 'fallback', aigonSessionId: 'continuation-01', reason: 'context-conflict',
+    });
+    const decisions = entityContext.readEntityContext(repo, 'feature', '01').continuityDecisions;
+    assert.strictEqual(decisions.filter(item => item.recoveryOfSessionId === 'continuation-01').length, 1);
+    assert.strictEqual(decisions.find(item => item.recoveryOfSessionId === 'continuation-01').fallbackLaunch.state, 'simulated');
 }));
 
 testAsync('explicit research submit succeeds when a done feature with same ID exists', () => withTempDirAsync('aigon-research-done-feature-collision-', async (repo) => {

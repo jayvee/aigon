@@ -413,6 +413,17 @@ New consumers should use `createAgentSessionService()` for session lookup, live 
 
 Session facts that may carry lifecycle meaning go through `lib/agent-sessions/workflow-signal-bridge.js`. The rule is: `AgentSession` emits runtime facts such as `agent_session.status_reported`, `agent_session.task_completed`, `agent_session.task_failed`, and `agent_session.lost`; `WorkflowSignalBridge` maps selected facts to feature/research workflow events such as `agent-ready`, `agent-waiting`, code-review completion, or spec-review completion. Tmux hosts and shell wrappers may know role, task type, exit code, and legacy `aigon agent-status` names for compatibility, but they do not own workflow event names. `aigon agent-status` and dashboard mark-complete are compatibility adapters that record session signals first, then let the bridge dispatch lifecycle effects.
 
+Original spec-draft continuity uses the same boundary. `lib/entity-context.js`
+keeps the portable, versioned author handoff under tracked `.aigon/context/`,
+while origin provider IDs, health/checkpoint facts, and continuity decisions stay
+in ignored `.aigon/state/entity-context/`. This split makes the handoff available
+across branches and storage sync without publishing provider-local provenance.
+`lib/session-continuity-policy.js` is the pure phase-aware resolver shared by CLI
+and dashboard launch paths; adapters opt into resume only through explicit
+`runtime.continuity` capabilities. A resumed role session links to the immutable
+`spec-draft` origin instead of replacing it. Ready/fallback checkpoints continue
+through `aigon agent-status` and the session signal bridge.
+
 ### Workflow Authority Split
 
 The post-cutover system is easier to reason about if you separate lifecycle truth from runtime/session metadata:
@@ -434,6 +445,8 @@ The post-cutover system is easier to reason about if you separate lifecycle trut
 | tmux session identity | `.aigon/sessions/{name}.json` sidecar (`tmuxId`, `shellPid`, `category`) | F351: `tmuxId` is the durable FK (stable across renames); `category` is `entity` or `repo`. `aigon session-list` surfaces all live sessions. Internal routing uses `-t $N` via `tmuxId` |
 | agent session signal facts | `.aigon/sessions/events.jsonl` | Append-only record of runtime facts before bridge dispatch. Entries include `id`, `at`, `sessionId`, `entity`, `role`, `agent`, `eventType`, optional `status`, and payload. Duplicate completion/status facts are idempotent for workflow dispatch. |
 | agent transcript binding | `.aigon/sessions/{name}.json` fields `agentSessionId` + `agentSessionPath` | F357: populated post-launch by background capture process (`lib/session-sidecar.js`). `agentSessionId` is the Claude UUID / Codex stem / Gemini sessionId; `agentSessionPath` is the full transcript path. Read as optional — absent on pre-F357 sidecars. Used by `aigon feature-do --resume` to resume a dead tmux session deterministically. |
+| portable author handoff | `.aigon/context/{features,research}/{id}.json` | F684: tracked, versioned decisions/constraints/non-goals/questions/notes/spec references. It contains no transcript, credential, native provider ID, or provider-local path. |
+| origin continuity provenance | `.aigon/state/entity-context/{features,research}/{id}.json` | F684: local operational origin-session binding, policy-decision history, and ready/fallback checkpoints. Dashboard receives only the redacted projection. |
 | Feedback lifecycle | Spec folder location + command logic | Feedback does not use workflow-core |
 
 Important distinction: `.aigon/state/` still exists after the cutover, but it is no longer the coordinator manifest system that decides feature lifecycle.

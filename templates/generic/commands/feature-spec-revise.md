@@ -3,6 +3,11 @@
 
 You are the author-side agent. Review all pending `spec-review:` commits on the feature spec, decide what to keep, and land one acknowledgement commit.
 
+The continuity strategy is selected by Aigon before launch. Do not choose a
+provider or resume strategy yourself. When resumed, reconcile remembered paths
+against the current checkout and emit the requested continuation ready/fallback
+checkpoint before editing.
+
 ## Resolve the spec
 
 ```bash
