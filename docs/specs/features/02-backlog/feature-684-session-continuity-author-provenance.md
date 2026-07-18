@@ -1,6 +1,6 @@
 ---
 aigon_id: F684
-complexity: high
+complexity: very-high
 agent: cx
 # agent: cc    # optional — id of the agent that owns this spec. Used as the
 #              #   default reviewer for spec-revise cycles when the operator
@@ -74,7 +74,14 @@ optimization with a safe fresh-session fallback.
 - [ ] Creation establishes an entity-owned origin-session record with source
   (`direct-agent-session` or `aigon-launched`), author agent/provider,
   capture-start time, and a stable Aigon session reference.  Native provider
-  session ID/path capture reuses the existing adapter/session-sidecar boundary.
+  session ID/path capture reuses the existing adapter/session-sidecar boundary
+  (`findNewAgentSession` / `spawnCaptureProcess`, F357).
+- [ ] For `direct-agent-session` source — where Aigon did not launch the agent
+  and no capture watcher is running — native session-ID capture is best-effort
+  and must be attributable, not a most-recent-file guess.  When it cannot bind a
+  provider session ID to the creating conversation with confidence, the record
+  stores `direct-agent-session` source with unavailable native provenance rather
+  than a speculative ID.  (See Open Questions on direct-session attribution.)
 - [ ] Missing, expired, or unobservable native session IDs are represented as
   unavailable provenance, not fabricated values and not an error that blocks
   creating, reviewing, or implementing a spec.
@@ -95,8 +102,10 @@ optimization with a safe fresh-session fallback.
   command/templates must derive `AIGON_AGENT_ID` through `aigon agent-context`
   when needed.
 - [ ] The dashboard detail payload exposes author provenance, origin-session
-  capture state, the latest strategy decision, and the author handoff without
-  exposing raw transcript contents or provider-local paths by default.
+  capture state, the latest strategy decision, and the author handoff.  It never
+  exposes raw transcript contents or provider-local paths — there is no gated
+  "reveal" path; these are omitted from the payload entirely, not hidden behind a
+  default.
 
 ### Deterministic continuity selection
 
@@ -108,9 +117,14 @@ optimization with a safe fresh-session fallback.
   reasons, selected agent, parent origin-session reference where applicable,
   and a defined fallback.
 - [ ] A live matching origin session wins and is attached rather than spawning
-  a duplicate provider process.  Otherwise, native resume is eligible only
-  when the adapter explicitly supports resume-by-ID, the captured ID is valid,
-  and the selected agent is the origin author.
+  a duplicate provider process — but `attach-live-origin` is eligible only for
+  origin sessions Aigon owns and can address (an Aigon-launched tmux/iTerm
+  session it can deliver into), never a `direct-agent-session` running in a
+  terminal Aigon does not control.  An unaddressable live origin degrades to
+  `resume-origin` or `fresh-with-handoff`, not a dead-end strategy.  Otherwise,
+  native resume is eligible only when the adapter explicitly supports
+  resume-by-ID, the captured ID is valid, and the selected agent is the origin
+  author.
 - [ ] The resolver uses deterministic, inspectable facts: phase, adapter
   capability, session availability/known failure, author match, handoff
   validity/completeness, capture age, and known compaction/health signals.  It
@@ -136,11 +150,13 @@ optimization with a safe fresh-session fallback.
 - [ ] The resumed task explicitly states the current role, current checkout or
   worktree, current spec, and review findings.  It treats current files and git
   state as authoritative over paths remembered from the original conversation.
-- [ ] A resumed agent has a machine-readable `ready` / `fallback` checkpoint.
-  On a context-missing, context-conflict, or delivery failure signal, Aigon
-  records the failed continuation and automatically launches a fresh session
-  with the validated handoff.  It must not ask the operator to diagnose token
-  context.
+- [ ] A resumed agent has a machine-readable `ready` / `fallback` checkpoint
+  delivered over the existing agent signal surface (`aigon agent-status` /
+  `agent-context`), not a new bespoke transport.  The spec must name the exact
+  signal payload and how Aigon observes it.  On a context-missing,
+  context-conflict, or delivery-failure signal, Aigon records the failed
+  continuation and automatically launches a fresh session with the validated
+  handoff.  It must not ask the operator to diagnose token context.
 - [ ] Existing `feature-do --resume` semantics for recovering the latest
   implementation session remain intact.  Origin-session continuation uses an
   unambiguous internal/source selector and must not accidentally choose the
@@ -267,12 +283,30 @@ semantics are verified.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
-- How should handoff artifacts participate in Pro/git-branch storage sync while
-  preserving the rule that raw transcripts and local paths are not portable?
+- **[Blocking — resolve before start]** How reliably can a `direct-agent-session`
+  (one Aigon did not launch, with no capture watcher running) be attributed to a
+  provider session ID and author at all?  The headline user story depends on it,
+  but F357 capture assumes an Aigon-launched session.  Quantify the expected
+  success rate and confirm the authorless / origin-unavailable fallback is the
+  common case, not the exception — otherwise the continuity half of this feature
+  rarely fires and should be deferred.
+- **[Blocking — resolve before start]** How do handoff artifacts participate in
+  Pro/git-branch storage sync while preserving the rule that raw transcripts and
+  local paths are not portable?  The handoff is the durable fallback; if it is
+  not portable across machines/branches the "durable cross-provider handoff"
+  guarantee is undermined.
 - Which adapter-specific post-resume task-delivery mechanisms are verified for
   each currently launchable agent?
+- What is the exact `ready` / `fallback` checkpoint signal payload on the
+  `agent-status` surface, and how does Aigon observe and time it out?
 - Should implementation's initial policy threshold be operator-configurable in
   a later feature, after default behavior has real-world telemetry?
+- **Split recommendation (reviewer):** scope spans two separable initiatives —
+  **(A)** author + origin provenance + durable handoff artifact (low-risk,
+  independently shippable and testable), and **(B)** the continuity-policy
+  resolver + resumed-launch / attach / checkpoint machinery (where the provider
+  dependency and the blocking unknowns above live).  Consider shipping (A) first
+  and gating (B) on the two blocking answers.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
