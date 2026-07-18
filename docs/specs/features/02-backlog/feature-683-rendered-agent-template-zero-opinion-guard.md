@@ -49,7 +49,7 @@ Close a confirmed target-repo instruction leak and the checker blind spot that l
 node scripts/check-template-leaks.js
 node tests/unit/template-leaks.test.js
 node tests/integration/install-agent-rendered-leaks.test.js
-npm run test:core
+npm run test:iterate
 ```
 
 ## Technical Approach
