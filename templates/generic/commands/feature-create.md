@@ -9,10 +9,9 @@ aigon feature-create {{ARG_SYNTAX}}
 
 This creates a new feature spec in `./docs/specs/features/01-inbox/`.
 
-**IMPORTANT:** After the CLI command completes, open the created feature file in markdown preview mode in a separate window:
-- File: `./docs/specs/features/01-inbox/feature-{{ARG_SYNTAX}}.md` (or similar, check the CLI output for exact filename)
-- Open the file, then use Cursor's command palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run: `Markdown: Open Preview` (or press `Cmd+Shift+V` / `Ctrl+Shift+V`)
-- This will open the markdown preview in a separate window for easy reference while you work
+**IMPORTANT:** Do not launch or foreground an editor, terminal, or Markdown
+preview after creation. Continue by reading and editing the spec through the
+current agent session; use the exact path printed by the CLI.
 
 ## Before writing the spec
 
