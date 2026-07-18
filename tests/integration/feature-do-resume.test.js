@@ -11,6 +11,7 @@ const os = require('os');
 const { test, report } = require('../_helpers');
 const { readLatestSidecarWithSession, resolveResumeArgs } = require('../../lib/session-sidecar');
 const { buildLaunchPromptArgs } = require('../../lib/commands/entity-commands');
+const { resolveImplementationContinuity } = require('../../lib/feature-start');
 
 const mkp = (p) => fs.mkdirSync(p, { recursive: true });
 
@@ -90,6 +91,20 @@ test('spec revision launcher uses Codex resume subcommand when continuity select
         prompt: 'revise feature 11', resumeProviderSessionId: 'cx-thread-id',
     });
     assert.deepStrictEqual(args, ['resume', 'cx-thread-id', 'revise feature 11']);
+});
+
+test('feature-start passes a healthy direct Codex origin into the implementation launch', () => {
+    const launch = resolveImplementationContinuity({
+        featureId: '11', agentId: 'cx', currentSessionId: 'implementation-feature-11-cx-test',
+        snapshot: { authorAgentId: 'cx' },
+        continuity: {
+            originSession: { source: 'direct-agent-session', authorAgentId: 'cx', providerSessionId: 'original-codex-thread', nativeProvenance: 'runtime-env' },
+            authorHandoff: { status: 'valid', decisions: ['Keep scope small'], specReferences: ['Technical Approach'] },
+        },
+    });
+    assert.strictEqual(launch.decision.strategy, 'resume-origin');
+    assert.strictEqual(launch.resumeProviderSessionId, 'original-codex-thread');
+    assert(launch.continuityInstructions.includes('continuation-ready 11 cx'));
 });
 
 test('resolveResumeArgs: unsupported agent or null inputs return null', () => {
