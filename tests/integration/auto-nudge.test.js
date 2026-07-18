@@ -98,4 +98,31 @@ test('auto-nudge is on by default, opt-out via enabled:false, and skips quota-pa
     assert.strictEqual(quota.skipped, 'quota-paused');
 }));
 
+testAsync('auto-nudge does not infer review-session idleness without an idle prompt signal', () => withTempDirAsync('aigon-auto-nudge-review-active-', async (repo) => {
+    let nudges = 0;
+    const deps = {
+        loadProjectConfig: () => ({ autoNudge: { enabled: true, idleVisibleSec: 1, idleAutoNudgeSec: 2, idleEscalateSec: 3 } }),
+        sendNudge: async () => { nudges += 1; return { ok: true }; },
+    };
+
+    const activeReview = {
+        ...baseInput('repo-f01-review-cc-demo'),
+        agentId: 'cc',
+        role: 'review',
+        status: 'reviewing',
+        idleAtPrompt: false,
+        idleAtPromptDetectedAt: '2026-04-29T00:00:00.000Z',
+    };
+
+    const result = autoNudge.computeIdleLadder(repo, activeReview, {
+        ...deps,
+        nowMs: Date.parse('2026-04-29T00:05:00.000Z'),
+    });
+
+    assert.strictEqual(result.state, 'active');
+    assert.strictEqual(result.idleSec, 0);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.strictEqual(nudges, 0);
+}));
+
 report();

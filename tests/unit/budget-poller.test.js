@@ -7,7 +7,17 @@
 
 const assert = require('assert');
 const { test, report } = require('../_helpers');
-const { parseClaudeStatus, parseGeminiModelUsage, parseGeminiFooterPlanQuota, parseAntigravityUsage, parseKimiUsage, stripAnsi } = require('../../lib/budget-poller');
+const {
+    parseClaudeStatus,
+    parseGeminiModelUsage,
+    parseGeminiFooterPlanQuota,
+    parseAntigravityUsage,
+    parseKimiUsage,
+    parsePsRows,
+    collectBudgetProcessTreePids,
+    budgetSessionName,
+    stripAnsi,
+} = require('../../lib/budget-poller');
 
 // REGRESSION: GET /api/budget cc — parseClaudeStatus misread 0% used when % is on progress-bar line above Resets.
 test('parseClaudeStatus: new format — pct on progress-bar line above Resets', () => {
@@ -88,6 +98,35 @@ test('parseClaudeStatus: drops incomplete Resets when continuation never arrives
     assert.strictEqual(r.session.resets_at, null);
     assert.strictEqual(r.week_all.pct_used, 57);
     assert.strictEqual(r.week_all.resets_at, null);
+});
+
+test('budget poller uses unique tmux session names', () => {
+    const a = budgetSessionName('aigon-budget-cc');
+    const b = budgetSessionName('aigon-budget-cc');
+    assert.ok(/^aigon-budget-cc-\d+-[a-z0-9]+$/.test(a));
+    assert.notStrictEqual(a, 'aigon-budget-cc');
+    assert.notStrictEqual(b, 'aigon-budget-cc');
+});
+
+test('budget poller identifies stale budget tmux process trees only', () => {
+    const rows = parsePsRows(`
+      100   1 tmux new-session -d -s aigon-budget-cc -x 420 -y 56
+      101 100 node /Users/me/src/aigon/aigon-cli.js dashboard start
+      102 101 sh -c child
+      200   1 tmux new-session -d -s aigon-f657-review-cc-demo
+      201 200 node /Users/me/src/aigon/aigon-cli.js feature-code-review 657
+      300   1 tmux new-session -d -s aigon-budget-km-999-abc -x 220 -y 50
+      301 300 kimi
+    `);
+
+    assert.deepStrictEqual(
+        collectBudgetProcessTreePids(rows, 'aigon-budget-cc').sort((a, b) => a - b),
+        [100, 101, 102]
+    );
+    assert.deepStrictEqual(
+        collectBudgetProcessTreePids(rows, 'aigon-budget-km').sort((a, b) => a - b),
+        [300, 301]
+    );
 });
 
 // REGRESSION: GET /api/budget gg — parse Gemini CLI /model "Model usage" rows (Flash / Flash Lite / Pro).
