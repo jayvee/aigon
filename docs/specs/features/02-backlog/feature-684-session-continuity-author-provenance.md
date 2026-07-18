@@ -152,11 +152,14 @@ optimization with a safe fresh-session fallback.
   state as authoritative over paths remembered from the original conversation.
 - [ ] A resumed agent has a machine-readable `ready` / `fallback` checkpoint
   delivered over the existing agent signal surface (`aigon agent-status` /
-  `agent-context`), not a new bespoke transport.  The spec must name the exact
-  signal payload and how Aigon observes it.  On a context-missing,
-  context-conflict, or delivery-failure signal, Aigon records the failed
-  continuation and automatically launches a fresh session with the validated
-  handoff.  It must not ask the operator to diagnose token context.
+  `agent-context`), not a new bespoke transport.  The exact payload is
+  `aigon agent-status continuation-ready <ID> <agent> --session=<aigonSessionId>`
+  or `aigon agent-status continuation-fallback <ID> <agent>
+  --session=<aigonSessionId> --reason=<context-missing|context-conflict|task-delivery-failed>`.
+  Aigon observes the status sidecar through the existing signal-health/status
+  refresh path.  On a fallback signal or checkpoint timeout, it records the
+  failed continuation and automatically launches one fresh session with the
+  validated handoff.  It must not ask the operator to diagnose token context.
 - [ ] Existing `feature-do --resume` semantics for recovering the latest
   implementation session remain intact.  Origin-session continuation uses an
   unambiguous internal/source selector and must not accidentally choose the
@@ -249,8 +252,18 @@ adapter signals and never a hard gate.
 Resume creates a role-specific child session and delivers the current task via
 an adapter-declared, confirmed mechanism.  If an adapter lacks reliable task
 delivery after resume, choose fresh-with-handoff.  The resumed agent receives a
-short checkpoint instruction.  A structured fallback signal records the reason
-and causes one fresh-with-handoff retry, preventing a loop.
+short checkpoint instruction.  The prompt requires exactly one of:
+
+```text
+aigon agent-status continuation-ready <ID> <agent> --session=<aigonSessionId>
+aigon agent-status continuation-fallback <ID> <agent> --session=<aigonSessionId> \\
+  --reason=<context-missing|context-conflict|task-delivery-failed>
+```
+
+These extend the existing agent-status writer and signal-health observer with a
+`continuityCheckpoint` payload; they are not a new transport.  A fallback or
+checkpoint timeout records the reason and causes one fresh-with-handoff retry,
+preventing a loop.
 
 ### Prompt/template changes
 
@@ -297,8 +310,6 @@ semantics are verified.
   guarantee is undermined.
 - Which adapter-specific post-resume task-delivery mechanisms are verified for
   each currently launchable agent?
-- What is the exact `ready` / `fallback` checkpoint signal payload on the
-  `agent-status` surface, and how does Aigon observe and time it out?
 - Should implementation's initial policy threshold be operator-configurable in
   a later feature, after default behavior has real-world telemetry?
 - **Split recommendation (reviewer):** scope spans two separable initiatives —
