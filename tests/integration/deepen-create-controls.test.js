@@ -40,6 +40,22 @@ test('research-create strips --quick without consuming adjacent description word
     assert.ok(!spec.includes('--quick'));
 }));
 
+// REGRESSION: F686 — the legacy --description form must also discard a trailing --quick flag.
+test('--description strips --quick while preserving surrounding text', () => {
+    withTempDir('aigon-deepen-feature-description-', repo => {
+        initGitRepo(repo, { branch: 'main' });
+        seedEntityDirs(repo, 'features');
+        runAigonCli(repo, ['feature-create', 'quick-feature', '--description', 'first', '--quick', 'second']);
+        assert.ok(onlySpec(repo, 'features').includes('first second'));
+    });
+    withTempDir('aigon-deepen-research-description-', repo => {
+        initGitRepo(repo, { branch: 'main' });
+        seedEntityDirs(repo, 'research-topics');
+        runAigonCli(repo, ['research-create', 'quick-research', '--description', 'first', '--quick', 'second']);
+        assert.ok(onlySpec(repo, 'research-topics').includes('first second'));
+    });
+});
+
 // REGRESSION: F686 — deepen.enabled resolves project > global > built-in true with provenance.
 test('deepen.enabled has shared precedence and appears in effective config', () => withTempDir('aigon-deepen-config-', repo => {
     const globalPath = path.join(repo, 'user-config.json');
