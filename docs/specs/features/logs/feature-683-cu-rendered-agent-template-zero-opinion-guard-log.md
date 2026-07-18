@@ -1,3 +1,17 @@
+---
+commit_count: 3
+lines_added: 643
+lines_removed: 146
+lines_changed: 789
+files_touched: 14
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+model: "cursor"
+source: "no-telemetry-cursor"
+---
 # Implementation Log: Feature 683 - rendered-agent-template-zero-opinion-guard
 Agent: cu
 
