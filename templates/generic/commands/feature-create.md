@@ -61,8 +61,8 @@ the bare `aigon feature-create` CLI remains a noninteractive scaffolder.
    `Recommended: <answer>`
 
    The user may reply `yes` to ratify it or provide an override. After every
-   answer, update the working decisions and recompute the highest-leverage
-   unresolved gap rather than blindly advancing through the headings.
+   answer, update the working decisions and select the next highest-leverage unresolved gap
+   rather than blindly advancing through the headings.
 5. **Handle exits and uncertainty.** Normally ask 3–6 questions, with coverage —
    not question count — as the exit condition. Never exceed 7 questions unless
    the user explicitly asks to continue. If the user says `enough`, `stop`, or
