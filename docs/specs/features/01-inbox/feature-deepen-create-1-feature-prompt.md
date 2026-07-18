@@ -1,7 +1,8 @@
 ---
-complexity: medium
+complexity: low
 research: 46
 set: deepen-create
+depends_on: [deepen-create-3-toggle-and-quick-flag]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-29T23:21:45.513Z", actor: "cli/feature-prioritise" }
 ---
@@ -10,45 +11,55 @@ transitions:
 
 ## Summary
 
-Add a "deepen" interview pattern to `templates/generic/commands/feature-create.md` so that creating a feature becomes a short, guided Q&A that produces a substantially better spec than the current one-shot template fill-in. The agent walks the spec template top-to-bottom, asks one question at a time with a recommended answer, prefers reading the codebase over asking the user when an answer is discoverable, and stops when every required section has a concrete, ratified value.
+Add a "deepen" interview pattern to `templates/generic/commands/feature-create.md` so the installed feature-create agent command conducts a short, guided Q&A that produces a substantially better spec than the current one-shot fill-in. The agent first builds a coverage map from the request, planning context, and codebase, then asks one decision-relevant question at a time with a recommended answer. It skips questions that would not materially change scope, acceptance criteria, or approach.
 
-This feature only ships the prompt content — the default-on/`--quick`/config plumbing lives in feature #3. After this lands, an agent that runs the create flow already produces a deeper spec when nothing gates it.
+This feature only ships the feature-specific prompt content and consumes the default-on/`--quick`/config contract from feature #3. Bare `aigon feature-create` remains a noninteractive scaffolder; deepen is behavior of the installed agent command that surrounds it.
 
 ## User Stories
 
 - [ ] As a user creating a feature, I am asked targeted questions one at a time with a recommended answer attached, so I can ratify by saying "yes" instead of authoring full prose for every section.
 - [ ] As a user, the agent reads the codebase to answer questions whose answers are already there (existing patterns, deps, file paths) instead of asking me.
+- [ ] As a user, I am only asked about consequential choices or unresolved assumptions, rather than being marched through every template heading.
 - [ ] As a user, I can say "enough" / "stop" / "that's plenty" at any point and the agent writes the spec with what it has.
-- [ ] As a user, when I answer "I don't know", the agent writes its recommendation as the value and flags it inline (`<!-- assumed; confirm during spec-review -->`) rather than blocking on me.
-- [ ] As a user, after the interview the spec ends with a one-sentence rationale for the chosen `complexity:` value so I understand why the agent picked low / medium / high / very-high.
+- [ ] As a user, when I answer "I don't know", the agent uses its recommendation and records the unresolved assumption visibly under `Open Questions` for spec review.
+- [ ] As a user, the agent's final response includes a one-sentence rationale for the chosen `complexity:` value without adding a non-template rationale section to the spec.
 
 ## Acceptance Criteria
 
-- [ ] `templates/generic/commands/feature-create.md` contains a "Deepen" section with: (a) one-question-at-a-time rule, (b) "provide a recommended answer for each question, labelled `Recommended: …`", (c) "investigate the codebase to answer your own questions before asking the user", (d) walk template sections in dependency order (Summary → User Stories → Acceptance Criteria → Technical Approach → Dependencies → Out of Scope → complexity), (e) explicit `enough` / `stop` / `that's plenty` exit, (f) "I don't know" handler that writes the recommendation + `<!-- assumed; confirm during spec-review -->`, (g) end with a one-sentence rationale for the chosen `complexity:`, (h) a question budget: typical session length 5–9 questions, at most one highest-leverage question per template section; when in doubt between asking and assuming, write the recommendation with the `<!-- assumed -->` flag instead of asking. Over-asking is the pattern's #1 documented failure mode and the budget is load-bearing, not advisory.
+- [ ] Before Deepen, the prompt applies feature #3's gate: skip when raw invocation arguments contain `--quick`; otherwise run `aigon config get deepen.enabled` and skip only when the effective value is `false`.
+- [ ] `templates/generic/commands/feature-create.md` contains a "Deepen" section with: (a) a coverage pass over request, planning context, current spec, and relevant code, (b) one question per message, (c) a recommended answer labelled `Recommended: ...`, (d) investigate discoverable technical facts instead of asking the user, (e) ask only when the answer could materially change scope, acceptance criteria, or approach, and (f) challenge a consequential assumption or surface a meaningful alternative rather than asking a template-completion question.
+- [ ] The prompt checks coverage internally in dependency order (Summary → User Stories → Acceptance Criteria → Technical Approach → Dependencies → Out of Scope → complexity), but does not require one question per section. After every answer it updates its working decisions and selects the next highest-leverage unresolved gap.
+- [ ] The interview normally asks 3–6 questions and has a hard ceiling of 7 unless the user explicitly asks to continue. Coverage, not question count, remains the normal exit condition; the user can always end immediately with `enough`, `stop`, or `that's plenty`.
+- [ ] On "I don't know", the agent uses its recommendation, then adds a visible `Open Questions` entry in the form `Assumed: <decision>; confirm during spec review.` It does not hide unresolved assumptions in HTML comments.
+- [ ] The agent infers `complexity:` after the spec is resolved and gives the user a one-sentence rationale in its final response; it does not append an ad hoc rationale section or sentence to the spec file.
 - [ ] If `planning_context:` is set on the in-flight spec, the prompt instructs the agent to use the plan file as the source of recommended answers and not re-interview about decisions already in the plan.
+- [ ] When Deepen ran and `deepen.enabled` came from the built-in default, the final response includes one concise hint: `Skip next time with --quick; disable everywhere with aigon config set --global deepen.enabled false.` The hint is omitted for explicit project/global configuration, and no counter or persisted hint state is introduced.
 - [ ] No mention of "grill" or any reference to Matt Pocock's `/grill-me` skill in the prompt body or comments. The pattern stands on its own.
 - [ ] The existing "Explore the codebase" guidance is reconciled with the new investigate-before-asking rule — they are not contradictory and the prompt is no longer redundant.
 - [ ] No model IDs or effort levels appear in the prompt — `complexity:` is the only frontmatter the deepen flow sets, per F313.
-- [ ] The slash commands regenerated by `aigon install-agent` reflect the new prompt across `.claude/commands/`, `.cursor/commands/`, etc.
+- [ ] Commands regenerated by `aigon install-agent --all` reflect the new prompt across every supported installed agent surface; user-owned `AGENTS.md`, `CLAUDE.md`, and `README.md` remain byte-identical or absent.
 
 ## Validation
 
 ```bash
-# Generate slash commands and confirm the deepen block is present in every agent surface.
-aigon install-agent cc gg cx cu
-grep -l "one question at a time" .claude/commands/aigon-feature-create.md .cursor/commands/aigon-feature-create.md
+# Generate supported agent commands and confirm the deepen contract survives rendering.
+aigon install-agent --all
+rg -l "highest-leverage unresolved gap" .claude/commands/ .cursor/commands/ .agents/skills/
+node scripts/check-template-leaks.js
 node -c aigon-cli.js
+npm run test:iterate
 ```
 
 ## Technical Approach
 
-- This is purely a prompt change in `templates/generic/commands/feature-create.md`. No `lib/*.js` edits, no engine work, no dashboard work.
+- This is purely a prompt change in `templates/generic/commands/feature-create.md`. Feature #3 already owns flag/config plumbing; no `lib/*.js`, engine, or dashboard edits belong here.
 - Keep the existing structure of the file (Title, Step 1: Read Project Conventions, Step 2: Write the Spec, etc.). Insert the deepen block as a new step *before* "Write the Spec", titled "Step N: Deepen — interview the user before writing".
 - The deepen block is a numbered procedure the agent follows literally:
-  1. Read the bare-bones initial spec (already present from CLI scaffolding) and the codebase to seed recommended answers.
-  2. For each template section in order, formulate the highest-leverage open question, attach a recommended answer, and ask the user.
-  3. Read the user's reply: ratification → record answer; override → record override; "I don't know" → record recommendation + flag; `enough` / `stop` → exit loop and write spec.
-  4. Resolve all template sections, set `complexity:` last with a one-sentence rationale, write the file.
+  1. Apply the `--quick` / `deepen.enabled` gate. If disabled, proceed directly to today's write flow.
+  2. Read the bare-bones spec, planning context when present, and relevant code to build a coverage map and seed recommended answers.
+  3. Ask the highest-leverage unresolved decision, one question per message. After each reply, update the working decisions and recompute the next gap instead of blindly advancing headings.
+  4. Record ratifications and overrides; turn "I don't know" into a visible assumed Open Question; honour the user's stop phrase immediately.
+  5. Write the resolved template, infer `complexity:` last, and give its rationale in the final response.
 - Be explicit about what the deepen flow must NOT do: invent model IDs, set `agent:` frontmatter, mutate other specs, run `git commit`. Those are out of band.
 - Do not touch `templates/prompts/feature-draft.md` — that is a separate code path used only by the legacy `--agent` drafting mode and is being superseded by this in-place prompt change. (cx's research finding suggested editing that file; the consolidated decision is to edit the slash command prompt directly.)
 
@@ -58,26 +69,26 @@ node -c aigon-cli.js
 
 ## Dependencies
 
--
+- depends_on: deepen-create-3-toggle-and-quick-flag
 
 ## Out of Scope
 
-- The default-on behavior, `--quick` flag, and `deepen.enabled` config toggle — those are feature #3 (`deepen-create-3-toggle-and-quick-flag`).
+- The `--quick` parser and `deepen.enabled` config implementation — those are feature #3 (`deepen-create-3-toggle-and-quick-flag`).
 - The matching prompt for `research-create` — that is feature #2 (`deepen-create-2-research-prompt`). Deliberately a different prompt because research-create forbids investigation.
-- Updating `feature-now` to pass `--quick` — that is feature #4.
+- Any change to `feature-now`; it already bypasses `feature-create` and cannot enter this prompt.
 - Any change to `templates/prompts/feature-draft.md` (legacy `--agent` drafting prompt).
 - A standalone "deepen an existing spec" command — explicitly deferred; `feature-spec-review` already covers post-hoc improvement.
 
 ## Open Questions
 
-- When invoked from a bare shell (no agent attached), the deepen interview cannot run. Today the create commands are usually invoked via the agent slash command, so this is an edge case — but it should be handled gracefully (fall back to today's one-shot behavior with a note that deepen was skipped). The exact wording of the fallback note is left to the implementing agent.
+- None. Bare CLI creation is intentionally noninteractive and does not need a "deepen skipped" warning.
 
 ## Non-goals / intended bypasses
 
-- Specs created via bare CLI calls to `aigon feature-create` — notably agents materialising the feature table from a research-eval synthesis — never load this slash-command prompt and therefore skip deepen. This is **intended**: the research synthesis already supplies the depth the interview would elicit. Do not "fix" this path to force an interview.
+- Specs created via bare CLI calls to `aigon feature-create` — notably agents materialising the feature table from a research-eval synthesis — never load this agent-command prompt and therefore skip deepen. This is intended: the research synthesis already supplies the depth the interview would elicit. Do not add warnings or attempt to force an interview into the CLI path.
 
 ## Related
 
 - Research: #46 guided-entity-creation
 - Set: deepen-create
-- Prior features in set: —
+- Prior features in set: deepen-create-3-toggle-and-quick-flag
