@@ -37,6 +37,9 @@ test('author handoff validation is atomic and public context redacts native iden
     assert.strictEqual(publicValue.originSession.hasNativeSession, true);
     assert.strictEqual(JSON.stringify(publicValue).includes('provider-secret'), false);
     assert.strictEqual(JSON.stringify(publicValue).includes('/private/'), false);
+    const durableRaw = fs.readFileSync(entityContext.entityContextPath(repo, 'feature', '7'), 'utf8');
+    assert.strictEqual(durableRaw.includes('provider-secret'), false);
+    assert.strictEqual(fs.readFileSync(entityContext.operationalEntityContextPath(repo, 'feature', '7'), 'utf8').includes('provider-secret'), true);
 }));
 
 // REGRESSION: F684 — direct sessions are never attachable and unsupported adapters deterministically fall back.
@@ -59,6 +62,20 @@ test('continuity policy selects resume only for attributed author sessions with 
     assert.strictEqual(refused.strategy, 'fresh-with-handoff');
     assert.ok(refused.reasons.includes('adapter-resume-unsupported'));
 });
+
+// REGRESSION: F684 — a fallback checkpoint records exactly one fresh recovery decision.
+test('continuation fallback checkpoint is idempotent and traceable', () => withTempDir('aigon-continuation-checkpoint-', (repo) => {
+    entityContext.recordContinuityDecision(repo, 'feature', '7', {
+        strategy: 'resume-origin', selectedAgent: 'cx', currentSessionId: 'continuation-1', reasons: ['phase-prefers-author'],
+    });
+    const checkpoint = { state: 'fallback', aigonSessionId: 'continuation-1', reason: 'context-conflict', agentId: 'cx' };
+    entityContext.recordContinuityCheckpoint(repo, 'feature', '7', checkpoint);
+    entityContext.recordContinuityCheckpoint(repo, 'feature', '7', checkpoint);
+    const decisions = entityContext.readEntityContext(repo, 'feature', '7').continuityDecisions;
+    assert.strictEqual(decisions.filter(item => item.recoveryOfSessionId === 'continuation-1').length, 1);
+    assert.strictEqual(decisions[0].checkpoint.state, 'fallback');
+    assert.strictEqual(decisions[1].strategy, 'fresh-with-handoff');
+}));
 
 // REGRESSION: F584 — --agent on create must stamp specAuthor even without AIGON_AGENT_ID.
 test('entityCreate with options.agent stamps specAuthor on inbox bootstrap', () => withTempDir('aigon-spec-author-create-', (repo) => {
