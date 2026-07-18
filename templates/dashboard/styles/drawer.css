@@ -107,8 +107,12 @@
     .stats-token-table td:first-child,.stats-token-table td:nth-child(2){color:var(--text-primary)}
     .stats-token-table .cost-na{color:var(--text-tertiary);font-style:italic}
     .stats-token-table .cost-total-row td{border-top:1px solid var(--border-subtle);border-bottom:none;color:var(--text-primary)}
-    .deep-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 0}
-    .deep-status-section{padding:12px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated)}
+    .deep-status-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;padding:4px 0}
+    .deep-status-section{grid-column:span 4;min-width:0;padding:14px 16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--bg-elevated)}
+    .deep-status-session,.deep-status-progress{grid-column:span 3}
+    .deep-status-spec{grid-column:span 6}
+    .deep-status-identity{grid-column:span 5}
+    .deep-status-continuity{grid-column:span 7;border-color:rgba(96,165,250,.24);background:linear-gradient(135deg,rgba(59,130,246,.075),var(--bg-elevated) 38%)}
     .deep-status-heading{margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
     .deep-status-footer{font-size:11px;color:var(--text-tertiary);text-align:right;padding:8px 0 0}
     .drawer-lease-section{border-left:3px solid rgba(251,191,36,.65)}
@@ -136,7 +140,13 @@
     .status-dot.status-alive{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
     .status-dot.status-dead{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.4)}
     .status-dot.status-completed{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.5)}
-    @media(max-width:920px){.deep-status-grid{grid-template-columns:1fr}}
+    .status-dot.status-idle{background:#94a3b8;box-shadow:0 0 6px rgba(148,163,184,.28)}
+    .deep-status-section .stats-row{grid-template-columns:minmax(100px,132px) minmax(0,1fr);align-items:baseline;gap:12px;padding:4px 0}
+    .deep-status-section .stats-key{line-height:1.35}
+    .deep-status-section .stats-val{min-width:0;line-height:1.4;overflow-wrap:anywhere;word-break:normal}
+    .deep-status-section .mono{display:block;min-width:0;font:12px/1.45 var(--mono);font-weight:500;color:var(--text-secondary);overflow-wrap:anywhere;word-break:break-word}
+    @media(max-width:1200px){.deep-status-session,.deep-status-progress,.deep-status-spec,.deep-status-identity,.deep-status-continuity{grid-column:span 6}}
+    @media(max-width:720px){.deep-status-grid{grid-template-columns:1fr}.deep-status-session,.deep-status-progress,.deep-status-spec,.deep-status-identity,.deep-status-continuity{grid-column:span 1}.deep-status-section{padding:12px}.deep-status-section .stats-row{grid-template-columns:minmax(92px,120px) minmax(0,1fr);gap:8px}}
     @media(max-width:560px){.drawer-lease-row{grid-template-columns:minmax(0,1fr);align-items:start}.drawer-lease-state{justify-self:start}.drawer-lease-holder{white-space:normal;word-break:break-word}}
     .commits-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-elevated);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em}
     .commits-source{font-weight:600;color:var(--text-secondary)}

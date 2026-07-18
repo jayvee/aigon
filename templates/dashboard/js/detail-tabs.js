@@ -737,11 +737,12 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
       }
 
       function statusSection(title, rows) {
+        const sectionClass = 'deep-status-' + String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         const body = rows
           .filter(r => r)
           .map(([k, v]) => '<div class="stats-row"><div class="stats-key">' + escHtml(k) + '</div><div class="stats-val">' + (v || 'n/a') + '</div></div>')
           .join('');
-        return '<div class="deep-status-section"><h4 class="deep-status-heading">' + escHtml(title) + '</h4>' + body + '</div>';
+        return '<div class="deep-status-section ' + sectionClass + '"><h4 class="deep-status-heading">' + escHtml(title) + '</h4>' + body + '</div>';
       }
 
       function implementedByHtml(implementedBy) {
@@ -759,6 +760,42 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         return '<div class="stats-val-main">' + escHtml(label) + '</div>' + hint;
       }
 
+      function agentLabel(agentId) {
+        if (!agentId) return 'unknown';
+        return (window.AGENT_DISPLAY_NAMES && window.AGENT_DISPLAY_NAMES[agentId]) || agentId;
+      }
+
+      function continuitySectionHtml(data) {
+        const origin = data.originSession || {};
+        const handoff = data.authorHandoff || {};
+        const decision = data.latestContinuityDecision || null;
+        if (!origin.source && !handoff.status && !decision) return '';
+
+        const originParts = [];
+        if (origin.source === 'direct-agent-session') originParts.push('Direct author session');
+        else if (origin.source === 'aigon-launched') originParts.push('Aigon-managed author session');
+        else if (origin.source) originParts.push(origin.source);
+        if (origin.captureState) originParts.push(origin.captureState);
+        if (origin.hasNativeSession) originParts.push('resumable ID captured');
+
+        const handoffText = handoff.status
+          ? handoff.status + (handoff.artifactVersion ? ' · v' + handoff.artifactVersion : '')
+          : 'not recorded';
+        const decisionText = decision
+          ? decision.strategy + (decision.confidence ? ' · ' + decision.confidence + ' confidence' : '')
+          : 'not evaluated yet';
+        const reasonText = decision && Array.isArray(decision.reasons) && decision.reasons.length
+          ? decision.reasons.join(', ')
+          : null;
+
+        return statusSection('Continuity', [
+          ['Origin', escHtml(originParts.join(' · ') || 'unavailable')],
+          ['Author handoff', escHtml(handoffText)],
+          ['Latest decision', escHtml(decisionText)],
+          reasonText ? ['Decision reasons', escHtml(reasonText)] : null,
+        ]);
+      }
+
       function renderStatus(data, transcriptBundle) {
         const s = data.session || {};
         const p = data.progress || {};
@@ -766,12 +803,19 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         const parsed = parseEntityFromSpecPath(getDrawerState().path, getDrawerState().type);
         const leaseHtml = parsed.id ? renderLeaseSection(parsed.type, parsed.id, getDrawerState().repoPath) : '';
 
+        const noActiveSession = !s.completed && !data.primaryAgent
+            && ['inbox', 'backlog', 'paused'].includes(String(data.lifecycle || '').toLowerCase());
         const sessionRows = s.completed
           ? [
               ['Status', statusIndicator(false, s)],
               s.completedAt ? ['Completed at', escHtml(formatIso(s.completedAt))] : null,
               s.durationMs != null ? ['Duration', formatUptime(Math.floor(s.durationMs / 1000))] : null,
             ]
+          : noActiveSession
+            ? [
+                ['Status', '<span class="status-dot status-idle"></span> No active session'],
+                ['Next session', 'Created when implementation starts'],
+              ]
           : [
               ['Status', statusIndicator(s.tmuxAlive)],
               ['Session name', s.sessionName ? escHtml(s.sessionName) : 'n/a'],
@@ -822,6 +866,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
           ['Name', escHtml(data.name || '')],
           ['Lifecycle', escHtml(data.lifecycle || 'unknown')],
           ['Mode', escHtml(data.mode || 'unknown')],
+          ['Spec author', escHtml(agentLabel((data.specAuthor && data.specAuthor.agentId) || data.authorAgentId))],
           ['Primary agent', escHtml(data.primaryAgent || 'none')],
           data.implementedBy ? ['Implemented by', implementedByHtml(data.implementedBy)] : null,
           data.worktreePath ? ['Worktree', '<span class="mono">' + escHtml(data.worktreePath) + '</span>'] : null,
@@ -830,7 +875,7 @@ import { copyText, escHtml, formatLeaseHolderLabel, showToast } from './utils.js
         detailEl.innerHTML =
           (parsed.id ? renderDrawerRecoveryActions(parsed.type, parsed.id, getDrawerState().repoPath) : '') +
           '<div class="deep-status-grid">' +
-            leaseHtml + sessionHtml + progressHtml + costHtml + specHtml + agentSessionsHtml + metaHtml +
+            leaseHtml + sessionHtml + progressHtml + costHtml + specHtml + agentSessionsHtml + metaHtml + continuitySectionHtml(data) +
           '</div>' +
           '<div class="deep-status-footer">Collected ' + escHtml(formatIso(data.collectedAt)) + '</div>';
         wireDrawerRecoveryActions(detailEl, parsed.type, parsed.id, getDrawerState().repoPath);

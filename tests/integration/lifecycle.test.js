@@ -246,6 +246,11 @@ testAsync('feature deep status returns implementation provenance from stats', ()
     await engine.startFeature(repo, '80', 'solo_branch', ['cu']);
     await engine.signalAgentReady(repo, '80', 'cu');
     await engine.closeFeatureWithEffects(repo, '80', async () => {});
+    const snapshotPath = path.join(repo, '.aigon', 'workflows', 'features', '80', 'snapshot.json');
+    const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+    snapshot.specAuthor = { agentId: 'cu', model: null, effort: null, authoredAt: '2026-07-18T00:00:00.000Z' };
+    snapshot.authorAgentId = 'cu';
+    fs.writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2));
     writeStats(repo, 'feature', '80', {
         implementedBy: {
             holderId: 'docker-machine-b',
@@ -255,6 +260,8 @@ testAsync('feature deep status returns implementation provenance from stats', ()
         },
     });
     const status = collectFeatureDeepStatus(repo, '80');
+    assert.strictEqual(status.specAuthor.agentId, 'cu');
+    assert.strictEqual(status.authorAgentId, 'cu');
     assert.deepStrictEqual(status.implementedBy, {
         holderId: 'docker-machine-b',
         user: 'testuser-b@example.com',

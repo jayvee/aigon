@@ -97,6 +97,7 @@ test('active review and revision work carries a live session for Peek', () => {
 // REGRESSION: F684 — gallery must cover unavailable origins and checkpoint fallback without provider-local data.
 test('continuity gallery facts cover fresh handoff and checkpoint fallback', () => {
     const unavailable = scenario('feature-continuity-origin-unavailable');
+    assert.strictEqual(unavailable.specAuthor.agentId, 'cx');
     assert.strictEqual(unavailable.continuity.latestContinuityDecision.strategy, 'fresh-with-handoff');
     assert.deepStrictEqual(unavailable.continuity.latestContinuityDecision.reasons, ['origin-unavailable']);
     const fallback = scenario('feature-continuity-checkpoint-fallback');
