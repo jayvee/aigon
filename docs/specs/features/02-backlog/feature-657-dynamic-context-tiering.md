@@ -13,31 +13,12 @@ Reduce cold-start context cost for agents working on **the Aigon repository itse
 
 Do **not** implement dynamic context tiers, marker extraction, task-aware context assembly, generated prompt files, or an OpenCode `agent.build.prompt` override in this feature. OpenCode loads the project-root `AGENTS.md` as a separate system-instruction source and combines it with configured instructions; a custom build-agent prompt is additive and therefore does not suppress the large root file.
 
-## Spec review decision (2026-07-18)
+## Background
 
-### Recommendation
-
-**Do the cost-reduction work, but do not implement F657's original dynamic-tiering architecture.** The underlying cost is real; the proposed delivery mechanism does not remove its source and adds a second instruction-composition system that Aigon would have to keep aligned with multiple agent harnesses.
-
-### Evidence
-
-- This repo's `AGENTS.md` is currently 439 lines / 75,573 bytes (roughly 15–20k tokens before harness prompts and tool schemas).
-- Local OpenCode telemetry contains trivial first turns of roughly 30–36k input tokens and a recent real Aigon session whose first assistant turn used 37,603 input tokens. The probe fixes in commit `95e233cbe` stopped automated probe waste, but real Aigon-managed OpenCode sessions still start in the repo/worktree and load the root instruction file.
-- Aigon's F420 install contract already makes consumer `AGENTS.md` files user-owned: `install-agent` neither creates nor modifies them. Therefore the large `AGENTS.md` motivating this feature is an **Aigon-repo maintenance problem**, not evidence that Aigon copies its maintainer module map into target repos.
-- Current OpenCode documentation says project `AGENTS.md` content is included in the model context and that configured `instructions` are combined with it. OpenCode 1.18.3 also expands `agent.build.prompt: "{file:...}"`, but this adds an agent prompt; it does not replace project instructions.
-- The original spec incorrectly states that the spawn exports `AIGON_TASK_TYPE`. Today it is scoped only to the `aigon agent-status` start command, so task-aware assembly would require new environment plumbing too.
-
-### Separate target-repo leak found during review
-
-There **is** a genuine but separate target-repo instruction leak: `templates/agents/cx.json` and `templates/agents/cu.json` render `npm run dev`, `next dev`, `.env.local`, and related stack-specific advice into `.aigon/docs/agents/*.md`. `scripts/check-template-leaks.js` reports green because it scans generic template source files but not agent JSON placeholder values or fully rendered install outputs.
-
-That should be a separate, small feature which:
-
-1. removes/generalises the current cx/cu stack-specific placeholder text;
-2. runs the zero-opinion leak rules against fully rendered per-agent docs and rules for every active agent; and
-3. proves an `install-agent` fixture contains no package-manager, framework, or target-directory assumptions.
-
-Do not claim this feature fixes consumer instruction leaks, and do not combine that guard expansion with OpenCode runtime configuration.
+- This repo's `AGENTS.md` is 439 lines / 75,573 bytes (roughly 15–20k tokens before harness prompts and tool schemas). Real Aigon-managed OpenCode sessions start in the repo/worktree and load it on turn 1 — local telemetry shows first assistant turns of ~30–37k input tokens. The probe-cost fixes in commit `95e233cbe` are complementary and already shipped; they did not address real sessions.
+- The F420 install contract makes consumer `AGENTS.md` files user-owned: `install-agent` neither creates nor modifies them. The oversized root file is therefore an **Aigon-repo maintenance problem**, not a template leak into target repos.
+- Why the original dynamic-tiering design was dropped: OpenCode includes project `AGENTS.md` as a separate system-instruction source and combines configured `instructions` with it — an `agent.build.prompt` override is additive and does not suppress the root file. Additionally, `AIGON_TASK_TYPE` is not exported to the session env (it is scoped to the `aigon agent-status` start command), so task-aware assembly would have required new plumbing on top of a mechanism that could not deliver the reduction.
+- A separate target-repo instruction leak (stack-specific placeholder text in `templates/agents/cx.json` / `cu.json` rendered into consumer docs, unscanned by `scripts/check-template-leaks.js`) was found during spec review and is tracked as its own feature — see Related.
 
 ## User Stories
 
@@ -129,10 +110,6 @@ Keep the harness-native always-loaded file small. Put durable detail in normal r
 - Fixing the cx/cu rendered-placeholder leak found during review; track it as a separate target-template guard feature.
 - RAG, automatic git-diff context selection, or dynamic spec summaries.
 
-## Follow-up recommendation
-
-Create and prioritise a separate feature such as `rendered-agent-template-zero-opinion-guard`. It should fix the confirmed cx/cu placeholder leaks and make the leak checker evaluate the exact rendered artifacts installed into target repos. This follow-up is product correctness; the present feature is Aigon-repo context-cost maintenance.
-
 ## Related
 
 - Probe-cost mitigation: commit `95e233cbe`.
@@ -140,3 +117,4 @@ Create and prioritise a separate feature such as `rendered-agent-template-zero-o
 - Existing pointer primitive: `lib/commands/setup/project-context.js`, `templates/generic/agents-md.md`.
 - Prior research: R35 (`token-and-context-reduction`).
 - Current OpenCode rule behavior: project `AGENTS.md` is a system instruction source; configured instruction files are combined with it.
+- Follow-up feature: `rendered-agent-template-zero-opinion-guard` — fixes the cx/cu placeholder leak and extends leak checking to rendered install artifacts (created from this spec review; product correctness, separate from this repo-maintenance feature).
