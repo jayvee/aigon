@@ -10,6 +10,7 @@ const path = require('path');
 const os = require('os');
 const { test, report } = require('../_helpers');
 const { readLatestSidecarWithSession, resolveResumeArgs } = require('../../lib/session-sidecar');
+const { buildLaunchPromptArgs } = require('../../lib/commands/entity-commands');
 
 const mkp = (p) => fs.mkdirSync(p, { recursive: true });
 
@@ -81,6 +82,14 @@ test('resolveResumeArgs: cx uses resume subcommand (prependArgs)', () => {
     const r = resolveResumeArgs('cx', 'cx-id');
     assert.deepStrictEqual(r.prependArgs, ['resume', 'cx-id']);
     assert.strictEqual(r.isSubcommand, true);
+});
+
+test('spec revision launcher uses Codex resume subcommand when continuity selects origin', () => {
+    const args = buildLaunchPromptArgs({
+        agentId: 'cx', model: null, flagTokens: ['--full-auto'], promptFlag: null,
+        prompt: 'revise feature 11', resumeProviderSessionId: 'cx-thread-id',
+    });
+    assert.deepStrictEqual(args, ['resume', 'cx-thread-id', 'revise feature 11']);
 });
 
 test('resolveResumeArgs: unsupported agent or null inputs return null', () => {

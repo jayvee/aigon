@@ -78,7 +78,7 @@ test('direct entity creation persists an attributable Codex origin session', () 
 }));
 
 // REGRESSION: F684 — direct sessions are never attachable and unsupported adapters deterministically fall back.
-test('continuity policy selects resume only for attributed author sessions with verified task delivery', () => {
+test('continuity policy resumes healthy attributable author sessions for revision and implementation', () => {
     const handoff = {
         status: 'valid', decisions: ['Keep current paths'], specReferences: ['Technical Approach'],
         unresolvedQuestions: ['implementation choice'],
@@ -93,6 +93,14 @@ test('continuity policy selects resume only for attributed author sessions with 
     });
     assert.strictEqual(resume.strategy, 'resume-origin');
     assert.ok(resume.reasons.includes('adapter-resume-and-task-delivery-verified'));
+    const implementation = resolveContinuityPolicy({
+        phase: 'implementation', selectedAgent: 'cx', authorAgentId: 'cx', originSession: {
+            ...origin, nativeProvenance: 'runtime-env',
+        }, authorHandoff: { ...handoff, unresolvedQuestions: [] },
+        adapter: { continuity: { resumeById: true, taskDelivery: 'initial-argument' } },
+    });
+    assert.strictEqual(implementation.strategy, 'resume-origin');
+    assert.ok(implementation.reasons.includes('implementation-origin-healthy'));
     const refused = resolveContinuityPolicy({
         phase: 'spec-revise', selectedAgent: 'cx', authorAgentId: 'cx', originSession: origin, authorHandoff: handoff,
         adapter: { continuity: { resumeById: true, taskDelivery: 'unverified' } },
