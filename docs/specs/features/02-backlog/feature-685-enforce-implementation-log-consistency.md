@@ -33,10 +33,10 @@ Implementation logs are currently treated inconsistently across Aigon's workflow
 - [ ] As a maintainer, I want completion/close gates to catch missing required logs before a feature reaches `done`, so the workflow invariant is enforced by the tool and not only by prose.
 
 ## Acceptance Criteria
-- [ ] The default logging policy no longer silently skips implementation logs for solo Drive branch work. If the chosen product decision is not "always", the alternative must still preserve a durable feature-level context artifact by default.
+- [ ] The default logging policy no longer silently skips implementation logs for solo Drive branch work: with no `logging_level` set, `resolveImplementationLogVariant('drive', undefined)` returns a non-`'skip'` variant (today it returns `'skip'`; a `'minimal'` required one-liner is the minimum bar). The implementer must record the chosen default — change the product default vs. rename/repurpose `fleet-only` — in the implementation log with one line of rationale, so the resolved OQ is durable.
 - [ ] `templates/generic/docs/agent.md`, `.aigon/docs/agents/*` generated content, `templates/generic/commands/feature-do.md` output, and `.aigon/docs/development_workflow.md` agree on when a log is required, optional, or explicitly disabled.
 - [ ] `aigon feature-do <ID>` prints the resolved expected log path or explicit opt-out reason in all modes, and solo branch output does not contradict the workflow docs.
-- [ ] `aigon agent-status implementation-complete` or `aigon feature-close` blocks, or at minimum emits a clear non-bypassable warning under the selected policy, when a required implementation log is missing.
+- [ ] When a required implementation log is missing, `aigon agent-status implementation-complete` reports it as a blocker before review, and `aigon feature-close` surfaces it through the **existing** close-integrity framework — a new gate name registered in `CLOSE_INTEGRITY_GATES` (`lib/close-integrity-policy.js`) with a label in `close-readiness.js`, advisory by default and blocking when `featureClose.integrityPolicy: "blocking"` (or a per-gate `integrityGates` override) selects it. Do not add a bespoke pass/fail check bolted onto `feature-close.js` outside that framework (avoids a second source of truth for close blocking).
 - [ ] The guard respects an explicit project opt-out such as `"logging_level": "never"` and does not require logs for research findings or unrelated docs/state files.
 - [ ] Existing feature log discovery remains compatible with both solo names (`feature-<ID>-<desc>-log.md`) and agent-specific names (`feature-<ID>-<agent>-<desc>-log.md`).
 - [ ] Focused regression coverage proves that the default policy requires a solo branch log, that explicit opt-out still skips, and that completion/close handling detects a missing required log.
@@ -73,9 +73,10 @@ Likely implementation areas:
   - Align persistent agent guidance with runtime behavior. Avoid target-repo-specific assumptions.
 - `templates/docs/development_workflow.md` and `.aigon/docs/development_workflow.md`
   - Clarify that logs are default-required feature context, with explicit opt-out only through config.
-- `lib/commands/agent-signals.js` and/or `lib/feature-close.js`
-  - Add a reusable helper that resolves whether a feature mode requires a log, discovers the expected log file, and reports a precise error/warning.
-  - Prefer checking on `agent-status implementation-complete` so agents fix the issue before review. Add a close-side safety check if the submit path can be bypassed through explicit args, legacy sessions, or dashboard close.
+- `lib/commands/agent-signals.js`, `lib/close-integrity-policy.js`, `lib/close-readiness.js`
+  - Add a reusable helper (single source) that resolves whether a feature mode+`logging_level` requires a log and discovers the expected log file. Reuse the existing solo-vs-agent log discovery already in `agent-signals.js` (~L478–485: `feature-<ID>-*-log.md` filtered against the `feature-<ID>-<agent>-` prefix) — do not duplicate that glob.
+  - Check first on `agent-status implementation-complete` so agents fix the issue before review (this is the loud, early path).
+  - For the close-side safety net (explicit-arg submit, legacy sessions, dashboard close), register a new gate in `CLOSE_INTEGRITY_GATES` and emit a close finding routed through `resolveCloseIntegrityPolicy` / `isCloseFindingBlocking`, rather than a standalone check in `feature-close.js`. Advisory by default keeps existing repos unblocked while making the gap visible.
 - `lib/feature-command-helpers.js`
   - Keep logs ignored for "substantive implementation evidence"; that prevents log-only submissions from passing. Add separate log-required evidence rather than conflating the two.
 
@@ -96,9 +97,9 @@ Testing plan:
 - Do not backfill all historical missing logs automatically. Document the approach and optionally backfill only known local examples if the implementation agent judges it safe.
 
 ## Open Questions
-- Should this repo set `"logging_level": "always"` explicitly, or should the product default change so no project config is needed?
-- Should missing required logs block `feature-close`, or should close record a blocking/advisory integrity finding based on `featureClose.integrityPolicy`?
-- Should `agent-status implementation-complete <ID> <agent>` explicit-arg mode remain able to bypass the log guard for recovery operations, with close as the final safety net?
+- Should the product default change (so no project config is needed) or should `fleet-only` be renamed/repurposed? Prefer changing the default so a fresh repo is safe out of the box; setting `"logging_level": "always"` only in this repo does not fix the invariant for users. Whichever is chosen, record it per AC #1.
+- **Resolved by AC #4:** missing required logs are surfaced as a close-integrity finding governed by `featureClose.integrityPolicy` (advisory default, blocking when configured) — not a hard, unconditional `feature-close` block.
+- Should `agent-status implementation-complete <ID> <agent>` explicit-arg mode remain able to bypass the log guard for recovery operations, with close as the final safety net? Default to: explicit-arg mode still warns but does not hard-block (recovery escape hatch), close is the safety net.
 
 ## Related
 - Evidence: `F676` and `F677` are closed `solo_branch` features with no implementation log files.
