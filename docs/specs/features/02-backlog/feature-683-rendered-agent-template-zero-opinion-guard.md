@@ -2,6 +2,8 @@
 aigon_id: F683
 complexity: medium
 agent: cc
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-18T00:22:09.424Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: rendered-agent-template-zero-opinion-guard
