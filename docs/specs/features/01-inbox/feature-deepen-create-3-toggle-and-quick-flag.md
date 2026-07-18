@@ -29,7 +29,7 @@ This is the smallest piece of code/config work in the set — feature #1 and #2 
 - [ ] `aigon config show` displays `deepen.enabled` and its effective value.
 - [ ] `aigon config set deepen.enabled <bool>` writes to project config (mirroring how other writeable config keys behave today; verify in `lib/config.js` before implementing).
 - [ ] When deepen is gated off (either by flag or config), the slash command prompt skips the deepen step and the agent goes straight to the existing one-shot scaffolding.
-- [ ] When the deepen flow runs and finishes, the agent emits a one-line hint at the end: `(Don't want this every time? Run \`aigon config set deepen.enabled false\`.)` — but only on the first ~3 deepen sessions per user (idempotent counter in user config), so it doesn't become noise.
+- [ ] When the deepen flow runs and finishes, the agent emits a one-line hint at the end: `(Don't want this every time? \`aigon feature-create --quick\`, or disable with \`aigon config set deepen.enabled false\`.)` — unconditionally, every session. One line is not noise, and a first-N-runs counter (agent-maintained state in user config) was considered and rejected as disproportionate complexity.
 - [ ] `aigon doctor` does not warn or error on `deepen.enabled` being set; it is a known key.
 - [ ] No mention of "grill" anywhere in code, config, or prompts.
 
@@ -56,7 +56,7 @@ npm test
   > If invoked with `--quick`, or if `aigon config get deepen.enabled` returns `false`, skip the Deepen step and proceed directly to "Write the spec".
   
   The prompt is interpreted by the agent, not the CLI — so this is a documentation-style condition the agent reads. The CLI's job is only to make the flag and config readable; the agent is responsible for honouring the rule. Verify that `aigon config get deepen.enabled` is a usable command path so the agent can shell-out to check it (add a one-shot getter if not present).
-- **Hint emission**: the deepen prompt instructs the agent to append the hint after the spec is written, conditional on a first-N-runs counter stored in `~/.aigon/config.json` under `deepen.hintCount`. Increment after each emission; stop emitting once `hintCount >= 3`.
+- **Hint emission**: the deepen prompt instructs the agent to append the one-line hint after the spec is written, every time. No counter, no persisted state — the hint is static prompt text.
 - **Tests**: unit tests for `resolveDeepenEnabled` covering all four precedence layers. No UI tests required — this is a CLI/config feature.
 - **Restart server** after `lib/*.js` edits per CLAUDE.md hot rule #3.
 

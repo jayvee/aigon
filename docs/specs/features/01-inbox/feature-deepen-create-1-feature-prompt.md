@@ -24,7 +24,7 @@ This feature only ships the prompt content — the default-on/`--quick`/config p
 
 ## Acceptance Criteria
 
-- [ ] `templates/generic/commands/feature-create.md` contains a "Deepen" section with: (a) one-question-at-a-time rule, (b) "provide a recommended answer for each question, labelled `Recommended: …`", (c) "investigate the codebase to answer your own questions before asking the user", (d) walk template sections in dependency order (Summary → User Stories → Acceptance Criteria → Technical Approach → Dependencies → Out of Scope → complexity), (e) explicit `enough` / `stop` / `that's plenty` exit, (f) "I don't know" handler that writes the recommendation + `<!-- assumed; confirm during spec-review -->`, (g) end with a one-sentence rationale for the chosen `complexity:`.
+- [ ] `templates/generic/commands/feature-create.md` contains a "Deepen" section with: (a) one-question-at-a-time rule, (b) "provide a recommended answer for each question, labelled `Recommended: …`", (c) "investigate the codebase to answer your own questions before asking the user", (d) walk template sections in dependency order (Summary → User Stories → Acceptance Criteria → Technical Approach → Dependencies → Out of Scope → complexity), (e) explicit `enough` / `stop` / `that's plenty` exit, (f) "I don't know" handler that writes the recommendation + `<!-- assumed; confirm during spec-review -->`, (g) end with a one-sentence rationale for the chosen `complexity:`, (h) a question budget: typical session length 5–9 questions, at most one highest-leverage question per template section; when in doubt between asking and assuming, write the recommendation with the `<!-- assumed -->` flag instead of asking. Over-asking is the pattern's #1 documented failure mode and the budget is load-bearing, not advisory.
 - [ ] If `planning_context:` is set on the in-flight spec, the prompt instructs the agent to use the plan file as the source of recommended answers and not re-interview about decisions already in the plan.
 - [ ] No mention of "grill" or any reference to Matt Pocock's `/grill-me` skill in the prompt body or comments. The pattern stands on its own.
 - [ ] The existing "Explore the codebase" guidance is reconciled with the new investigate-before-asking rule — they are not contradictory and the prompt is no longer redundant.
@@ -71,6 +71,10 @@ node -c aigon-cli.js
 ## Open Questions
 
 - When invoked from a bare shell (no agent attached), the deepen interview cannot run. Today the create commands are usually invoked via the agent slash command, so this is an edge case — but it should be handled gracefully (fall back to today's one-shot behavior with a note that deepen was skipped). The exact wording of the fallback note is left to the implementing agent.
+
+## Non-goals / intended bypasses
+
+- Specs created via bare CLI calls to `aigon feature-create` — notably agents materialising the feature table from a research-eval synthesis — never load this slash-command prompt and therefore skip deepen. This is **intended**: the research synthesis already supplies the depth the interview would elicit. Do not "fix" this path to force an interview.
 
 ## Related
 
