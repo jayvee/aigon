@@ -43,7 +43,7 @@
   },
   "scripts": {
     "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true && node ./aigon-cli.js installed-notice || true",
-    "prepublishOnly": "node scripts/check-template-leaks.js && node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
+    "prepublishOnly": "node scripts/check-root-instruction-budget.js && node scripts/check-template-leaks.js && node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
     "release": "node scripts/publish.js",
     "ship": "node scripts/ship.js",
     "ship:share": "node scripts/ship.js share",
@@ -61,7 +61,7 @@
     "test:iterate": "node scripts/iterate-validate.js",
     "test:quick": "npm run test:iterate",
     "test:related": "node scripts/test-related.js",
-    "test:core": "npm run lint:paths && npm run lint && node scripts/check-template-leaks.js && node scripts/check-module-graph.js && node scripts/check-alpine-bindings.js && node scripts/generate-workflow-diagrams.js --check && bash scripts/check-test-budget.sh && npm run test:unit && npm run test:integration && npm run test:workflow",
+    "test:core": "npm run lint:paths && npm run lint && node scripts/check-root-instruction-budget.js && node scripts/check-template-leaks.js && node scripts/check-module-graph.js && node scripts/check-alpine-bindings.js && node scripts/generate-workflow-diagrams.js --check && bash scripts/check-test-budget.sh && npm run test:unit && npm run test:integration && npm run test:workflow",
     "test:core:full": "npm run test:core && npm run test:unit:heavy && npm run test:integration:heavy",
     "test:browser": "npm run test:browser:smoke",
     "test:browser:full": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list",

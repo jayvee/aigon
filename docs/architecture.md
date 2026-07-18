@@ -4,6 +4,8 @@
 
 This document gives agents and contributors a fast map of the Aigon codebase. It focuses on where workflow state lives, how the CLI is structured, and where new code should go.
 
+The root `AGENTS.md` intentionally contains only always-needed safety invariants and reading pointers. Detailed module maps, state histories, installation internals, and change checklists belong here; testing detail belongs in `docs/testing.md`. `scripts/check-root-instruction-budget.js` enforces that split with byte/line budgets and stable safety-anchor markers.
+
 ## Repository Layout
 
 - `aigon-cli.js`: thin CLI entrypoint. It parses argv, resolves aliases, dispatches commands, and handles top-level async errors.
@@ -317,6 +319,21 @@ The workflow-core engine is the sole lifecycle authority for features and resear
 | Lock model | Exclusive file creation (`wx` flag) |
 | Effects | Explicit, durable, resumable lifecycle (requested → claimed → succeeded/failed) |
 | Dependency | `xstate` npm package |
+
+### Adding a lifecycle state
+
+A new `currentSpecState` is a coordinated engine, projector, read-contract, and session change. Audit every applicable site; omitting one commonly creates a half-state that writes successfully but cannot render or recover:
+
+1. Add the value in `lib/workflow-core/types.js` and map it to the appropriate lifecycle view in `lib/workflow-core/paths.js`.
+2. Add the state, inbound/outbound transitions, guards, action candidates, and transient-state registration in `lib/feature-workflow-rules.js` and/or `lib/research-workflow-rules.js`.
+3. Register matching XState guards and deliberate hydration ordering in `lib/workflow-core/machine.js`.
+4. Teach `lib/workflow-core/projector.js` to replay every new event and initialise new context fields for old snapshots.
+5. Keep incremental application aligned in `lib/workflow-core/engine.js`: transition switch, record helper, snapshot projection, and effect suppression where folders do not change.
+6. Add presentation metadata in `lib/state-render-meta.js` and update the entity UI contract/fingerprint when the new state must repaint a card.
+7. Update `lib/workflow-snapshot-adapter.js` and the relevant dashboard collectors/DTOs; browser code must only render the resulting server-owned contract.
+8. If the state introduces a session role, update `lib/agent-sessions/names.js`, host/session DTOs, and round-trip parsing tests. Do not infer roles in frontend code.
+9. Add projector replay, machine-transition, adapter/contract, and end-to-end recovery tests appropriate to the state.
+10. Update this lifecycle documentation, the dashboard contract gallery scenarios, and `CHANGELOG.md`; then review Cards, Pipeline, and Monitor on desktop and mobile.
 
 **State files** (gitignored local projection under `.aigon/workflows/`; canonical git-branch events live on `refs/heads/aigon-state` as `specs/<KEY>/events.jsonl`):
 - `.aigon/workflows/features/{id}/events.jsonl` — append-only event log (local copy; rebuilt from the state branch on sync when git-branch storage is enabled)

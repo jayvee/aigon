@@ -1,6 +1,6 @@
 # Aigon — CLAUDE Pointer
 
-The full orientation lives in **`AGENTS.md`**. Read that first — it is the single source of truth for repo structure, the ctx pattern, the module map, state architecture, editing rules, testing discipline, and common mistakes.
+The always-loaded orientation lives in **`AGENTS.md`** — read that first for the load-bearing safety invariants (OSS/Pro boundary, target-repo zero-opinion, template source-of-truth, lifecycle authority, ctx pattern, dashboard gallery, server-restart, test/commit discipline) and reading pointers. Deep reference — repo structure, the module map, state architecture, install internals — lives on-demand in **`docs/architecture.md`** (and testing detail in `docs/testing.md`); read those when the task touches their area.
 
 ## Hot rules (read before editing)
 - **F313 frontmatter**: feature/research specs carry `complexity:` YAML only; model/effort defaults resolve at start from `templates/agents/<id>.json` `cli.complexityDefaults` then config (not from the spec). Parser: `lib/cli-parse.js parseFrontMatter`. Resolver: `lib/spec-recommendation.js`. Dashboard reads via `/api/recommendation/:type/:id` and pre-selects the start-modal dropdowns.
