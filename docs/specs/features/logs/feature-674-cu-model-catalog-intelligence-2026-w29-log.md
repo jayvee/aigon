@@ -3,6 +3,7 @@ Agent: cu
 
 ## Status
 
+W29 weekly catalog scan complete — 8 pricing refreshes, 4 quarantine→archive upgrades, 12/12 probes PASS, 6 summary drafts in report (yes/no gated).
 ## New API Surface
 
 ## Key Decisions
