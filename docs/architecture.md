@@ -4,6 +4,8 @@
 
 This document gives agents and contributors a fast map of the Aigon codebase. It focuses on where workflow state lives, how the CLI is structured, and where new code should go.
 
+The root `AGENTS.md` intentionally contains only always-needed safety invariants and reading pointers. Detailed module maps, state histories, installation internals, and change checklists belong here; testing detail belongs in `docs/testing.md`. `scripts/check-root-instruction-budget.js` enforces that split with byte/line budgets and stable safety-anchor markers.
+
 ## Repository Layout
 
 - `aigon-cli.js`: thin CLI entrypoint. It parses argv, resolves aliases, dispatches commands, and handles top-level async errors.

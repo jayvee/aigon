@@ -96,6 +96,7 @@ These are anti-patterns that have repeatedly slowed the dev cycle. Don't:
 | Parallel test runner | `scripts/run-tests-parallel.js` |
 | LOC budget enforcement | `scripts/check-test-budget.sh` (ceiling in file header) |
 | Per-feature extra validation | The `## Validation` block in each feature spec |
+| Root agent-instruction size and safety anchors | `scripts/check-root-instruction-budget.js` (wired into `test:core` and `prepublishOnly`) |
 | **This summary doc** | `docs/testing.md` (you are here) |
 
 If those sources disagree, the order of precedence is: `CLAUDE.md` > `AGENTS.md` > templates > this doc. This doc is a digest, not the canon.
