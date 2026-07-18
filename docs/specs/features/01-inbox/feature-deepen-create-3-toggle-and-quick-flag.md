@@ -10,27 +10,25 @@ transitions:
 
 ## Summary
 
-Wire up the on/off control surface for the deepen interview behavior introduced in features #1 and #2. Default-on is the goal: thin specs are the current default failure mode and an opt-in flag wouldn't be typed by the people who need it most. Add a `--quick` per-call flag to skip the interview, and a `deepen.enabled` config key (project + user precedence) so users who genuinely prefer one-shot creation can disable it once and forget about it.
+Establish the control contract used by the feature-create and research-create agent prompts. Default-on is the goal: thin specs are the current default failure mode and an opt-in flag would not be used by the people who need it most. Add a prompt-visible `--quick` per-call opt-out and a shared `deepen.enabled` config key with project-over-user precedence.
 
-This is the smallest piece of code/config work in the set — feature #1 and #2 ship the behavior, this feature ships the control over when the behavior runs.
+Deepen is behavior of an installed agent command, not of the bare CLI. The CLI remains a noninteractive scaffolder: it accepts `--quick` as a boolean no-op so the flag does not leak into description text, while the agent prompt reads the raw invocation and effective config before deciding whether to interview. This feature lands first so features #1 and #2 can consume a stable contract without temporarily shipping default-on prompts that have no opt-out.
 
 ## User Stories
 
-- [ ] As a user, the default behavior of `aigon feature-create` and `aigon research-create` runs the deepen interview, because the default should be the higher-quality path.
-- [ ] As a user in a hurry, I pass `--quick` to skip the interview for one call and get today's one-shot scaffolding behavior.
-- [ ] As a user who genuinely prefers one-shot creation, I run `aigon config set deepen.enabled false` once and the deepen flow stops running everywhere unless I flip it back.
-- [ ] As a project lead, I commit `deepen.enabled: false` (or `true`) in `.aigon/config.json` so my team's default matches our preference, with the user-level config falling through.
-- [ ] As a user invoking `aigon feature-create --quick`, no deepen prompt is loaded and no interview is attempted regardless of config.
+- [ ] As a user invoking an installed feature-create or research-create agent command, I get the higher-quality deepen path by default.
+- [ ] As a user in a hurry, I pass `--quick` to the agent command to skip the interview for that invocation.
+- [ ] As a user who prefers one-shot creation across repositories, I run `aigon config set --global deepen.enabled false` once.
+- [ ] As a project lead, I commit a project-level `deepen.enabled` value in `.aigon/config.json` so the repository can override the user default.
+- [ ] As a shell user, bare `aigon feature-create` and `aigon research-create` remain noninteractive scaffold commands regardless of deepen configuration.
 
 ## Acceptance Criteria
 
-- [ ] `aigon feature-create` and `aigon research-create` both accept `--quick` and skip the deepen block entirely when present.
-- [ ] `deepen.enabled` is a recognised config key with precedence: per-call `--quick` flag (skip) > project `.aigon/config.json` > user `~/.aigon/config.json` > built-in default `true`.
-- [ ] `aigon config show` displays `deepen.enabled` and its effective value.
-- [ ] `aigon config set deepen.enabled <bool>` writes to project config (mirroring how other writeable config keys behave today; verify in `lib/config.js` before implementing).
-- [ ] When deepen is gated off (either by flag or config), the slash command prompt skips the deepen step and the agent goes straight to the existing one-shot scaffolding.
-- [ ] When the deepen flow runs and finishes, the agent emits a one-line hint at the end: `(Don't want this every time? \`aigon feature-create --quick\`, or disable with \`aigon config set deepen.enabled false\`.)` — unconditionally, every session. One line is not noise, and a first-N-runs counter (agent-maintained state in user config) was considered and rejected as disproportionate complexity.
-- [ ] `aigon doctor` does not warn or error on `deepen.enabled` being set; it is a known key.
+- [ ] The feature-create and research-create CLI parsers accept `--quick` as a valueless boolean flag, do not include it in positional description text, and otherwise preserve today's scaffold output. The bare CLI does not attempt an interview.
+- [ ] `deepen.enabled` is a recognised shared boolean config key with effective precedence: project `.aigon/config.json` > user `~/.aigon/config.json` > built-in default `true`. Per-call `--quick` is evaluated by the agent prompt before that effective value.
+- [ ] `aigon config get deepen.enabled` returns the effective boolean with `project`, `global`, or `default` provenance, and `aigon config show` includes the effective value.
+- [ ] `aigon config set deepen.enabled <bool>` writes the project override; `aigon config set --global deepen.enabled <bool>` writes the user override.
+- [ ] The downstream prompts can implement the gate without another runtime API: inspect their raw invocation for `--quick`; otherwise run `aigon config get deepen.enabled` and skip only when the effective value is `false`.
 - [ ] No mention of "grill" anywhere in code, config, or prompts.
 
 ## Validation
@@ -38,26 +36,19 @@ This is the smallest piece of code/config work in the set — feature #1 and #2 
 ```bash
 node -c aigon-cli.js
 node -c lib/config.js
-aigon config show | grep -i deepen
-# Behavioural smoke test:
-aigon feature-create "smoke-test-quick" --quick    # should NOT run deepen
-aigon feature-create "smoke-test-default"          # should reference deepen in slash command
-# Clean up:
-rm docs/specs/features/01-inbox/feature-smoke-test-*.md 2>/dev/null
-npm test
+node -c lib/commands/feature.js
+node -c lib/commands/research.js
+aigon config get deepen.enabled
+aigon config show | rg '"deepen"|"enabled"'
+npm run test:iterate
 ```
 
 ## Technical Approach
 
-- **CLI flag**: parse `--quick` in `lib/commands/feature.js` (or wherever `feature-create` and `research-create` argument parsing lives — `lib/cli-parse.js` is likely involved). The flag is a boolean; default false.
-- **Config key**: extend `lib/config.js` with `deepen.enabled` (boolean, default `true`). Reuse the existing project-then-user precedence walker; do not introduce a new precedence path.
-- **Effective resolution**: a single helper, e.g. `resolveDeepenEnabled({ quickFlag, repoPath })` returns the effective boolean. `--quick` always wins (disables). Otherwise project config, then user config, then default `true`.
-- **Wiring into the slash command**: the `feature-create.md` and `research-create.md` prompts (built in #1 and #2) include a top-of-file conditional like:
-  > If invoked with `--quick`, or if `aigon config get deepen.enabled` returns `false`, skip the Deepen step and proceed directly to "Write the spec".
-  
-  The prompt is interpreted by the agent, not the CLI — so this is a documentation-style condition the agent reads. The CLI's job is only to make the flag and config readable; the agent is responsible for honouring the rule. Verify that `aigon config get deepen.enabled` is a usable command path so the agent can shell-out to check it (add a one-shot getter if not present).
-- **Hint emission**: the deepen prompt instructs the agent to append the one-line hint after the spec is written, every time. No counter, no persisted state — the hint is static prompt text.
-- **Tests**: unit tests for `resolveDeepenEnabled` covering all four precedence layers. No UI tests required — this is a CLI/config feature.
+- **CLI flag acceptance**: add `--quick` to the existing per-command parsers in `lib/commands/feature.js` and `lib/commands/research.js`. It consumes no following value, is not forwarded as description content, and does not alter `entityCreate`; the agent command is the behavioral consumer.
+- **Config key**: add `deepen.enabled: true` to the existing default config source used by `getConfigValueWithProvenance`. Keep it a shared key so both project and global writes are valid, and reuse existing config resolution rather than adding a deepen-specific precedence path.
+- **Prompt contract**: document for #1 and #2 that prompts inspect raw invocation arguments and the existing provenance-bearing `aigon config get` output. Do not add an unused `resolveDeepenEnabled` helper to the CLI.
+- **Tests**: focused regression coverage proves both create parsers strip `--quick` without consuming adjacent description words, and config resolution covers project > global > default. Every new test carries the repository-required `// REGRESSION:` comment. No UI tests are required.
 - **Restart server** after `lib/*.js` edits per CLAUDE.md hot rule #3.
 
 ## Pre-authorised
@@ -66,25 +57,24 @@ npm test
 
 ## Dependencies
 
-- depends_on: deepen-create-1-feature-prompt
-- depends_on: deepen-create-2-research-prompt
+-
 
 ## Out of Scope
 
 - A `--deepen` inverse flag for one-call opt-in when globally disabled — explicitly rejected during research-eval as unnecessary cognitive cost. If the case ever materialises, add it then.
 - A standalone `aigon spec-deepen <ID>` command for deepening existing specs — explicitly deferred. `feature-spec-review` already covers post-hoc improvement.
-- Changing the prompts themselves — that is features #1 and #2.
-- Updating `feature-now` to pass `--quick` — that is feature #4.
+- Changing the deepen prompt bodies or their opt-out hint — those are features #1 and #2.
+- Changing `feature-now`; it already bypasses `feature-create` and therefore cannot enter the deepen interview.
 - Telemetry on how often `--quick` is used or how often deepen is globally disabled.
 - A spec transcript / Q&A log artifact — explicitly rejected during research-eval (sidecar reflex; spec is the contract).
+- A dedicated `resolveDeepenEnabled` runtime helper; no CLI runtime behavior consumes such a value.
 
 ## Open Questions
 
-- Where exactly is the right place to read `--quick` — at `aigon-cli.js` dispatch level or inside the per-command handler? Implementing agent should pick the spot consistent with how other create-time flags like `--set` are read.
-- Should the effective value be exposed in `aigon doctor` output (informational, not a warning)? Probably yes; defer judgement to implementing agent.
+- None. The create command handlers own flag acceptance, and existing config provenance owns effective-value reporting.
 
 ## Related
 
 - Research: #46 guided-entity-creation
 - Set: deepen-create
-- Prior features in set: deepen-create-1-feature-prompt, deepen-create-2-research-prompt
+- Prior features in set: —
