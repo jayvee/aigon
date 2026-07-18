@@ -60,7 +60,11 @@ the bare `aigon feature-create` CLI remains a noninteractive scaffolder.
 
    `Recommended: <answer>`
 
-   The user may reply `yes` to ratify it or provide an override. After every
+   When the question chooses between discrete alternatives, enumerate them as
+   short lettered options — `a) …`, `b) …` — and name the chosen letter in the
+   recommendation (`Recommended: a) <answer>`), so the user can answer with just
+   a letter. The user may reply with a letter, `yes` to ratify the
+   recommendation, or an override. After every
    answer, update the working decisions and select the next highest-leverage unresolved gap
    rather than blindly advancing through the headings.
 5. **Handle exits and uncertainty.** Normally ask 3–6 questions, with coverage —
