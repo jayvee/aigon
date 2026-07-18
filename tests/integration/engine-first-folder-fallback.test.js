@@ -125,6 +125,24 @@ test('collectDoneSpecs: filename-only — 05-done only; engine-done without fold
     assert.ok(ids.includes('41'), `folder done feature 41 missing: ${ids.join(',')}`);
 }));
 
+test('collectDoneSpecs: orders by close date (spec mtime), not numeric id', () => withTempDir('aigon-done-closeorder-', (repo) => {
+    // REGRESSION: a lower-id feature closed more recently must sort ABOVE
+    // a higher-id feature closed earlier. mtime of the 05-done spec ≈ close date.
+    seedEntityDirs(repo, 'features');
+    const doneDir = path.join(repo, 'docs', 'specs', 'features', '05-done');
+    // Higher id, closed earlier (older mtime).
+    writeSpec(repo, 'features', '05-done', 'feature-680-recent-create.md');
+    fs.utimesSync(path.join(doneDir, 'feature-680-recent-create.md'), new Date('2026-07-15T00:00:00Z'), new Date('2026-07-15T00:00:00Z'));
+    // Lower id, closed just now (newest mtime).
+    writeSpec(repo, 'features', '05-done', 'feature-657-just-closed.md');
+    fs.utimesSync(path.join(doneDir, 'feature-657-just-closed.md'), new Date('2026-07-18T00:00:00Z'), new Date('2026-07-18T00:00:00Z'));
+
+    const out = collectDoneSpecs(doneDir, /^feature-\d+-.+\.md$/, 10, { entityType: 'feature' });
+    const ids = out.recent.map(item => (item.file.match(/^feature-(\d+)/) || [])[1]);
+    assert.strictEqual(ids[0], '657', `most-recently-closed 657 must lead despite lower id: ${ids.join(',')}`);
+    assert.strictEqual(ids[1], '680', `earlier-closed 680 must follow: ${ids.join(',')}`);
+}));
+
 // ---------------------------------------------------------------------------
 // Read-model — drift discriminator
 // ---------------------------------------------------------------------------
