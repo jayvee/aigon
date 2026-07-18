@@ -12,7 +12,7 @@ const {
 // --- 1. Session name round-trip for every current role ----------------------
 
 test('tmux session name round-trips for all current roles', () => {
-    const roleAgentRoles = ['do', 'eval', 'review', 'revise', 'spec-review', 'spec-revise', 'spec-check', 'close'];
+    const roleAgentRoles = ['spec-draft', 'do', 'eval', 'review', 'revise', 'spec-review', 'spec-revise', 'spec-check', 'close'];
     for (const role of roleAgentRoles) {
         const name = buildTmuxSessionName('42', 'cx', { repo: 'aigon', role, entityType: 'f', desc: 'demo-feature' });
         const parsed = parseTmuxSessionName(name);
@@ -33,7 +33,7 @@ test('tmux session name round-trips for all current roles', () => {
     assert.strictEqual(autoParsed.role, 'auto');
     assert.strictEqual(autoParsed.agent, null);
     assert.deepStrictEqual([...VALID_TMUX_ROLES].sort(), [
-        'auto', 'close', 'do', 'eval', 'review', 'revise', 'spec-check', 'spec-review', 'spec-revise',
+        'auto', 'close', 'do', 'eval', 'review', 'revise', 'spec-check', 'spec-draft', 'spec-review', 'spec-revise',
     ]);
 });
 

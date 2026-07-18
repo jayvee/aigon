@@ -9,6 +9,56 @@ const engine = require('../../lib/workflow-core/engine');
 const { projectContext } = require('../../lib/workflow-core/projector');
 const { resolveSpecAuthor, buildSpecAuthor } = require('../../lib/spec-author-provenance');
 const { buildEntityView } = require('../../lib/read-model/entity-view');
+const entityContext = require('../../lib/entity-context');
+const { resolveContinuityPolicy } = require('../../lib/session-continuity-policy');
+
+// REGRESSION: F684 — creation authorship must follow flag > env > active-session precedence without guessing.
+test('resolveCreationAuthor uses deterministic precedence and leaves unknown shells authorless', () => {
+    const detect = () => ({ detected: true, agentId: 'cu' });
+    assert.strictEqual(entityContext.resolveCreationAuthor({ agent: 'cc' }, { AIGON_AGENT_ID: 'cx' }, detect), 'cc');
+    assert.strictEqual(entityContext.resolveCreationAuthor({}, { AIGON_AGENT_ID: 'cx' }, detect), 'cx');
+    assert.strictEqual(entityContext.resolveCreationAuthor({}, {}, detect), 'cu');
+    assert.strictEqual(entityContext.resolveCreationAuthor({}, {}, () => ({ detected: true, agentId: 'not-an-agent' })), null);
+});
+
+// REGRESSION: F684 — invalid replacement handoffs must never overwrite the previous valid artifact.
+test('author handoff validation is atomic and public context redacts native identifiers', () => withTempDir('aigon-author-handoff-', (repo) => {
+    entityContext.establishOriginSession(repo, 'feature', '7', { authorAgentId: 'cx', aigonLaunched: true });
+    entityContext.bindOriginNativeSession(repo, 'feature', '7', { sessionId: 'provider-secret', sessionPath: '/private/transcript' });
+    const valid = {
+        decisions: ['Use the existing workflow engine'], constraints: ['No transcript storage'], nonGoals: [],
+        unresolvedQuestions: ['Confirm launch health'], implementationNotes: [], specReferences: ['Technical Approach'],
+    };
+    const first = entityContext.recordAuthorHandoff(repo, 'feature', '7', valid, { recordedBy: 'cx' });
+    assert.strictEqual(first.artifactVersion, 1);
+    assert.throws(() => entityContext.recordAuthorHandoff(repo, 'feature', '7', { decisions: [] }), /repair:/);
+    const publicValue = entityContext.readPublicEntityContext(repo, 'feature', '7');
+    assert.strictEqual(publicValue.authorHandoff.artifactVersion, 1);
+    assert.strictEqual(publicValue.originSession.hasNativeSession, true);
+    assert.strictEqual(JSON.stringify(publicValue).includes('provider-secret'), false);
+    assert.strictEqual(JSON.stringify(publicValue).includes('/private/'), false);
+}));
+
+// REGRESSION: F684 — direct sessions are never attachable and unsupported adapters deterministically fall back.
+test('continuity policy selects resume only for attributed author sessions with verified task delivery', () => {
+    const handoff = { status: 'valid', unresolvedQuestions: ['implementation choice'] };
+    const origin = {
+        aigonSessionId: 'spec-draft-feature-07', source: 'direct-agent-session', authorAgentId: 'cx',
+        providerSessionId: 'native-id', nativeProvenance: 'attributed', addressable: false,
+    };
+    const resume = resolveContinuityPolicy({
+        phase: 'spec-revise', selectedAgent: 'cx', authorAgentId: 'cx', originSession: origin, authorHandoff: handoff,
+        liveOriginSession: true, adapter: { continuity: { resumeById: true, taskDelivery: 'initial-argument' } },
+    });
+    assert.strictEqual(resume.strategy, 'resume-origin');
+    assert.ok(resume.reasons.includes('adapter-resume-and-task-delivery-verified'));
+    const refused = resolveContinuityPolicy({
+        phase: 'spec-revise', selectedAgent: 'cx', authorAgentId: 'cx', originSession: origin, authorHandoff: handoff,
+        adapter: { continuity: { resumeById: true, taskDelivery: 'unverified' } },
+    });
+    assert.strictEqual(refused.strategy, 'fresh-with-handoff');
+    assert.ok(refused.reasons.includes('adapter-resume-unsupported'));
+});
 
 // REGRESSION: F584 — --agent on create must stamp specAuthor even without AIGON_AGENT_ID.
 test('entityCreate with options.agent stamps specAuthor on inbox bootstrap', () => withTempDir('aigon-spec-author-create-', (repo) => {

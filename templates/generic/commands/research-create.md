@@ -42,6 +42,13 @@ The template ships with a `complexity:` frontmatter field that feeds the dashboa
 
 Set `complexity:` in the frontmatter; do not write model or effort values into the spec — defaults are resolved at start time from each agent’s `cli.complexityDefaults[<complexity>]`.
 
+After the brief is final, promote durable framing decisions into the spec and
+record the transcript-free author handoff. Derive identity with
+`eval "$(aigon agent-context --shell)"`, then run
+`aigon research-context record <ID> --file=<handoff.json>`. The JSON contains
+the six arrays documented by `aigon-research-context`; never copy provider
+session IDs or transcript paths manually.
+
 Next step: Once the topic is complete, run `{{CMD_PREFIX}}research-prioritise {{ARG_SYNTAX}}` to assign an ID and prioritise it to backlog.
 
 ## Prompt Suggestion

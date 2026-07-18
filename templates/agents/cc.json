@@ -39,7 +39,8 @@
     "sessionStrategy": "claude-jsonl",
     "telemetryStrategy": "claude-transcript",
     "trustInstallScope": "worktree-base",
-    "resume": { "kind": "append", "flag": "--resume" }
+    "resume": { "kind": "append", "flag": "--resume" },
+    "continuity": { "resumeById": true, "taskDelivery": "initial-argument" }
   },
   "quota": {
     "errorPatterns": [

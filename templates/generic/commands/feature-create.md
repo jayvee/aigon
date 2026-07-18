@@ -57,9 +57,21 @@ The implementing agent will read the plan before writing any code, and the conte
 
 ## After writing the spec
 
+Promote every durable product decision into the spec, then record a compact
+author handoff. Derive the active author identity through `agent-context`; do
+not copy provider session IDs or transcripts manually:
+
+```bash
+eval "$(aigon agent-context --shell)"
+aigon feature-context record <ID> --file=<handoff.json>
+```
+
+The handoff JSON contains `decisions`, `constraints`, `nonGoals`,
+`unresolvedQuestions`, `implementationNotes`, and `specReferences` arrays.
+
 Commit the spec file:
 ```bash
-git add docs/specs/features/01-inbox/
+git add docs/specs/features/01-inbox/ .aigon/context/features/
 git commit -m "feat: create feature spec - <name>"
 ```
 
