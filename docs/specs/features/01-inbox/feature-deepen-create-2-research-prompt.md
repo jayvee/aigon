@@ -1,7 +1,8 @@
 ---
-complexity: medium
+complexity: low
 research: 46
 set: deepen-create
+depends_on: [deepen-create-3-toggle-and-quick-flag]
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-04-29T23:21:48.726Z", actor: "cli/feature-prioritise" }
 ---
@@ -10,46 +11,56 @@ transitions:
 
 ## Summary
 
-Add a deepen interview pattern to `templates/generic/commands/research-create.md` — but in a deliberately stricter, framing-only variant. Unlike feature-create, the research-create deepen flow MUST NOT investigate the codebase, MUST NOT search the web, and MUST NOT attempt to answer the research questions. Its only job is to sharpen the brief: Context (why now?), Questions (falsifiable and well-framed), Scope (in/out), Inspiration. "I don't know" is a valid and expected answer that gets converted into an explicit research question rather than blocking the user.
+Add a deepen interview pattern to `templates/generic/commands/research-create.md`, but in a deliberately stricter framing-only variant. Unlike feature-create, the installed research-create agent command MUST NOT investigate the codebase, search the web, or attempt to answer the research questions. Its only job is to sharpen the brief: Context (why now?), Questions to Answer, Scope (in/out), and optional Inspiration. "I don't know" is valid and expected: substantive unknowns become explicit research questions rather than blockers.
 
-This is the strongest design call from the research synthesis: research-create elicitation is *framing-only* because the whole point of research is that the answer is not yet known. Conflating elicitation with investigation here would break the contract that research-create produces a brief for a *later* agent.
+This is the strongest design call from the research synthesis: research-create elicitation is framing-only because the whole point of research is that the answer is not yet known. Conflating elicitation with investigation would break the contract that research-create produces a brief for a later agent. Bare `aigon research-create` remains a noninteractive scaffolder; feature #3 supplies the prompt gate consumed here.
 
 ## User Stories
 
-- [ ] As a user creating a research topic, I am asked targeted questions one at a time about scope and framing only, so the resulting brief is concrete enough that a future research agent can run without coming back to ask me what I meant.
-- [ ] As a user, when I say "I don't know", that gets converted into an explicit entry under "Questions to Answer" instead of stalling the interview.
+- [ ] As a user creating a research topic, I am asked a short sequence of targeted questions about scope and framing only, so a future research agent can run without coming back to ask what I meant.
+- [ ] As a user, each question includes a recommended framing choice I can ratify without the create agent pretending to know the research answer.
+- [ ] As a user, when I do not know a substantive answer, that unknown becomes an explicit entry under "Questions to Answer" instead of stalling the interview.
 - [ ] As a user, the agent never tries to answer the research questions for me during the create step — it only helps me ask better ones.
 - [ ] As a user, I can say "enough" / "stop" at any point and the agent writes the brief with what it has.
-- [ ] As a user, after the interview the brief ends with a one-sentence rationale for the chosen `complexity:` value.
+- [ ] As a user, the final response explains the chosen `complexity:` in one sentence without adding a non-template rationale to the research brief.
 
 ## Acceptance Criteria
 
-- [ ] `templates/generic/commands/research-create.md` contains a "Deepen" section with: (a) one-question-at-a-time rule, (b) recommended answer attached to each question (`Recommended: …`), (c) **explicit prohibition** on reading code, searching the web, or attempting to answer the research questions during create, (d) walk template sections in this order: Context (why now?) → Questions to Answer (falsifiable) → Scope (in/out) → Inspiration → complexity, (e) explicit `enough` / `stop` exit, (f) "I don't know" handler that converts the unknown into a new entry under Questions to Answer rather than writing an assumption, (g) typical session length 4–7 questions, (h) end with a one-sentence rationale for the chosen `complexity:`.
+- [ ] Before Deepen, the prompt applies feature #3's gate: skip when raw invocation arguments contain `--quick`; otherwise run `aigon config get deepen.enabled` and skip only when the effective value is `false`.
+- [ ] `templates/generic/commands/research-create.md` contains a "Deepen" section with: (a) one question per message, (b) a framing choice labelled `Recommended framing: ...`, (c) an explicit prohibition on reading code, searching the web, or attempting to answer research questions, (d) an internal coverage pass over Context → Questions to Answer → Scope → optional Inspiration → complexity, and (e) explicit `enough` / `stop` exit handling.
+- [ ] The interview normally asks 2–5 questions and has a hard ceiling of 6 unless the user explicitly asks to continue. It skips already-resolved sections and never asks for Inspiration merely to complete the template.
+- [ ] On "I don't know", the agent converts a substantive unknown into a non-duplicative entry under Questions to Answer. For an unknown framing preference, it uses the recommended framing and makes that assumption visible in the relevant Context or Scope prose rather than inventing a research answer.
+- [ ] The agent infers `complexity:` after the brief is framed and gives the user a one-sentence rationale in its final response; it does not append an ad hoc rationale section or sentence to the brief.
 - [ ] The prohibition on investigation is stated **at the top** of the deepen block, not buried at the bottom — this is the single most important rule and prior practitioners have a strong instinct to investigate that must be overridden.
+- [ ] Existing research-create wording is reconciled with the prohibition: it no longer permits reading source code "to phrase good questions" or any other exploratory investigation during create.
 - [ ] No mention of "grill" or any reference to Matt Pocock's `/grill-me` skill.
 - [ ] No model IDs or effort levels appear in the prompt — `complexity:` is the only frontmatter the deepen flow sets, per F313.
-- [ ] The slash commands regenerated by `aigon install-agent` reflect the new prompt across all installed agent surfaces.
-- [ ] The Question-quality bar is encoded in the prompt: a question is "falsifiable" when it specifies a case, an alternative, and a metric (e.g. "for case Y, does X beat Z by metric W?" not "is X good?").
+- [ ] Commands regenerated by `aigon install-agent --all` reflect the new prompt across every supported installed agent surface; user-owned `AGENTS.md`, `CLAUDE.md`, and `README.md` remain byte-identical or absent.
+- [ ] The question-quality bar is answerable, evidence-seeking, and decision-relevant. Comparative or empirical questions name the case, alternatives, and evidence or metric where applicable; exploratory and qualitative questions may instead seek mechanisms, constraints, user needs, or failure modes without inventing a metric.
+- [ ] When Deepen ran and `deepen.enabled` came from the built-in default, the final response includes one concise hint: `Skip next time with --quick; disable everywhere with aigon config set --global deepen.enabled false.` The hint is omitted for explicit project/global configuration, and no counter or persisted hint state is introduced.
 
 ## Validation
 
 ```bash
-aigon install-agent cc gg cx cu
-grep -l "framing-only" .claude/commands/aigon-research-create.md
-grep -l "do not read code" .claude/commands/aigon-research-create.md
+aigon install-agent --all
+rg -l "Recommended framing" .claude/commands/ .cursor/commands/ .agents/skills/
+rg -l "do not read code" .claude/commands/ .cursor/commands/ .agents/skills/
+node scripts/check-template-leaks.js
 node -c aigon-cli.js
+npm run test:iterate
 ```
 
 ## Technical Approach
 
-- Pure prompt change in `templates/generic/commands/research-create.md`. No engine, lib, or dashboard work.
+- Pure prompt change in `templates/generic/commands/research-create.md`. Feature #3 already owns flag/config plumbing; no engine, lib, or dashboard work belongs here.
 - Insert deepen block as a new step *before* "Write the brief".
 - The block follows the same numbered shape as feature #1, but with the framing-only rules:
-  1. Read the bare-bones initial brief and the topic name. Do **not** read code. Do **not** search the web.
-  2. For each template section in order (Context, Questions to Answer, Scope, Inspiration), formulate the highest-leverage open question with a recommended answer based only on the topic name and any inspiration the user named.
-  3. Read the user's reply: ratification → record; override → record override; "I don't know" → write a new explicit research question into the "Questions to Answer" section; `enough` / `stop` → exit and write the brief.
-  4. Resolve all sections, set `complexity:` last with a one-sentence rationale.
-- The `complexity:` rubric for research is identical to features (low / medium / high / very-high) — keep the existing rubric text in research-create.md and add the rationale-prose requirement.
+  1. Apply the `--quick` / `deepen.enabled` gate. If disabled, proceed directly to today's write flow.
+  2. Read only the bare-bones brief, topic name, planning conversation, and user-provided references. Do not read code, open references, or search the web.
+  3. Build an internal coverage map and ask the highest-leverage unresolved framing choice with a `Recommended framing`, one question per message.
+  4. Record ratifications and overrides; convert substantive unknowns into deduplicated research questions; honour `enough` / `stop` immediately.
+  5. Write the framed brief, infer `complexity:` last, and give its rationale in the final response.
+- Keep the existing research-specific low / medium / high / very-high rubric text in `research-create.md`; do not replace it with feature implementation examples.
 - Do not touch `templates/prompts/research-draft.md`.
 
 ## Pre-authorised
@@ -58,11 +69,11 @@ node -c aigon-cli.js
 
 ## Dependencies
 
--
+- depends_on: deepen-create-3-toggle-and-quick-flag
 
 ## Out of Scope
 
-- The default-on behavior, `--quick` flag, and `deepen.enabled` config — feature #3.
+- The `--quick` parser and `deepen.enabled` config implementation — feature #3.
 - Any version of investigation during research-create (this is the explicit anti-goal).
 - The matching prompt for `feature-create` — feature #1.
 - Updating any fast-track flow — research has no `feature-now` equivalent today.
@@ -70,10 +81,10 @@ node -c aigon-cli.js
 
 ## Open Questions
 
-- Is there a fast-path equivalent for research (analogous to `feature-now`) that should pass `--quick`? Today there isn't one. If `research-now` is ever introduced, it should follow the same `--quick` pattern.
+- None. Bare CLI research creation is intentionally noninteractive; hypothetical future fast-track commands are outside this set.
 
 ## Related
 
 - Research: #46 guided-entity-creation
 - Set: deepen-create
-- Prior features in set: —
+- Prior features in set: deepen-create-3-toggle-and-quick-flag
