@@ -44,6 +44,7 @@
     "telemetryStrategy": "codex-transcript",
     "trustInstallScope": "all-existing-worktrees",
     "resume": { "kind": "subcommand", "args": ["resume"] },
+    "directSessionIdEnv": "CODEX_THREAD_ID",
     "continuity": { "resumeById": true, "taskDelivery": "initial-argument" }
   },
   "quota": {

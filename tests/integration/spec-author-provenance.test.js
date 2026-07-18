@@ -21,6 +21,17 @@ test('resolveCreationAuthor uses deterministic precedence and leaves unknown she
     assert.strictEqual(entityContext.resolveCreationAuthor({}, {}, () => ({ detected: true, agentId: 'not-an-agent' })), null);
 });
 
+// REGRESSION: direct Codex conversations expose a resumable thread ID to child
+// commands. Bind only the adapter-declared variable; never guess from newest
+// transcript files.
+test('resolveDirectNativeSession accepts only an adapter-declared runtime session id', () => {
+    const binding = entityContext.resolveDirectNativeSession('cx', { CODEX_THREAD_ID: 'test-codex-session-123' });
+    assert.strictEqual(binding.sessionId, 'test-codex-session-123');
+    assert.strictEqual(binding.provenance, 'runtime-env');
+    assert.strictEqual(entityContext.resolveDirectNativeSession('cc', { CODEX_THREAD_ID: 'not-claude' }), null);
+    assert.strictEqual(entityContext.resolveDirectNativeSession('cx', {}), null);
+});
+
 // REGRESSION: F684 — invalid replacement handoffs must never overwrite the previous valid artifact.
 test('author handoff validation is atomic and public context redacts native identifiers', () => withTempDir('aigon-author-handoff-', (repo) => {
     entityContext.establishOriginSession(repo, 'feature', '7', { authorAgentId: 'cx', aigonLaunched: true });
@@ -40,6 +51,30 @@ test('author handoff validation is atomic and public context redacts native iden
     const durableRaw = fs.readFileSync(entityContext.entityContextPath(repo, 'feature', '7'), 'utf8');
     assert.strictEqual(durableRaw.includes('provider-secret'), false);
     assert.strictEqual(fs.readFileSync(entityContext.operationalEntityContextPath(repo, 'feature', '7'), 'utf8').includes('provider-secret'), true);
+}));
+
+test('direct entity creation persists an attributable Codex origin session', () => withTempDir('aigon-direct-codex-origin-', (repo) => {
+    seedEntityDirs(repo, 'features');
+    const oldAgent = process.env.AIGON_AGENT_ID;
+    const oldThread = process.env.CODEX_THREAD_ID;
+    process.env.AIGON_AGENT_ID = 'cx';
+    process.env.CODEX_THREAD_ID = 'test-codex-session-123';
+    try {
+        withRepoCwd(repo, () => {
+            const { utils, entity } = freshEntityModules();
+            entity.entityCreate(entity.FEATURE_DEF, 'direct-codex-origin', buildEntityCtx(utils));
+        });
+    } finally {
+        if (oldAgent === undefined) delete process.env.AIGON_AGENT_ID;
+        else process.env.AIGON_AGENT_ID = oldAgent;
+        if (oldThread === undefined) delete process.env.CODEX_THREAD_ID;
+        else process.env.CODEX_THREAD_ID = oldThread;
+    }
+    const context = entityContext.readEntityContext(repo, 'feature', '01');
+    assert.strictEqual(context.originSession.source, 'direct-agent-session');
+    assert.strictEqual(context.originSession.captureState, 'captured');
+    assert.strictEqual(context.originSession.nativeProvenance, 'runtime-env');
+    assert.strictEqual(context.originSession.providerSessionId, 'test-codex-session-123');
 }));
 
 // REGRESSION: F684 — direct sessions are never attachable and unsupported adapters deterministically fall back.
