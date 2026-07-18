@@ -67,6 +67,7 @@ testAsync('continuation checkpoint uses agent-status sidecar and records one fre
     });
     const decisions = entityContext.readEntityContext(repo, 'feature', '01').continuityDecisions;
     assert.strictEqual(decisions.filter(item => item.recoveryOfSessionId === 'continuation-01').length, 1);
+    assert.strictEqual(decisions.find(item => item.recoveryOfSessionId === 'continuation-01').fallbackLaunch.state, 'simulated');
 }));
 
 testAsync('explicit research submit succeeds when a done feature with same ID exists', () => withTempDirAsync('aigon-research-done-feature-collision-', async (repo) => {
