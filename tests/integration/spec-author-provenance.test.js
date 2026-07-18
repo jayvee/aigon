@@ -44,7 +44,10 @@ test('author handoff validation is atomic and public context redacts native iden
 
 // REGRESSION: F684 — direct sessions are never attachable and unsupported adapters deterministically fall back.
 test('continuity policy selects resume only for attributed author sessions with verified task delivery', () => {
-    const handoff = { status: 'valid', unresolvedQuestions: ['implementation choice'] };
+    const handoff = {
+        status: 'valid', decisions: ['Keep current paths'], specReferences: ['Technical Approach'],
+        unresolvedQuestions: ['implementation choice'],
+    };
     const origin = {
         aigonSessionId: 'spec-draft-feature-07', source: 'direct-agent-session', authorAgentId: 'cx',
         providerSessionId: 'native-id', nativeProvenance: 'attributed', addressable: false,
@@ -61,6 +64,14 @@ test('continuity policy selects resume only for attributed author sessions with 
     });
     assert.strictEqual(refused.strategy, 'fresh-with-handoff');
     assert.ok(refused.reasons.includes('adapter-resume-unsupported'));
+    const stale = resolveContinuityPolicy({
+        phase: 'spec-revise', selectedAgent: 'cx', authorAgentId: 'cx',
+        originSession: { ...origin, capturedAt: '2025-01-01T00:00:00.000Z' }, authorHandoff: handoff,
+        now: new Date('2026-07-18T00:00:00.000Z'),
+        adapter: { continuity: { resumeById: true, taskDelivery: 'initial-argument' } },
+    });
+    assert.strictEqual(stale.strategy, 'fresh-with-handoff');
+    assert.ok(stale.reasons.includes('origin-capture-stale'));
 });
 
 // REGRESSION: F684 — a fallback checkpoint records exactly one fresh recovery decision.
