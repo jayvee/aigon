@@ -113,9 +113,19 @@ testAsync('session events are persisted before workflow dispatch and duplicate c
         payload: { taskType: 'do' },
     }, deps);
     assert.strictEqual(calls.length, 1, 'duplicate completion only dispatches workflow once');
+    await dispatchSessionSignal({
+        entityType: 'feature',
+        entityId: '01',
+        agentId: 'cx',
+        sessionId: 'session-02',
+        status: 'implementation-complete',
+        source: 'test',
+        payload: { taskType: 'do' },
+    }, deps);
+    assert.strictEqual(calls.length, 2, 'a restarted session dispatches its own completion');
     const eventsPath = path.join(repo, '.aigon', 'sessions', 'events.jsonl');
     const events = fs.readFileSync(eventsPath, 'utf8').trim().split('\n').map(JSON.parse);
-    assert.strictEqual(events.length, 2, 'both session facts remain append-only');
+    assert.strictEqual(events.length, 3, 'all session facts remain append-only');
     assert.strictEqual(events[0].eventType, 'agent_session.task_completed');
     assert.strictEqual(events[0].status, 'implementation-complete');
 }));
