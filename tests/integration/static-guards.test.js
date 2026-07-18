@@ -40,14 +40,18 @@ test('dashboard e2e mock bootstrap strips model overrides and forces mock agent 
     assert.ok(!('MOCK_AGENT_BIN' in host));
     assert.ok(!('TMUX_TMPDIR' in host));
 });
-// REGRESSION: F286 mode-conditional implementation logs (fleet-only + skip copy).
+// REGRESSION: F685+F286 implementation logging policy (default requires solo branch log; never opts out).
 test('implementation logging policy', () => {
     const pp = require('../../lib/profile-placeholders');
-    assert.strictEqual(pp.resolveImplementationLogVariant('drive', undefined), 'skip');
+    assert.strictEqual(pp.resolveImplementationLogVariant('drive', undefined), 'minimal');
     assert.strictEqual(pp.resolveImplementationLogVariant('drive', 'always'), 'full');
-    assert.strictEqual(pp.shouldWriteImplementationLogStarter({ mode: 'drive', loggingLevel: 'fleet-only' }), false);
+    assert.strictEqual(pp.resolveImplementationLogVariant('drive', 'never'), 'skip');
+    assert.strictEqual(pp.shouldWriteImplementationLogStarter({ mode: 'drive', loggingLevel: 'fleet-only' }), true);
+    assert.strictEqual(pp.shouldWriteImplementationLogStarter({ mode: 'drive', loggingLevel: 'never' }), false);
     const r = pp.resolveLoggingPlaceholders('full', { implementationLogMode: 'drive', loggingLevel: 'fleet-only', projectConfig: {} });
-    assert.ok(r.LOGGING_SECTION.includes('No implementation log'));
+    assert.ok(r.LOGGING_SECTION.includes('required one-liner'));
+    const skip = pp.resolveLoggingPlaceholders('full', { implementationLogMode: 'drive', loggingLevel: 'never', projectConfig: {} });
+    assert.ok(skip.LOGGING_SECTION.includes('No implementation log'));
 });
 // REGRESSION: AutoConductor solo `feature-close` used to stall after code review when the
 // implementer status was 'feedback-addressed' — the close gate only counted ready/submitted.

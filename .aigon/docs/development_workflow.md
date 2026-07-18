@@ -121,6 +121,22 @@ On `review-complete`, each marker becomes a `review.escalation_raised` workflow 
 
 Autonomous flows do not auto-accept escalations.
 
+## Implementation logs
+
+Implementation logs are **default-required** for every completed feature. Solo Drive (branch or worktree) needs at least a one-line log in `docs/specs/features/logs/feature-<ID>-*-log.md`; Fleet agents write agent-specific `feature-<ID>-<agent>-*-log.md` files. The only project-wide opt-out is `"logging_level": "never"` in `.aigon/config.json`.
+
+`aigon agent-status implementation-complete` blocks when a required log is missing. `aigon feature-close` surfaces the same gap through the close-integrity framework (`implementation-log` gate — advisory by default, blocking when `featureClose.integrityPolicy` or per-gate overrides select it).
+
+### Backfilling missing logs
+
+Closed features shipped before this policy may lack logs. To backfill manually:
+
+1. Find the feature spec under `docs/specs/features/05-done/` (or the canonical `00-specs/` path in stable layout).
+2. Create `docs/specs/features/logs/feature-<ID>-<slug>-log.md` with a one-line **Status** (what shipped and where to look in git).
+3. Commit on `main` (or the feature branch if still open).
+
+Known local gaps: **F676** and **F677** (solo-branch closes with no `feature-676-*.md` / `feature-677-*.md` log files). Backfill when touching those areas or before reusing their decisions.
+
 ## Solo Mode Workflow
 
 1. Run `aigon feature-start <ID>` to create branch/workflow state and refresh the in-progress view
@@ -129,9 +145,10 @@ Autonomous flows do not auto-accept escalations.
 4. Implement the feature according to the spec
 5. Test your changes and wait for user confirmation
 6. Commit using conventional commits (`feat:`, `fix:`, `chore:`)
-7. Update the implementation log in `./docs/specs/features/logs/`
+7. Update the implementation log in `./docs/specs/features/logs/` (required unless `logging_level: never`)
 8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
 
+<!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Arena Mode Workflow
 
 1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
@@ -146,6 +163,7 @@ Autonomous flows do not auto-accept escalations.
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
+<!-- AIGON_LIGHT_OPTIONAL_END -->
 
 ## Per-worktree setup (`worktreeSetup`)
 
@@ -161,7 +179,7 @@ or (faster, when your stack tolerates it):
 { "worktreeSetup": "<your faster local setup command>" }
 ```
 
-**When it runs:** after `git worktree add` writes `.env.local`, before the agent launches. One execution per worktree.
+**When it runs:** after worktree creation configures the agent port, before the agent launches. One execution per worktree.
 
 **Where to set it:** `.aigon/config.json` (project scope). Use `&&` to compose multiple commands on one line.
 
@@ -221,6 +239,6 @@ Or block only selected policy findings:
 }
 ```
 
-Supported policy gates are `review-escalation`, `preauth-validation`, and `post-merge-gate`. Mechanical failures such as invalid workflow state, missing branches or worktrees, merge conflicts, security scan failures, git failures, and push failures remain hard stops.
+Supported policy gates are `review-escalation`, `preauth-validation`, `post-merge-gate`, and `implementation-log`. Mechanical failures such as invalid workflow state, missing branches or worktrees, merge conflicts, security scan failures, git failures, and push failures remain hard stops.
 
 The worktree security scan before merge still runs (fail fast before merging). The post-merge gate is the final authority for "done".
