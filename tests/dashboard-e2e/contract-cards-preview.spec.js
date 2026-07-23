@@ -447,20 +447,21 @@ test.describe('Contract card production renderer @smoke', () => {
         expect(layout.ok, `expected ${layout.colCount} columns on one row`).toBe(true);
     });
 
-    test('responsive pipeline fills the viewport and matches stage density @smoke', async ({ page }) => {
+    test('responsive pipeline fills the viewport and keeps compact session Peek visible @smoke', async ({ page }) => {
         await page.setViewportSize({ width: 1728, height: 1000 });
         await mountPreview(page, buildPayload({
             features: [
                 baseRow('910', scenario('feature-inbox-solo_worktree'), { stage: 'inbox' }),
-                baseRow('911', scenario('feature-backlog-blocked'), { stage: 'backlog' }),
+                baseRow('911', scenario('feature-spec_review_in_progress-solo_worktree'), { stage: 'backlog' }),
                 baseRow('912', scenario('feature-autonomous-running'), { stage: 'in-progress' }),
             ],
         }));
         await expect(page.locator('.kanban--responsive')).toHaveCount(1);
         await expect(page.locator('.kanban-col[data-pipeline-column="backlog"] .ccard.is-compact')).toHaveCount(1);
+        // REGRESSION: compact backlog cards must retain Peek for inspectable spec-review sessions.
+        await expect(page.locator('.kcard[data-feature-id="911"] .ccard-peek[data-peek-session]')).toBeVisible();
         await expect(page.locator('.kanban-col[data-pipeline-column="in-progress"] .ccard.is-expanded')).toHaveCount(1);
-        const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
-        expect(fits).toBe(true);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
         const wrap = page.locator('.wrap');
         await expect(wrap).toHaveClass(/wrap--operational/);
     });
