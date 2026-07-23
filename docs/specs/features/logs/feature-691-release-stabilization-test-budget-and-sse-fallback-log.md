@@ -50,4 +50,6 @@ Passed the focused dashboard-review-status integration file, the isolated
 two-test SSE Playwright file, `npm run test:iterate` (22 scoped
 integration/workflow files plus 30 browser smoke cases), and
 `scripts/check-test-budget.sh` at 17,224 / 17,225 LOC. The full maintainer
-release gate is run after this log commit.
+release gate also passed: all core and heavy tests, package security checks,
+zero-vulnerability npm audit, 37 full-browser passes with the opt-in live-agent
+case skipped, and the final budget check.
