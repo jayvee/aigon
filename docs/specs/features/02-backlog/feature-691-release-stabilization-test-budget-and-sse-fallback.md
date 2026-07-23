@@ -18,6 +18,8 @@ complexity: high
 # set: my-slug  # optional — ONLY when creating 2+ inbox peers to ship together.
 #              #   Run `aigon set list` / `aigon set show <slug>` first. NEVER tag into
 #              #   a completed set (all members done). Follow-up work: standalone + depends_on.
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-07-23T22:40:06.392Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: release-stabilization-test-budget-and-sse-fallback
