@@ -1,3 +1,16 @@
+---
+commit_count: 8
+lines_added: 342
+lines_removed: 913
+lines_changed: 1255
+files_touched: 29
+fix_commit_count: 3
+fix_commit_ratio: 0.375
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+---
+
 # Implementation Log: Feature 691 - release-stabilization-test-budget-and-sse-fallback
 
 ## Status
