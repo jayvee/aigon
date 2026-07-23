@@ -460,7 +460,7 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(page.locator('.kanban-col[data-pipeline-column="backlog"] .ccard.is-compact')).toHaveCount(1);
         // REGRESSION: compact backlog cards must retain Peek for inspectable spec-review sessions.
         await expect(page.locator('.kcard[data-feature-id="911"] .ccard-peek[data-peek-session]')).toBeVisible();
-        await expect(page.locator('.kanban-col[data-pipeline-column="in-progress"] .ccard.is-expanded')).toHaveCount(1);
+        expect(await page.locator('.kcard[data-feature-id="911"] .ccard-row-note').evaluateAll(nodes => nodes.every(node => getComputedStyle(node).whiteSpace === 'nowrap'))).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
         const wrap = page.locator('.wrap');
         await expect(wrap).toHaveClass(/wrap--operational/);

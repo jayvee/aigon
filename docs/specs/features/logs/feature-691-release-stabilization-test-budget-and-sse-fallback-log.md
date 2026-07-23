@@ -25,7 +25,9 @@ The Playwright assertion now targets `data-feature-name="e2e-solo-feature"`.
 
 Compact inbox/backlog cards now reveal the activity row when the server contract
 contains an inspectable session. They retain compact layout and actions while
-making live and retained spec-cycle output reachable through Peek.
+making live and retained spec-cycle output reachable through Peek. Compact
+session rows keep their status on one line and use an icon-only Peek control so
+the activity remains legible in narrow backlog columns.
 
 The 895-line test reduction removed whole low-value files:
 
