@@ -600,6 +600,19 @@
 /* ── Density and responsiveness ──────────────────────────────────────────── */
 .ccard.is-compact { gap: 8px; }
 .ccard.is-compact .ccard-actions { padding-top: 7px; }
+.ccard.is-compact .ccard-row-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ccard.is-compact .ccard-peek-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.ccard.is-compact .ccard-peek { padding: 2px 6px; }
 
 @media (max-width: 480px) {
   .ccard-stage { grid-template-columns: 16px minmax(0, 1fr) minmax(24px, auto) 60px 52px; }

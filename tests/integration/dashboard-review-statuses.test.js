@@ -215,6 +215,44 @@ test('findSpecReviewTmuxSession resolves spec-review role sessions from tmux lis
     }
 });
 
+// REGRESSION: active spec-review sessions can exist in tmux/sidecars even when
+// the workflow snapshot has already fallen back to the resting backlog state.
+test('read model exposes live spec-review sessions without snapshot active reviewers', () => {
+    const helpers = require('../../lib/dashboard-status-helpers');
+    const featureSession = 'aigon-repo-f649-spec-review-cx-nudge-confirm';
+    helpers._setTmuxListCacheForTest([featureSession]);
+    try {
+        const sessions = wrm.readSpecReviewSessions('/tmp/aigon-repo', 'feature', '649', 'backlog', {
+            specReview: { activeReviewers: [], pendingReviews: [] },
+        });
+        assert.deepStrictEqual(
+            sessions.map(s => ({ session: s.session, agent: s.agent, running: s.running, status: s.status, source: s.source })),
+            [{ session: featureSession, agent: 'cx', running: true, status: 'reviewing', source: 'live-session' }],
+        );
+    } finally {
+        helpers._resetTmuxListCache();
+    }
+});
+
+// REGRESSION: active spec-revise sessions must be peekable from backlog cards
+// even if the durable spec-review checker list is empty.
+test('read model exposes live spec-revise sessions without snapshot active checkers', () => {
+    const helpers = require('../../lib/dashboard-status-helpers');
+    const featureSession = 'aigon-repo-f649-spec-revise-cx-nudge-confirm';
+    helpers._setTmuxListCacheForTest([featureSession]);
+    try {
+        const sessions = wrm.readSpecCheckSessions('/tmp/aigon-repo', 'feature', '649', 'backlog', {
+            specReview: { activeCheckers: [] },
+        });
+        assert.deepStrictEqual(
+            sessions.map(s => ({ session: s.session, agent: s.agent, running: s.running, status: s.status, source: s.source })),
+            [{ session: featureSession, agent: 'cx', running: true, status: 'addressing-spec-review', source: 'live-session' }],
+        );
+    } finally {
+        helpers._resetTmuxListCache();
+    }
+});
+
 testAsync('workflow read model derives completed feature review state from engine events', () => withTempDirAsync('aigon-review-status-', async (repo) => {
     const specPath = path.join(repo, 'docs', 'specs', 'features', '03-in-progress', 'feature-99-review-status.md');
     fs.mkdirSync(path.dirname(specPath), { recursive: true });

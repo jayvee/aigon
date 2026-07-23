@@ -60,6 +60,7 @@ function contextHtml(contract) {
 export function renderContractCardBody(contract, options = {}) {
   const compact = options.density === 'compact';
   const idleStack = options.setStackIdle === true;
+  const hasInspectableSession = (contract.sessions || []).some(session => session && session.inspectable);
   const soloAgent = soloStatusBarAgent(contract);
   const inner = [
     // suppressIdentity: the host already names this entity (e.g. a set's
@@ -68,7 +69,7 @@ export function renderContractCardBody(contract, options = {}) {
     idleStack ? '' : (soloAgent ? statusBarHtml(contract, options) : stateLineHtml(contract)),
     idleStack ? '' : (compact ? '' : contextHtml(contract)),
     idleStack ? dependenciesHtml(contract) : blockersHtml(contract),
-    idleStack || compact ? '' : activityHtml(contract, options),
+    idleStack || (compact && !hasInspectableSession) ? '' : activityHtml(contract, options),
     idleStack || compact ? '' : runPlanHtml(contract, options),
     options.suppressActions ? '' : actionBarHtml(contract, {
       compact: idleStack || compact,

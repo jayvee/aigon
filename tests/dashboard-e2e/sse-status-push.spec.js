@@ -8,7 +8,7 @@
 const { test, expect } = require('@playwright/test');
 const { gotoPipelineWithMockedSessions } = require('./_helpers');
 
-const FEATURE_NAME = 'e2e solo feature';
+const FEATURE_SLUG = 'e2e-solo-feature';
 
 test.describe('F622 SSE status push', () => {
     test('SSE open triggers extra status fetch while poll interval blocked @smoke', async ({ page }) => {
@@ -55,7 +55,12 @@ test.describe('F622 SSE status push', () => {
         await page.waitForTimeout(1500);
         expect(warnings.length).toBeLessThanOrEqual(1);
 
-        const backlogCol = page.locator('.kanban-col[data-stage="backlog"]').first();
-        await expect(backlogCol).toContainText(FEATURE_NAME, { timeout: 12000 });
+        // REGRESSION: when EventSource cannot connect, the interval poll must
+        // still populate a known fixture card. Target the stable card identity;
+        // visible title formatting and overflow summaries are separate concerns.
+        const backlogCard = page.locator(
+            `.kanban-col[data-stage="backlog"] .kcard[data-feature-name="${FEATURE_SLUG}"]`,
+        ).first();
+        await expect(backlogCard).toBeVisible({ timeout: 12000 });
     });
 });
