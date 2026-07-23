@@ -2,8 +2,8 @@
 // check-template-leaks.js — fail if user-facing templates or agent placeholders
 // reference aigon-internal paths or target-repo stack assumptions.
 //
-// Rendered install output is checked by tests/integration/install-agent-rendered-leaks.test.js
-// (wired in test:core) and scripts/check-rendered-template-leaks.js (prepublishOnly).
+// Rendered install output is checked by scripts/check-rendered-template-leaks.js
+// during prepublish; this source scan remains part of every test:core run.
 
 'use strict';
 
