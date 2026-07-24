@@ -30,7 +30,7 @@ Aigon warns if the evaluator shares a provider family with an implementer (e.g.,
 aigon feature-eval 108 --allow-same-model-judge
 ```
 
-**Tip:** Use a different model for evaluation than those that implemented. For example, if Claude and Gemini implemented, evaluate with Codex.
+**Tip:** Use a different model for evaluation than those that implemented. For example, if Claude and Antigravity implemented, evaluate with Codex.
 
 ## Evaluation criteria
 
@@ -47,7 +47,7 @@ Each criterion gets a score out of 10, producing a total out of 40.
 
 ## Example output
 
-| Criteria | cc | cx | gg |
+| Criteria | cc | cx | ag |
 |----------|----|----|-----|
 | Code Quality | 9/10 | 10/10 | 6/10 |
 | Spec Compliance | 10/10 | 10/10 | 7/10 |
@@ -71,7 +71,7 @@ aigon feature-close 108 cx              # Merge Codex's implementation
 
 ```bash
 aigon feature-close 108 cx --adopt all  # Review diffs from all losers
-aigon feature-close 108 cx --adopt gg   # Review diffs from specific agents
+aigon feature-close 108 cx --adopt ag   # Review diffs from specific agents
 ```
 
 The `--adopt` flag prints diffs from losing agents after merging the winner. Review for extra tests, better error handling, documentation, and edge cases worth keeping.

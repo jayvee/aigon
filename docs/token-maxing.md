@@ -23,7 +23,7 @@ aigon token-window
 aigon token-window --message="Good morning"
 
 # Target only specific agents
-aigon token-window --agents=cc,gg
+aigon token-window --agents=cc,ag
 
 # Preview without sending
 aigon token-window --dry-run
@@ -45,7 +45,7 @@ Store defaults in `~/.aigon/config.json` under the `tokenWindow` key:
 {
   "tokenWindow": {
     "timezone": "Australia/Melbourne",
-    "targetAgents": ["cc", "gg"],
+    "targetAgents": ["cc", "ag"],
     "message": "Checking in to align token window"
   }
 }

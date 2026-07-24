@@ -10,11 +10,14 @@ depends_on: [restore-antigravity-agent-reliability, harden-setup-wizard-contract
 ## Summary
 
 Bring the public landing page and all 108 documentation pages into line with the Aigon
-release that actually exists after F696 and F697. Replace live Gemini CLI/`gg` agent
-instructions with Antigravity CLI/`ag`, correct the license, lifecycle, stable spec layout,
-dashboard security, setup flow, deprecated Feedback workflow, command examples, and stale
-visuals. Preserve the existing Aigon Pro product terminology and tier framing exactly as a
-separate concern: F693–F695 (`pro-merge`) will remove/rewrite that material later.
+release that actually exists after F696 and F697. Commit `bbf64b21c` has already performed
+the broad live Gemini CLI/`gg` → Antigravity CLI/`ag` naming pass; treat that commit as the
+baseline to verify, not work to repeat. Correct inaccurate or mechanical substitutions
+(especially authentication, subscription, and quota claims), then address the remaining
+license, lifecycle, stable spec layout, dashboard security, setup flow, deprecated Feedback
+workflow, command examples, and stale visuals. Preserve the existing Aigon Pro product
+terminology and tier framing exactly as a separate concern: F693–F695 (`pro-merge`) will
+remove/rewrite that material later.
 
 ## User Stories
 
@@ -33,12 +36,22 @@ separate concern: F693–F695 (`pro-merge`) will remove/rewrite that material la
 
 ### Supported-agent truth
 
+- [ ] Audit the complete `bbf64b21c` documentation diff against the active agent registry and
+      F696 implementation log. Preserve correct replacements and fix incorrect mechanical
+      substitutions rather than repeating the migration wholesale.
 - [ ] The live user-facing surfaces under `site/content`, `site/public`, `site/app`,
       `site/components`, and `site/scripts` contain no instruction to install, select, launch,
       review with, or evaluate with `gg`/Gemini CLI.
-- [ ] Replace those examples with Antigravity CLI (`ag`) only after F696's real lifecycle
-      gate passes. Other examples use the active registry rather than hardcoding a provider
-      where provider identity is irrelevant.
+- [ ] Antigravity examples use CLI/agent ID `ag` only after F696 is merged and closed. Other
+      examples use the active registry rather than hardcoding a provider where provider
+      identity is irrelevant.
+- [ ] Antigravity terminology distinguishes the Antigravity product/CLI, official interactive
+      Google sign-in, and Gemini model names. Public copy does not invent an “Antigravity
+      key”, API-key/env-token authentication, headless support, or a subscription name not
+      established by the supported installation.
+- [ ] Quota and failover copy matches the executable registry: Aigon may detect Antigravity
+      exhaustion from a running session, but does not claim the periodic quota poller actively
+      probes Antigravity unless a documented non-interactive quota source has been implemented.
 - [ ] “Gemini” may remain only when it names a model family used through Antigravity, or in
       an explicit historical/migration note. “Gemini CLI” and agent ID `gg` do not remain as
       current capabilities.
@@ -130,11 +143,13 @@ with an allowlisted checker that identifies the exact approved file and context.
 
 ## Technical Approach
 
-Create a temporary facts checklist from the executable agent registry, workflow read model,
-wizard step contract, dashboard security resolver, package metadata, and command handlers.
-Update the reader journey in order: landing and Getting Started, concepts, guides, references,
-then metadata/LLM/sitemap and visuals. This reduces repeated edits and keeps each page grounded
-in an already-correct implementation.
+Start with a focused review of `bbf64b21c`: classify each changed statement as a correct
+agent rename, a model-family mention, or a claim requiring correction. Then create a temporary
+facts checklist from the executable agent registry, F696 implementation log, workflow read
+model, wizard step contract, dashboard security resolver, package metadata, and command
+handlers. Update the remaining reader journey in order: landing and Getting Started, concepts,
+guides, references, then metadata/LLM/sitemap and visuals. This reduces repeated edits and
+keeps each page grounded in an already-correct implementation.
 
 Use registry- or command-derived examples where practical, but do not turn the prose into
 generated boilerplate. Keep deprecated/historical material clearly separated from current
@@ -142,8 +157,9 @@ instructions. Use the dashboard gallery as the canonical visual-state source.
 
 ## Dependencies
 
-- `restore-antigravity-agent-reliability` — docs must not advertise `ag` until it passes a
-  real Aigon lifecycle.
+- `restore-antigravity-agent-reliability` — implementation commits `139c0ae68` and
+  `bbf64b21c` supply the integration and initial naming pass, but this feature must not start
+  from an unmerged/unclosed F696 state.
 - `harden-setup-wizard-contract` — setup docs must describe the fixed behavior, not the audit.
 
 ## Out of Scope
@@ -165,6 +181,7 @@ instructions. Use the dashboard gallery as the canonical visual-state source.
 ## Related
 
 - F696 and F697 — implementation facts this documentation consumes.
+- Commits `139c0ae68` and `bbf64b21c` — Antigravity implementation and initial docs baseline.
 - F691 — release stabilisation and compact dashboard session controls.
 - F693–F695 (`pro-merge`) — intentionally separate follow-up for all Pro terminology/removal.
 ## Dependency Graph

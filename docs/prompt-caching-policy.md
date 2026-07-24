@@ -72,4 +72,4 @@ When the stable prefix changes (e.g. a new `CLAUDE.md` section is added):
 
 ## Non-CC agents
 
-This policy applies only to CC (`claude` CLI). Caching for cx (Codex/OpenAI), gg (Gemini), and cu (Cursor) is out of scope — each provider has different caching semantics and is addressed separately if at all.
+This policy applies only to CC (`claude` CLI). Caching for cx (Codex/OpenAI), ag (Antigravity), and cu (Cursor) is out of scope — each provider has different caching semantics and is addressed separately if at all.

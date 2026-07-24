@@ -104,7 +104,7 @@ aigon workflow list
 aigon workflow show solo-cc
 
 # Create a custom workflow from flag shorthand (saved to the project)
-aigon workflow create my-arena --implement=cc,gg --eval=cu --label="CU judges"
+aigon workflow create my-arena --implement=cc,ag --eval=cu --label="CU judges"
 
 # Create a global workflow by copying an existing one
 aigon workflow create my-solo --from=solo-cc --global --label="My solo default"
@@ -126,7 +126,7 @@ aigon workflow delete my-solo --global
 aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
 
 # Override one field while still using the workflow for the rest
-aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=ag
 ```
 
 ## Dashboard

@@ -1,7 +1,7 @@
 /* dashboard-esm-processed */
 
 import { AIGON_SET_CARDS } from './set-cards.js';
-import { filterSetStackMembers, isSetStackIdleMember } from './set-bundle-members.js';
+import { filterSetStackMembers, isSetStackIdleMember, shouldExpandSetStack } from './set-bundle-members.js';
 import { AIGON_AUTONOMOUS_PLAN } from './autonomous-plan.js';
 import { AGENT_DISPLAY_NAMES, AGENT_SHORT_NAMES, fetchSpecRecommendation, tripletsToCliArgs } from './actions-picker.js';
 import { handleFeatureAction, handleSetAction, renderActionButtons, resolveCloseWithAgent, shouldShowCloseWithAgent, showNudgeModal } from './actions.js';
@@ -1901,7 +1901,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       button.title = collapsed ? 'Expand feature set' : 'Collapse feature set';
     }
 
-    function wireSetBundleToggle(header, stack, hasMembers) {
+    function wireSetBundleToggle(header, stack, hasMembers, expandByDefault) {
       if (!hasMembers) {
         header.querySelector('.kanban-set-toggle')?.remove();
         stack.classList.add('is-collapsed');
@@ -1909,7 +1909,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       }
       if (!stack.dataset.collapseReady) {
         stack.dataset.collapseReady = 'true';
-        stack.classList.add('is-collapsed');
+        stack.classList.toggle('is-collapsed', !expandByDefault);
       }
       const host = header.querySelector('.ccard-head') || header.querySelector('.kanban-set-header-row') || header;
       let button = host.querySelector('.kanban-set-toggle');
@@ -1985,7 +1985,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
         bundle.appendChild(stack);
       }
       reconcileKeyedCards(stack, stackMembers, repo, pType, stats, { host: 'set-stack' });
-      wireSetBundleToggle(header, stack, stackMembers.length > 0);
+      wireSetBundleToggle(header, stack, stackMembers.length > 0, shouldExpandSetStack(stackMembers, roll));
     }
 
     function buildUngroupedHeader(count) {

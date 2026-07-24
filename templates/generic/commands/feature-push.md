@@ -21,5 +21,5 @@ Examples:
 ```bash
 aigon feature-push
 aigon feature-push 55
-aigon feature-push 55 gg
+aigon feature-push 55 ag
 ```

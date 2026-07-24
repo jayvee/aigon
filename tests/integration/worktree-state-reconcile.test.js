@@ -169,8 +169,10 @@ test('deactivated gg cannot launch via buildRawAgentCommand', () => {
         /deactivated.*superseded by `ag`/i,
     );
 });
-test('deactivated ag cannot launch via buildRawAgentCommand', () => {
-    assert.throws(() => buildRawAgentCommand({ agent: 'ag', featureId: '07', path: '/tmp/aigon-ag-linger-test-wt', repoPath: process.cwd() }, 'do'), /agent `ag` is deactivated/i);
+test('active ag launches through the interactive prompt contract', () => {
+    // REGRESSION: ag must be launchable with the current interactive prompt and model flag after its auth recovery.
+    const command = buildRawAgentCommand({ agent: 'ag', featureId: '07', path: '/tmp/aigon-ag-linger-test-wt', repoPath: process.cwd() }, 'do');
+    assert.match(command, /agy.*--dangerously-skip-permissions.*--model.*gemini-3\.5-flash-medium.*--prompt-interactive/);
 });
 
 test('Codex resume pins the resumed author thread to the implementation worktree', () => {

@@ -25,7 +25,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 - [security.md](security.md) — Merge-gate scanning (gitleaks + semgrep), what blocks a close.
 - [security-scanner.md](security-scanner.md) — Standalone `aigon security-scan` CLI surface.
 - [linux-install.md](linux-install.md) — Linux-specific install caveats (terminal detection, tmux, signals).
-- [../.aigon/docs/agents/](../.aigon/docs/agents/) — Per-agent notes (`cc.md`, `gg.md`, `cx.md`, `cu.md`, etc.). Vendored from `templates/generic/docs/agent.md`; aigon-the-repo dogfoods them from `.aigon/docs/agents/` (F421). Read the one for the agent you're operating.
+- [../.aigon/docs/agents/](../.aigon/docs/agents/) — Per-agent notes (`cc.md`, `ag.md`, `cx.md`, `cu.md`, etc.). Vendored from `templates/generic/docs/agent.md`; aigon-the-repo dogfoods them from `.aigon/docs/agents/` (F421). Read the one for the agent you're operating.
 
 ## Reference
 

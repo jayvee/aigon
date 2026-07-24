@@ -23,7 +23,7 @@ If no ID is provided, or the ID doesn't match an existing feature:
 ## What Gets Cleaned Up
 
 This command removes:
-- **All worktrees** for the feature (e.g., `../feature-55-cc-desc`, `../feature-55-gg-desc`)
+- **All worktrees** for the feature (e.g., `../feature-55-cc-desc`, `../feature-55-ag-desc`)
 - **All local branches** for the feature
 - **Worktree permissions** from Claude settings
 

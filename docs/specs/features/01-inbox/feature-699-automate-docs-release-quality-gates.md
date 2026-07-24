@@ -64,6 +64,9 @@ Preserve the current Aigon Pro terminology and classifications until the separat
       internal links and anchors; referenced local images; MDX frontmatter/title/description;
       zero placeholder markers; active agent IDs in current examples; Apache-2.0 marketing
       copy; command-reference coverage; and canonical route status.
+- [ ] The agent-doc checks lock in F696/F698's supported Antigravity contract: current examples
+      cannot regress to `gg`/Gemini CLI, undocumented Antigravity key/env-token authentication,
+      headless support, or periodic quota-probe claims.
 - [ ] The checker follows redirects deliberately, reports `/pro`/canonical loops or temporary
       redirects, and catches the previously broken uninstall link.
 - [ ] Agent checks distinguish active examples from approved historical/model-family mentions;
@@ -154,6 +157,8 @@ workflow state.
 ## Related
 
 - F698 — corrected documentation baseline.
+- Commit `bbf64b21c` — the initial Antigravity naming pass whose correct portions the checker
+  must keep from regressing.
 - F691 — prior release stabilisation and test-budget work.
 - F693–F695 (`pro-merge`) — future product-boundary change; this checker must make their
   deliberate terminology removal straightforward rather than block it.

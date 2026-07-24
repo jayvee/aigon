@@ -5,7 +5,7 @@
 <h1 align="center">Aigon</h1>
 
 <p align="center">
-  <strong>Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Gemini CLI, and Codex CLI from one Kanban board, one CLI, or one slash command.</strong>
+  <strong>Aigon is a spec-driven multi-agent harness — orchestrate Claude Code, Antigravity CLI, and Codex CLI from one Kanban board, one CLI, or one slash command.</strong>
   <br/>
   One Kanban for many agents — on real branches, in real worktrees, against real specs.
 </p>
@@ -35,12 +35,12 @@
 
 Aigon is a spec-driven harness for orchestrating multiple AI coding agents on the same codebase. Each feature is a Markdown spec in git; each agent runs in its own git worktree under tmux; the lifecycle moves through inbox → backlog → in-progress → review → done on a local Kanban board. Aigon doesn't try to be a model — it orchestrates a growing list of agent CLIs as engines.
 
-You work with Aigon from wherever you already are: a **web dashboard** on `localhost`, **slash commands** inside your agent (Claude Code, Gemini CLI, Codex CLI, Cursor, OpenCode, Kimi, Amp), or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
+You work with Aigon from wherever you already are: a **web dashboard** on `localhost`, **slash commands** inside your agent (Claude Code, Antigravity CLI, Codex CLI, Cursor, OpenCode, Kimi, Amp), or direct **CLI commands** in your terminal. All three surfaces read and write the same Markdown specs in your repo — no SaaS account, no vendor lock-in, no proprietary state.
 
 It works with the AI coding tools you already use:
 
 - 🤖 **Claude Code** (`cc`)
-- 💎 **Gemini CLI** (`gg`)
+- 💎 **Antigravity CLI** (`ag`)
 - 📟 **Codex CLI** (`cx`)
 - 🎯 **Cursor** (`cu`)
 - 🧭 **OpenCode** (`op`)
@@ -51,7 +51,7 @@ Mix and match. Aigon doesn't care which model writes the code — it just manage
 
 ## Why Aigon?
 
-- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Gemini, Cursor, OpenCode, Kimi, Amp); no separate Aigon billing, no token packs, no markup.
+- **Bring your own subscriptions** — use the AI products you already pay for (Claude, Codex, Antigravity, Cursor, OpenCode, Kimi, Amp); no separate Aigon billing, no token packs, no markup.
 - **Stay in the flow when a subscription lapses** — switch agents or accounts mid-session instead of being stuck on one vendor's meter.
 - **Spec-driven development you control** — features and research live as Markdown specs that can be built, shipped, reset, and rebuilt for clean handoffs and retries.
 - **Autonomous and multi-agent workflows** — configure who drafts, implements, and reviews, then run long loops through a pre-built push/merge lifecycle.
@@ -74,7 +74,7 @@ aigon setup
 # Bring aigon into your project
 cd /path/to/your/project
 aigon apply                            # Bootstraps .aigon/, kanban folders, hooks
-aigon install-agent cc                 # Install the Claude Code agent (others: gg, cx, cu, op, km, am)
+aigon install-agent cc                 # Install the Claude Code agent (others: ag, cx, cu, op, km, am)
 aigon doctor                           # Verify environment
 ```
 
@@ -94,7 +94,7 @@ The Reports tab shows cycle time, commits per feature, and rework ratio across y
 
 ### 2. Slash commands — when you're already inside an agent
 
-If you're already in Claude Code, Gemini CLI, Codex, Cursor, OpenCode, Kimi, or Amp, drive Aigon from where you are. The fastest path is `/aigon:feature-now`:
+If you're already in Claude Code, Antigravity CLI, Codex, Cursor, OpenCode, Kimi, or Amp, drive Aigon from where you are. The fastest path is `/aigon:feature-now`:
 
 ```
 /aigon:feature-now dark-mode
@@ -144,7 +144,7 @@ Full documentation lives at **[aigon.build/docs](https://www.aigon.build/docs)**
 - 🧭 [Core Concepts](https://www.aigon.build/docs/concepts) — workflows, execution modes, reliability
 - 🛠 [Guides](https://www.aigon.build/docs/guides) — Drive, Fleet, Autopilot, Research, Dashboard, Telemetry
 - 📚 [CLI Reference](https://www.aigon.build/docs/reference/commands) — every command documented
-- 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Gemini, Codex, Cursor, OpenCode, Kimi, Amp setup
+- 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Antigravity, Codex, Cursor, OpenCode, Kimi, Amp setup
 
 ## Aigon Pro
 

@@ -30,7 +30,7 @@ Queue a [`feature-autonomous-start`](/docs/reference/commands/feature/feature-au
 ```bash
 aigon schedule add feature_autonomous 142 \
   --run-at=2026-04-28T09:30:00-07:00 cc \
-  --stop-after=eval --eval-agent=gg
+  --stop-after=eval --eval-agent=ag
 ```
 
 | Flag | Meaning |
@@ -40,7 +40,7 @@ aigon schedule add feature_autonomous 142 \
 | `--eval-agent=<id>` | Agent for the eval phase. |
 | `--review-agent=<id>` | Agent for the code-review phase. |
 | `--workflow=<slug>` | Workflow definition slug. |
-| `--models=<csv>` | Per-agent model overrides (e.g. `cc=claude-opus-4-7,gg=gemini-2.5-pro`). |
+| `--models=<csv>` | Per-agent model overrides (e.g. `cc=claude-opus-4-7,ag=gemini-3.5-flash-medium`). |
 | `--efforts=<csv>` | Per-agent effort overrides. |
 | `--review-model=<id>` / `--review-effort=<id>` | Review-phase overrides. |
 | `--repo=<path>` | Target repo (defaults to current). |
@@ -51,7 +51,7 @@ Queue a [`set-autonomous-start`](/docs/guides/feature-sets-autonomous) for a fut
 
 ```bash
 aigon schedule add set_autonomous nightly \
-  --run-at=2026-06-19T09:00:00Z cx gg \
+  --run-at=2026-06-19T09:00:00Z cx ag \
   --review-agent=cc --stop-after=close
 ```
 
@@ -70,7 +70,7 @@ Queue a [`research-start`](/docs/reference/commands/research/research-start).
 
 ```bash
 aigon schedule add research_start 12 \
-  --run-at=2026-04-29T08:00:00Z cc gg --background
+  --run-at=2026-04-29T08:00:00Z cc ag --background
 ```
 
 | Flag | Meaning |

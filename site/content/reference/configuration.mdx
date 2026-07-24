@@ -48,7 +48,7 @@ Created with `aigon config init --global` at `~/.aigon/config.json`:
   "tmuxApp": "terminal",
   "agents": {
     "cc": { "cli": "claude", "implementFlag": "--permission-mode acceptEdits" },
-    "gg": { "cli": "gemini", "implementFlag": "--yolo" },
+    "ag": { "cli": "agy", "implementFlag": "--dangerously-skip-permissions" },
     "cx": { "cli": "codex", "implementFlag": "" },
     "mv": { "cli": "vibe", "implementFlag": "-p" }
   }
@@ -79,7 +79,7 @@ Created with `aigon config init` at `.aigon/config.json`:
 | `tmuxApp` | Global | Terminal app hosting tmux sessions | `terminal` (default), `iterm2` |
 | `profile` | Project | Project type | `web`, `api`, `ios`, `android`, `library`, `generic` |
 | `appId` | Project | App domain for dev proxy | Auto-detected from `package.json` |
-| `agents.{id}.cli` | Global | CLI command for each agent | `claude`, `gemini`, `codex`, `vibe` |
+| `agents.{id}.cli` | Global | CLI command for each agent | `claude`, `agy`, `codex`, `vibe` |
 | `agents.{id}.implementFlag` | Global | CLI flags for permission prompts | String (empty = manual approval) |
 | `security.enabled` | Global | Enable merge gate security scanning | `true` (default), `false` |
 | `security.mergeGateStages` | Global | Which scanners run at each stage | `{ featureClose: ['gitleaks', 'semgrep'] }` |
@@ -263,7 +263,7 @@ aigon apply                 # Regenerate templates after changing profile
 ### Port configuration (web/api profiles)
 
 ```
-PORT=3400 in .env → cc=3401, gg=3402, cx=3403, cu=3404, mv=3405
+PORT=3400 in .env → cc=3401, ag=3402, cx=3403, cu=3404, mv=3405
 ```
 
 Ports are derived from your base PORT using fixed offsets, avoiding clashes when running multiple projects.
@@ -278,13 +278,13 @@ aigon config models
 
 # Override for specific agent/task
 aigon config set agents.cc.models.research haiku
-aigon config set agents.gg.models.evaluate gemini-2.5-flash
+aigon config set agents.ag.models.evaluate gemini-3.5-flash-medium
 
 # Per-session override via env var (highest priority)
 AIGON_CC_RESEARCH_MODEL=haiku aigon config models
 ```
 
-Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC/GG/CX/CU` and TASK is `RESEARCH/IMPLEMENT/EVALUATE`.
+Env var pattern: `AIGON_{AGENT}_{TASK}_MODEL` where AGENT is `CC/AG/CX/CU` and TASK is `RESEARCH/IMPLEMENT/EVALUATE`.
 
 **Spec complexity:** Feature and research specs can declare a **`complexity`** level in YAML frontmatter. When you start work from the dashboard, that label **pre-selects** model and effort via each agent’s complexity ladder, then your config defaults. Global keys above apply when you pick **Default** in the picker or when `complexity` is missing. See [Agents → Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).
 
@@ -296,7 +296,7 @@ Default "yolo mode" flags auto-approve agent commands:
 |-------|-------------|--------|
 | `cc` (Claude) | `--permission-mode acceptEdits` | Auto-edits, prompts for risky Bash |
 | `cu` (Cursor) | `--force` | Auto-approves commands |
-| `gg` (Gemini) | `--yolo` | Auto-approves all |
+| `ag` (Antigravity) | `--dangerously-skip-permissions` | Auto-approves all |
 | `cx` (Codex) | _(empty)_ | Interactive by default |
 
 For stricter permissions:

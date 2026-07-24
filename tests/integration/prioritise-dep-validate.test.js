@@ -39,12 +39,13 @@ function runCli(root, args) {
     };
 }
 
-function writeInboxSpec(root, slug, dependsOnBody = null) {
+function writeInboxSpec(root, slug, dependsOnBody = null, setSlug = null) {
     const dir = path.join(root, 'docs', 'specs', 'features', '01-inbox');
     fs.mkdirSync(dir, { recursive: true });
     const lines = [
         '---',
         'complexity: low',
+        ...(setSlug ? [`set: ${setSlug}`] : []),
         '---',
         '',
         `# Feature: ${slug}`,
@@ -173,6 +174,23 @@ test('feature-prioritise allows no-dep features unchanged', () => withTempDir('a
     assert.strictEqual(result.code, 0, `Expected success for feature with no deps: ${result.stdout}${result.stderr}`);
     const backlog = fs.readdirSync(path.join(specRoot, '02-backlog'));
     assert.ok(backlog.some(f => f.includes('standalone-feature')), 'standalone-feature must be in 02-backlog');
+}));
+
+// REGRESSION: individual prioritisation of one set member allowed it to start
+// while sibling specs remained in inbox, producing an invalid mixed-stage set.
+test('feature-prioritise requires a set to be prioritised as one unit', () => withTempDir('aigon-set-prioritise-', (root) => {
+    initRepo(root);
+    writeInboxSpec(root, 'set-first', null, 'release-readiness');
+    writeInboxSpec(root, 'set-second', null, 'release-readiness');
+
+    const direct = runCli(root, ['feature-prioritise', 'set-first']);
+    assert.notStrictEqual(direct.code, 0, 'individual set-member prioritisation must fail');
+    assert.match(direct.stdout + direct.stderr, /aigon set-prioritise release-readiness/);
+
+    const grouped = runCli(root, ['set-prioritise', 'release-readiness']);
+    assert.strictEqual(grouped.code, 0, `set-prioritise failed: ${grouped.stdout}${grouped.stderr}`);
+    const backlog = fs.readdirSync(path.join(root, 'docs', 'specs', 'features', '02-backlog'));
+    assert.equal(backlog.filter(name => name.includes('set-')).length, 2);
 }));
 
 report();

@@ -70,8 +70,8 @@ install_agent_clis() {
   # Claude Code is the one required agent CLI. Other agents (Antigravity/ag,
   # Codex/cx, etc.) are installed as aigon agent *configs* via `install-agent`
   # below — that path does not need the vendor binary present. We deliberately
-  # do NOT install Gemini here: the Gemini CLI agent was retired (F-antigravity
-  # migration) and Antigravity (agy) replaced it.
+  # Do not install Antigravity here: its supported OAuth/keyring flow requires a local
+  # interactive terminal, which this headless clean-room test intentionally does not provide.
   step "Install agent CLIs (Claude Code)"
   if [[ "$PLATFORM" == "linux" ]]; then
     sudo npm i -g @anthropic-ai/claude-code 2>&1 | tail -1

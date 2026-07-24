@@ -29,12 +29,14 @@ test('shouldSkipDoctorAuthProbe: any authCheck.command containing agy is skipped
     );
 });
 
-test('doctorAuthStatusForSkippedAgent: token env reports authenticated', () => {
+test('doctorAuthStatusForSkippedAgent: token env never claims authentication', () => {
+    // REGRESSION: agy only supports its interactive OAuth/keyring flow; arbitrary env tokens are not proof of auth.
     const prev = process.env.ANTIGRAVITY_TOKEN;
     process.env.ANTIGRAVITY_TOKEN = 'test-token';
     try {
         const result = doctorAuthStatusForSkippedAgent({});
-        assert.equal(result.status, 'authenticated');
+        assert.equal(result.status, 'external');
+        assert.match(result.message, /does not launch agy/i);
     } finally {
         if (prev === undefined) delete process.env.ANTIGRAVITY_TOKEN;
         else process.env.ANTIGRAVITY_TOKEN = prev;

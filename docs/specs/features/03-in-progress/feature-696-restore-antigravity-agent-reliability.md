@@ -1,7 +1,6 @@
 ---
 aigon_id: F696
 complexity: high
-set: docs-release-readiness
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-24T23:19:44.625Z", actor: "cli/feature-prioritise" }
 ---
@@ -126,7 +125,9 @@ the real Aigon lifecycle. Restart the dashboard after any `lib/*.js` edit.
 
 - Re-enabling Gemini CLI (`gg`) or relabelling historical `gg` telemetry as Antigravity.
 - Claiming headless CI/API-key support while upstream issues #479 and #78 remain unresolved.
-- Bulk public-documentation replacement; F698 owns the user-facing `gg` → Antigravity pass.
+- The broader public-documentation accuracy audit. Commit `bbf64b21c` completed the initial
+  user-facing `gg` → Antigravity naming pass alongside this feature; F698 owns verification,
+  correction of mechanical substitutions, and all remaining documentation gaps.
 - Any Aigon Pro terminology, packaging, gating, or merge work.
 
 ## Open Questions
@@ -142,6 +143,8 @@ the real Aigon lifecycle. Restart the dashboard after any `lib/*.js` edit.
 - F591 — add-antigravity-agent.
 - F592 — retire-gg-deactivated-agent.
 - Commit `cef60ae76` — deactivated `ag` after auth failures.
+- Commit `139c0ae68` — restored the supported interactive Antigravity integration.
+- Commit `bbf64b21c` — performed the initial public Antigravity documentation pass.
 - Upstream: `google-antigravity/antigravity-cli` issues #85, #479, and #78; release 1.1.6.
 ## Dependency Graph
 

@@ -151,7 +151,7 @@ Known local gaps: **F676** and **F677** (solo-branch closes with no `feature-676
 <!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Arena Mode Workflow
 
-1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
+1. Run `aigon feature-start <ID> cc ag cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-do <ID>`

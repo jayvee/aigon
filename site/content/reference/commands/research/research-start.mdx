@@ -20,7 +20,7 @@ Start research \<ID\> [agents...] - begin Drive or Fleet research
 ## Usage
 
 ```bash
-# Slash command (Claude Code / Gemini)
+# Slash command (Claude Code / Antigravity)
 /aigon:research-start <ID>
 
 # CLI
@@ -32,7 +32,7 @@ aigon research-start <ID>
 Same per-run flags as feature start, for example:
 
 ```bash
-aigon research-start 3 gg cx --models=gg=gemini-2.5-pro,cx=gpt-5.3-codex
+aigon research-start 3 ag cx --models=ag=gemini-3.5-flash-medium,cx=gpt-5.3-codex
 ```
 
 Without overrides, model and effort follow the research spec’s **`complexity`**, then each agent’s complexity ladder, then `aigon config`. See [Agents: Spec complexity and model defaults](/docs/reference/agents#spec-complexity-and-model-defaults).

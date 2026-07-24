@@ -6,6 +6,7 @@ const {
     isSetStackIdleMember,
     shouldSkipSetStackMember,
     filterSetStackMembers,
+    shouldExpandSetStack,
 } = require('../../templates/dashboard/js/set-bundle-members.js');
 
 test('pre-start set members render as compact stack tiles', () => {
@@ -30,4 +31,11 @@ test('active set members keep full stack cards', () => {
     const roll = { slug: 'active-set' };
     const active = { id: '42', stage: 'in-progress', currentSpecState: 'implementing' };
     assert.equal(isSetStackIdleMember(active, roll), false);
+});
+
+// REGRESSION: a mixed-lane set hid its only active member behind a collapsed stack.
+test('active set members expand the stack by default', () => {
+    const roll = { slug: 'active-set' };
+    const active = { id: '42', stage: 'in-progress', currentSpecState: 'implementing' };
+    assert.equal(shouldExpandSetStack([active], roll), true);
 });

@@ -20,7 +20,7 @@ This is the **only** sanctioned way to add a model to the public catalog (see §
    - `label` — provider's market name, no fluff.
    - `lastRefreshAt` — ISO timestamp confirming the model exists today.
    - `score: { <role>: number|null }` — `null` is fine for a fresh, unscored model; the key being *present* is not optional.
-   - `pricing: { input, output }` USD/MTok — required for paid per-token SKUs; **omit** for plan-bundled SKUs (e.g. `cc`, `gg` on a subscription).
+   - `pricing: { input, output }` USD/MTok — required for paid per-token SKUs; **omit** for plan-bundled SKUs (e.g. `cc`, `ag` on a subscription).
    - `notes: { <role>: string }` — required only once the model is promoted into a `cli.complexityDefaults` slot (step 3); encouraged otherwise.
 3. **Decide `complexityDefaults` promotion.** Only wire a model into a `low`/`medium`/`high`/`very-high` slot once it has a real `score` for that role and `notes` prose. Leaving it as a pickable option with `score: null` is the correct default for a brand-new model.
 4. **Validate + verify.** Run `npm test` (the contract test now guards the file) → `aigon agent-probe <id> --model <value>` to confirm the model is reachable before anyone is routed to it.
@@ -77,7 +77,7 @@ Every entry in `cli.modelOptions` must have:
 - `label` — human-readable name as the provider markets it. No marketing fluff.
 - `lastRefreshAt` — ISO timestamp of when discovery confirmed the model exists. Updated on every refresh sweep.
 - `score: { <role>: number | null }` — one entry per role this model is eligible for. `null` is acceptable for a new model; *missing* is not.
-- `pricing: { input, output }` in USD per MTok — required for paid SKUs. Omitted for plan-bundled SKUs (cc, gg with Google AI Pro).
+- `pricing: { input, output }` in USD per MTok — required for paid SKUs. Omitted for plan-bundled SKUs (cc, ag with Google AI Pro).
 - `notes: { <role>: string }` — one paragraph per role. **Required** for any model promoted into a `cli.complexityDefaults` slot. Optional otherwise — but encouraged at addition time so the next reviewer doesn't have to re-derive the rationale.
 - `summary: { headline, body?, bestFor?, avoidFor?, confidence, researchedAt, sources? }` — operator-facing qualitative verdict distinct from per-role `notes` / `score`. **Optional on legacy rows** until the weekly catalog task backfills them; **required on any new model added after F618 ships** — enforced at PR review, not by `validateModelOptions` (the validator only checks shape when `summary` is present). Shape:
   - `headline` — string, ≤120 chars, role-opinionated; must not duplicate `label` (case-insensitive, trimmed).

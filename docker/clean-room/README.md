@@ -78,7 +78,7 @@ Then continue with `aigon setup` exactly as the public docs describe.
 The public docs describe each step. In the container specifically:
 
 - **Step 2 (Terminal preference)** — macOS-only, auto-skips on Linux.
-- **Step 3 (Agent install)** — pick `cc cx`. Skip the auth flows when prompted (Ctrl-C the sub-prompt) — you're testing install, not login. (Gemini/`gg` and Antigravity/`ag` are both deactivated — `ag` is blocked by upstream agy auth bugs.)
+- **Step 3 (Agent install)** — pick `cc cx`. Skip the auth flows when prompted (Ctrl-C the sub-prompt) — you're testing install, not login. Do not select `ag` in this headless container: Antigravity requires an interactive OAuth/keyring session.
 - **Step 4 (Seed clone)** — say yes.
 - **Step 5 (Repo scan)** — decline.
 - **Step 6 (Dashboard server)** — say yes.
@@ -117,7 +117,7 @@ cd ~/src/aigon
 bash scripts/docker-inject-creds.sh $(docker ps -qf ancestor=aigon-clean-room)
 ```
 
-This copies `~/.claude.json`, `~/.claude/settings.json`, Gemini, Codex, and GitHub CLI credentials into the container. Skip silently for anything you don't have configured on your Mac.
+This copies `~/.claude.json`, `~/.claude/settings.json`, Codex, and GitHub CLI credentials into the container. Antigravity's supported OAuth credentials stay in the host keyring and are not copied. Skip silently for anything you don't have configured on your Mac.
 
 ---
 
@@ -134,6 +134,6 @@ docker exec -it $(docker ps -qf ancestor=aigon-clean-room) bash
 | Issue | Workaround |
 |-------|-----------|
 | `npm i -g` needs sudo on Linux | Always prefix with `sudo` inside the container |
-| Gemini CLI fails if `~/.gemini/` doesn't exist | `mkdir -p ~/.gemini` before first `gemini` run |
+| Antigravity CLI authentication is unavailable | Use a local interactive terminal; headless container auth is unsupported |
 | `aigon server start &` gets suspended by job control | Use `nohup aigon server start > /dev/null 2>&1 &` |
 | Dashboard port | Host port **4102** maps to container 4100 (4100 may be in use on your Mac) |

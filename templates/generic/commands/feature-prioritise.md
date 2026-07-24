@@ -38,7 +38,7 @@ Choose your mode:
 ```
 
 Example Drive worktree: `{{CMD_PREFIX}}feature-start 55 cc`
-Example Fleet: `{{CMD_PREFIX}}feature-start 55 cc gg cx cu`
+Example Fleet: `{{CMD_PREFIX}}feature-start 55 cc ag cx cu`
 
 ## Prompt Suggestion
 
