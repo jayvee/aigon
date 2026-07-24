@@ -29,8 +29,8 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 
 - Best for: important features where you want the best approach
 - Workspace: one worktree per agent
-- Slash command: `/afs 07 cc gg cx`
-- CLI: `aigon feature-start 07 cc gg cx`
+- Slash command: `/afs 07 cc ag cx`
+- CLI: `aigon feature-start 07 cc ag cx`
 
 ## Autopilot
 
@@ -39,7 +39,7 @@ Aigon uses four modes across two axes: number of agents and level of autonomy. A
 - Best for: well-scoped features with clear acceptance criteria
 - Workspace: worktree (implementing agent) + optional review session (reviewer agent)
 - CLI: `aigon feature-autonomous-start 07 cc`
-- CLI (with review): `aigon feature-autonomous-start 07 cc --review-agent=gg`
+- CLI (with review): `aigon feature-autonomous-start 07 cc --review-agent=ag`
 
 ```
 implement → [review] → close
@@ -53,8 +53,8 @@ implement → [review] → close
 
 - Best for: maximum coverage with minimal supervision
 - Workspace: one worktree per agent
-- CLI: `aigon feature-autonomous-start 07 cc gg`
-- CLI (explicit evaluator): `aigon feature-autonomous-start 07 cc gg --eval-agent=cc`
+- CLI: `aigon feature-autonomous-start 07 cc ag`
+- CLI (explicit evaluator): `aigon feature-autonomous-start 07 cc ag --eval-agent=cc`
 
 ```
 implement (parallel) → evaluate → close

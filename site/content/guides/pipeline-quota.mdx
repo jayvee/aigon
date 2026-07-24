@@ -11,7 +11,7 @@ The **Pipeline** tab shows a **Remaining quota before reset** panel: a read-only
 
 - **Claude Code** — session, weekly, and (when present) Sonnet-specific remaining percentages, plus reset hints from the CLI output.
 - **Codex** — short-window (e.g. five-hour) and weekly remaining percentages, plus plan / credit hints when the Codex app-server returns them.
-- **Gemini CLI** — model usage and plan quota rows when the CLI exposes them.
+- **Antigravity CLI** — unavailable for automatic polling; Aigon never starts its interactive CLI to scrape quota.
 - **Kimi Code CLI** — usage tiers when the CLI exposes them.
 
 Each **bar** is *remaining* headroom for that window (not “used”). **0%** means that window is already exhausted until it resets.
@@ -39,7 +39,7 @@ Use **Collapse** / **Expand** on the panel header to reclaim vertical space. Whe
 
 Roughly every **30 minutes** the Aigon server runs **one coordinated poll** (budget scrape → headless probe → provider wallet when configured):
 
-- Polls **Claude Code**, **Gemini CLI**, and **Kimi Code CLI** via short-lived tmux sessions that drive their usage views.
+- Polls **Claude Code** and **Kimi Code CLI** via short-lived tmux sessions that drive their usage views. Antigravity is deliberately skipped to avoid triggering OAuth.
 - Reads **Codex** limits from the local Codex app-server (`account/rateLimits/read`).
 - Runs headless **quota probes** and provider HTTP checks in the same tick.
 

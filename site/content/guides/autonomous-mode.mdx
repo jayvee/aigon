@@ -26,13 +26,13 @@ Autonomous mode behaves differently depending on how many implementation agents 
 One agent implements in an isolated worktree. Optionally, a second agent reviews the implementation before the feature closes.
 
 ```
-feature-autonomous-start 42 cc [--review-agent=gg]
+feature-autonomous-start 42 cc [--review-agent=ag]
          ↓
 AutoConductor spawns (auto tmux session)
          ↓
 cc implements in worktree
          ↓ submits
-[gg reviews — optional]
+[ag reviews — optional]
          ↓ review-complete signal
 feature-close → done ✅
 ```
@@ -46,11 +46,11 @@ Without `--review-agent`, the feature closes immediately after the implementatio
 Multiple agents compete in parallel worktrees on the same spec. When all submit, a designated evaluator agent compares implementations and picks a winner.
 
 ```
-feature-autonomous-start 42 cc gg [--eval-agent=cc]
+feature-autonomous-start 42 cc ag [--eval-agent=cc]
          ↓
 AutoConductor spawns (auto tmux session)
          ↓
-cc and gg implement in parallel worktrees
+cc and ag implement in parallel worktrees
          ↓ both submit
 cc evaluates — writes **Winner:** to eval file
          ↓
@@ -84,17 +84,17 @@ Click **Start Autonomously** on any backlog feature card. The modal adapts to th
 # Solo — implement then close, no review
 aigon feature-autonomous-start 42 cc
 
-# Solo + review — implement, review with gg, then close
-aigon feature-autonomous-start 42 cc --review-agent=gg
+# Solo + review — implement, review with ag, then close
+aigon feature-autonomous-start 42 cc --review-agent=ag
 
 # Solo + review — stop after review starts (review manually, close when ready)
-aigon feature-autonomous-start 42 cc --review-agent=gg --stop-after=review
+aigon feature-autonomous-start 42 cc --review-agent=ag --stop-after=review
 
 # Fleet — two agents, auto eval and close
-aigon feature-autonomous-start 42 cc gg --eval-agent=cc
+aigon feature-autonomous-start 42 cc ag --eval-agent=cc
 
 # Fleet — stop after eval (pick winner manually)
-aigon feature-autonomous-start 42 cc gg --eval-agent=cc --stop-after=eval
+aigon feature-autonomous-start 42 cc ag --eval-agent=cc --stop-after=eval
 
 # Stop after implement only
 aigon feature-autonomous-start 42 cc --stop-after=implement
@@ -114,7 +114,7 @@ aigon workflow list
 aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
 
 # Override a field for this run (flags always win over workflow values)
-aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=ag
 ```
 
 Workflows resolve to the same `--agents`, `--eval-agent`, `--review-agent`, and `--stop-after` inputs documented on this page — they are a UX layer on top of the autonomous conductor, not a second execution engine.
@@ -196,8 +196,8 @@ Poll log output shows exactly what the AutoConductor sees on each cycle:
 ```
 [09:15:17] state=implementing agents=[cc=running] allReady=false ...
 [09:16:47] state=implementing agents=[cc=ready] allReady=true ...
-🚀 Spawning review session: brewboard-f42-review-gg-...
-✅ Started review session: brewboard-f42-review-gg-...
+🚀 Spawning review session: brewboard-f42-review-ag-...
+✅ Started review session: brewboard-f42-review-ag-...
   [review-start 1/10] running=true
 ✅ Review started. Waiting for review agent to complete...
   [review-close 1/120] reviewCompleted=false reviewState=in-progress
@@ -254,9 +254,9 @@ No recovery state to clean up — the feature is in whatever stage it was when t
 | Situation | Recommended |
 |-----------|-------------|
 | Routine feature, clear spec | Solo (`cc`) |
-| Important feature, want a second opinion | Solo + reviewer (`cc --review-agent=gg`) |
-| Critical feature, want best implementation | Fleet + eval (`cc gg --eval-agent=cc`) |
-| Maximum coverage, minimal supervision | Fleet + eval + close (`cc gg`, default stop) |
+| Important feature, want a second opinion | Solo + reviewer (`cc --review-agent=ag`) |
+| Critical feature, want best implementation | Fleet + eval (`cc ag --eval-agent=cc`) |
+| Maximum coverage, minimal supervision | Fleet + eval + close (`cc ag`, default stop) |
 
 For features that need ongoing direction or spec refinement mid-stream, stick with manual Drive mode.
 

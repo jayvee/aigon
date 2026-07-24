@@ -50,7 +50,7 @@ That one command clones the seed to `~/src/brewboard`, strips the origin remote 
 
 ```bash
 cd ~/src/brewboard
-aigon install-agent cc          # swap for gg, cx, or cu if you prefer
+aigon install-agent cc          # swap for ag, cx, or cu if you prefer
 ```
 
 ### Start the dashboard server
@@ -92,9 +92,9 @@ Before closing, click the **globe icon** on the card to open a preview of that w
 
 ### Fleet mode
 
-Fleet mode runs two agents on the same feature simultaneously. Find feature **03 — Rating System** in the Backlog. Click **Start** and select two agents (e.g. Claude Code + Gemini CLI).
+Fleet mode runs two agents on the same feature simultaneously. Find feature **03 — Rating System** in the Backlog. Click **Start** and select two agents (e.g. Claude Code + Antigravity CLI).
 
-<img src="/img/tutorial-fleet-mode.png" alt="Fleet mode agent picker — feature 04 rating-system with Claude Code and Gemini selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
+<img src="/img/tutorial-fleet-mode.png" alt="Fleet mode agent picker — feature 04 rating-system with Claude Code and Antigravity selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
 
 Two cards appear for the same feature — one per agent — both updating independently. When both show **Submitted**, click **Evaluate** to open a review session that compares both implementations and recommends a winner. Then click **Accept & Close** on your preferred card to merge it.
 
@@ -135,7 +135,7 @@ Claude creates the worktree and begins implementing feature 01. You can watch it
 Start two agents on feature 04 from inside Claude:
 
 ```
-/aigon:feature-start 04 cc gg
+/aigon:feature-start 04 cc ag
 ```
 
 Both agents start in parallel. Once both signal submitted, run the evaluation:
@@ -155,7 +155,7 @@ The eval agent reads both diffs and writes a recommendation. Close with your cho
 Hand the whole lifecycle over to the AutoConductor:
 
 ```
-/aigon:feature-autonomous-start 02 --agent cc --review-agent gg
+/aigon:feature-autonomous-start 02 --agent cc --review-agent ag
 ```
 
 The conductor handles implementation → review → close automatically. You'll see the feature move through the pipeline in the dashboard without any further commands.
@@ -187,20 +187,20 @@ aigon feature-close 01
 ### Fleet mode
 
 ```bash
-aigon feature-start 04 cc gg    # requires both Claude Code and Gemini CLI
+aigon feature-start 04 cc ag    # requires both Claude Code and Antigravity CLI
 ```
 
 Two worktrees are created and both agents start implementing independently. When both are done, evaluate and close:
 
 ```bash
 aigon feature-eval 04           # opens a review session comparing both diffs
-aigon feature-close 04 cc       # merge cc's branch; or swap for gg
+aigon feature-close 04 cc       # merge cc's branch; or swap for ag
 ```
 
 ### Autonomous mode
 
 ```bash
-aigon feature-autonomous-start 02 --agent cc --review-agent gg
+aigon feature-autonomous-start 02 --agent cc --review-agent ag
 ```
 
 Walk away — the AutoConductor handles implementation, review, and merge. Check `aigon board` when you're back to see the result:

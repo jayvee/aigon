@@ -16,7 +16,7 @@ If no name is provided, or the name doesn't match an existing topic in the inbox
 
 This assigns or confirms the research ID, records backlog lifecycle state, and refreshes the generated view.
 
-Next step: Run `{{CMD_PREFIX}}research-start <ID>` (Drive) or `{{CMD_PREFIX}}research-start <ID> cc gg` (Fleet) to begin.
+Next step: Run `{{CMD_PREFIX}}research-start <ID>` (Drive) or `{{CMD_PREFIX}}research-start <ID> cc ag` (Fleet) to begin.
 
 ## Prompt Suggestion
 

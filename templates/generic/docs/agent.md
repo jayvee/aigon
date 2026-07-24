@@ -85,7 +85,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 <!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Fleet Mode Workflow
 
-1. Run `{{CMD_PREFIX}}feature-start <ID> cc cx gg cu` to create worktrees for each agent
+1. Run `{{CMD_PREFIX}}feature-start <ID> cc cx ag cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Run `{{CMD_PREFIX}}feature-do <ID>`
@@ -113,7 +113,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 <!-- AIGON_LIGHT_OPTIONAL_START -->
 ### Fleet Mode
 
-1. Run `{{CMD_PREFIX}}research-start <ID> cc cx gg cu` to prepare and launch parallel research
+1. Run `{{CMD_PREFIX}}research-start <ID> cc cx ag cu` to prepare and launch parallel research
 2. In each agent session, run `{{CMD_PREFIX}}research-do <ID>`
 3. Each agent writes only to its own findings file and signals completion
 4. Optionally run `{{CMD_PREFIX}}research-review <ID>` for a separate review pass

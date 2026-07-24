@@ -57,7 +57,7 @@
 |------|-------|---------|------|
 {{AGENT_CLI_MAPPING_ROWS}}
 
-**Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
+**Quick-allow when prompted:** Claude `Shift+Tab` • Antigravity uses `--dangerously-skip-permissions` at launch • Cursor "Add to allowlist" • Codex "Allow and remember"
 
 **Override defaults:** Set `agents.{id}.implementFlag` in `~/.aigon/config.json` to use stricter permissions (e.g., `""` to require manual approval). Project config (`.aigon/config.json`) takes precedence over global config.
 

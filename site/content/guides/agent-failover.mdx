@@ -48,7 +48,7 @@ Add an `agentFailover` block to your repo's `.aigon/config.json`:
 {
   "agentFailover": {
     "policy": "switch",
-    "chain": ["cc", "cx", "gg"],
+    "chain": ["cc", "cx", "ag"],
     "tokenLimits": {
       "perSessionBillableTokens": 500000
     }
@@ -70,7 +70,7 @@ You can set a per-agent model override in `.aigon/agents/<id>/config.json`. When
 
 The full auto path, step by step:
 
-1. Feature is started in autonomous mode (e.g. via `aigon feature-autonomous-start`) on `cc` with chain `[cc, cx, gg]` and `policy: switch`.
+1. Feature is started in autonomous mode (e.g. via `aigon feature-autonomous-start`) on `cc` with chain `[cc, cx, ag]` and `policy: switch`.
 2. `cc` hits its quota. The CLI prints "usage limit" and returns to its REPL prompt — it does **not** exit.
 3. The supervisor sweep (runs every 30 s) reads the live tmux pane, matches the quota string, fires.
 4. `agent.token_exhausted` is appended to `events.jsonl` (source: `live_pane_pattern`). The slot's status flips to `needs_attention`.
@@ -80,7 +80,7 @@ The full auto path, step by step:
 8. `agent.failover_switched` is appended.
 9. `tokenExhausted` is cleared from the snapshot — the sweep will not re-fire until the next real exhaustion.
 
-If `cx` later exhausts, the process repeats with `gg`. When `gg` exhausts with no next agent, `agent.token_exhausted` is recorded but no switch fires.
+If `cx` later exhausts, the process repeats with `ag`. When `ag` exhausts with no next agent, `agent.token_exhausted` is recorded but no switch fires.
 
 > **Manual runs never auto-swap.** A feature started with `aigon feature-start` (Drive / Fleet / solo) records the exhaustion event, flips the card to "Token limit hit", and waits for you to click the failover button. The autonomy gate is intentional — the operator is at the wheel.
 

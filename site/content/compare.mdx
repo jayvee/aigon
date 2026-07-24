@@ -5,7 +5,7 @@ description: Aigon vs single-agent tools, intra-vendor harnesses, and autonomous
 
 ## The wedge
 
-> **Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Gemini (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.**
+> **Most coding tools give you one model's opinion and stop when its quota runs out. Aigon coordinates Claude, Codex, Antigravity (and more...) on the same spec — multiple coding agents implement, a different coding agent reviews, and work continues on whichever subscription still has quota.**
 
 Most coding tools give you one model's perspective on each change. A growing class of harnesses give you several copies of *the same* model racing each other. Aigon races **different vendors** against each other, and uses a fourth vendor as the reviewer. That one architectural choice yields two things nobody else delivers together: **reviewer diversity** (quality) and **quota arbitrage** (economics).
 
@@ -27,7 +27,7 @@ By April 2026, every serious peer ships Markdown specs in git, git-worktree isol
 
 **Quality.** You're betting that one model is right. On routine work, that's fine. On anything ambitious — a tricky migration, a security-sensitive change, a refactor with unclear blast radius — you want a second and third opinion *before* you ship, not in code review after.
 
-**Economics.** If you already pay for Claude Pro *and* a Gemini key *and* Codex, your single favourite tool only spends one of those quotas. The other two sit idle. When that one quota hits its 5-hour wall, you stop. Aigon spreads the load — and when Claude's quota is exhausted, work continues on Gemini automatically.
+**Economics.** If you already pay for Claude Pro *and* a Antigravity key *and* Codex, your single favourite tool only spends one of those quotas. The other two sit idle. When that one quota hits its 5-hour wall, you stop. Aigon spreads the load — and when Claude's quota is exhausted, work continues on Antigravity automatically.
 
 For one-off scripts and small fixes on a single subscription, your favourite tool is the right answer. Aigon is for harder work, or wider budgets.
 
@@ -45,7 +45,7 @@ Different shape entirely. Devin is cloud + autonomous + per-task billing. Aigon 
 
 **Pick Devin or Jules** if zero local setup matters more than control; you bill per-ACU happily; your tasks are well-bounded enough that fire-and-forget works; you want a single web app to live in.
 
-**Pick Aigon** if you want to watch the work happen (`tmux attach`, dashboard); your existing Claude / Gemini / Codex subscriptions should be the budget; you want the option to escalate to autonomous mode without giving up the supervised default.
+**Pick Aigon** if you want to watch the work happen (`tmux attach`, dashboard); your existing Claude / Antigravity / Codex subscriptions should be the budget; you want the option to escalate to autonomous mode without giving up the supervised default.
 
 ## The minimum-viable grid
 
@@ -58,7 +58,7 @@ If you want a comparison table, this is the only one that matters. Everything el
 | **Devin (multiple Devins)** | ✓ | ✓ | — | — | — |
 | **Aigon Fleet** | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-The last column isn't just a posture claim — it's a feature claim. Aigon ships a quota poller that checks Claude Code, Codex, Gemini CLI, Kimi, and Amp every 30 minutes, surfaces headroom on the dashboard and at feature-start, and auto-fails over to a vendor with quota when one runs out.
+The last column isn't just a posture claim — it's a feature claim. Aigon ships a quota poller that checks Claude Code, Codex, Antigravity CLI, Kimi, and Amp every 30 minutes, surfaces headroom on the dashboard and at feature-start, and auto-fails over to a vendor with quota when one runs out.
 
 **OSS vs Pro split:** The quota poller, exhaustion event vocabulary, and dashboard quota display are OSS. Automatic failover (`policy: switch`) and the manual "Failover now" dashboard button are [Aigon Pro](/docs/getting-started#aigon-pro-beta-access) features. Without Pro, exhaustion events are still recorded in `events.jsonl` and the supervisor logs a warning, but no agent switch is triggered. See the [Agent Failover guide](/docs/guides/agent-failover) for configuration details.
 

@@ -11,7 +11,7 @@ aigon agent-context [--id-only] [--json]
 
 ## Description
 
-Detects and prints the current Aigon agent host, such as `cc`, `gg`, `cx`, or `cu`. This is useful inside agent prompts and slash commands that need to bootstrap `AIGON_AGENT_ID` without parsing process names themselves.
+Detects and prints the current Aigon agent host, such as `cc`, `ag`, `cx`, or `cu`. This is useful inside agent prompts and slash commands that need to bootstrap `AIGON_AGENT_ID` without parsing process names themselves.
 
 Agent launchers also export `AIGON_AGENT_ID`, `AIGON_ENTITY_TYPE`, `AIGON_ENTITY_ID`, and `AIGON_PROJECT_PATH` for commands that need feature or research context. `agent-context` reports only the agent identity; callers that need entity values should read those environment variables directly.
 

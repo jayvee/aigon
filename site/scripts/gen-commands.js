@@ -125,7 +125,7 @@ ${safeDescription}
     if (def.aliases) {
         // Show both slash and CLI usage
         slashExamples.push(`\`\`\`bash
-# Slash command (Claude Code / Gemini)
+# Slash command (Claude Code / Antigravity)
 /aigon:${name}${argHints ? ` ${argHints.split(' ')[0]}` : ''}
 
 # CLI

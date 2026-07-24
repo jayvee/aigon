@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aigon | Spec-Driven Multi-Agent Harness for Claude Code, Gemini CLI, Codex CLI and more</title>
+    <title>Aigon | Spec-Driven Multi-Agent Harness for Claude Code, Antigravity CLI, Codex CLI and more</title>
     <meta
       name="description"
       content="Write a spec once, launch competing implementations, let one agent judge another, and merge the diff that survives review."
@@ -69,7 +69,7 @@
         <div class="container hero-grid">
           <div class="hero-copy">
             <h1>One spec, many agents, the best diff wins.</h1>
-            <p class="hero-subtitle">Aigon orchestrates Claude Code, Gemini CLI, Codex, and Cursor from a single spec. Competing implementations, cross-agent review, merge the survivor.</p>
+            <p class="hero-subtitle">Aigon orchestrates Claude Code, Antigravity CLI, Codex, and Cursor from a single spec. Competing implementations, cross-agent review, merge the survivor.</p>
 
             <div class="hero-actions">
               <a href="#get-started" class="hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@next">
@@ -153,9 +153,9 @@
             <div class="agent-selector" role="group" aria-label="Choose agent demo">
               <button class="agent-tab is-active" data-agent-demo="cc-drive" data-ps1="> " aria-pressed="true">Claude Code</button>
               <button class="agent-tab" data-agent-demo="cx-eval" data-ps1="codex> " aria-pressed="false">Fleet Setup</button>
-              <button class="agent-tab" data-agent-demo="gg-research" data-ps1="gemini> " aria-pressed="false">Gemini CLI</button>
+              <button class="agent-tab" data-agent-demo="ag-research" data-ps1="agy> " aria-pressed="false">Antigravity CLI</button>
             </div>
-            <div class="hero-terminal" id="hero-terminal" aria-label="Agent demo cycling through Claude Code, Codex, and Gemini CLI"></div>
+            <div class="hero-terminal" id="hero-terminal" aria-label="Agent demo cycling through Claude Code, Codex, and Antigravity CLI"></div>
           </div>
         </div>
       </section>
@@ -343,12 +343,12 @@
       </template>
 
       <template id="step-setup-fleet">
-        <terminal-line data="input" lineDelay="400">/aigon:feature-start 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">/aigon:feature-start 07 cc ag cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🚛 Fleet mode · 3 agents</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  ✓ Worktree: feature-07-cc  (Claude Code)</terminal-line>
-        <terminal-line data="output">  ✓ Worktree: feature-07-gg  (Gemini CLI)</terminal-line>
+        <terminal-line data="output">  ✓ Worktree: feature-07-ag  (Antigravity CLI)</terminal-line>
         <terminal-line data="output">  ✓ Worktree: feature-07-cx  (Codex)</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Spec copied to all worktrees.</terminal-line>
@@ -366,10 +366,10 @@
       </template>
 
       <template id="step-setup-swarm">
-        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc ag cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🐝 Swarm mode</terminal-line>
-        <terminal-line data="output">  Worktrees created for: cc, gg, cx</terminal-line>
+        <terminal-line data="output">  Worktrees created for: cc, ag, cx</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="input" lineDelay="500">aigon feature-do 07 --iterate</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
@@ -401,7 +401,7 @@
         <terminal-line data="input" lineDelay="400">/aigon:feature-do 07</terminal-line>
         <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 12 files · submitted</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  [worktree: feature-07-gg]</terminal-line>
+        <terminal-line data="output">  [worktree: feature-07-ag]</terminal-line>
         <terminal-line data="input" lineDelay="300">/aigon:feature-do 07</terminal-line>
         <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 18 files · submitted</terminal-line>
         <terminal-line data="output"> </terminal-line>
@@ -428,7 +428,7 @@
         <terminal-line data="output">  All agents iterating autonomously in parallel.</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  cc  ✓ passed checks · submitted</terminal-line>
-        <terminal-line data="output">  gg  ✓ passed checks · submitted (iter 2)</terminal-line>
+        <terminal-line data="output">  ag  ✓ passed checks · submitted (iter 2)</terminal-line>
         <terminal-line data="output">  cx  ✓ passed checks · submitted</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
@@ -440,7 +440,7 @@
         <terminal-line data="output">  Comparing implementations:</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  cc: 12 files · tests pass · clean types</terminal-line>
-        <terminal-line data="output">  gg: 18 files · tests pass · 2 type warnings</terminal-line>
+        <terminal-line data="output">  ag: 18 files · tests pass · 2 type warnings</terminal-line>
         <terminal-line data="output">  cx:  9 files · tests pass · clean types</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Winner: cx — smallest diff, all checks green</terminal-line>
@@ -474,10 +474,10 @@
       </template>
 
       <template id="demo-fleet">
-        <terminal-line data="input" lineDelay="400">/aigon:feature-start 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">/aigon:feature-start 07 cc ag cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🚛 Fleet mode</terminal-line>
-        <terminal-line data="output">  Worktrees created: feature-07-cc, feature-07-gg, feature-07-cx</terminal-line>
+        <terminal-line data="output">  Worktrees created: feature-07-cc, feature-07-ag, feature-07-cx</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="input" lineDelay="500">/aigon:feature-open 07</terminal-line>
         <terminal-line data="output">  Opening 3 agent sessions in split terminals...</terminal-line>
@@ -516,10 +516,10 @@
       </template>
 
       <template id="demo-swarm">
-        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="400">aigon feature-start 07 cc ag cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  🐝 Swarm mode</terminal-line>
-        <terminal-line data="output">  Worktrees created for: cc, gg, cx</terminal-line>
+        <terminal-line data="output">  Worktrees created for: cc, ag, cx</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="input" lineDelay="500">aigon feature-open 07 --all</terminal-line>
         <terminal-line data="output">  Opening all worktrees in parallel terminals...</terminal-line>
@@ -528,7 +528,7 @@
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Autonomous loops running:</terminal-line>
         <terminal-line data="output">  cc: pass on iteration 1</terminal-line>
-        <terminal-line data="output">  gg: pass on iteration 2</terminal-line>
+        <terminal-line data="output">  ag: pass on iteration 2</terminal-line>
         <terminal-line data="output">  cx: pass on iteration 2</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Evaluate: aigon feature-eval 07</terminal-line>
@@ -561,12 +561,12 @@
 
       <template id="demo-cx-eval">
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">$aigon-feature-start 07 cc gg cx</terminal-line>
+        <terminal-line data="input" lineDelay="600">$aigon-feature-start 07 cc ag cx</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Fleet mode · 3 agents</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  ✓ Worktree: feature-07-cc  (Claude Code)</terminal-line>
-        <terminal-line data="output">  ✓ Worktree: feature-07-gg  (Gemini CLI)</terminal-line>
+        <terminal-line data="output">  ✓ Worktree: feature-07-ag  (Antigravity CLI)</terminal-line>
         <terminal-line data="output">  ✓ Worktree: feature-07-cx  (Codex)</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Spec copied to all worktrees.</terminal-line>
@@ -575,7 +575,7 @@
         <terminal-line data="output"> </terminal-line>
       </template>
 
-      <template id="demo-gg-research">
+      <template id="demo-ag-research">
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="input" lineDelay="600">/aigon:research-do 03</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
@@ -586,7 +586,7 @@
         <terminal-line data="output">  Investigating: Social OAuth (Google + Apple)...</terminal-line>
         <terminal-line data="output">  Investigating: Magic link email flow...</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  Findings written: logs/research-03-gg-findings.md</terminal-line>
+        <terminal-line data="output">  Findings written: logs/research-03-ag-findings.md</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  Key recommendations:</terminal-line>
         <terminal-line data="output">  1. Passkey as primary — best UX, strongest security</terminal-line>
@@ -643,7 +643,7 @@
                 <li>Five synchronized trend charts &mdash; cycle time, commits, rework</li>
                 <li>Token usage &amp; cost attributed per agent and phase</li>
                 <li>AI-generated observations &amp; coaching</li>
-                <li>Agent benchmarks &mdash; reproducible perf timings across CC, Codex, Gemini, OpenRouter, Kimi</li>
+                <li>Agent benchmarks &mdash; reproducible perf timings across CC, Codex, Antigravity, OpenRouter, Kimi</li>
                 <li>Reusable autonomous workflows &mdash; named stages saved to git, launched from CLI or dashboard</li>
                 <li>Scheduled autonomous runs &mdash; overnight, or aligned with quota refresh</li>
                 <li>Recurring features &mdash; cadence-driven template batches (weekly, quarterly)</li>
@@ -829,7 +829,7 @@
           fleet: {
             title: "Competing agents, pick the winner.",
             desc: "Launch the same spec across multiple agents in isolated worktrees. Each works independently, then you compare and merge the best implementation.",
-            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc gg cx</div><div><span class="prompt">$</span> aigon feature-open 07 --all</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
+            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc ag cx</div><div><span class="prompt">$</span> aigon feature-open 07 --all</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
           },
           autopilot: {
             title: "Iterate until checks pass.",
@@ -839,7 +839,7 @@
           swarm: {
             title: "All agents iterate autonomously.",
             desc: "Multiple agents each iterate autonomously in parallel. When all have submitted, evaluate and merge the winner.",
-            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc gg cx</div><div><span class="prompt">$</span> aigon feature-do 07 --iterate</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
+            cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc ag cx</div><div><span class="prompt">$</span> aigon feature-do 07 --iterate</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
           }
         };
 
@@ -1013,7 +1013,7 @@
         var heroAgents = [
           { slug: "cc-drive", ps1: "> " },
           { slug: "cx-eval", ps1: "codex> " },
-          { slug: "gg-research", ps1: "gemini> " }
+          { slug: "ag-research", ps1: "agy> " }
         ];
         var heroIndex = 0;
         var heroCycleTimer = window.setInterval(function () {

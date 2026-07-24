@@ -71,17 +71,17 @@ When finished, the AutoConductor kills its own tmux session so the dashboard bad
 # Solo — implement and close, no review
 aigon feature-autonomous-start 42 cc
 
-# Solo + review — implement, gg reviews, then close
-aigon feature-autonomous-start 42 cc --review-agent=gg
+# Solo + review — implement, ag reviews, then close
+aigon feature-autonomous-start 42 cc --review-agent=ag
 
 # Solo + review — stop after review starts, close manually
-aigon feature-autonomous-start 42 cc --review-agent=gg --stop-after=review
+aigon feature-autonomous-start 42 cc --review-agent=ag --stop-after=review
 
-# Fleet — cc and gg implement, cc evaluates, auto-close winner
-aigon feature-autonomous-start 42 cc gg --eval-agent=cc
+# Fleet — cc and ag implement, cc evaluates, auto-close winner
+aigon feature-autonomous-start 42 cc ag --eval-agent=cc
 
 # Fleet — stop after eval, pick winner manually
-aigon feature-autonomous-start 42 cc gg --eval-agent=cc --stop-after=eval
+aigon feature-autonomous-start 42 cc ag --eval-agent=cc --stop-after=eval
 
 # Implement only, then hand back control
 aigon feature-autonomous-start 42 cc --stop-after=implement
@@ -90,7 +90,7 @@ aigon feature-autonomous-start 42 cc --stop-after=implement
 aigon feature-autonomous-start 42 --workflow=solo-cc-reviewed-cx
 
 # Use a saved workflow but override the reviewer for this one run
-aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=gg
+aigon feature-autonomous-start 42 --workflow=my-arena --eval-agent=ag
 
 # Check AutoConductor status
 aigon feature-autonomous-start status 42
@@ -127,8 +127,8 @@ aigon feature-autonomous-start status 42
 ```
 [09:15:17] state=implementing agents=[cc=running] allReady=false ...
 [09:16:47] state=implementing agents=[cc=ready] allReady=true ...
-🚀 Spawning review session: brewboard-f42-review-gg-...
-✅ Started review session: brewboard-f42-review-gg-...
+🚀 Spawning review session: brewboard-f42-review-ag-...
+✅ Started review session: brewboard-f42-review-ag-...
   [review-start 1/10] running=true
 ✅ Review started. Waiting for review agent to complete...
   [review-close 1/120] reviewCompleted=false reviewState=in-progress
@@ -141,8 +141,8 @@ aigon feature-autonomous-start status 42
 ### Fleet + eval poll log
 
 ```
-[09:15:17] state=implementing agents=[cc=running, gg=running] allReady=false ...
-[09:17:47] state=implementing agents=[cc=ready, gg=ready] allReady=true ...
+[09:15:17] state=implementing agents=[cc=running, ag=running] allReady=false ...
+[09:17:47] state=implementing agents=[cc=ready, ag=ready] allReady=true ...
 🚀 Eval session name: brewboard-f42-eval-cc-...
 ✅ Started eval session: brewboard-f42-eval-cc-...
   [eval-start 1/10] state=evaluating running=true

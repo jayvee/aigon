@@ -20,7 +20,7 @@ Each row shows:
 | CATEGORY | `entity` (feature/research) or `repo` (repo-scoped session) |
 | ENTITY | Entity shorthand, e.g. `f42` for feature 42, `r7` for research 7, or `repo:<name>` |
 | ROLE | Session role: `do`, `eval`, `review`, `auto`, etc. |
-| AGENT | Agent ID (`cc`, `gg`, `cx`, `cu`, …) |
+| AGENT | Agent ID (`cc`, `ag`, `cx`, `cu`, …) |
 | SESSION | Full tmux session name |
 | TMUX | Durable tmux session ID, e.g. `$12` (stable across renames) |
 | STATUS | `attached`, `detached`, or `orphan(<reason>)` |
@@ -40,7 +40,7 @@ Sample output:
 CATEGORY  ENTITY  ROLE  AGENT  SESSION                              TMUX  STATUS
 --------  ------  ----  -----  -----------------------------------  ----  --------
 entity    f42     do    cc     aigon-f42-do-cc-add-auth-flow        $12   detached
-entity    f42     eval  gg     aigon-f42-eval-gg-add-auth-flow      $13   attached
+entity    f42     eval  ag     aigon-f42-eval-ag-add-auth-flow      $13   attached
 entity    r7      do    cx     aigon-r7-do-cx-api-perf-research     $9    detached
 ```
 

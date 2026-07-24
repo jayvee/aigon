@@ -6,7 +6,7 @@ description: "Attach to a feature workspace and implement — the main work step
 ## Synopsis
 
 ```bash
-aigon feature-do <ID> [--agent=<cc|gg|cx|cu>] [--iterate] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]
+aigon feature-do <ID> [--agent=<cc|ag|cx|cu>] [--iterate] [--max-iterations=N] [--auto-submit] [--no-auto-submit] [--dry-run]
 ```
 
 ## Shortcuts
@@ -17,7 +17,7 @@ aigon feature-do <ID> [--agent=<cc|gg|cx|cu>] [--iterate] [--max-iterations=N] [
 
 | Flag | Description |
 |------|-------------|
-| `--agent=<cc\|gg\|cx\|cu>` | Override agent detection (useful when branch name is ambiguous) |
+| `--agent=<cc\|ag\|cx\|cu>` | Override agent detection (useful when branch name is ambiguous) |
 | `--iterate` | Run in Autopilot mode: implement → validate → repeat until passing or max iterations |
 | `--max-iterations=N` | Max iterations for `--iterate` mode (default: 5) |
 | `--auto-submit` | Automatically run `agent-status implementation-complete` when done |

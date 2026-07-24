@@ -3,7 +3,7 @@ title: Telemetry & Analytics
 description: Cross-agent token tracking, cost attribution, and activity breakdown.
 ---
 
-Aigon collects telemetry from every agent session — Claude Code, Gemini CLI, and Codex CLI — and normalizes it into a unified format. This gives you a single view of token usage, cost, and activity across your entire multi-agent workflow.
+Aigon collects telemetry from every agent session — Claude Code, Antigravity CLI, and Codex CLI — and normalizes it into a unified format. This gives you a single view of token usage, cost, and activity across your entire multi-agent workflow.
 
 ## What is collected
 
@@ -16,7 +16,7 @@ After each feature session, Aigon parses agent-specific transcript files to extr
 | **Cost** | Computed from token counts and a built-in pricing table |
 | **Activity type** | Whether the session was an `implement`, `evaluate`, or `review` activity |
 | **Duration** | Session wall-clock time from first to last message |
-| **Agent** | Which agent CLI produced the session (cc, gg, cx) |
+| **Agent** | Which agent CLI produced the session (cc, ag, cx) |
 
 Telemetry is stored locally in `.aigon/telemetry/` — nothing is sent to external services.
 
@@ -27,7 +27,7 @@ Each agent CLI writes transcripts in a different format. Aigon includes a parser
 | Agent | Transcript location | Format |
 |-------|---------------------|--------|
 | **Claude Code** (cc) | `.claude/projects/*/transcripts/*.jsonl` | JSONL with `usage` blocks per assistant turn |
-| **Gemini CLI** (gg) | `~/.gemini/tmp/` session JSON | JSON with token counts in response metadata |
+| **Antigravity CLI** (ag) | `~/.gemini/antigravity-cli/conversations/` SQLite database | Conversation steps and usage metadata |
 | **Codex CLI** (cx) | `~/.codex/sessions/` | JSONL matched by working directory |
 | **Cursor** (cu) | — | No telemetry — Cursor does not expose session data |
 
@@ -50,7 +50,7 @@ This distinction lets you answer questions like:
 
 ## Cost attribution
 
-Aigon maintains a pricing table covering Claude, Gemini, and GPT-5 model families. Costs are computed per-turn using actual token counts:
+Aigon maintains a pricing table covering Claude, Antigravity, and GPT-5 model families. Costs are computed per-turn using actual token counts:
 
 ```
 cost = (input_tokens × input_rate)

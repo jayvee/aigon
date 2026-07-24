@@ -31,6 +31,9 @@ Implemented; waiting for user review before feature close.
 
 ## Explicitly Deferred
 
+- Headless/container Antigravity authentication and API-key support remain upstream work;
+  Aigon intentionally does not offer either path.
+
 ## For the Next Feature in This Set
 
 ## Test Coverage
@@ -43,3 +46,13 @@ Implemented; waiting for user review before feature close.
   accepted the staged plugin. Reinstalling the local plugin succeeded after the hook fix.
 - Automated: `node tests/integration/doctor-agent-auth-probe.test.js`,
   `node tests/integration/quota-probe.test.js`, and `npm run test:iterate` all passed.
+
+## Documentation Follow-up
+
+- Replaced live `gg`/Gemini CLI examples across public site content, LLM metadata,
+  README, clean-room guidance, and installed command templates with the supported `ag` /
+  Antigravity CLI path. Historical specs, telemetry, and archived review material remain
+  unchanged.
+- Corrected the associated operational facts: `agy` command and permission flag,
+  file-prompt delivery, plugin hooks, SQLite conversation telemetry, current model slugs,
+  and the no-automatic-Antigravity-quota-polling rule.

@@ -17,7 +17,7 @@ aigon dev-server <start|stop|logs|list|open|url> [flags]
 
 Manages dev servers with automatic port allocation, so multiple agents can run the same web app on different branches without port conflicts.
 
-**Why not just `npm run dev`?** When you have multiple worktrees (e.g., feature-42-cc and feature-42-gg), each needs its own port. Running `npm run dev` directly uses the default port and causes conflicts. `aigon dev-server start` allocates a unique port per agent and registers it with the local proxy.
+**Why not just `npm run dev`?** When you have multiple worktrees (e.g., feature-42-cc and feature-42-ag), each needs its own port. Running `npm run dev` directly uses the default port and causes conflicts. `aigon dev-server start` allocates a unique port per agent and registers it with the local proxy.
 
 ## How port isolation works
 
@@ -28,7 +28,7 @@ Base PORT = 3400 (from .env or .aigon/config.json)
 
 Main repo:     3400
 cc worktree:   3401
-gg worktree:   3402
+ag worktree:   3402
 cx worktree:   3403
 cu worktree:   3404
 mv worktree:   3405
@@ -119,7 +119,7 @@ aigon dev-server start
 aigon dev-server start
 # → http://localhost:3401
 
-# In the gg worktree for the same feature:
+# In the ag worktree for the same feature:
 aigon dev-server start
 # → http://localhost:3402
 
@@ -128,7 +128,7 @@ aigon dev-server list
 # PORT  AGENT  FEATURE  URL
 # 3400  main   —        http://localhost:3400
 # 3401  cc     42       http://localhost:3401
-# 3402  gg     42       http://localhost:3402
+# 3402  ag     42       http://localhost:3402
 ```
 
 ### With the local proxy

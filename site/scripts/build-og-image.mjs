@@ -351,7 +351,7 @@ const html = `<!doctype html>
       <div class="footer">
         <b>aigon.build</b>
         <span>/</span>
-        <span>Claude Code · Codex · Gemini · Cursor</span>
+        <span>Claude Code · Codex · Antigravity · Cursor</span>
       </div>
     </section>
 
@@ -384,7 +384,7 @@ const html = `<!doctype html>
             <small>worktree / cx42</small>
             </div>
             <div class="card active">
-              <strong>Gemini</strong>
+              <strong>Antigravity</strong>
             <small>worktree / gg42</small>
             </div>
           </div>
@@ -404,7 +404,7 @@ const html = `<!doctype html>
 
       <div class="terminal">
         <div class="terminal-code">
-          <b>$</b> aigon feature-start 42 cc cx gg<br>
+          <b>$</b> aigon feature-start 42 cc cx ag<br>
           <b>$</b> aigon feature-eval 42
         </div>
       </div>

@@ -168,7 +168,7 @@ aigon feature-validate 36 --no-update  # evaluate without writing checkboxes
 aigon feature-do <ID> --iterate [options]
 
 --max-iterations=N    Max loop iterations (default: 5, or set in .aigon/config.json)
---agent=<id>          Which agent CLI to use: cc, gg, cx, cu (default: cc)
+--agent=<id>          Which agent CLI to use: cc, ag, cx, cu (default: cc)
 --dry-run             Show what would run without executing
 ```
 
