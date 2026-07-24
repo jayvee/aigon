@@ -62,3 +62,8 @@ export function filterSetStackMembers(members, roll) {
   return (Array.isArray(members) ? members : [])
     .filter(member => !shouldSkipSetStackMember(member, roll));
 }
+
+export function shouldExpandSetStack(members, roll) {
+  return filterSetStackMembers(members, roll)
+    .some(member => !isSetStackIdleMember(member, roll));
+}

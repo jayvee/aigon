@@ -1,7 +1,6 @@
 ---
 aigon_id: F696
 complexity: high
-set: docs-release-readiness
 transitions:
   - { from: "inbox", to: "backlog", at: "2026-07-24T23:19:44.625Z", actor: "cli/feature-prioritise" }
 ---
