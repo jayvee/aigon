@@ -51,14 +51,14 @@ test('resolveAgentRecommendation: returns modelSource=none for null spec', () =>
     assert.strictEqual(r.resolveAgentRecommendation('cc', null).modelSource, 'none');
 });
 
-test('buildRecommendationPayload: launchable agent IDs present; deactivated agents excluded', () => {
+test('buildRecommendationPayload: launchable agent IDs present', () => {
     const pl = r.buildRecommendationPayload(FM('complexity: medium'));
     assert.strictEqual(pl.complexity, 'medium');
     for (const agent of reg.getLaunchableAgents()) {
         assert.ok(agent.id in pl.agents, `${agent.id} missing from recommendation payload`);
         if (agent.cli?.complexityDefaults) assert.ok(agent.cli.complexityDefaults.low, `${agent.id} needs low complexityDefaults`);
     }
-    assert.ok(!('ag' in pl.agents), 'deactivated ag should not appear in the recommendation payload');
+    assert.ok('ag' in pl.agents, 'active ag should appear in the recommendation payload');
 });
 
 test('buildRecommendationPayload: deactivated gg is excluded', () => {

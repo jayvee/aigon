@@ -8,16 +8,7 @@
   ],
   "displayName": "Antigravity CLI",
   "shortName": "AG",
-  "active": false,
-  "deactivated": {
-    "since": "2026-07-13",
-    "reason": "Antigravity CLI (agy) auth is broken for automated/CLI use: macOS Keychain 1s read timeout (google-antigravity/antigravity-cli#85) re-prompts login on nearly every launch, headless token storage is write-only (#479), and there is no API-key/env auth (#78) so aigon's ANTIGRAVITY_TOKEN/AGY_TOKEN authCheck is a no-op. Re-enable once upstream auth is fixed.",
-    "upstreamIssues": [
-      "https://github.com/google-antigravity/antigravity-cli/issues/85",
-      "https://github.com/google-antigravity/antigravity-cli/issues/479",
-      "https://github.com/google-antigravity/antigravity-cli/issues/78"
-    ]
-  },
+  "active": true,
   "providerFamily": "google",
   "portOffset": 8,
   "terminalColor": "green",
@@ -26,14 +17,10 @@
   "installHint": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "installCommand": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
   "authCheck": {
-    "method": "envVar",
-    "envVarNames": [
-      "ANTIGRAVITY_TOKEN",
-      "AGY_TOKEN"
-    ],
-    "configFilePath": "~/.gemini/antigravity-cli/settings.json",
+    "method": "none",
     "skipDoctorProbe": true,
-    "loginHint": "Launch agy interactively for Google sign-in, or set ANTIGRAVITY_TOKEN for CI (doctor never launches agy)"
+    "loginCommand": "agy",
+    "loginHint": "Run agy in a local interactive terminal and complete Google sign-in. Headless and API-key authentication are not supported."
   },
   "trust": {
     "type": "json-array",
@@ -100,10 +87,10 @@
     "reviewPrompt": "feature-code-review",
     "reviewCheckPrompt": "feature-code-revise",
     "models": {
-      "research": "gemini-3.5-flash",
-      "implement": "gemini-3.5-flash",
-      "evaluate": "gemini-3.5-flash",
-      "review": "gemini-3.5-flash"
+      "research": "gemini-3.5-flash-medium",
+      "implement": "gemini-3.5-flash-medium",
+      "evaluate": "gemini-3.5-flash-medium",
+      "review": "gemini-3.5-flash-medium"
     },
     "modelOptions": [
       {
@@ -111,8 +98,8 @@
         "label": "Default"
       },
       {
-        "value": "gemini-3.5-flash",
-        "label": "Gemini 3.5 Flash",
+        "value": "gemini-3.5-flash-medium",
+        "label": "Gemini 3.5 Flash (Medium)",
         "pricing": {
           "input": 1.5,
           "output": 9
@@ -134,8 +121,8 @@
         "lastRefreshAt": "2026-06-25T00:00:00.000Z"
       },
       {
-        "value": "gemini-3.1-pro-preview",
-        "label": "Gemini 3.1 Pro Preview",
+        "value": "gemini-3.1-pro-high",
+        "label": "Gemini 3.1 Pro (High)",
         "pricing": {
           "input": 1.25,
           "output": 10
@@ -157,8 +144,8 @@
         "lastRefreshAt": "2026-06-25T00:00:00.000Z"
       },
       {
-        "value": "gemini-2.5-flash",
-        "label": "Gemini 2.5 Flash",
+        "value": "gemini-3.5-flash-low",
+        "label": "Gemini 3.5 Flash (Low)",
         "pricing": {
           "input": 0.15,
           "output": 0.6
@@ -183,19 +170,19 @@
     "effortOptions": [],
     "complexityDefaults": {
       "low": {
-        "model": "gemini-2.5-flash",
+        "model": "gemini-3.5-flash-low",
         "effort": null
       },
       "medium": {
-        "model": "gemini-3.5-flash",
+        "model": "gemini-3.5-flash-medium",
         "effort": null
       },
       "high": {
-        "model": "gemini-3.5-flash",
+        "model": "gemini-3.5-flash-medium",
         "effort": null
       },
       "very-high": {
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-3.1-pro-high",
         "effort": null
       }
     },
