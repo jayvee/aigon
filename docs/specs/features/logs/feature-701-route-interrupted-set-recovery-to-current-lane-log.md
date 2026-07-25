@@ -1,3 +1,16 @@
+---
+commit_count: 7
+lines_added: 255
+lines_removed: 10
+lines_changed: 265
+files_touched: 9
+fix_commit_count: 3
+fix_commit_ratio: 0.429
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: true
+---
+
 # Implementation Log: Feature 701 - route-interrupted-set-recovery-to-current-lane
 
 ## Plan
