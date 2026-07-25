@@ -363,8 +363,7 @@ test('backlog snapshot exposes feature-unprioritise validAction', () => withTemp
     );
 }));
 
-// buildPendingScheduleIndex regression test moved to @aigon/pro with feature
-// 236 alongside the scheduled-kickoff engine.
+// buildPendingScheduleIndex coverage lives in tests/unit/scheduled-kickoff.test.js.
 
 // REGRESSION F460: getFeatureDashboardState/getResearchDashboardState reuse a
 // caller-supplied baseState instead of re-reading snapshot+events from disk.

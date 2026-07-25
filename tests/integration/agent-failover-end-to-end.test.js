@@ -5,16 +5,11 @@ const a = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { testAsync, withTempDirAsync, report, withIsolatedTmuxAsync } = require('../_helpers');
+const { test, testAsync, withTempDirAsync, report, withIsolatedTmuxAsync } = require('../_helpers');
 const wf = require('../../lib/workflow-core');
 const { writeAgentStatusAt } = require('../../lib/agent-status');
-const {
-    sweepEntity,
-    registerExhaustionHandler,
-    tmuxSessionAlive,
-    _resetExhaustionHandlers,
-} = require('../../lib/supervisor');
-const { chooseNextAgent } = require('../../lib/agent-exhaustion-detect');
+const { sweepEntity, tmuxSessionAlive } = require('../../lib/supervisor');
+const agentFailover = require('../../lib/agent-failover');
 const { buildTmuxSessionName, createDetachedTmuxSession } = require('../../lib/worktree');
 const { _resetTmuxListCache } = require('../../lib/dashboard-status-helpers');
 
@@ -31,28 +26,10 @@ function readEvents(repo, featureId) {
     }
 }
 
-// Build a handler that implements the chain-switch logic (mirrors what @aigon/pro registers).
-function makeSwitchHandler(capturedSessionName) {
-    return async function ({ repoPath, entityId, agentId, signal, failoverConfig }) {
-        const replacementAgentId = chooseNextAgent(
-            failoverConfig.chain, signal.currentAgentId, [signal.currentAgentId]
-        );
-        if (!replacementAgentId) return;
-
-        await wf.recordAgentFailoverSwitch(repoPath, entityId, {
-            agentId,
-            previousAgentId: signal.currentAgentId,
-            replacementAgentId,
-            source: signal.source,
-            lastCommit: null,
-        });
-
-        createDetachedTmuxSession(capturedSessionName.value, repoPath, 'tail -f /dev/null', {});
-    };
-}
-
-// Run all three scenarios sequentially to avoid contaminating the module-level
-// exhaustionHandlers array that supervisor uses.
+// F693 merged aigon-pro into OSS: lib/agent-failover.js is the real handler the
+// supervisor now calls directly, so these scenarios exercise the shipped engine
+// rather than a stand-in. This file also absorbs the appendFailoverDashboardActions
+// coverage that used to live in the aigon-pro copy of this test.
 testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTmuxAsync(async () => {
     process.env.AIGON_TEST_MODE = '1';
 
@@ -60,7 +37,6 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
     // Scenario 1: switch policy — cc exhausted, cx is next
     // -----------------------------------------------------------------------
     await withTempDirAsync(async (repo) => {
-        _resetExhaustionHandlers();
         const featureId = '1';
         const repoName = path.basename(repo);
         const sessionRef = {
@@ -82,8 +58,6 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
                 lastExitCode: 1,
                 lastPaneTail: 'usage limit reached',
             }, 'feature');
-
-            registerExhaustionHandler(makeSwitchHandler(sessionRef));
 
             // Create the auto session and flush the tmux list cache so sweepEntity
             // sees it and marks the feature autonomous (required for policy=switch).
@@ -117,15 +91,13 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
             killSession(sessionRef.value);
             killSession(autoSessionName);
             _resetTmuxListCache();
-            _resetExhaustionHandlers();
-        }
+            }
     });
 
     // -----------------------------------------------------------------------
     // Scenario 2: chain end — ag is last, no successor → no failover_switched
     // -----------------------------------------------------------------------
     await withTempDirAsync(async (repo) => {
-        _resetExhaustionHandlers();
         const featureId = '2';
         const sessionRef = { value: buildTmuxSessionName(featureId, 'ag', {
             repo: path.basename(repo), role: 'do', entityType: 'f',
@@ -144,8 +116,6 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
                 lastPaneTail: 'quota exceeded: token limit',
             }, 'feature');
 
-            registerExhaustionHandler(makeSwitchHandler(sessionRef));
-
             const snapshot = await wf.showFeatureOrNull(repo, featureId);
             sweepEntity(repo, 'feature', featureId, snapshot, {});
             await new Promise(r => setTimeout(r, 800));
@@ -159,18 +129,16 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
             a.strictEqual(switched.length, 0, 'Sc2: no failover_switched when chain has no successor');
         } finally {
             killSession(sessionRef.value);
-            _resetExhaustionHandlers();
-        }
+            }
     });
 
     // -----------------------------------------------------------------------
     // Scenario 3: notify policy — exhaustion recorded, no switch, slot stays on cc
     // -----------------------------------------------------------------------
     await withTempDirAsync(async (repo) => {
-        _resetExhaustionHandlers();
         const featureId = '3';
 
-        try {
+        {
             await wf.startFeature(repo, featureId, 'solo_worktree', ['cc'], {
                 agentFailover: { policy: 'notify', chain: ['cc', 'cx', 'ag'] },
             });
@@ -197,12 +165,68 @@ testAsync('agent-failover-end-to-end: all scenarios', async () => withIsolatedTm
             const snap = await wf.showFeatureOrNull(repo, featureId);
             a.ok(snap.agents.cc.tokenExhausted, 'Sc3: tokenExhausted is set on the slot');
             a.strictEqual(snap.agents.cc.currentAgentId, 'cc', 'Sc3: slot stays on cc');
-        } finally {
-            _resetExhaustionHandlers();
         }
     });
 
     delete process.env.AIGON_TEST_MODE;
 }));
+
+// ── appendFailoverDashboardActions (merged from the aigon-pro test suite) ─────
+
+test('appendFailoverDashboardActions injects switch-agent when tokenExhausted set', () => {
+    const snapshot = {
+        agents: {
+            cc: {
+                status: 'needs_attention',
+                tokenExhausted: { source: 'stderr_pattern', at: new Date().toISOString() },
+                currentAgentId: 'cc',
+            },
+        },
+        agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
+    };
+    const agents = [{ id: 'cc', status: 'needs_attention' }];
+    const result = agentFailover.appendFailoverDashboardActions(
+        '/fake/repo', 'feature', '42', snapshot, agents, []
+    );
+    a.strictEqual(result.length, 1, 'one action injected');
+    const action = result[0];
+    a.strictEqual(action.action, 'switch-agent', 'action is switch-agent');
+    a.strictEqual(action.agentId, 'cc', 'agentId is cc');
+    a.strictEqual(action.metadata.nextAgentId, 'cx', 'next agent is cx');
+    a.strictEqual(action.metadata.chainExhausted, false, 'chain not exhausted');
+    a.ok(action.label.includes('cx'), 'label includes next agent id');
+});
+
+test('appendFailoverDashboardActions marks chainExhausted when no next agent', () => {
+    const snapshot = {
+        agents: {
+            gg: {
+                status: 'needs_attention',
+                tokenExhausted: { source: 'stderr_pattern', at: new Date().toISOString() },
+                currentAgentId: 'gg',
+            },
+        },
+        agentFailover: { policy: 'switch', chain: ['cc', 'cx', 'gg'] },
+    };
+    const agents = [{ id: 'gg', status: 'needs_attention' }];
+    const result = agentFailover.appendFailoverDashboardActions(
+        '/fake/repo', 'feature', '42', snapshot, agents, []
+    );
+    a.strictEqual(result.length, 1, 'one action injected even when chain exhausted');
+    a.strictEqual(result[0].metadata.chainExhausted, true, 'chainExhausted flagged');
+    a.strictEqual(result[0].metadata.nextAgentId, null, 'no next agent');
+});
+
+test('appendFailoverDashboardActions skips slot without tokenExhausted', () => {
+    const snapshot = {
+        agents: { cc: { status: 'running', currentAgentId: 'cc' } },
+        agentFailover: { policy: 'switch', chain: ['cc', 'cx'] },
+    };
+    const agents = [{ id: 'cc', status: 'running' }];
+    const result = agentFailover.appendFailoverDashboardActions(
+        '/fake/repo', 'feature', '42', snapshot, agents, []
+    );
+    a.strictEqual(result.length, 0, 'no action injected for healthy slot');
+});
 
 report();

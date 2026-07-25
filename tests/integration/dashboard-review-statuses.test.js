@@ -79,8 +79,6 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
         isComplete: false,
         inboxMemberCount: 0,
     }, {
-        requiresPro: true,
-        proAvailable: true,
     });
     assert.ok(actions.some(a => a.action === 'set-autonomous-start'), 'expected immediate set start action');
     const schedule = actions.find(a => a.action === 'set-autonomous-schedule');
@@ -94,8 +92,6 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
         isComplete: false,
         inboxMemberCount: 0,
     }, {
-        requiresPro: true,
-        proAvailable: false,
         proDisabledReason: 'Pro required',
     });
     const gatedSchedule = gated.find(a => a.action === 'set-autonomous-schedule');
@@ -114,7 +110,7 @@ test('manual member activity drives set lifecycle without conductor controls', (
         pendingSpecReviseMemberCount: 0,
     };
     assert.strictEqual(resolveSetLifecycle(state), 'running');
-    const actionIds = buildSetValidActions(state, { requiresPro: false, proAvailable: true })
+    const actionIds = buildSetValidActions(state)
         .map(action => action.action);
     assert(!actionIds.includes('set-autonomous-start'));
     assert(!actionIds.includes('set-autonomous-stop'));
@@ -133,8 +129,6 @@ test('buildSetValidActions exposes restart actions for stopped partial sets', ()
             completed: ['609', '610'],
         },
     }, {
-        requiresPro: false,
-        proAvailable: true,
     });
     assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-start'), 'expected restart start action');
     assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-resume'), 'expected resume action');
@@ -165,7 +159,7 @@ test('buildSetValidActions exposes recovery actions for interrupted sets', () =>
     const actions = buildSetValidActions({
         slug: 'docs-release-readiness', isComplete: false,
         autonomous: { status: 'interrupted', members: ['697', '698', '699'], completed: ['697'] },
-    }, { requiresPro: false, proAvailable: true });
+    });
     assert.ok(actions.some(a => a.action === 'set-autonomous-resume' && a.label === 'Resume (same agents)'));
     assert.ok(actions.some(a => a.action === 'set-autonomous-start' && a.label === 'Resume (choose agents…)'));
     assert.ok(actions.some(a => a.action === 'set-autonomous-stop' && a.label === 'Take over manually'));
