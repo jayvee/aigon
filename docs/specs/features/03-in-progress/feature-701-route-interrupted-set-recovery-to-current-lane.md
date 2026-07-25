@@ -30,16 +30,16 @@ complexity: medium
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Render an interrupted feature set's recovery contract in the lane containing its current feature, so the active work and recovery controls cannot disappear from the Pipeline.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator, I can see an interrupted set's current feature in its actual workflow lane.
+- [ ] As an operator, I can use the set-level recovery controls from that visible card.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
+- [ ] A set whose contract lane has no Pipeline column renders its full contract in the current feature's lane.
+- [ ] The embedded current feature and Resume (same agents) action are visible for an interrupted set.
+- [ ] The normal running-set lane routing remains unchanged.
 - [ ]
 
 ## Validation
@@ -48,6 +48,8 @@ complexity: medium
      All commands must exit 0 for the iteration to be considered successful.
      Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+npm run test:iterate
+npx playwright test --config tests/dashboard-e2e/playwright.config.js tests/dashboard-e2e/contract-cards-preview.spec.js
 ```
 
 ## Pre-authorised
@@ -58,17 +60,17 @@ complexity: medium
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Keep the set contract server-owned. Adjust only Pipeline lane placement: when the contract lane is not a visible feature lane, use the current member's lane as the contract host. Cover the mixed-lane interrupted recovery card with the production renderer test.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
      For Aigon feature dependencies use: depends_on: feature-name-slug
      This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- F700 stale autonomous conductor recovery state.
 
 ## Out of Scope
 <!-- Explicitly list what this feature does NOT include -->
--
+- Changes to feature lifecycle or autonomous execution.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
@@ -76,7 +78,6 @@ complexity: medium
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+- Prior work: F700 stale-conductor recovery controls.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
