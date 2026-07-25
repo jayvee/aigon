@@ -1,3 +1,26 @@
+---
+commit_count: 6
+lines_added: 207
+lines_removed: 117
+lines_changed: 324
+files_touched: 7
+fix_commit_count: 1
+fix_commit_ratio: 0.167
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 196
+output_tokens: 40473
+cache_creation_input_tokens: 201451
+cache_read_input_tokens: 8332643
+thinking_tokens: 0
+total_tokens: 8574763
+billable_tokens: 40669
+cost_usd: 6.4382
+sessions: 1
+model: "claude-opus-5"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 695 - remove-aigon-pro-step-from-setup-wizard
 Agent: cc
 
