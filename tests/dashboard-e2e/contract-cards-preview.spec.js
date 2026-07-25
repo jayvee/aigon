@@ -427,6 +427,33 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(inProgress.locator('.ccard-set-current')).toContainText('F682');
     });
 
+    // REGRESSION: interrupted sets project into a recovery lane that Pipeline
+    // does not render. The visible current-member lane must host the contract,
+    // otherwise its embedded member and Resume action both disappear.
+    test('interrupted set recovery is visible with its current feature', async ({ page }) => {
+        const setScenario = scenario('set-conductor-interrupted');
+        await mountPreview(page, buildPayload({
+            features: [baseRow('682', scenario('feature-autonomous-stopped'), {
+                stage: 'in-progress', set: 'autonomous-recovery',
+            })],
+            sets: [{
+                slug: 'autonomous-recovery', goal: 'Autonomous recovery', status: 'interrupted',
+                isComplete: false, completed: 1, memberCount: 3,
+                progress: { merged: 1, total: 3, percent: 33 },
+                currentFeature: { id: '682', label: 'Recover interrupted runs', stage: 'in-progress' },
+                validActions: setScenario.dashboardActions,
+                autonomous: { status: 'interrupted', running: false, currentFeature: '682' },
+                uiContract: setScenario.contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+
+        const inProgress = page.locator('.col-body[data-stage="in-progress"] .kanban-set-bundle');
+        await expect(inProgress.locator('.kanban-set-header-contract')).toHaveCount(1);
+        await expect(inProgress.locator('.ccard-set-current')).toContainText('F682');
+        await expect(inProgress.locator('[data-va-action="set-autonomous-resume"]')).toHaveCount(1);
+    });
+
     test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 900 });
         await mountPreview(page, buildPayload({

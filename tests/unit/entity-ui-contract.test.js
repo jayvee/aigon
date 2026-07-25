@@ -29,6 +29,16 @@ test('duplicate action identities are rejected', () => {
     })), /Duplicate UI contract action identity/);
 });
 
+test('separate review escalations keep distinct action identities', () => {
+    assert.doesNotThrow(() => buildEntityUiContract(base({
+        actions: ['first', 'second'].map(escalationId => ({
+            action: 'feature-escalation-accept',
+            label: 'Acknowledge & proceed',
+            metadata: { escalationId },
+        })),
+    })));
+});
+
 test('disabled actions require a stable unavailable reason', () => {
     assert.throws(() => buildEntityUiContract(base({
         actions: [{ action: 'feature-start', label: 'Start', disabled: true }],
