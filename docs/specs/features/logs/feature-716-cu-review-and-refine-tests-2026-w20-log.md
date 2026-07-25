@@ -17,3 +17,21 @@ Completed W20 recurring test hygiene pass. Validated existing unit/integration/w
 ## Explicitly Deferred
 
 - None.
+
+## Code Review
+
+**Reviewed by**: cx
+**Date**: 2026-07-25
+
+### Fixes Applied
+- c5a524315 fix(review): surface test reduction threshold breach
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- ESCALATE:blocked — The reductions in `insights.test.js` (11→3 tests) and `backup.test.js` (9→7 tests) exceed the spec's 20% per-file threshold and require human review before they can be accepted.
+
+### Notes
+- No out-of-scope file deletions were present.
+- The remaining harness migrations and integration grouping adjustment were internally consistent on diff review.
