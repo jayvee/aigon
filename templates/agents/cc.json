@@ -266,6 +266,44 @@
           "research": null
         },
         "lastRefreshAt": "2026-06-12T00:00:00.000Z"
+      },
+      {
+        "value": "claude-opus-5",
+        "label": "Opus 5",
+        "pricing": {
+          "input": 5,
+          "output": 25
+        },
+        "notes": {
+          "spec_review": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "implement": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "review": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "spec": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification.",
+          "research": "Newest Opus tier; not yet maintainer-benchmarked — scores pending qualification."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "summary": {
+          "headline": "Newest Opus tier at Opus 4.8 pricing; unscored pending maintainer qualification.",
+          "body": "Successor to Opus 4.8, provider-positioned for long-horizon agentic coding, at the same $5/$25 per MTok. 1M context is the default and maximum, so no separate [1m] row is needed. Thinking is on by default and the effort ladder runs through max. Provider-published positioning only — no aigon-bench numbers yet, so score stays null and complexityDefaults is unchanged (policy §0.3, §4).",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Anthropic model overview — Claude Opus 5",
+              "url": "https://platform.claude.com/docs/en/about-claude/models/overview"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       }
     ],
     "effortOptions": [
