@@ -1,3 +1,26 @@
+---
+commit_count: 10
+lines_added: 376
+lines_removed: 1520
+lines_changed: 1896
+files_touched: 57
+fix_commit_count: 2
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 328
+output_tokens: 78064
+cache_creation_input_tokens: 706542
+cache_read_input_tokens: 18226197
+thinking_tokens: 0
+total_tokens: 19011131
+billable_tokens: 78392
+cost_usd: 15.4822
+sessions: 2
+model: "claude-opus-5"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 694 - merge-pro-docs-into-oss-docs-and-purge-pro-references
 Agent: cc
 
