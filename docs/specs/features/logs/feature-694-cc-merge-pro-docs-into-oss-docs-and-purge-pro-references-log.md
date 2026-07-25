@@ -153,3 +153,25 @@ No new tests — this feature changes no behaviour. Verification is the gate set
 
 `npm run test:browser` was not run — pre-authorised to skip mid-iteration; it
 belongs to the deploy gate before close.
+
+## Code Review
+
+**Reviewed by**: cursor (composer)
+**Date**: 2026-07-25
+
+### Fixes Applied
+- `929410859` fix(review): remove stale Pro preview banner from hero-snapshot.md
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- Implementation is thorough and matches the spec's four-commit shape plus the
+  necessary `docs:check` gate fix. `hero-snapshot.md` had line 61 updated but
+  still carried the retired `/pro` preview banner at lines 13–16; removed in
+  review. Deferred items from the implementation log (archive-repo commits,
+  `npm deprecate`, pre-commit secret scanner) remain operator follow-ups, not
+  blockers for close.
