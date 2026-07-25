@@ -30,16 +30,17 @@ complexity: medium
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Recover a feature-set autonomous run when its tmux conductor disappears, without misrepresenting already-completed feature work as failed.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator, I can see that a set conductor was interrupted rather than falsely shown as running.
+- [ ] As an operator, I can resume the interrupted set with the same agents, choose a new pairing, or take over manually without losing completed work.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
+- [ ] A persisted running set with no live tmux session is reconciled to an explicit interrupted state after the startup grace period.
+- [ ] An interrupted set exposes Resume (same agents), Resume (choose agents…), Take over manually, and Reset through the server-owned set action contract.
+- [ ] The gallery includes the interrupted-conductor recovery state and asserts its available actions.
+- [ ] Regression coverage proves that a missing conductor never remains dashboard-running and that recovery actions are available.
 - [ ]
 
 ## Validation
@@ -48,6 +49,11 @@ complexity: medium
      All commands must exit 0 for the iteration to be considered successful.
      Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+npm run test:iterate
+node tests/integration/auto-session-state.test.js
+node tests/integration/dashboard-review-statuses.test.js
+node tests/unit/dashboard-card-gallery.test.js
+npm run test:gallery
 ```
 
 ## Pre-authorised
@@ -58,17 +64,18 @@ complexity: medium
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Add a durable stale-running set reconciliation alongside the existing paused-set reconciliation. Project the resulting `interrupted` state through the canonical feature-set interaction definition, so the dashboard renders recovery actions rather than inferring them in browser code. Preserve the existing `set-autonomous-*` command handlers: same-agent resume, choose-agent restart, and stop-as-manual-takeover.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
      For Aigon feature dependencies use: depends_on: feature-name-slug
      This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- Existing feature/set autonomous state and dashboard contracts.
 
 ## Out of Scope
 <!-- Explicitly list what this feature does NOT include -->
--
+- Determining the external process that ended tmux in the historical F698 incident.
+- Replaying or changing F698's committed implementation.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
@@ -76,7 +83,6 @@ complexity: medium
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+- Prior work: F698 AutoConductor interruption; F646 paused-conductor dashboard recovery.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
