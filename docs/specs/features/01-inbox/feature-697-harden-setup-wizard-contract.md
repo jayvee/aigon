@@ -12,9 +12,10 @@ Make `aigon setup` safe, resumable, testable, and truthful before the next relea
 current nine-step wizard contradicts its original F337 contract: `--resume` cannot rerun
 skipped steps, `--yes` clones Brewboard and starts a server, agent authentication is keyed
 by the wrong identifiers, server success is never health-checked, the seed is applied twice,
-and config/Git writes are unsafe. Correct those behaviors while deliberately preserving the
-current Aigon Pro step, wording, package gate, and vault gate; F695 in the separate
-`pro-merge` set owns their later removal.
+config/Git writes are unsafe, and command-local `--help` can execute the command instead of
+showing help. Correct those behaviors and their dedicated public setup documentation while
+deliberately preserving the current Aigon Pro step, wording, package gate, and vault gate;
+F695 in the separate `pro-merge` set owns their later removal.
 
 ## User Stories
 
@@ -28,6 +29,8 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
       and any config containing a credential is private to my account.
 - [ ] As a maintainer, wizard behavior is covered by focused tests rather than a single
       Docker happy path.
+- [ ] As a user exploring the setup commands, `--help` is always read-only and the published
+      setup guide describes the behavior I will actually see.
 
 ## Acceptance Criteria
 
@@ -50,6 +53,17 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
       and the summary can distinguish "never reached" from "tried and broke".
 - [ ] `global-setup --force` is documented and implemented only as machine configuration;
       it is not presented as a clean rerun of all wizard steps.
+
+### Side-effect-free command help
+
+- [ ] Global argument handling intercepts command-local `--help`/`-h` before execution for
+      every public command and subcommand. Fix this centrally in `aigon-cli.js` dispatch so
+      no individual handler can forget the guard.
+- [ ] `aigon feature-create --help`, `aigon setup --help`, lifecycle mutations, server
+      commands, and Pro stubs print usage without changing files, workflow/config state,
+      processes, or network state.
+- [ ] A temporary-repo/HOME regression test runs a representative help-command matrix and
+      proves filesystem and process-relevant state is unchanged.
 
 ### Safe unattended and interactive defaults
 
@@ -87,12 +101,24 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
       steps do not fall back to `~/src/brewboard`.
 - [ ] The demo selects an installed/available launchable agent rather than hardcoding `cc`,
       and it describes whether it starts a supervised feature or an autonomous run.
-- [ ] If the wizard promises persistence, it runs `aigon server start --persistent`;
-      otherwise the prompt and docs say the server is session-local. In either case it polls
-      a health endpoint, records `done` only after success, and reports logs/remediation on
-      failure.
+- [ ] Interactive setup offers to start the persistent dashboard server and defaults that
+      prompt to yes. On acceptance it runs `aigon server start --persistent`, polls a health
+      endpoint, records `done` only after success, and reports logs/remediation on failure.
+      `setup --yes` remains conservative and does not start the server.
 - [ ] Server start respects the loopback/security configuration and does not imply LAN
       exposure by default.
+
+### Public setup documentation
+
+- [ ] Getting Started's setup passages, Setup Wizard, the `setup` command reference, and
+      clean-room installation material describe the implemented nine-step flow,
+      `--resume`/repeatable `--step`, conservative `--yes`, terminal and agent-auth behavior,
+      seed/demo choices, persistent server default, health-check failure, and safe help.
+- [ ] `global-setup --force` is described only as machine-configuration regeneration, never
+      as restarting the wizard from step one.
+- [ ] Setup-specific screenshots and examples are refreshed where the behavior or step count
+      changed, at desktop and 390px mobile. F698 owns the rest of the public corpus and must
+      not rewrite these setup facts.
 
 ### Tests
 
@@ -108,8 +134,8 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
       consolidating obsolete or duplicated wizard/install coverage first.
 - [ ] **The budget is already red at review time**: `scripts/check-test-budget.sh` reports
       17255 LOC against a 17225 ceiling, so the Validation block below fails before any work
-      starts. As the first feature in the set, F697 owns clearing that pre-existing overage
-      *and* funding its own four new suites; F698/F699 must not inherit a red budget. If
+      starts. As an upstream feature in the set, F697 owns clearing that pre-existing overage
+      *and* funding its own focused coverage; F698/F699 must not inherit a red budget. If
       nothing can be consolidated, stop and ask before raising the ceiling.
 
 ## Validation
@@ -119,6 +145,7 @@ node tests/unit/onboarding-state.test.js
 node tests/integration/onboarding-wizard.test.js
 npm run test:iterate
 bash scripts/check-test-budget.sh
+npm run build --prefix site
 ```
 
 Exact test filenames may follow existing repository conventions, but both pure state and
@@ -140,9 +167,10 @@ Make state selection pure and table-driven. Treat `done`, `skipped`, missing, an
 distinct values; `--resume` explicitly includes skipped while ordinary first-run completion
 may continue treating an intentional skip as complete.
 
-Route config through the canonical writer and process execution through argv APIs. Then fix
-seed/server/demo behavior and finally align the public guide in F698. Restart the dashboard
-after `lib/*.js` edits.
+Route config through the canonical writer and process execution through argv APIs. Fix the
+global help guard early because it is small, user-visible, and required to inspect the setup
+surface safely. Then fix seed/server/demo behavior and update the setup-owned public pages in
+this feature. Restart the dashboard after `lib/*.js` edits.
 
 ### Verified defect anchors (added by spec review)
 
@@ -160,12 +188,13 @@ re-deriving them:
 | Git config shell interpolation | `wizard.js:215-216` — `execSync(\`git config --global user.name ${JSON.stringify(name)}\`)`; JSON quoting still leaves backticks and `$()` shell-active inside double quotes |
 | `writeGlobalConfig()` duplicate | `wizard.js:106`, used at `:389` and `:425` (the Pro-key write) |
 | Demo hardcodes `cc` and the seed path | `wizard.js:657` (`~/src/brewboard`), `wizard.js:672` (`spawnSync('claude', …)`), `wizard.js:710` (`feature-start <id> cc`) |
+| Command-local help executes handlers | `aigon-cli.js:258` only treats `--help` as help when it is the resolved first argument |
 
 ## Dependencies
 
 - No intra-set dependency. F696 is closed (`05-done`, commits on `main`), so this starts clean.
-- F698 depends on this feature **only for its "Setup and dashboard truth" criteria**. The rest
-  of F698 does not need this feature; see the note in F698's Dependencies section.
+- F698 runs independently and owns the non-setup documentation corpus. F699 depends on both
+  features so its checker locks in both corrected baselines.
 
 ## Out of Scope
 
@@ -174,21 +203,18 @@ re-deriving them:
 - Changing Aigon Pro availability, packaging, beta-channel, or product terminology.
 - Broad setup-command module migration; F631 owns that architecture.
 - Editing or resetting the actual Brewboard seed repositories.
+- Site-wide lifecycle, agent, product, dashboard-security, navigation, and visual cleanup;
+  F698 owns those surfaces.
 
-## Open Questions
+## Decisions
 
-Resolved by spec review (folded into the criteria above — reopen if you disagree):
-
-- ~~`--step` or `--from`?~~ → `--step <id>`, repeatable. `--from` would duplicate `--resume`.
-- ~~Does a failed step stay `failed`?~~ → Yes; it stays `failed` so resume can distinguish it
+- Use repeatable `--step <id>`; `--from` would duplicate `--resume`.
+- A failed step stays `failed` so resume can distinguish it
   from "never reached".
-
-Still needs the author's call:
-
-- Should persistent server setup remain the interactive default after a successful health check?
-  **Recommend yes** — the dashboard is meant to be an always-on command centre, so the default
-  should match that. This is a UX default rather than a correctness question, so it is left to
-  the author; whichever way it lands, the prompt text and F698's docs must say the same thing.
+- Interactive setup defaults the persistent dashboard prompt to yes, but success is recorded
+  only after the health check. Non-interactive `--yes` never starts it.
+- The live global `--help` dispatch bug belongs here rather than waiting behind the docs pass,
+  because setup exposes the same unsafe behavior and F697 is independently startable.
 
 ## Related
 
@@ -196,8 +222,9 @@ Still needs the author's call:
 - F418 — Brewboard demo feature.
 - F631 — setup-command module migration.
 - F695 — future Pro-step removal, explicitly separate from this feature.
+- F699 — release checker that consumes the corrected setup documentation baseline.
 ## Dependency Graph
 
 <!-- AIGON_DEP_GRAPH_START -->
-<svg xmlns="http://www.w3.org/2000/svg" width="868" height="132" viewBox="0 0 868 132" role="img" aria-label="Feature dependency graph for feature 697" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-697" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-697)"/><path d="M 544 66 C 584 66, 584 66, 624 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-697)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#f59e0b" stroke-width="3"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#697</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">harden setup wizard contr…</text><text x="36" y="90" font-size="12" fill="#475569">inbox</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#698</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">refresh public docs for c…</text><text x="336" y="90" font-size="12" fill="#475569">inbox</text></g><g><rect x="624" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="636" y="48" font-size="14" font-weight="700" fill="#0f172a">#699</text><text x="636" y="70" font-size="13" font-weight="500" fill="#1f2937">automate docs release qua…</text><text x="636" y="90" font-size="12" fill="#475569">inbox</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 697" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-697" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-697)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#f59e0b" stroke-width="3"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#697</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">harden setup wizard contr…</text><text x="36" y="90" font-size="12" fill="#475569">inbox</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#699</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">automate docs release qua…</text><text x="336" y="90" font-size="12" fill="#475569">inbox</text></g></svg>
 <!-- AIGON_DEP_GRAPH_END -->
