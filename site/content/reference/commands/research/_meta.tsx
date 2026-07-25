@@ -1,5 +1,3 @@
-import { withPro } from "../../../../components/pro-badge";
-
 export default {
   "research-create": "research-create",
   "research-rename": "research-rename",
@@ -9,5 +7,5 @@ export default {
   "research-open": "research-open",
   "research-eval": "research-eval",
   "research-close": "research-close",
-  "research-autopilot": { title: withPro("research-autopilot") },
+  "research-autopilot": "research-autopilot",
 };

@@ -3,8 +3,6 @@ title: Guides
 description: Step-by-step walkthroughs for common Aigon workflows.
 ---
 
-import { withPro } from "../../components/pro-badge";
-
 Practical guides for using Aigon in different modes and workflows.
 
 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -24,6 +22,30 @@ Practical guides for using Aigon in different modes and workflows.
     <h3 className="text-lg font-semibold mb-1">Dashboard</h3>
     <p className="text-sm text-gray-400 m-0">The centralised command centre for all repos and agents.</p>
   </a>
+  <a href="/docs/guides/autonomous-mode" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Autonomous Mode</h3>
+    <p className="text-sm text-gray-400 m-0">Hands-off feature runs with AutoConductor: implement, review or evaluate, then close.</p>
+  </a>
+  <a href="/docs/guides/feature-sets-autonomous" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Feature Sets in Autonomous Mode</h3>
+    <p className="text-sm text-gray-400 m-0">How set-level autonomy sequences features, tracks progress, and resumes after failure.</p>
+  </a>
+  <a href="/docs/guides/brewboard-feature-set" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Tutorial: Brewboard Feature Set</h3>
+    <p className="text-sm text-gray-400 m-0">A concrete Brewboard walkthrough for tagging a set and running it autonomously.</p>
+  </a>
+  <a href="/docs/guides/scheduling-features" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Scheduling Features</h3>
+    <p className="text-sm text-gray-400 m-0">Defer autonomous feature or research starts to an explicit wall time (ISO 8601 with timezone).</p>
+  </a>
+  <a href="/docs/guides/recurring-features" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Recurring Features</h3>
+    <p className="text-sm text-gray-400 m-0">Cadence-driven batches from recurring templates — weekly maintenance, benchmarks, and similar rolls.</p>
+  </a>
+  <a href="/docs/guides/insights" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Insights</h3>
+    <p className="text-sm text-gray-400 m-0">Quality metrics, token analytics, trends, and AI coaching on top of Reports data.</p>
+  </a>
   <a href="/docs/guides/pipeline-quota" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Usage limits (Pipeline)</h3>
     <p className="text-sm text-gray-400 m-0">Agent quota bars, status dot, collapse, and how polling works.</p>
@@ -32,45 +54,20 @@ Practical guides for using Aigon in different modes and workflows.
     <h3 className="text-lg font-semibold mb-1">Agent Quota Awareness</h3>
     <p className="text-sm text-gray-400 m-0">Use live quota context to decide which agent should take the implementation work.</p>
   </a>
+  <a href="/docs/guides/agent-failover" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Agent Failover</h3>
+    <p className="text-sm text-gray-400 m-0">Hand work to the next agent in the chain when the running one hits its quota.</p>
+  </a>
   <a href="/docs/guides/local-models" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
     <h3 className="text-lg font-semibold mb-1">Local Models</h3>
     <p className="text-sm text-gray-400 m-0">Run local LLMs alongside cloud agents using Ollama, LM Studio, or any OpenAI-compatible endpoint.</p>
+  </a>
+  <a href="/docs/guides/aigon-sync" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
+    <h3 className="text-lg font-semibold mb-1">Aigon Sync</h3>
+    <p className="text-sm text-gray-400 m-0">Private Git vault for portable .aigon state — push/pull across machines (CLI + dashboard Settings).</p>
   </a>
 </div>
 
 ## Migration and deprecated guides
 
 - [Feedback workflow](./feedback-workflow) — legacy feedback commands are no-ops; capture new customer input as research with `origin: customer-feedback`.
-
-## Aigon Pro guides
-
-<div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <a href="/docs/guides/autonomous-mode" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Autonomous Mode")}</h3>
-    <p className="text-sm text-gray-400 m-0">Hands-off feature runs with AutoConductor: implement, review or evaluate, then close.</p>
-  </a>
-  <a href="/docs/guides/insights" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Insights")}</h3>
-    <p className="text-sm text-gray-400 m-0">Pro-tier quality metrics, token analytics, trends, and AI coaching on top of Reports data.</p>
-  </a>
-  <a href="/docs/guides/scheduling-features" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Scheduling Features")}</h3>
-    <p className="text-sm text-gray-400 m-0">Defer autonomous feature or research starts to an explicit wall time (ISO 8601 with timezone).</p>
-  </a>
-  <a href="/docs/guides/recurring-features" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Recurring Features")}</h3>
-    <p className="text-sm text-gray-400 m-0">Cadence-driven batches from recurring templates — weekly maintenance, benchmarks, and similar rolls.</p>
-  </a>
-  <a href="/docs/guides/aigon-sync" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Aigon Sync")}</h3>
-    <p className="text-sm text-gray-400 m-0">Private Git vault for portable .aigon state — push/pull across machines (CLI + dashboard Settings).</p>
-  </a>
-  <a href="/docs/guides/feature-sets-autonomous" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Feature Sets in Autonomous Mode")}</h3>
-    <p className="text-sm text-gray-400 m-0">How set-level autonomy sequences features, tracks progress, and resumes after failure.</p>
-  </a>
-  <a href="/docs/guides/brewboard-feature-set" className="block rounded-lg border border-gray-800 p-5 hover:border-gray-600 transition-colors no-underline">
-    <h3 className="text-lg font-semibold mb-1">{withPro("Tutorial: Brewboard Feature Set")}</h3>
-    <p className="text-sm text-gray-400 m-0">A concrete Brewboard walkthrough for tagging a set and running it autonomously.</p>
-  </a>
-</div>

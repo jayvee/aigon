@@ -1,5 +1,3 @@
-import { withPro } from "../../../../components/pro-badge";
-
 export default {
   board: "board",
   storage: "storage",
@@ -14,7 +12,7 @@ export default {
   proxy: "proxy",
   "proxy-setup": "proxy-setup",
   deploy: "deploy",
-  insights: { title: withPro("insights") },
+  insights: "insights",
   "agent-status": "agent-status",
   "agent-context": "agent-context",
   "sessions-close": "sessions-close",
@@ -23,7 +21,7 @@ export default {
   status: "status",
   repair: "repair",
   "security-scan": "security-scan",
-  workflow: { title: withPro("workflow") },
+  workflow: "workflow",
   help: "help",
   next: "next",
 };
