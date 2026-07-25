@@ -90,6 +90,14 @@ Current shared modules:
 **Fully implemented modules** (logic lives in the module itself):
 
 - `lib/board.js` (~501 lines): board rendering and board action helpers
+- `lib/insights.js` (~497 lines): AADE insights read-model — aggregates, rule-based observations, optional Claude-API coaching (F114)
+- `lib/benchmark-artifacts.js` (~335 lines): read-model over `.aigon/benchmarks/*.json` for the agent benchmark matrix (F713)
+- `lib/sync.js` (~907 lines), `lib/sync-core.js` (~178), `lib/sync-merge.js` (~336), `lib/sync-state.js` (~427): git-backed state sync — bundle build/merge, sync metadata, and `isFeatureSuspended` (F708)
+- `lib/backup.js` (~783 lines): unified vault/backup engine — configure, push, pull, schedule, retention (F712)
+- `lib/profile-state.js` (~415 lines): `~/.aigon/` profile sync to a git remote (F711)
+- `lib/recurring.js` (~406 lines): weekly/quarterly recurring-feature templates and batch creation (F707)
+- `lib/scheduled-kickoff.js` (~674 lines) + `lib/cron-parse.js` (~110): deferred job store and server poller for scheduled feature/research kickoffs and `agent_prompt` runs (F709, F710)
+- `lib/agent-failover.js` (~281 lines): token-exhaustion agent switching — prompt build, tmux respawn, dashboard action appender (F714)
   `collectBoardItems`, `displayBoardKanbanView`, `displayBoardListView`, `saveBoardMapping`, `getBoardAction`
 - `lib/feedback.js` (~373 lines): feedback parsing, normalization, similarity, triage helpers
   `normalizeFeedbackMetadata`, `collectFeedbackItems`, `findDuplicateFeedbackCandidates`, `buildFeedbackTriageRecommendation`
@@ -670,51 +678,75 @@ Components:
 - `{agent}` — agent short code (`cc`, `ag`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
-## Scheduling and recurring work
+## Merged engines (formerly Aigon Pro)
 
-Scheduled and recurring work is no longer implemented in the OSS package. The former scheduler engine and `agent_prompt` runner moved to `@aigon/pro` with feature 236. In this repo:
+Aigon had a free/Pro split between 2026-04-07 and 2026-07-25. **F693 dissolved
+it.** Aigon is one free, open-source product; every engine below ships to every
+user with no key, no gate, and no badge. `lib/pro.js`, `lib/pro-bridge.js`,
+`lib/dashboard-pro-assets.js`, `lib/commands/pro.js`, the dashboard stub modules
+and `AIGON_FORCE_PRO` are all deleted — there is no extension seam to hook.
 
-- `lib/commands/schedule.js` keeps the `aigon schedule` verb as a thin delegating stub.
-- `lib/commands/recurring.js` keeps `aigon recurring-run` and `aigon recurring-list` as thin delegating stubs.
-- `lib/commands/agent-launch.js` keeps the internal `aigon agent-launch` primitive as a thin delegating stub.
-- `lib/dashboard-status-collector.js` may decorate feature, research, and feature-set read models with pending schedule metadata when Pro exposes a schedule index.
+| Engine | Modules | CLI | Dashboard |
+|---|---|---|---|
+| **Insights** (F114) | `lib/insights.js` | `aigon insights [--coach] [--refresh]` | Insights tab (`js/views/insights-view.js`) |
+| **Benchmark Matrix** (F713) | `lib/benchmark-artifacts.js` | — | Settings → Agent benchmarks (`js/benchmark-matrix.js`) |
+| **Aigon Sync** (F708) | `lib/sync.js`, `lib/sync-core.js`, `lib/sync-merge.js`, `lib/sync-state.js` | `aigon sync legacy` | — |
+| **Vault / Backup** (F712) | `lib/backup.js` | `aigon vault`, `aigon backup`, `aigon sync` | Settings → Aigon Sync (`js/backup-sync.js`) |
+| **Profile Sync** (F711) | `lib/profile-state.js` | `aigon profile configure\|push\|pull\|status` | — |
+| **Recurring Features** (F707) | `lib/recurring.js` | `aigon recurring-run`, `aigon recurring-list` | Settings → Schedule (`js/scheduled-features.js`) |
+| **Scheduled Kickoffs** (F709, F710) | `lib/scheduled-kickoff.js`, `lib/cron-parse.js` | `aigon schedule`, `aigon agent-launch` | Settings → Schedule |
+| **Agent Failover** (F714) | `lib/agent-failover.js` | — | Failover-now action + `styles/failover.css` |
 
-Each stub tries to load the matching `@aigon/pro/commands/*` implementation when Pro is installed. Without Pro, it prints the standard "Pro feature — coming later" notice and exits non-zero. Do not add scheduler engine behavior back to OSS unless the free/pro boundary changes.
+`vault` is the user-facing alias for the unified backup engine; `lib/backup.js`
+serves both verbs.
 
-## Aigon Pro (`@aigon/pro`)
+### Where they hook in
 
-Aigon has a **free/pro split**. The free tier (this repo) is open source under Apache 2.0. The commercial Pro tier is a separate package that augments aigon with deeper insights, AI coaching, and the autonomous-mode "AutoConductor" — **Pro is in development and not yet available for purchase**, and gate messages in the CLI explicitly say so.
+- **Routes.** The 13 endpoints Pro used to register through the bridge are
+  ordinary route-table entries: `lib/dashboard-routes/insights.js`
+  (`/api/insights`, `/api/insights/refresh`, `/api/benchmarks/latest`),
+  `lib/dashboard-routes/sync.js` (`/api/profile/status`,
+  `/api/settings-sync/status`, `/api/backup/status`, `/api/backup/schedule`,
+  `/api/sync/status`), `lib/dashboard-routes/scheduling.js`
+  (`/api/recurring/status`, `/api/schedule/jobs`, `/api/schedule/add`,
+  `/api/schedule/cancel`) and `lib/dashboard-routes/failover.js`
+  (`/api/feature-failover`). They take dependencies from `ctx`, not an injected
+  helpers bag.
+- **Background work.** `lib/dashboard-server.js` starts the recurring-feature
+  check (immediately, then every 24h), the scheduled-kickoff poller, and the
+  hourly vault-push tick unconditionally at server boot. All intervals are
+  `.unref()`ed so they never hold the process open.
+- **Failover.** There is no runtime registry. `lib/supervisor.js` calls
+  `agentFailover.handleExhaustion` directly on a positive token-exhaustion
+  signal (lazily required to keep the module graph acyclic), and
+  `lib/workflow-read-model.js` calls `appendFailoverDashboardActions` alongside
+  its sibling appenders — so action policy keeps exactly one source, per the
+  entity-UI-contract rule.
+- **Dashboard modules.** `js/benchmark-matrix.js`, `js/backup-sync.js` and
+  `js/scheduled-features.js` are real ES modules imported by `js/settings.js`.
+  Nothing assigns to `globalThis`, and no call site guards on
+  `typeof globalThis.<export> === 'function'`.
 
-| | Aigon (this repo) | Aigon Pro |
-|---|---|---|
-| **Status** | Free, open source (Apache 2.0) | In development, not yet for sale |
-| **Package** | `aigon` | `@aigon/pro` (separate package) |
-| **Contains** | CLI, workflow engine, dashboard, free-tier features | Insights engine, AI coaching, autonomous-mode runner |
-| **Data collection** | Yes — `getFeatureGitSignals()` in `lib/git.js` | No — consumes the free tier's data |
+### Spec history
 
-### Integration shape
+The aigon-pro spec history was imported by F693. IDs that collided with this
+repo were renumbered; the full old→new mapping and the list of specs
+deliberately left in the private archive are in
+`docs/specs/features/MERGED-FROM-AIGON-PRO.md`. The `aigon-pro` GitHub repo
+survives as a private archive for marketing and competitive material only.
 
-The free tier is the **host**. Pro is an optional **subscriber** loaded via a single extension seam. There are exactly two files in aigon that may import `@aigon/pro`:
+Specs that describe the tiered architecture carry a historical banner. They
+explain why `lib/pro-bridge.js` existed; they do not describe how Aigon works
+today.
 
-1. **`lib/pro.js`** — lazy-require gate. Exposes `isProAvailable()` and `getPro()`. Respects the `AIGON_FORCE_PRO` environment variable so the free tier can be simulated as the only tier for testing.
-2. **`lib/pro-bridge.js`** — the single extension point. At server startup it invites Pro (if installed) to register itself, then dispatches incoming requests to whichever side owns them.
+### Migrating an old install
 
-```js
-// lib/pro.js — the entire integration surface visible to consumers
-let pro = null;
-try { pro = require('@aigon/pro'); } catch { /* free tier */ }
-module.exports = { isProAvailable, getPro: () => pro };
-```
-
-When `@aigon/pro` is absent (the default for everyone right now), the CLI gracefully degrades: the dashboard shows "Pro — coming later" placeholders, and `aigon insights` prints a friendly message pointing at the free alternatives (`aigon board`, `aigon commits`, `aigon feature-status`).
-
-**Honest gate messaging is non-negotiable** — gate messages in the CLI must never imply that a purchase flow exists. There is no "buy" button anywhere because there is nothing to sell yet.
-
-### Specs for Pro features
-
-Since 2026-04-07, Pro feature specs live in a private companion repo, not in this one. Historical Pro feature IDs that moved out are listed in `docs/specs/features/MOVED-TO-AIGON-PRO.md`. For day-to-day OSS development this is invisible — you only notice it if you see a gap in feature numbering and want to know what filled it.
-
-If a future contribution to aigon needs to make a coordinated change with the Pro side, the convention is documented in `CLAUDE.md` and `AGENTS.md` under "Cross-repo features".
+Users upgrading from a tiered version may have `@senlabsai/aigon-pro` installed
+globally and a `proKey` in `~/.aigon/config.json`. Migration `2.76.0` drops the
+key, and `aigon doctor` reports both under an "Aigon Pro leftovers" section
+(the key is removable with `--fix`; the package needs a manual
+`npm uninstall -g @senlabsai/aigon-pro`). The published npm package is not
+unpublished — that would break existing lockfiles.
 
 ## Design Rules
 
