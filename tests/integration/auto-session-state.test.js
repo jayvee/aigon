@@ -15,7 +15,7 @@ const {
     writeFeatureAutoState, clearFeatureAutoState,
     getSetAutoStatePath, readSetAutoState,
     writeSetAutoState, writeSetAutoStateSync, clearSetAutoState,
-    reconcileStaleSetAutoPauseState,
+    reconcileStaleSetAutoPauseState, reconcileStaleSetAutoSessionState,
 } = require('../../lib/auto-session-state');
 const {
     safeFeatureAutoSessionExists,
@@ -100,6 +100,22 @@ test('safeSetAutoSessionExists preserves paused-on-failure when tmux wait-loop i
     } finally {
         _resetTmuxListCache();
     }
+}));
+
+// REGRESSION: a vanished set conductor used to remain dashboard-running and hide Resume.
+test('missing running set conductor becomes interrupted with recovery actions', () => withTempDir('aigon-set-interrupted-', (repo) => {
+    writeSetAutoStateSync(repo, 'docs-release-readiness', {
+        status: 'running', running: true, currentFeature: '698',
+        completed: ['697'], members: ['697', '698', '699'], agents: ['cx'],
+        reviewAgent: 'cu', startedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const reconciled = reconcileStaleSetAutoSessionState(repo, 'docs-release-readiness', false);
+    assert.strictEqual(reconciled.status, 'interrupted');
+    assert.strictEqual(reconciled.running, false);
+    assert.strictEqual(reconciled.reason, 'set-auto-session-lost');
+    const view = safeSetAutoSessionExists('docs-release-readiness', repo);
+    const actions = buildSetValidActions({ slug: 'docs-release-readiness', isComplete: false, autonomous: view }, { requiresPro: false, proAvailable: true });
+    assert.deepStrictEqual(actions.filter(a => ['set-autonomous-resume', 'set-autonomous-start', 'set-autonomous-stop'].includes(a.action)).map(a => a.label), ['Resume (choose agents…)', 'Take over manually', 'Resume (same agents)']);
 }));
 
 test('reconcileStaleSetAutoPauseState heals failed member closed externally', () => withTempDir('aigon-set-pause-heal-', (repo) => {
