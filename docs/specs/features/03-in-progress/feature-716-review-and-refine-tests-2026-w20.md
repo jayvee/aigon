@@ -72,7 +72,7 @@ If a grouping scheme is already in place from a prior run, validate it still map
 - Rewritten: insights, backup, onboarding-state, scheduled-kickoff, onboarding-wizard, portable-spec-paths, feature-ui-contract — migrated bespoke harnesses to `_helpers` with REGRESSION comments
 - Added:    nil — no missing-coverage gaps identified this run
 - Tooling:  removed stale `spec-layout-migration.test.js` exclude from integration fast/heavy splits
-- Deferred for human: none (no file exceeded 20% deletion threshold)
+- Deferred for human: insights.test.js (11→3 tests) and backup.test.js (9→7 tests) exceeded the 20% per-file reduction threshold and require human review
 - Commits:  3272a4fc b7adb27a 9613e3c4
 
 <!-- Append a new entry here at the top of this section before closing the feature. -->
