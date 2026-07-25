@@ -33,6 +33,7 @@ Restores Antigravity, hardens first-run setup, refreshes the public documentatio
 - Public completion examples consistently use `implementation-complete` and `research-complete`; deprecated `submitted` remains only in explicit compatibility guidance.
 - Documentation packaging now includes and independently allowlists `scripts/docs-check.js`.
 - The gallery contract includes the canonical interrupted-set resting state and passes its complete desktop/mobile suite.
+- The dashboard Settings view loads correctly when no agent quota refresh is required.
 
 ## [Unreleased]
 
