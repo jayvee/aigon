@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.76.0-beta.1] — 2026-07-25
+
+Aigon Pro is merged into the open-source product — every engine that sat behind the commercial tier now ships to everyone, with no key and no gate.
+
+### Added
+
+- **Claude Opus 5** in the `cc` model picker.
+
 ### Changed
 
 - **Aigon Pro is now part of the free open-source product.** Every engine that used to sit behind the commercial tier — Insights, Aigon Sync, vault/backup, recurring features, scheduled kickoffs, agent failover, benchmark matrix, and profile sync — ships to every user with no key, no gate, and no badge. The `@senlabsai/aigon-pro` package is deprecated; `aigon doctor` reports leftover installs and `proKey` entries, and migration `2.76.0` drops the key from `~/.aigon/config.json`.
@@ -18,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`aigon pro activate` / `aigon pro status`.** There is nothing left to activate. The setup wizard's Pro step is gone; it is now eight steps.
 - **The `/pro` marketing page** at aigon.build, along with the `pro-installation` guide. `/pro` redirects to `/`, and `/docs/guides/pro-installation` redirects to `/docs/getting-started`, so indexed inbound links do not 404.
+
+### Fixed
+
+- Set members expose the close-recovery action when a conductor stops mid-run.
+- Test-suite reduction threshold breaches surface instead of passing silently.
 
 ## [2.75.0-beta.1] — 2026-07-25
 
@@ -46,8 +59,6 @@ Restores Antigravity, hardens first-run setup, refreshes the public documentatio
 - Documentation packaging now includes and independently allowlists `scripts/docs-check.js`.
 - The gallery contract includes the canonical interrupted-set resting state and passes its complete desktop/mobile suite.
 - The dashboard Settings view loads correctly when no agent quota refresh is required.
-
-## [Unreleased]
 
 ## [2.74.0-beta.1] — 2026-07-13
 
