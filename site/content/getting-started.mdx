@@ -39,13 +39,13 @@ The setup wizard installs everything else it needs (`tmux`, `lsof`, `gh`) once A
 <Tabs items={['macOS', 'Linux']}>
   <Tabs.Tab>
     ```bash
-    npm install -g @senlabsai/aigon@next
+    npm install -g @senlabsai/aigon@latest
     aigon setup
     ```
   </Tabs.Tab>
   <Tabs.Tab>
     ```bash
-    sudo npm install -g @senlabsai/aigon@next
+    sudo npm install -g @senlabsai/aigon@latest
     aigon setup
     ```
   </Tabs.Tab>
@@ -99,8 +99,8 @@ Make sure you're on the **Pipeline** view, then pick your project (or **Brewboar
 <img src="/img/dashboard-new-feature-button.png" alt="New feature button on the Aigon dashboard" style={{ width: '66%' }} />
 
 1. **New feature** — click the **+ New feature** button. Fill in a title and a short description, save. The card lands in **Inbox**.
-2. **Prioritise** — click **Prioritise** on the card. Gets an ID, moves to **Backlog**.
-3. **Start** — pick an agent and model in the modal. Aigon creates a worktree, launches the agent in a tmux session, moves to **In Progress**. Click the card to watch live.
+2. **Prioritise** — click **Prioritise** on the card. The permanent `F<ID>` is already allocated; this moves it to **Backlog**.
+3. **Start** — pick an agent and model in the modal. Aigon creates the workspace and starts the configured session host, then moves to **In Progress**. Click the card to watch live.
 4. **Code review** (optional) — click **Code Review** for a pass by a *different* agent. Reviewer diversity catches blind spots a same-model reviewer misses.
 5. **Close** — runs gitleaks + semgrep gates, merges to main, runs tests, moves to **Done**.
 
@@ -114,14 +114,14 @@ Add a dark mode toggle to the top-right header.
 Default to system preference. Store choice in localStorage.
 ```
 
-The agent creates a spec, assigns an ID, sets up the workspace, and starts implementing — all in one conversation.
+The agent creates a spec with its permanent `F<ID>`, sets up the workspace, and starts implementing — all in one conversation.
 
 For more control, use individual commands: `feature-create` → `feature-prioritise` → `feature-start` → `feature-do` → `feature-code-review` → `feature-close`. 
 
 ## Updating Aigon
 
 ```bash
-npm update -g @senlabsai/aigon@next
+npm update -g @senlabsai/aigon@latest
 aigon apply --all
 ```
 

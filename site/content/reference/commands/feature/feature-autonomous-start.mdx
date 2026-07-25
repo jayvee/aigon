@@ -53,7 +53,7 @@ When finished, the AutoConductor kills its own tmux session so the dashboard bad
 
 | Value | Behaviour |
 |-------|-----------|
-| `implement` | Stop after agent submits |
+| `implement` | Stop after the agent signals `implementation-complete` |
 | `review` | Stop when review session starts (review is still running; close manually) |
 | `close` | **Default.** Implement → review (if `--review-agent` set) → close |
 
@@ -61,7 +61,7 @@ When finished, the AutoConductor kills its own tmux session so the dashboard bad
 
 | Value | Behaviour |
 |-------|-----------|
-| `implement` | Stop after all agents submit |
+| `implement` | Stop after all agents signal `implementation-complete` |
 | `eval` | Stop after evaluation starts (pick winner and close manually) |
 | `close` | **Default.** Implement → eval → auto-close the winner |
 

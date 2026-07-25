@@ -21,11 +21,11 @@ aigon feature-start <ID> [agents...]
 - **One agent** — Drive worktree: creates an isolated worktree for that agent, opens the agent terminal pre-loaded with `feature-do`
 - **Two or more agents** — Fleet mode: creates one worktree per agent, opens all agent terminals simultaneously, agents implement in parallel
 
-**Always use this CLI command** — never manually create branches or worktrees. The CLI commits the spec move from `02-backlog/` to `03-in-progress/` before creating worktrees, which is essential so all worktrees inherit the updated spec.
+**Always use this CLI command** — never manually create branches or worktrees. The CLI records the backlog-to-in-progress workflow transition and prepares the branch or worktree; in the stable layout, lifecycle folders are generated views rather than spec-file moves.
 
 ## What it does
 
-1. Moves the spec from `02-backlog/` to `03-in-progress/` and commits the move
+1. Records the feature's transition from backlog to in-progress and refreshes the generated lifecycle view
 2. Creates a feature branch (`feature-<ID>-<slug>`) or worktree(s) (`feature-<ID>-<agent>-<slug>`)
 3. For worktrees: writes a `.env.local` with an isolated `PORT` value for the dev server
 4. Opens agent terminals pre-loaded with `feature-do <ID>`
@@ -61,13 +61,13 @@ aigon feature-start 42 cc ag --models=cc=claude-opus-4-7,ag=gemini-3.5-flash-med
 | Mode | After feature-start |
 |------|---------------------|
 | Drive (branch) | Implement manually, then `feature-close <ID>` |
-| Drive worktree | Wait for agent to submit, then `feature-close <ID>` |
-| Fleet | Wait for all agents to submit, then `feature-eval <ID>` |
+| Drive worktree | Wait for the agent to signal `implementation-complete`, then `feature-close <ID>` |
+| Fleet | Wait for all agents to signal `implementation-complete`, then `feature-eval <ID>` |
 
 ## Related
 
-- [`feature-prioritise`](./feature-prioritise) — assign the ID and move to backlog (run before start)
+- [`feature-prioritise`](./feature-prioritise) — move the already allocated ID to backlog (run before start)
 - [`feature-do`](./feature-do) — the command agents run inside the workspace
 - [`feature-open`](./feature-open) — re-open a crashed agent terminal after start
-- [`feature-eval`](./feature-eval) — compare Fleet implementations after agents submit
+- [`feature-eval`](./feature-eval) — compare Fleet implementations after agents signal completion
 - [`feature-close`](./feature-close) — merge the winning implementation

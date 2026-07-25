@@ -345,7 +345,7 @@ const html = `<!doctype html>
           Parallel worktrees, kanban control, agent reviews, and LLM-as-judge evals.
           Everything stays in your repo.
         </p>
-        <div class="install">$ npm install -g @senlabsai/aigon@next <span>Beta</span></div>
+        <div class="install">$ npm install -g @senlabsai/aigon@latest <span>Beta</span></div>
       </div>
 
       <div class="footer">

@@ -48,7 +48,7 @@ Click **Research Autopilot** on any backlog research card.
 
 1. Calls `research-start` to set up agent worktrees and launch all agents
 2. Polls workflow state every 30 seconds
-3. When all agents signal `submitted`, spawns the evaluator
+3. When all agents signal `research-complete`, spawns the evaluator
 4. Evaluator synthesises findings and recommends features
 5. AutoConductor exits with a summary
 

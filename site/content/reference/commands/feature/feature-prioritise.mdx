@@ -15,7 +15,7 @@ aigon feature-prioritise <feature-name or letter>
 
 ## Description
 
-`feature-prioritise` graduates a feature from the inbox to the backlog by assigning it the ID it will carry through its entire lifecycle. It renames the spec file with the numeric ID prefix, resolves any `depends_on` declarations to canonical IDs, checks for circular dependencies, and commits the move.
+`feature-prioritise` graduates an already allocated `F<ID>` feature from the inbox to the backlog. It resolves `depends_on` declarations to canonical IDs, checks for circular dependencies, and records the lifecycle transition; it does not assign or rekey the feature ID.
 
 The name argument accepts partial matches — if you type `dark`, Aigon finds any inbox spec whose filename contains that string. If multiple match, it lists them and asks you to pick.
 

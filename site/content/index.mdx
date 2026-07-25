@@ -9,7 +9,7 @@ description: Aigon orchestrates Claude Code, Codex, and Cursor CLI (and more) to
 >
 > **Schedule your specs to run when you have quota (the dreaded 5hr window), or when you are asleep, avoiding FONUT — Fear Of Not Using Tokens.**
 
-Aigon is an open-source, spec-driven harness for multi-agent coding. Each feature is a Markdown spec in your repo. Each agent runs in its own git worktree under tmux. You merge the diff that survives review. No SaaS account, no token resale, no lock-in.
+Aigon is an open-source, spec-driven harness for multi-agent coding. Each feature is a Markdown spec in your repo. Execution mode and session host determine whether an agent uses a branch, worktree, or managed session. You merge the diff that survives review. No SaaS account, no token resale, no lock-in.
 
 ![Aigon Dashboard — Pipeline (kanban)](/img/aigon-dashboard-kanban.png)
 
@@ -23,7 +23,7 @@ Four reasons one agent isn't enough.
 
 **Use the subscriptions you already own.** Aigon never sits in your billing path. Spend the Claude Pro, ChatGPT Plus, and Cursor Pro subscriptions you already have — Aigon orchestrates the agent CLIs, not their underlying model APIs. No tokens, no markup, no metering.
 
-**Watch the work happen, locally.** Each agent runs in its own git worktree under tmux — `tmux attach` to any session and watch the work happen live. Specs live in your repo as Markdown; every workflow move is a git diff. No cloud sandbox, no opaque execution.
+**Watch the work happen, locally.** Managed sessions can expose live output in the dashboard or terminal host. Specs live in your repo as Markdown; canonical specs remain stable while lifecycle views are projected from workflow state. No cloud sandbox, no opaque execution.
 
 ## How you drive it
 

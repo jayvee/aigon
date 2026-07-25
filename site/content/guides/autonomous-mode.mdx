@@ -43,7 +43,7 @@ Without `--review-agent`, the feature closes immediately after the implementatio
 
 ### Fleet + evaluator (multiple agents)
 
-Multiple agents compete in parallel worktrees on the same spec. When all submit, a designated evaluator agent compares implementations and picks a winner.
+Multiple agents compete in parallel worktrees on the same spec. When all signal `implementation-complete`, a designated evaluator agent compares implementations and picks a winner.
 
 ```
 feature-autonomous-start 42 cc ag [--eval-agent=cc]
@@ -51,13 +51,13 @@ feature-autonomous-start 42 cc ag [--eval-agent=cc]
 AutoConductor spawns (auto tmux session)
          ↓
 cc and ag implement in parallel worktrees
-         ↓ both submit
+         ↓ both signal implementation-complete
 cc evaluates — writes **Winner:** to eval file
          ↓
 feature-close <winner> → done ✅
 ```
 
-{/* SCREENSHOT: Dashboard showing Fleet autonomous run — two agents submitted, evaluator running, auto badge visible */}
+{/* SCREENSHOT: Dashboard showing Fleet autonomous run — two complete agents, evaluator running, auto badge visible */}
 
 The evaluator reads both implementations and writes `**Winner:** <agent>` to the eval file. The AutoConductor parses this and calls `feature-close` directly — no LLM relay, no manual step.
 
@@ -169,7 +169,7 @@ The stop-after value controls where autonomy ends. Available values differ by mo
 
 | Value | Behaviour |
 |-------|-----------|
-| `implement` | Stop after all agents submit — skip eval |
+| `implement` | Stop after all agents signal `implementation-complete` — skip eval |
 | `eval` | Stop after evaluation starts — pick winner and close manually |
 | `close` | **Default.** Implement → eval → auto-close the winner |
 
@@ -221,7 +221,7 @@ The active states you'll see during an autonomous run:
 | `spec_review_in_progress` | 📋 Spec review | A reviewer agent is reading the spec before implementation begins. |
 | `spec_revision_in_progress` | 📋 Revising spec | The author agent is addressing spec-review feedback. |
 | `implementing` | 🔨 Implementing | Implementation agent is writing code in the worktree. |
-| `submitted` | — (agent row shows ✓ Complete) | Implementation agent has signalled `implementation-complete`. |
+| `implementation-complete` | — (agent row shows ✓ Complete) | Implementation agent has signalled completion. |
 | `code_review_in_progress` | 👀 Code review | A reviewer agent is reading the diff and writing review notes. |
 | `code_revision_in_progress` | ✍️ Addressing review | The implementer is addressing code-review feedback. Healthy productive state — not a warning. |
 | `evaluating` | ⚖️ Evaluating | Fleet mode only — the evaluator is comparing implementations and picking a winner. |
@@ -229,7 +229,7 @@ The active states you'll see during an autonomous run:
 | `close_recovery_in_progress` | 🛠 Close recovery | An earlier close failed and a recovery pass is underway. |
 | `done` | — (card moves to Done column) | Feature merged and closed. |
 
-Why some states have no badge: states that are already obvious from the column the card sits in (`inbox`, `backlog`, `done`, `paused`) or from the per-agent status row (`submitted`, `ready_for_review`, the various `*_complete` states) skip the badge to avoid double-signalling. Active in-progress stages all carry a chip so it's clear at a glance which sub-stage of an autonomous run is currently live.
+Why some states have no badge: states that are already obvious from the column the card sits in (`inbox`, `backlog`, `done`, `paused`) or from the per-agent status row (`implementation-complete`, `ready_for_review`, the various `*_complete` states) skip the badge to avoid double-signalling. Active in-progress stages all carry a chip so it's clear at a glance which sub-stage of an autonomous run is currently live.
 
 Colour conventions: blue chips (`📋`, `👀`, `✍️`) mark productive review/revision passes; green chips (`🔨`, `⚖️`, `🚀`) mark the headline running stages (implement / evaluate / close). Amber `🛠 Close recovery` is the one chip that intentionally signals "human attention may be needed."
 

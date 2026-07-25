@@ -84,7 +84,8 @@ rm ~/.config/systemd/user/aigon-server.service
 The server always runs on port **4100**. This is not currently configurable.
 
 - **Direct URL**: `http://localhost:4100`
-- **Remote access**: The server binds to `0.0.0.0`, so it's accessible from any device on your local network at `http://<your-ip>:4100`
+- **Default binding**: `127.0.0.1` (loopback), so only the local machine can reach the dashboard.
+- **Non-loopback access**: configure an explicit host allow-list and shared secret/token before exposing the server beyond loopback.
 - **Pretty URL**: `http://aigon.localhost` — requires `aigon proxy install`, which sets up a local Caddy reverse proxy on port 80. This is optional; the direct URL always works.
 
 ## Troubleshooting

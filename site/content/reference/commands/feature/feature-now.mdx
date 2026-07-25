@@ -27,7 +27,7 @@ After starting, `feature-now` proceeds to implementation immediately — you lan
 ## What it does
 
 1. Checks `docs/specs/features/01-inbox/` for a matching spec
-2. If found: calls `feature-prioritise` to assign an ID and move to backlog
+2. If found: calls `feature-prioritise` to move its allocated `F<ID>` to backlog
 3. If not found: calls `feature-create` to write the spec, then `feature-prioritise`
 4. Calls `feature-start <ID>` to create the Drive worktree
 5. Opens the agent terminal and begins implementation
@@ -49,5 +49,5 @@ Use `feature-now` for **small, low-complexity features** that don't need time in
 ## Related
 
 - [`feature-create`](./feature-create) — create a spec without starting (more deliberate flow)
-- [`feature-prioritise`](./feature-prioritise) — assign an ID and move to backlog
+- [`feature-prioritise`](./feature-prioritise) — move an allocated feature to backlog
 - [`feature-start`](./feature-start) — create the workspace (use when you want control over agents/mode)
