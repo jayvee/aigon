@@ -30,17 +30,18 @@ complexity: medium
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-Render an interrupted feature set's recovery contract in the lane containing its current feature, so the active work and recovery controls cannot disappear from the Pipeline.
+Render autonomous recovery safely: keep an interrupted feature set's contract visible in the lane containing its current feature, and replace a lost implementer session when review requests revision.
 
 ## User Stories
 - [ ] As an operator, I can see an interrupted set's current feature in its actual workflow lane.
 - [ ] As an operator, I can use the set-level recovery controls from that visible card.
+- [ ] As an operator, a review-requested revision resumes in a fresh implementation session when the original session is gone.
 
 ## Acceptance Criteria
 - [ ] A set whose contract lane has no Pipeline column renders its full contract in the current feature's lane.
 - [ ] The embedded current feature and Resume (same agents) action are visible for an interrupted set.
 - [ ] The normal running-set lane routing remains unchanged.
-- [ ]
+- [ ] A lost implementation tmux session after a requested code revision launches a revision worker; it never causes the conductor to treat feedback as addressed or proceed to close.
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
@@ -60,7 +61,7 @@ npx playwright test --config tests/dashboard-e2e/playwright.config.js tests/dash
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-Keep the set contract server-owned. Adjust only Pipeline lane placement: when the contract lane is not a visible feature lane, use the current member's lane as the contract host. Cover the mixed-lane interrupted recovery card with the production renderer test.
+Keep the set contract server-owned. Adjust Pipeline lane placement so a non-visible contract lane uses the current member's lane as host. In the autonomous conductor, use the existing safe respawn path for a code-revision worker, launched with the canonical `feature-code-revise` prompt and lifecycle signals. Cover both recovery paths with regressions.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
@@ -70,7 +71,7 @@ Keep the set contract server-owned. Adjust only Pipeline lane placement: when th
 
 ## Out of Scope
 <!-- Explicitly list what this feature does NOT include -->
-- Changes to feature lifecycle or autonomous execution.
+- Unrelated autonomous workflow changes.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
