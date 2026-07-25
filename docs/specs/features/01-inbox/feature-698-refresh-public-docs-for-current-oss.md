@@ -36,12 +36,25 @@ remove/rewrite that material later.
 
 ### Supported-agent truth
 
+> **Spec review — read before ticking these.** The naming pass in `bbf64b21c` already landed:
+> `rg '\bgg\b|Gemini CLI' site/content site/public site/app site/components site/scripts`
+> returns **zero hits today** (the only match anywhere is vendored `_pagefind/pagefind-ui.js`).
+> So the first two criteria below are already green and are **verification, not work**. The
+> criteria that still carry real work are the authentication, subscription, and quota ones —
+> and a `\bgg\b` grep cannot see any of them. Do not treat a passing grep as evidence that
+> this section is done.
+
 - [ ] Audit the complete `bbf64b21c` documentation diff against the active agent registry and
       F696 implementation log. Preserve correct replacements and fix incorrect mechanical
       substitutions rather than repeating the migration wholesale.
-- [ ] The live user-facing surfaces under `site/content`, `site/public`, `site/app`,
-      `site/components`, and `site/scripts` contain no instruction to install, select, launch,
-      review with, or evaluate with `gg`/Gemini CLI.
+- [ ] *(already green — confirm only)* The live user-facing surfaces under `site/content`,
+      `site/public`, `site/app`, `site/components`, and `site/scripts` contain no instruction to
+      install, select, launch, review with, or evaluate with `gg`/Gemini CLI.
+- [ ] **Positive assertion, since the grep cannot cover it:** enumerate every surviving
+      Antigravity/Gemini mention (24 files at review time) and record for each one whether it is
+      (a) a correct `ag`/Antigravity CLI reference, (b) a legitimate Gemini *model-family* name,
+      (c) an explicit historical/migration note, or (d) a claim to fix. Land that classification
+      in the implementation log so the F699 checker inherits an allowlist rather than guessing.
 - [ ] Antigravity examples use CLI/agent ID `ag` only after F696 is merged and closed. Other
       examples use the active registry rather than hardcoding a provider where provider
       identity is irrelevant.
@@ -122,18 +135,30 @@ remove/rewrite that material later.
 
 ## Validation
 
+Three of these were over-escaped (`\\.` and `\\n` inside single quotes are literal backslashes
+to `rg`, so the patterns did not match what the author intended). Corrected:
+
 ```bash
+# Regression guards — these must stay at zero hits.
 ! rg -n '\bgg\b|Gemini CLI' site/content site/public site/app site/components site/scripts
-! rg -n 'MIT License|Open source[^<\\n]*MIT' site/public site/app
-! rg -n '0\\.0\\.0\\.0|binds.*local network' site/content site/public
+! rg -n 'MIT License|Open source[^<\n]*MIT' site/public site/app
+! rg -n '0\.0\.0\.0|binds.*local network' site/content site/public
 ! rg -n 'PLACEHOLDER|TODO|TBD' site/content
+
+# Positive checks — a zero-hit grep cannot prove these.
+rg -n 'Apache-2.0' site/public/home.html site/public/pro.html   # must hit
+test -f site/content/guides/uninstalling-aigon.mdx              # or the link is retargeted
+curl -sI http://localhost:3600/pro | head -1                    # 200, not 307/308
+
 npm run build --prefix site
 node tests/unit/dashboard-card-gallery.test.js
 npm run test:gallery
 ```
 
-If a deliberately historical “Gemini CLI” reference remains, replace the zero-hit command
-with an allowlisted checker that identifies the exact approved file and context.
+The first grep **already passes** — it is a regression guard, not a completion signal (see the
+note in Supported-agent truth). If a deliberately historical "Gemini CLI" reference is
+introduced, replace that command with an allowlisted checker naming the exact approved file
+and context, and hand the allowlist to F699.
 
 ## Pre-authorised
 
@@ -155,12 +180,44 @@ Use registry- or command-derived examples where practical, but do not turn the p
 generated boilerplate. Keep deprecated/historical material clearly separated from current
 instructions. Use the dashboard gallery as the canonical visual-state source.
 
+### Verified defect anchors (added by spec review)
+
+Every factual claim in this spec was confirmed against the tree at `bbf64b21c`. Page counts and
+locations are exact as of review, so start here instead of re-hunting:
+
+| Claim | Confirmed at |
+|---|---|
+| 108 documentation pages | `find site/content -name '*.md*'` → 108 |
+| MIT on live marketing | `site/public/home.html:83` (hero meta), `:669` (footer), `site/public/pro.html:430` — while `package.json` says Apache-2.0 |
+| `0.0.0.0` claim is wrong | `site/content/guides/dashboard.mdx:300`, `site/content/reference/commands/infra/server.mdx:87`. The **code is already correct** — `lib/dashboard-security.js:18` sets `DEFAULT_HOST = '127.0.0.1'` (F672). This is a docs-only fix; do not "fix" the server. |
+| 11 placeholders across 5 pages | `guides/dashboard.mdx` ×6 (`:62,72,76,85,93,225`), `guides/agent-matrix.mdx` ×2 (`:32,88`), `guides/security-scanning.mdx:60`, `guides/feature-sets-autonomous.mdx:16`, `reference/commands/feature/feature-code-review.mdx:47` |
+| Broken uninstall link | `reference/commands/setup/remove.mdx:49` → `/docs/guides/uninstalling-aigon`; no such file exists under `site/content` |
+| `/pro` double redirect | Both `site/next.config.mjs:39` (rewrite → `/pro.html`) **and** `site/app/pro/page.tsx:4` (`redirect("/pro.html")`). Two mechanisms for one route — resolving this means deleting one, not editing both. |
+
 ## Dependencies
 
-- `restore-antigravity-agent-reliability` — implementation commits `139c0ae68` and
-  `bbf64b21c` supply the integration and initial naming pass, but this feature must not start
-  from an unmerged/unclosed F696 state.
+- `restore-antigravity-agent-reliability` — **satisfied.** F696 is closed (`05-done`) and
+  `139c0ae68`/`bbf64b21c` are on `main`, so the "must not start from an unmerged state" caveat
+  no longer blocks anything.
 - `harden-setup-wizard-contract` — setup docs must describe the fixed behavior, not the audit.
+
+### Dependency is narrower than the frontmatter implies — author decision needed
+
+Only the **"Setup and dashboard truth"** criteria genuinely need F697. Everything else here —
+license facts, lifecycle/Feedback corrections, the uninstall link, `/pro` routing, sitemap
+dates, the 11 placeholders, navigation and visuals — is independent of the wizard and is
+currently blocked behind a high-complexity refactor for no reason. As written this is also five
+distinct workstreams under one `complexity: high` spec covering 108 pages.
+
+The reviewer deliberately did **not** touch `depends_on:` — rewiring the set graph is the
+author's call, not a reviewer's. Two options:
+
+1. **Split** F698 into a docs-content feature (startable now, parallel with F697) and a
+   setup/dashboard-docs feature that keeps the F697 dependency. Preferred.
+2. **Keep one spec** but sequence internally: do every non-setup section first, and treat the
+   setup section as a late block gated on F697 closing.
+
+Either way the whole 108-page pass should not wait on the wizard.
 
 ## Out of Scope
 
@@ -173,8 +230,16 @@ instructions. Use the dashboard gallery as the canonical visual-state source.
 
 ## Open Questions
 
-- Which npm dist-tag will this release publish and therefore which command should the site show?
-- Should the legacy Feedback guide remain navigable under a “Migration/Deprecated” separator
+**Blocking — must be answered before this feature starts:**
+
+- Which npm dist-tag will this release publish, and therefore which command should the site
+  show? This is not a nice-to-have: the criterion "Install and update commands use the release
+  channel chosen by the maintainer" is unresolvable by the implementer, who has no way to pick
+  a channel. Answer it in the spec, not mid-implementation.
+
+Non-blocking (implementer may choose and record the choice):
+
+- Should the legacy Feedback guide remain navigable under a "Migration/Deprecated" separator
   or redirect to the research workflow?
 - Which competitive claims remain valuable after requiring citations and verification dates?
 
