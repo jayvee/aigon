@@ -24,7 +24,7 @@ aigon feature-close $1
 The command auto-detects whether the feature uses a branch or a Drive worktree.
 
 ### Fleet mode
-If you used `feature-start $1 cc gg cx cu`:
+If you used `feature-start $1 cc ag cx cu`:
 ```bash
 aigon feature-close $1 <winning-agent>
 ```
@@ -38,7 +38,7 @@ aigon feature-close $1 <winning-agent> --adopt <agents...|all>
 ```
 
 Examples:
-- `aigon feature-close $1 cc --adopt gg cu` — adopt from specific agents
+- `aigon feature-close $1 cc --adopt ag cu` — adopt from specific agents
 - `aigon feature-close $1 cc --adopt all` — adopt from all losing agents
 
 ## What happens
@@ -157,7 +157,7 @@ Use `--push` if you want to preserve the alternative implementations on the remo
 ## Important Notes
 
 - **Drive worktree**: The agent is auto-detected — no need to specify it
-- **Fleet mode**: The agent parameter is REQUIRED (e.g., `cc`, `gg`, `cx`, `cu`)
+- **Fleet mode**: The agent parameter is REQUIRED (e.g., `cc`, `ag`, `cx`, `cu`)
 - **`--adopt`**: Only available in Fleet mode — requires a winning agent
 - **Do NOT run from a worktree**: Always run from the main repository
 - The command uses `--no-ff` merge to preserve feature history

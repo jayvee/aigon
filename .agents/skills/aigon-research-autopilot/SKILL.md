@@ -27,12 +27,12 @@ aigon research-autopilot $ARGUMENTS
 
 ### Specify agents explicitly
 ```bash
-aigon research-autopilot $ARGUMENTS cc gg cx
+aigon research-autopilot $ARGUMENTS cc ag cx
 ```
 
 ### With auto-eval
 ```bash
-aigon research-autopilot $ARGUMENTS cc gg cx --auto-eval
+aigon research-autopilot $ARGUMENTS cc ag cx --auto-eval
 ```
 
 ## What it does

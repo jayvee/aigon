@@ -19,7 +19,7 @@ aigon feature-transfer $1 --to=<agent> [--reason="..."] [--no-launch]
 ```
 
 Flags:
-- `--to=<agent>` (required) — target agent id (e.g. `cc`, `cx`, `gg`, `cu`).
+- `--to=<agent>` (required) — target agent id (e.g. `cc`, `cx`, `ag`, `cu`).
 - `--reason="..."` — free-text reason recorded in the transfer briefing.
 - `--no-launch` — do the transfer but don't auto-spawn the new agent; handy for scripted orchestration.
 

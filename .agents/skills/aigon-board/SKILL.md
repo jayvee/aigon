@@ -116,7 +116,7 @@ In Progress (3):
           → /afd 11
    #12  notifications       Drive (branch) *
           → /afd 12
-   #14  profile-redesign    Fleet (cc, gg) [F]
+   #14  profile-redesign    Fleet (cc, ag) [F]
           → /afe 14
 
 RESEARCH

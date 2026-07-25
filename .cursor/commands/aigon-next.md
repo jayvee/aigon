@@ -24,10 +24,10 @@ Extract context from the branch name using the pattern `feature-<ID>-<agent>-<de
 
 - **Type**: `feature` or `research`
 - **ID**: numeric ID (e.g., `25`)
-- **Agent**: agent code (e.g., `cc`, `gg`, `cx`, `cu`) — if absent, this is a Drive branch
+- **Agent**: agent code (e.g., `cc`, `ag`, `cx`, `cu`) — if absent, this is a Drive branch
 - **Description**: slug description
 
-**Drive vs worktree**: if the agent segment is one of `cc`, `gg`, `cx`, `cu`, this is a Fleet worktree branch — `feature-do` runs automatically on open and must NOT be suggested. If the agent segment is absent (branch is `feature-<ID>-<description>`), this is a Drive branch — `feature-do` must be run manually.
+**Drive vs worktree**: if the agent segment is one of `cc`, `ag`, `cx`, `cu`, this is a Fleet worktree branch — `feature-do` runs automatically on open and must NOT be suggested. If the agent segment is absent (branch is `feature-<ID>-<description>`), this is a Drive branch — `feature-do` must be run manually.
 
 If the branch is `main` (or `master`), skip to **Path D: Main branch**.
 
@@ -113,7 +113,7 @@ Check `aigon board --list --active` output for in-progress items.
 
 #### D1: In-progress features found
 
-Count the worktrees for each in-progress feature (from board output — look for `Fleet (cc, gg...)` vs `Drive`).
+Count the worktrees for each in-progress feature (from board output — look for `Fleet (cc, ag...)` vs `Drive`).
 
 **Fleet mode** (2+ agents): Suggest eval
 > Feature `#<ID> <name>` is in progress (Fleet mode).

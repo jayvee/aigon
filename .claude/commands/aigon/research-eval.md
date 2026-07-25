@@ -71,9 +71,9 @@ Extract the `## Suggested Features` table from each agent's findings file.
 
 | # | Feature Name | Description | Priority | Agents | Status |
 |---|--------------|-------------|----------|--------|--------|
-| 1 | feature-name | Best description | high | cc, gg | Consensus |
+| 1 | feature-name | Best description | high | cc, ag | Consensus |
 | 2 | another-feat | Description | medium | cc | Unique to Claude |
-| 3 | third-feat | Description | low | gg, cx | Consensus |
+| 3 | third-feat | Description | low | ag, cx | Consensus |
 ```
 
 **Status values:**

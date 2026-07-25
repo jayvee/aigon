@@ -60,8 +60,9 @@
 | op | OpenCode | `opencode` | Workspace-write, smart approval |
 | km | Kimi Code CLI | `kimi --yolo` | Auto-approves all |
 | am | Amp | `amp --no-ide --no-jetbrains --no-notifications --dangerously-allow-all` | --no-ide --no-jetbrains --no-notifications --dangerously-allow-all |
+| ag | Antigravity CLI | `agy --dangerously-skip-permissions` | --dangerously-skip-permissions |
 
-**Quick-allow when prompted:** Claude `Shift+Tab` • Gemini `2` for always • Cursor "Add to allowlist" • Codex "Allow and remember"
+**Quick-allow when prompted:** Claude `Shift+Tab` • Antigravity uses `--dangerously-skip-permissions` at launch • Cursor "Add to allowlist" • Codex "Allow and remember"
 
 **Override defaults:** Set `agents.{id}.implementFlag` in `~/.aigon/config.json` to use stricter permissions (e.g., `""` to require manual approval). Project config (`.aigon/config.json`) takes precedence over global config.
 

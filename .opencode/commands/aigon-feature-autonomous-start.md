@@ -17,7 +17,7 @@ aigon feature-autonomous-start $ARGUMENTS <agents...> [--eval-agent=<agent>] [--
 aigon feature-autonomous-start $ARGUMENTS cc
 
 # Fleet: run through eval then stop for manual winner selection
-aigon feature-autonomous-start $ARGUMENTS cc gg --eval-agent=gg --stop-after=eval
+aigon feature-autonomous-start $ARGUMENTS cc ag --eval-agent=ag --stop-after=eval
 
 # Status
 aigon feature-autonomous-start status $ARGUMENTS

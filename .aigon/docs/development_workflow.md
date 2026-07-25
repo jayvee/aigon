@@ -148,10 +148,9 @@ Known local gaps: **F676** and **F677** (solo-branch closes with no `feature-676
 7. Update the implementation log in `./docs/specs/features/logs/` (required unless `logging_level: never`)
 8. **STOP** - Wait for user to approve before running `aigon feature-close <ID>`
 
-<!-- AIGON_LIGHT_OPTIONAL_START -->
 ## Arena Mode Workflow
 
-1. Run `aigon feature-start <ID> cc gg cx cu` to create worktrees for each agent
+1. Run `aigon feature-start <ID> cc ag cx cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open each worktree in a separate session
 3. In each worktree session:
    - Run `aigon feature-do <ID>`
@@ -163,7 +162,6 @@ Known local gaps: **F676** and **F677** (solo-branch closes with no `feature-676
 4. Return to main repo for evaluation: `aigon feature-eval <ID>`
 5. Merge winner: `aigon feature-close <ID> cc`
 6. Clean up losers: `aigon feature-cleanup <ID> --push` (to save branches) or `aigon feature-cleanup <ID>` (to delete)
-<!-- AIGON_LIGHT_OPTIONAL_END -->
 
 ## Per-worktree setup (`worktreeSetup`)
 

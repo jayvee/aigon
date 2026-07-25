@@ -44,7 +44,7 @@ Closing all agent sessions for #55...
 
 - If no processes are running (agents already exited), it prints a notice and still tries to close the Warp tab
 - Warp tab close is best-effort — if AppleScript can't find the window, you'll see a reminder to close it manually
-- Works for any mix of agents (cc, gg, cx, cu)
+- Works for any mix of agents (cc, ag, cx, cu)
 
 ## Step 1: Run the CLI command
 

@@ -44,7 +44,7 @@ Complete the checklist (Spec Compliance, Code Quality, Testing, Documentation, S
 Use this exact structure — scoring table, then summary table, then Strengths/Weaknesses, then Recommendation.
 
 ```markdown
-| Criteria | cx | gg |
+| Criteria | cx | ag |
 |---|---|---|
 | Code Quality | /10 | /10 |
 | Spec Compliance | /10 | /10 |
@@ -57,7 +57,7 @@ Use this exact structure — scoring table, then summary table, then Strengths/W
 | Agent | Lines | Score |
 |---|---|---|
 | cx | | /40 |
-| gg | | /40 |
+| ag | | /40 |
 ```
 
 Adjust agent columns to match the actual agents. Use standard GFM pipe tables (not Unicode box-drawing) and do NOT wrap them in code fences — the dashboard needs raw markdown to render as HTML tables.

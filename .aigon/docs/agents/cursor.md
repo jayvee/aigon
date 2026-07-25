@@ -61,13 +61,6 @@ Feature and research work are NOT complete until you run these commands yourself
 
 These are direct lifecycle commands you run yourself in the agent host — slash commands for some agents, skills for Codex, and never auto-invoked. The `aigon agent-status` command writes state to the **main repo** (not the worktree), so you won't see state files locally. Just run the command and trust the output.
 
-> **CRITICAL — Cursor dev server rules:**
->
-> **NEVER run `npm run dev`, `next dev`, or any dev command directly.** Running dev commands directly bypasses port allocation and will cause port conflicts.
->
-> Always use `aigon dev-server start` which allocates a unique port and registers with the proxy.
-> Check your URL with `aigon dev-server url`.
-
 ## Critical Rules
 
 1. **Read the active spec first**: Use `aigon feature-spec <ID>` for features. For research, read the spec directly from `docs/specs/research-topics/03-in-progress/`
@@ -90,7 +83,7 @@ These are direct lifecycle commands you run yourself in the agent host — slash
 
 ## Fleet Mode Workflow
 
-1. Run `/aigon-feature-start <ID> cc cx gg cu` to create worktrees for each agent
+1. Run `/aigon-feature-start <ID> cc cx ag cu` to create worktrees for each agent
 2. **STOP** - Tell the user to open the worktree in a separate session
 3. In the worktree session:
    - Run `/aigon-feature-do <ID>`
@@ -116,7 +109,7 @@ Research follows the same lifecycle shape as features: `start -> do -> submit ->
 
 ### Fleet Mode
 
-1. Run `/aigon-research-start <ID> cc cx gg cu` to prepare and launch parallel research
+1. Run `/aigon-research-start <ID> cc cx ag cu` to prepare and launch parallel research
 2. In each agent session, run `/aigon-research-do <ID>`
 3. Each agent writes only to its own findings file and signals completion
 4. Optionally run `/aigon-research-review <ID>` for a separate review pass

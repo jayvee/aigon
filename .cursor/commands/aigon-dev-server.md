@@ -70,7 +70,7 @@ Prints the proxy subdomain URL (or localhost fallback) for use in testing and br
 ## Notes
 
 - The dev server command is read from `devProxy.command` in `.aigon/config.json` (set this to whatever the project uses)
-- Port is allocated automatically — agents get offsets from the base port (cc=+1, gg=+2, cx=+3, cu=+4)
+- Port is allocated automatically — agents get offsets from the base port (cc=+1, ag=+2, cx=+3, cu=+4)
 - The base port is configured per-project in `.aigon/config.json` (devProxy.basePort). Worktree agents get offsets from this.
 - If the proxy is running (`aigon proxy install`), the server gets a named URL like `http://cx-121.myapp.localhost`
 - Without the proxy, it falls back to `http://localhost:<port>`

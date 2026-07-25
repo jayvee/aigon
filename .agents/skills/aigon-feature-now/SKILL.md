@@ -133,10 +133,10 @@ aigon agent-status implementation-complete
 Write and commit the log **before** calling `aigon agent-status implementation-complete`. Run `aigon feature-do {{ARG1_SYNTAX}}` once from the checkout where you implement — the CLI prints your mode.
 
 - **Fleet** (another agent worktree exists for this feature): fill in the log skeleton at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` targeting 200–400 words, then commit it.
-- **Solo Drive worktree** (only worktree for this feature): at most **one line** in that log path if the starter file exists.
-- **Solo Drive branch** (feature branch in the main repo path, not an `…-<agent>-…` worktree folder): **no log** — do not create `docs/specs/features/logs/` files. Go to **Step 5** (`aigon agent-status implementation-complete`).
+- **Solo Drive worktree** (only worktree for this feature): at least **one line** in that log path.
+- **Solo Drive branch** (feature branch in the main repo path, not an `…-<agent>-…` worktree folder): create `docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` with at least **one line** before completion.
 
-Override defaults with `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` (Codex inlines prompts from cwd at launch and follows the same rules).
+Override defaults with `"logging_level": "always" | "never"` in `.aigon/config.json` (`never` is the only opt-out; default tiered policy applies when unset).
 
 ## Step 7: STOP — Implementation complete
 

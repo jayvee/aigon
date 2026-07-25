@@ -41,7 +41,7 @@ aigon-feature-start <ID> <agent1> <agent2> [agent3...]
 ```
 
 Example Drive worktree: `aigon-feature-start 55 cc`
-Example Fleet: `aigon-feature-start 55 cc gg cx cu`
+Example Fleet: `aigon-feature-start 55 cc ag cx cu`
 
 ## Prompt Suggestion
 

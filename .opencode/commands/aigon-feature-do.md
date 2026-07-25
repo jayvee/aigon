@@ -90,17 +90,17 @@ Generate a **Manual Testing Checklist**: re-read the spec Acceptance Criteria an
 
 ## Step 4.5: Update docs if affected
 
-If changes add modules, alter repo structure, or introduce new patterns, update `AGENTS.md` and/or `docs/architecture.md` **before committing**. Cross-repo changes to `@aigon/pro`: note both sides. Docs ship with the code.
+If changes add modules, alter repo structure, or introduce new patterns, update the project's maintainer docs (e.g. `AGENTS.md` or equivalent) **before committing**. Docs ship with the code.
 
 ## Step 4.5: Implementation log (depends on your mode)
 
 Write and commit the log **before** calling `aigon agent-status implementation-complete`. Run `aigon feature-do {{ARG1_SYNTAX}}` once from the checkout where you implement — the CLI prints your mode.
 
 - **Fleet** (another agent worktree exists for this feature): fill in the log skeleton at `./docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` targeting 200–400 words, then commit it.
-- **Solo Drive worktree** (only worktree for this feature): at most **one line** in that log path if the starter file exists.
-- **Solo Drive branch** (feature branch in the main repo path, not an `…-<agent>-…` worktree folder): **no log** — do not create `docs/specs/features/logs/` files. Go to **Step 5** (`aigon agent-status implementation-complete`).
+- **Solo Drive worktree** (only worktree for this feature): at least **one line** in that log path.
+- **Solo Drive branch** (feature branch in the main repo path, not an `…-<agent>-…` worktree folder): create `docs/specs/features/logs/feature-{{ARG1_SYNTAX}}-*-log.md` with at least **one line** before completion.
 
-Override defaults with `"logging_level": "fleet-only" | "always" | "never"` in `.aigon/config.json` (Codex inlines prompts from cwd at launch and follows the same rules).
+Override defaults with `"logging_level": "always" | "never"` in `.aigon/config.json` (`never` is the only opt-out; default tiered policy applies when unset).
 
 ## Step 5: Signal completion
 

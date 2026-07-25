@@ -26,12 +26,12 @@ aigon research-autopilot {{args}}
 
 ### Specify agents explicitly
 ```bash
-aigon research-autopilot {{args}} cc gg cx
+aigon research-autopilot {{args}} cc ag cx
 ```
 
 ### With auto-eval
 ```bash
-aigon research-autopilot {{args}} cc gg cx --auto-eval
+aigon research-autopilot {{args}} cc ag cx --auto-eval
 ```
 
 ## What it does
