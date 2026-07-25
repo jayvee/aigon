@@ -25,6 +25,7 @@ const ALLOWED_PREFIXES = [
     'scripts/probe-agent.js',
     'scripts/check-package-security-config.js',
     'scripts/check-suspicious-deps.js',
+    'scripts/docs-check.js',
 ];
 
 function isAllowed(filePath) {

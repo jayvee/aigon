@@ -14,8 +14,8 @@ test.beforeEach(async ({ page }) => {
 
 test('contracts render autonomous and set hierarchy without duplicate activity', async ({ page }) => {
   await expect(page.locator('#diagnostics-count')).toHaveText('Complete');
-  // REGRESSION: F684 adds unavailable-origin and checkpoint-fallback continuity scenarios.
-  await expect(page.locator('[data-scenario-key]')).toHaveCount(73);
+  // REGRESSION: F684 continuity scenarios and F700's interrupted-set resting state are canonical gallery facts.
+  await expect(page.locator('[data-scenario-key]')).toHaveCount(74);
 
   const implementing = page.locator('[data-scenario-key="feature-autonomous-running"]');
   await expect(implementing.locator('.ccard-row')).toHaveCount(0);
