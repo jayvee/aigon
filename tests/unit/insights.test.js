@@ -65,30 +65,54 @@ Only cost data available.
 `);
 }
 
-// REGRESSION: collectAadeFeatures must enumerate done specs and parse AADE frontmatter.
-test('collectAadeFeatures reads done features and AADE telemetry fields', () => withTempDir('aigon-insights-', (repo) => {
-    seedAadeRepo(repo);
-    const features = insights.collectAadeFeatures(repo);
-    assert.strictEqual(features.length, 4);
+function withAadeRepo(fn) {
+    return withTempDir('aigon-insights-', (repo) => {
+        seedAadeRepo(repo);
+        return fn(repo);
+    });
+}
 
+// REGRESSION: collectAadeFeatures must enumerate every done spec.
+test('returns all features from done directory', () => withAadeRepo((repo) => {
+    assert.strictEqual(insights.collectAadeFeatures(repo).length, 4);
+}));
+
+// REGRESSION: AADE frontmatter cost and autonomy labels must surface on feature rows.
+test('reads cost and autonomy fields from frontmatter', () => withAadeRepo((repo) => {
+    const features = insights.collectAadeFeatures(repo);
     const f42 = features.find(f => f.featureId === '42');
     assert.strictEqual(f42.costUsd, 0.25);
     assert.strictEqual(f42.autonomyLabel, 'Full Autonomy');
-    assert.strictEqual(f42.tokensPerLineChanged, 3.5);
-    assert.strictEqual(f42.totalTokens, 1500);
-    assert.strictEqual(f42.linesChanged, 428);
+}));
 
-    const f43 = features.find(f => f.featureId === '43');
+// REGRESSION: rework flags must combine into hasRework for dashboard aggregates.
+test('reads rework flags correctly', () => withAadeRepo((repo) => {
+    const f43 = insights.collectAadeFeatures(repo).find(f => f.featureId === '43');
     assert.strictEqual(f43.reworkThrashing, true);
     assert.strictEqual(f43.reworkFixCascade, false);
     assert.strictEqual(f43.reworkScopeCreep, true);
     assert.strictEqual(f43.hasRework, true);
+}));
 
-    const f44 = features.find(f => f.featureId === '44');
+// REGRESSION: legacy logs without AADE telemetry must not fabricate cost/autonomy fields.
+test('feature without AADE data has null fields', () => withAadeRepo((repo) => {
+    const f44 = insights.collectAadeFeatures(repo).find(f => f.featureId === '44');
     assert.strictEqual(f44.costUsd, null);
     assert.strictEqual(f44.autonomyLabel, null);
     assert.strictEqual(f44.hasRework, false);
+}));
 
+// REGRESSION: token and line-change metrics must parse from implementation logs.
+test('reads tokens_per_line_changed and total_tokens', () => withAadeRepo((repo) => {
+    const f42 = insights.collectAadeFeatures(repo).find(f => f.featureId === '42');
+    assert.strictEqual(f42.tokensPerLineChanged, 3.5);
+    assert.strictEqual(f42.totalTokens, 1500);
+    assert.strictEqual(f42.linesChanged, 428);
+}));
+
+// REGRESSION: dashboard ordering must follow completedAtMs ascending.
+test('features are sorted by completedAtMs', () => withAadeRepo((repo) => {
+    const features = insights.collectAadeFeatures(repo);
     for (let i = 1; i < features.length; i++) {
         assert.ok(features[i].completedAtMs >= features[i - 1].completedAtMs,
             `Feature ${features[i].featureId} should be after ${features[i - 1].featureId}`);
@@ -96,18 +120,21 @@ test('collectAadeFeatures reads done features and AADE telemetry fields', () => 
 }));
 
 // REGRESSION: deterministic insights must refuse to invent signal on tiny samples.
-test('buildDeterministicInsights returns insufficientData for fewer than 3 features', () => {
+test('returns insufficientData for fewer than 3 features', () => {
     const result = insights.buildDeterministicInsights([{ featureId: '1' }, { featureId: '2' }]);
     assert.strictEqual(result.insufficientData, true);
 });
 
-// REGRESSION: dashboard insights must emit five observations with autonomy aggregates.
-test('buildDeterministicInsights returns observations and autonomy counts for sufficient data', () => withTempDir('aigon-insights-', (repo) => {
-    seedAadeRepo(repo);
-    const features = insights.collectAadeFeatures(repo);
-    const result = insights.buildDeterministicInsights(features);
+// REGRESSION: sufficient sample size must yield five observations.
+test('returns 5 observations for sufficient data', () => withAadeRepo((repo) => {
+    const result = insights.buildDeterministicInsights(insights.collectAadeFeatures(repo));
     assert.strictEqual(result.insufficientData, false);
     assert.strictEqual(result.observations.length, 5);
+}));
+
+// REGRESSION: autonomy buckets must count full-autonomy vs thrashing labels.
+test('computes autonomy counts in aggregates', () => withAadeRepo((repo) => {
+    const result = insights.buildDeterministicInsights(insights.collectAadeFeatures(repo));
     assert.strictEqual(result.aggregates.autonomyCounts.fullAutonomy, 1);
     assert.strictEqual(result.aggregates.autonomyCounts.thrashing, 1);
 }));

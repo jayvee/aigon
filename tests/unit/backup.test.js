@@ -7,7 +7,6 @@ const zlib = require('zlib');
 const { test, withTempDir, report } = require('../_helpers');
 const {
     PROJECT_EXCLUDES,
-    DEFAULT_RETENTION,
     applyTelemetryRetention,
 } = require('../../lib/backup');
 const { mergeJsonlByTimestamp } = require('../../lib/sync-merge');
@@ -61,6 +60,19 @@ test('retention drop: per-session json older than dropAfterDays is deleted', () 
 
     assert.ok(!fs.existsSync(oldFile));
     assert.ok(!fs.existsSync(oldFile + '.gz'));
+}));
+
+// REGRESSION: null dropAfterDays must leave telemetry untouched like other disable paths.
+test('retention disabled when dropAfterDays=null', () => withTempDir('backup-test-', (repo) => {
+    const telDir = path.join(repo, '.aigon', 'telemetry');
+    fs.mkdirSync(telDir, { recursive: true });
+
+    const oldFile = path.join(telDir, 'feature-400-cc-bbb.json');
+    writeJsonFile(oldFile, { featureId: '400', endAt: new Date(daysAgoMs(400)).toISOString() });
+
+    applyTelemetryRetention(repo, { compressAfterDays: null, dropAfterDays: null });
+
+    assert.ok(fs.existsSync(oldFile));
 }));
 
 // REGRESSION: retention can be disabled without mutating existing telemetry files.
