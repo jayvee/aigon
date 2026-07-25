@@ -1,0 +1,16 @@
+---
+title: Uninstalling Aigon
+description: Remove Aigon from a project, its dashboard service, or your machine.
+---
+
+Use [`aigon remove`](/docs/reference/commands/setup/remove) from a project to remove Aigon-managed files. Add `--purge` only when you also want to remove the project's `.aigon/` state.
+
+To remove the CLI globally:
+
+```bash
+npm uninstall -g @senlabsai/aigon
+```
+
+If you installed the persistent dashboard service, stop and remove it first using the platform-specific instructions in the [server reference](/docs/reference/commands/infra/server#uninstall-the-service). Remove any reverse proxy separately if you configured one.
+
+Finally, uninstall agent CLIs only if you no longer use them outside Aigon; Aigon does not own those installations.

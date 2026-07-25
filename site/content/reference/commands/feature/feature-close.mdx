@@ -21,7 +21,7 @@ aigon feature-close <ID> [agent] [--adopt <agents...|all>]
 
 ## Description
 
-`feature-close` is the final step in the feature lifecycle. It merges the implementation into main, moves the spec from `03-in-progress/` to `05-done/`, organizes the implementation logs, and removes the feature's worktree and branch.
+`feature-close` is the final step in the feature lifecycle. It merges the implementation into main, records completion in `05-done`, organizes the implementation logs, and removes managed workspace resources. Canonical specs remain in `00-specs`; lifecycle folders are projected views rather than Git file moves.
 
 The command behaves differently depending on how the feature was developed:
 
@@ -37,7 +37,7 @@ If a GitHub pull request is open for the feature branch, `feature-close` will bl
 1. Auto-commits any uncommitted changes on the feature branch
 2. Pushes the feature branch to `origin`
 3. Switches to `main` and merges with `--no-ff`
-4. Moves spec to `05-done/`
+4. Records completion in the `05-done` lifecycle view
 5. Moves implementation log to `logs/selected/`
 6. Deletes the local feature branch
 
@@ -45,7 +45,7 @@ If a GitHub pull request is open for the feature branch, `feature-close` will bl
 
 1. Pushes the winning agent's branch to `origin`
 2. Switches to `main` and merges the winning branch with `--no-ff`
-3. Moves spec to `05-done/`
+3. Records completion in the `05-done` lifecycle view
 4. Organizes logs: winning agent → `logs/selected/`, others → `logs/`
 5. With `--adopt`: prints diffs from each losing agent's branch so you can cherry-pick improvements
 

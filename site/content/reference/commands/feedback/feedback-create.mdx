@@ -17,13 +17,13 @@ aigon feedback-create <title>
 
 `feedback-create` is a legacy no-op. It prints the deprecation notice and does not create a feedback file. Capture new user/customer input as research with `origin: customer-feedback`.
 
-The command creates the file and then expects you (or an agent) to fill in the `## Summary` and `## Evidence` sections, plus attribution fields (`reporter`, `source`). Once filed, use `feedback-triage` to classify it and decide what to do with it.
+Use `research-create` for new input and record the customer source in the research frontmatter.
 
 ## What it does
 
-1. Creates `docs/specs/feedback/01-inbox/feedback-<ID>-<slug>.md` from the feedback template
-2. Pre-fills frontmatter with the assigned ID and title
-3. Prints the next suggested command: `aigon feedback-triage <ID>`
+1. Prints the deprecation notice
+2. Does not create or change a feedback file
+3. Directs new input to `aigon research-create`
 
 ## Examples
 
@@ -35,20 +35,10 @@ aigon research-create "Export button crashes on Safari"
 /aigon:research-create "Dashboard load time regression after deploy"
 ```
 
-## After creating
+## Capture new feedback
 
-Read the new file and fill in:
-- `## Summary` — clear description of the issue or observation
-- `## Evidence` — links, screenshots, error messages, reproduction steps
-- Attribution fields: `reporter` (who reported it) and `source` (where it came from — user, Slack, support ticket, etc.)
-
-Then triage:
-
-```bash
-aigon feedback-triage <ID>
-```
+Create research, then add `origin: customer-feedback` plus the reporter and source evidence to its frontmatter and body.
 
 ## Related
 
-- [`feedback-triage`](./feedback-triage) — classify and decide the next action
-- [`feedback-list`](./feedback-list) — see all feedback in the inbox
+- [`research-create`](/docs/reference/commands/research/research-create) — capture new customer input

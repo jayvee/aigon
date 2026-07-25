@@ -23,7 +23,7 @@ aigon feature-eval <ID> [--agent=<id>] [--allow-same-model-judge] [--force]
 
 ## Description
 
-`feature-eval` is the Fleet mode judging step — it compares all agent implementations against the spec, picks a winner, and records that decision so `feature-close` knows which branch to merge. Run it from the main repo after all agents have signalled `submitted`.
+`feature-eval` is the Fleet mode judging step — it compares all agent implementations against the spec, picks a winner, and records that decision so `feature-close` knows which branch to merge. Run it from the main repo after all agents have signalled `implementation-complete`.
 
 By default, Aigon auto-selects an evaluator that is different from the implementing agents to avoid bias. Pass `--agent=<id>` to override and choose a specific evaluator. To allow the same model to judge its own implementation (not recommended), use `--allow-same-model-judge`.
 
@@ -31,7 +31,7 @@ In Drive mode (single agent), use `feature-code-review` instead — there is no 
 
 ## What it does
 
-1. Reads all submitted implementations from the feature's worktrees
+1. Reads all completed implementations from the feature's workspaces
 2. Selects an evaluator (or uses the one specified via `--agent`)
 3. Opens an evaluation session pre-loaded with the full diff for each agent
 4. Evaluator compares implementations against the spec's acceptance criteria
