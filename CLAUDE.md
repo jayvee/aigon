@@ -1,6 +1,6 @@
 # Aigon — CLAUDE Pointer
 
-The always-loaded orientation lives in **`AGENTS.md`** — read that first for the load-bearing safety invariants (OSS/Pro boundary, target-repo zero-opinion, template source-of-truth, lifecycle authority, ctx pattern, dashboard gallery, server-restart, test/commit discipline) and reading pointers. Deep reference — repo structure, the module map, state architecture, install internals — lives on-demand in **`docs/architecture.md`** (and testing detail in `docs/testing.md`); read those when the task touches their area.
+The always-loaded orientation lives in **`AGENTS.md`** — read that first for the load-bearing safety invariants (public-repo hygiene, target-repo zero-opinion, template source-of-truth, lifecycle authority, ctx pattern, dashboard gallery, server-restart, test/commit discipline) and reading pointers. Deep reference — repo structure, the module map, state architecture, install internals — lives on-demand in **`docs/architecture.md`** (and testing detail in `docs/testing.md`); read those when the task touches their area.
 
 ## Hot rules (read before editing)
 - **F313 frontmatter**: feature/research specs carry `complexity:` YAML only; model/effort defaults resolve at start from `templates/agents/<id>.json` `cli.complexityDefaults` then config (not from the spec). Parser: `lib/cli-parse.js parseFrontMatter`. Resolver: `lib/spec-recommendation.js`. Dashboard reads via `/api/recommendation/:type/:id` and pre-selects the start-modal dropdowns.
@@ -19,7 +19,7 @@ The always-loaded orientation lives in **`AGENTS.md`** — read that first for t
 8. To start a feature over: `aigon feature-reset <ID>` — never stitch raw cleanup commands.
 9. Check `## Pre-authorised` before stopping on a policy gate — if the gate matches a listed line, proceed and add `Pre-authorised-by: <slug>` in the commit footer. Slugs are validated against the spec at close.
 10. **Templates under `templates/{generic,docs,specs,prompts,skill-pointers}/` install into the user's repo — Aigon has ZERO opinion about that repo's language, package manager, tests, build, lint, or directory layout.** Aigon only has opinions about its own lifecycle (features/research/feedback/specs) and its own `.aigon/` state. If a template sentence would be wrong in a Python repo, a Rust crate, or a static site — strip it. See `AGENTS.md` § "Target-repo boundary — zero opinion". Enforced by `scripts/check-template-leaks.js`.
-11. **Never hand-edit `cli.modelOptions` in `templates/agents/*.json` casually.** OSS ships curated model metadata for users; maintainer-only discovery, benchmarking, and registry mutation live in Pro/internal tooling. Full contract — modality filters, economic gates, approval flow — lives in **`docs/model-inclusion-policy.md`**.
+11. **Never hand-edit `cli.modelOptions` in `templates/agents/*.json` casually.** Aigon ships curated model metadata for users; discovery, benchmarking, and registry mutation are maintainer-only tooling. Full contract — modality filters, economic gates, approval flow — lives in **`docs/model-inclusion-policy.md`**.
 
 ## Write-path contract (pointer)
 

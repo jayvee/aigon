@@ -42,11 +42,11 @@ Modes:
   🐝 Swarm      Multiple agents run autonomously in parallel
 
 Conductor:
-  feature-autonomous-start <ID> <agents...>                [Pro]
+  feature-autonomous-start <ID> <agents...>
                                     Start AutoConductor (tmux auto session) and return immediately
-  feature-autonomous-stop <ID>                           [Pro]
+  feature-autonomous-stop <ID>
                                     Stop AutoConductor; keep current workflow state for manual takeover
-  feature-autonomous-start status <ID>                     [Pro]
+  feature-autonomous-start status <ID>
                                     Show AutoConductor tmux liveness + workflow state
   server start [--persistent]       Start the AIGON server (dashboard UI + supervisor)
   server add [path]                 Register a repo with the server
@@ -84,7 +84,7 @@ Feature Commands (Drive, Fleet, Autonomous, Swarm):
   feature-cleanup <ID>              Clean up Fleet worktrees and branches (worktrees + branches only)
   feature-reset <ID>                Full reset back to backlog: sessions + worktrees + branches + state + spec move
                                     (use this to start a feature over with a different agent)
-  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close] [--workflow=<slug>]   [Pro]
+  feature-autonomous-start <ID> <agents...> [--eval-agent=<id>] [--stop-after=implement|eval|close] [--workflow=<slug>]
                                     Start autonomous execution in dedicated auto tmux session
 
 Workflow Definitions (autonomous orchestration templates):
@@ -104,12 +104,12 @@ Research Commands:
   research-do <ID>                  Do research (agent writes findings)
   research-eval <ID>                Evaluate Fleet findings and recommend features
   research-close <ID>               Complete research (in-evaluation → done)
-  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + evaluate    [Pro]
+  research-autopilot <ID> [agents...] Fleet autopilot: setup + spawn + monitor + evaluate
 
 Deploy:
   deploy                            Run the configured deploy command (production)
   deploy --preview                  Run the configured preview command (staging)
-  insights [--coach] [--refresh]    AADE Insights    [Pro]
+  insights [--coach] [--refresh]    Workflow insights, trends, and coaching
 
 Visualization:
   board                             Show Kanban board view of features and research
@@ -212,8 +212,5 @@ Examples:
 
 Agents:
 {{SUPPORTED_AGENT_HELP_LINES}}
-
-
-Pro features are currently in development. Commands marked [Pro] will be enabled when Pro launches.
 
 Documentation: https://www.aigon.build/docs

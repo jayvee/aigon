@@ -151,14 +151,6 @@ stage_run_detached() {
     --hostname clean-room
   )
 
-  # Mount aigon-pro if present
-  local aigon_pro_dir
-  aigon_pro_dir="$(cd "$REPO_ROOT/.." && pwd)/aigon-pro"
-  if [[ -d "$aigon_pro_dir" ]]; then
-    DOCKER_ARGS+=(-v "$aigon_pro_dir:/home/dev/src/aigon-pro")
-    log "  Aigon Pro mounted at ~/src/aigon-pro"
-  fi
-
   # Forward API keys
   for key in ANTHROPIC_API_KEY GOOGLE_API_KEY OPENAI_API_KEY; do
     if [[ -n "${!key:-}" ]]; then

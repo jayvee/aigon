@@ -110,75 +110,6 @@ install_aigon() {
   pass "aigon installed and responds to --version"
 }
 
-install_aigon_pro() {
-  # Requires AIGON_PRO_KEY env var or AIGON_PRO_TGZ pointing at a local tarball.
-  # If neither is set, skip with a warning (Pro is optional in CI).
-  local tgz
-  tgz="${AIGON_PRO_TGZ:-}"
-  if [[ -z "$tgz" ]]; then
-    # Auto-detect from repo root — requires `npm pack` to have been run in aigon-pro first
-    tgz="$(ls "$REPO_ROOT"/../aigon-pro/senlabsai-aigon-pro-*.tgz 2>/dev/null | sort -V | tail -1)"
-  fi
-
-  local key="${AIGON_PRO_KEY:-}"
-
-  if [[ -z "$tgz" && -z "$key" ]]; then
-    echo "  SKIP: No AIGON_PRO_TGZ or AIGON_PRO_KEY set — skipping Pro install"
-    return 0
-  fi
-
-  if [[ -n "$tgz" ]]; then
-    step "Install aigon-pro from local tarball: $(basename "$tgz")"
-    if [[ "$PLATFORM" == "linux" ]]; then
-      sudo npm install -g "$tgz" 2>&1 | tail -3
-    else
-      npm install -g "$tgz" 2>&1 | tail -3
-    fi
-    hash -r 2>/dev/null || true
-    pass "aigon-pro installed from tarball"
-  else
-    step "Install aigon-pro from npm (public)"
-    if [[ "$PLATFORM" == "linux" ]]; then
-      sudo npm install -g @senlabsai/aigon-pro 2>&1 | tail -3
-    else
-      npm install -g @senlabsai/aigon-pro 2>&1 | tail -3
-    fi
-    hash -r 2>/dev/null || true
-    pass "aigon-pro installed from registry"
-  fi
-
-  if [[ -n "$key" ]]; then
-    step "Activate Pro key"
-    aigon pro activate "$key"
-    pass "Pro key activated"
-  fi
-
-  step "Verify Pro status"
-  local status_out
-  status_out="$(aigon pro status 2>&1)"
-  echo "$status_out"
-
-  if echo "$status_out" | grep -q "aigon-pro.*✅ installed"; then
-    pass "aigon-pro package detected"
-  else
-    fail "aigon-pro package not detected — check install"
-  fi
-
-  if [[ -n "$key" ]]; then
-    if echo "$status_out" | grep -q "Pro key.*✅ present"; then
-      pass "Pro key present in config"
-    else
-      fail "Pro key not found in ~/.aigon/config.json"
-    fi
-
-    if echo "$status_out" | grep -q "Pro is active"; then
-      pass "Pro is active"
-    else
-      fail "Pro not active — key may be invalid"
-    fi
-  fi
-}
-
 clone_brewboard() {
   step "Clone brewboard seed repo (simulates user's existing project)"
   mkdir -p "$WORK_ROOT"
@@ -277,71 +208,6 @@ scenario_2() {
   echo "=== SCENARIO 2 COMPLETE ==="
 }
 
-preflight_pro_tarball() {
-  # Fail fast BEFORE any downloading — verify the Pro tarball exists and
-  # installs cleanly. This prevents wasting 15+ minutes on scenario 1
-  # only to discover the Pro tarball is broken at the end.
-  CURRENT_SCENARIO="S3 preflight"
-
-  local tgz="${AIGON_PRO_TGZ:-}"
-  if [[ -z "$tgz" ]]; then
-    tgz="$(ls "$REPO_ROOT"/../aigon-pro/senlabsai-aigon-pro-*.tgz 2>/dev/null | sort -V | tail -1)"
-  fi
-
-  if [[ -z "$tgz" ]]; then
-    fail "No aigon-pro tarball found at $REPO_ROOT/../aigon-pro/senlabsai-aigon-pro-*.tgz — run 'npm pack' in the aigon-pro repo first"
-  fi
-
-  step "Pre-flight: verify Pro tarball exists"
-  if [[ ! -f "$tgz" ]]; then
-    fail "Tarball not found: $tgz"
-  fi
-  pass "Tarball found: $(basename "$tgz")"
-
-  step "Pre-flight: verify tarball contents"
-  local contents
-  contents="$(tar -tzf "$tgz" 2>&1)"
-  if ! echo "$contents" | grep -q "dist/index.js"; then
-    fail "dist/index.js missing from tarball — run 'npm pack' in aigon-pro (prepublishOnly builds it)"
-  fi
-  if ! echo "$contents" | grep -q "package.json"; then
-    fail "package.json missing from tarball"
-  fi
-  pass "Tarball contains dist/index.js and package.json"
-
-  step "Pre-flight: dry-run install into temp dir"
-  local tmpdir
-  tmpdir="$(mktemp -d)"
-  # Install both aigon + aigon-pro into same prefix to mirror global install
-  local aigon_tgz
-  aigon_tgz="$(ls "$REPO_ROOT"/senlabsai-aigon-*.tgz 2>/dev/null | sort -V | tail -1)"
-  if [[ -n "$aigon_tgz" ]]; then
-    npm install --prefix "$tmpdir" --no-save "$aigon_tgz" "$tgz" > /dev/null 2>&1 || fail "Dry-run install failed — tarball may be corrupt or have broken dependencies. Fix before running the full scenario."
-  else
-    npm install --prefix "$tmpdir" --no-save "$tgz" > /dev/null 2>&1 || fail "Dry-run install failed — tarball may be corrupt or have broken dependencies. Fix before running the full scenario."
-  fi
-  rm -rf "$tmpdir"
-  pass "Dry-run install succeeded"
-}
-
-scenario_3() {
-  CURRENT_SCENARIO="S3: Full install + Pro"
-  step "Starting scenario: full install + Pro"
-
-  # Validate the Pro tarball BEFORE spending time on scenario 1 downloads
-  preflight_pro_tarball
-
-  # Run scenario 1 if prerequisites aren't in place
-  if ! command -v aigon &>/dev/null; then
-    scenario_1
-  fi
-
-  install_aigon_pro
-
-  echo ""
-  echo "=== SCENARIO 3 COMPLETE ==="
-}
-
 # ---------- CLI ----------
 
 SCENARIO=""
@@ -363,10 +229,8 @@ while [[ $# -gt 0 ]]; do
       echo "Scenarios:"
       echo "  1  Full install (prerequisites → agent CLIs → aigon → brewboard → install-agent → doctor)"
       echo "  2  Full install + server (scenario 1 + aigon server + dashboard HTTP check)"
-      echo "  3  Full install + Pro (scenario 1 + aigon-pro install + key activation + status check)"
-      echo "       Requires: AIGON_PRO_KEY=<key> and optionally AIGON_PRO_TGZ=<path-to-tgz>"
       echo ""
-      echo "  --all    Run scenarios 1, 2, 3 sequentially"
+      echo "  --all    Run scenarios 1, 2 sequentially"
       exit 0
       ;;
     *)
@@ -384,13 +248,11 @@ detect_platform
 if [[ "$ALL" == true ]]; then
   scenario_1
   scenario_2
-  scenario_3
 elif [[ -n "$SCENARIO" ]]; then
   case "$SCENARIO" in
     1) scenario_1 ;;
     2) scenario_2 ;;
-    3) scenario_3 ;;
-    *) fail "Unknown scenario: $SCENARIO. Available: 1, 2, 3" ;;
+    *) fail "Unknown scenario: $SCENARIO. Available: 1, 2" ;;
   esac
 else
   # Default: run scenario 1

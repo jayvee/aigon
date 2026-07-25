@@ -58,7 +58,7 @@
       - generic [ref=e407]
     - generic [ref=e412]:
       - generic [ref=e413]
-      - img "Aigon Pro — AI-powered insights and coaching dashboard" [ref=e425]
+      - img "Aigon Insights — AI-powered quality metrics and coaching dashboard" [ref=e425]
   - contentinfo [ref=e426]:
     - generic [ref=e427]:
       - paragraph [ref=e428]: Aigon

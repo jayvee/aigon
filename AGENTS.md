@@ -7,20 +7,15 @@
 - `aigon-cli.js` is dispatch only. Command handlers live in `lib/commands/`; shared behavior lives in focused `lib/` modules.
 - Read the active feature/research spec before implementation and follow its scope and validation instructions.
 - New to this codebase? Read `docs/code-tour.md` — annotated verbatim excerpts of the core logic in execution order.
-- Read `docs/architecture.md` when changing modules, workflow state, installation, agent sessions, the dashboard, or Pro integration.
+- Read `docs/architecture.md` when changing modules, workflow state, installation, agent sessions, or the dashboard.
 - Read `docs/testing.md` before choosing validation commands or adding tests.
 - Read `.aigon/docs/development_workflow.md` for the feature/research lifecycle and agent-status protocol.
 - Read `docs/seeds.md` before touching a seed repo. The two-repo seed architecture makes an ordinary-looking reset capable of wiping work.
 
-<!-- aigon-root:oss-pro-boundary -->
-## OSS / Pro Boundary
+<!-- aigon-root:public-repo -->
+## Public Repository
 
-This repository is public. OSS CLI source, dashboard code, end-user docs, and generic install tests belong here. Pro source, credential-bearing test infrastructure, beta rosters/keys, release rehearsals, and maintainer-only operations belong in `~/src/aigon-pro`.
-
-- Never write a literal Pro/beta key or credential here. Use placeholders or environment variables.
-- Files matching `*published-pro*`, `pro-test-*`, or `*-pro-key*` belong in `aigon-pro`.
-- Do not bypass the pre-commit sensitive-content guard. Move misplaced internal material to `aigon-pro` and flag the find.
-- For cross-repo changes, keep public stubs/contracts here and Pro implementation/internal tests there. Read `docs/architecture.md` § Aigon Pro first.
+This repository is public and everything in it ships to users. Never commit a literal credential, API key, or private roster — use placeholders or environment variables. `.githooks/pre-commit` blocks staged `.env` and `*.local` files; it is not a secret scanner, so the check is yours to make.
 
 <!-- aigon-root:target-zero-opinion -->
 ## Target Repositories: Zero Opinion

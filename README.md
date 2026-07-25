@@ -146,18 +146,6 @@ Full documentation lives at **[aigon.build/docs](https://www.aigon.build/docs)**
 - 📚 [CLI Reference](https://www.aigon.build/docs/reference/commands) — every command documented
 - 🔍 [Agents](https://www.aigon.build/docs/reference/agents) — Claude, Antigravity, Codex, Cursor, OpenCode, Kimi, Amp setup
 
-## Aigon Pro
-
-Aigon Pro is a commercial tier that extends the free workflow with three things the open-source side intentionally doesn't do:
-
-- **Autonomous orchestration** — AutoConductor runs implement → review → close unattended, so you can hand off a feature and come back to a merged PR
-- **Insights** — deeper analytics over your whole feature history: agent quality trends, cost per delivered change, token efficiency over time, agent-vs-agent comparisons
-- **AI-powered coaching** — recommendations based on your workflow patterns, so the system learns what "shipping well" looks like for your team
-
-Aigon Pro is in **private beta — invitation only**. Email [john@aigon.build](mailto:john@aigon.build) with your GitHub username to request access. Once you have a key, the [installation guide](https://www.aigon.build/docs/guides/pro-installation) walks through setup; the [Pro page](https://www.aigon.build/pro) has the full feature overview.
-
-The free tier — Drive mode, manual Fleet, the dashboard, interactive evaluation/review, telemetry, and basic reports — is complete and stays free and open source.
-
 ## Community and support
 
 - 💬 [GitHub Discussions](https://github.com/jayvee/aigon/discussions) — questions, workflows, design ideas
