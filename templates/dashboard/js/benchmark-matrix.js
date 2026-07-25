@@ -799,13 +799,6 @@ function mount(section, getRepoPath) {
         fetch(url, { cache: 'no-store' })
             .then((r) => r.json().then((d) => ({ ok: r.ok, status: r.status, d })))
             .then(({ ok, status, d }) => {
-                if (d && d.proRequired) {
-                    show(
-                        'Performance benchmarks are a <strong>Pro</strong> feature. Install <code>@aigon/pro</code> and restart the dashboard.',
-                        true,
-                    );
-                    return;
-                }
                 if (!ok) {
                     show('Failed to load: ' + esc(d.error || ('HTTP ' + status)), true);
                     return;

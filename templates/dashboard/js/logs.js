@@ -3,8 +3,7 @@
 import { handleCloseWithAgent } from './pipeline.js';
 import { openDrawer } from './spec-drawer.js';
 import { lsKey, state } from './state.js';
-import { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildProGatedChart, buildProGatedStatCard, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon } from './statistics.js';
-import { isProActive } from './store.js';
+import { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon } from './statistics.js';
 import { escHtml, logsDateFmt } from './utils.js';
     // ── All Items view ────────────────────────────────────────────────────────
 
@@ -943,7 +942,6 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push(`<div class="stats-tab-content" data-tab="summary"${activeSubTab === 'summary' ? '' : ' data-hidden'}>`);
       html.push('<div class="stats-cards">');
       const trend30 = analytics.volume && analytics.volume.trend30d;
-      const _proActive = typeof isProActive === 'function' ? isProActive() : true;
 
       // ── Free stat cards ──
       html.push(buildStatCard('Features Completed', String(totalCompleted),
@@ -960,8 +958,8 @@ import { escHtml, logsDateFmt } from './utils.js';
 
       html.push('</div>'); // end free stats-cards grid
 
-      // ── Pro stat cards (grouped with section title) ──
-      html.push('<div class="stats-section-title stats-section-title--spaced">Agent Quality' + (_proActive ? '' : ' <span class="pro-badge-inline">PRO</span>') + '</div>');
+      // ── Agent-quality stat cards (grouped with section title) ──
+      html.push('<div class="stats-section-title stats-section-title--spaced">Agent Quality</div>');
       html.push('<div class="stats-cards">');
       // Commits per feature — median
       const commitsPerFeatureArr = Object.values(featureCommitMap).map(v => v.count).filter(c => c > 0).sort((a, b) => a - b);
@@ -978,23 +976,14 @@ import { escHtml, logsDateFmt } from './utils.js';
       const fixCommitCount = filteredCommits.filter(c => fixRegex.test(c.message || '')).length;
       const reworkRatio = commitTotal > 0 ? fixCommitCount / commitTotal : null;
 
-      if (_proActive) {
-        html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
-          'Percentage of features that passed evaluation on the first attempt without needing rework.', { pro: true }));
-        html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
-          null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
-          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.', { pro: true }));
-        html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
-          null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
-          'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.', { pro: true }));
-      } else {
-        html.push(buildProGatedStatCard('First-Pass Rate', 'summary-first-pass',
-          'Percentage of features that passed evaluation on the first attempt without needing rework.'));
-        html.push(buildProGatedStatCard('Commits / Feature', 'summary-cpf',
-          'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
-        html.push(buildProGatedStatCard('Rework Ratio', 'summary-rework',
-          'Percentage of commits that are fixes or rework. Lower is better.'));
-      }
+      html.push(buildStatCard('First-Pass Rate', fmtPct(firstPassRate), null, null,
+        'Percentage of features that passed evaluation on the first attempt without needing rework.'));
+      html.push(buildStatCard('Commits / Feature', cpfMedian !== null ? String(cpfMedian) : '—',
+        null, cpfAvg !== null ? `avg ${cpfAvg}` : null,
+        'Median number of commits per feature. Lower suggests more focused, single-pass implementations.'));
+      html.push(buildStatCard('Rework Ratio', reworkRatio !== null ? fmtPct(reworkRatio) : '—',
+        null, fixCommitCount > 0 ? `${fixCommitCount} fix commits` : null,
+        'Percentage of commits that are fixes or rework (messages starting with fix:, fixup, or bugfix). Lower is better — means more work lands correctly on the first pass.'));
       html.push('</div>');
 
       // Quality & Speed stats
@@ -1050,8 +1039,7 @@ import { escHtml, logsDateFmt } from './utils.js';
         html.push('<div class="stats-section-title stats-section-title--spaced-sm">Agent Leaderboard</div>');
         html.push('<div class="stats-block stats-block--scroll">');
         html.push('<table class="stats-leaderboard">');
-        const proTh = ' <span class="pro-badge-inline">PRO</span>';
-        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins' + proTh + '</th><th>Fleet win %' + proTh + '</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
+        html.push('<thead><tr><th>Agent</th><th>Features</th><th>Eval wins</th><th>Fleet win %</th><th>Cycle time</th><th>First-pass</th></tr></thead>');
         html.push('<tbody>');
 
         allAgentIds
@@ -1070,13 +1058,8 @@ import { escHtml, logsDateFmt } from './utils.js';
             html.push('<tr>');
             html.push(`<td><span class="agent-mono">${escHtml(agentId)}</span></td>`);
             html.push(`<td>${d.completed}</td>`);
-            if (_proActive) {
-              html.push(`<td>${ev ? ev.wins : '—'}</td>`);
-              html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
-            } else {
-              html.push('<td class="leaderboard-pro-cell">PRO</td>');
-              html.push('<td class="leaderboard-pro-cell">PRO</td>');
-            }
+            html.push(`<td>${ev ? ev.wins : '—'}</td>`);
+            html.push(`<td>${winShare !== null ? `<span class="win-rate">${fmtPct(winShare)}</span>` : '—'}</td>`);
             html.push(`<td>${fmtHours(avgCycle)}</td>`);
             html.push(`<td>${fmtPct(fpRate)}</td>`);
             html.push('</tr>');
@@ -1167,54 +1150,39 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push('<div class="chart-canvas-wrap"><canvas id="commits-chart-canvas"></canvas></div>');
       html.push('</div>');
 
-      // ── Pro charts: Cycle Time, CPF, Rework Ratio ──
-      const proBadgeHtml = '<span class="pro-badge-inline">PRO</span>';
-      if (_proActive) {
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Median Cycle Time ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
-        html.push('<span id="ct-nav-controls" class="flex-row-gap-sm">');
-        html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
-        html.push('<span id="ct-nav-range" class="vol-nav-range"></span>');
-        html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
-        html.push('</span>');
-        html.push('</div>');
-        html.push('<div class="chart-canvas-wrap"><canvas id="cycle-time-chart-canvas"></canvas></div>');
-        html.push('</div>');
+    // ── Quality charts: Cycle Time, CPF, Rework Ratio, Tokens ──
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Median Cycle Time ' + ' <span class="stat-info" data-stat-tooltip="Median wall-clock time from feature-start to feature-close per period. Outliers above P95 are excluded. Scale auto-switches between hours and minutes.">?</span></div>');
+      html.push('<span id="ct-nav-controls" class="flex-row-gap-sm">');
+      html.push('<button id="ct-nav-prev" class="vol-nav-btn" title="Earlier">&#8592;</button>');
+      html.push('<span id="ct-nav-range" class="vol-nav-range"></span>');
+      html.push('<button id="ct-nav-next" class="vol-nav-btn" title="Later">&#8594;</button>');
+      html.push('</span>');
+      html.push('</div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="cycle-time-chart-canvas"></canvas></div>');
+      html.push('</div>');
 
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Commits per Feature ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
-        html.push('</div>');
-        html.push('<div class="chart-canvas-wrap"><canvas id="cpf-chart-canvas"></canvas></div>');
-        html.push('</div>');
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Commits per Feature ' + ' <span class="stat-info" data-stat-tooltip="Median number of commits per feature completed in each period. Lower values suggest more focused, single-pass implementations. Trending down means features are getting tighter.">?</span></div>');
+      html.push('</div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="cpf-chart-canvas"></canvas></div>');
+      html.push('</div>');
 
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Rework Ratio ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
-        html.push('</div>');
-        html.push('<div class="chart-canvas-wrap"><canvas id="rework-chart-canvas"></canvas></div>');
-        html.push('</div>');
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Rework Ratio ' + ' <span class="stat-info" data-stat-tooltip="Percentage of commits that are fixes (messages starting with fix:, fixup, or bugfix). Lower is better — means agents produce correct code on the first pass. Trending down indicates improving code quality.">?</span></div>');
+      html.push('</div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="rework-chart-canvas"></canvas></div>');
+      html.push('</div>');
 
-        html.push('<div class="volume-chart-wrap">');
-        html.push('<div class="volume-chart-header">');
-        html.push('<div class="volume-chart-title">Tokens Used ' + proBadgeHtml + ' <span class="stat-info" data-stat-tooltip="Total billable tokens consumed per period. Correlate with Features Completed above to see token efficiency trends.">?</span></div>');
-        html.push('</div>');
-        html.push('<div class="chart-canvas-wrap"><canvas id="token-chart-canvas"></canvas></div>');
-        html.push('</div>');
-      } else {
-        // Pro-gated: show blurred SVG placeholders for the 3 Pro charts
-        html.push(buildProGatedChart('Median Cycle Time', 'chart-cycle-time',
-          'Median wall-clock time from feature-start to feature-close per period.'));
-        html.push(buildProGatedChart('Commits per Feature', 'chart-cpf',
-          'Median number of commits per feature completed in each period.'));
-        html.push(buildProGatedChart('Rework Ratio', 'chart-rework',
-          'Percentage of commits that are fixes. Lower is better.'));
-        html.push(buildProGatedChart('Tokens Used', 'chart-tokens',
-          'Total billable tokens consumed per period. Compare with Features Completed to track token efficiency.'));
-        html.push('<div class="pro-footer-note">Pro features — coming later. Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code>.</div>');
-      }
-
+      html.push('<div class="volume-chart-wrap">');
+      html.push('<div class="volume-chart-header">');
+      html.push('<div class="volume-chart-title">Tokens Used ' + ' <span class="stat-info" data-stat-tooltip="Total billable tokens consumed per period. Correlate with Features Completed above to see token efficiency trends.">?</span></div>');
+      html.push('</div>');
+      html.push('<div class="chart-canvas-wrap"><canvas id="token-chart-canvas"></canvas></div>');
+      html.push('</div>');
       html.push('</div>'); // end charts tab
 
       // ═══ DETAILS TAB ═══
@@ -1224,10 +1192,8 @@ import { escHtml, logsDateFmt } from './utils.js';
       html.push('<div class="stats-section-title stats-section-title--spaced-sm">Features</div>');
       html.push('<div class="stats-block stats-block--scroll"><div id="stats-feature-list"></div></div>');
 
-      // Commit table filters (Pro-gated: type + agent filters)
       html.push('<div class="stats-section-title stats-section-title--spaced">Commits</div>');
-      const filterGatedClass = _proActive ? '' : ' pro-gated-filters';
-      html.push(`<div class="stats-toolbar stats-toolbar--flush${filterGatedClass}">`);
+      html.push('<div class="stats-toolbar stats-toolbar--flush">');
       html.push('<label class="form-label--toolbar">Type:</label>');
       html.push('<select class="stats-select" id="commit-type-filter">');
       const ctf = statsState.commitTypeFilter || 'all';
@@ -1324,19 +1290,17 @@ import { escHtml, logsDateFmt } from './utils.js';
       {
         const rawVolSeries = buildVolumeSeries(filteredFeatures, statsState.volumeGranularity);
         const rawCommitSeries = buildCommitSeries(filteredCommits, statsState.volumeGranularity);
-        const rawCtSeries = _proActive ? buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity) : [];
-        const rawCpfSeries = _proActive ? buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity) : [];
-        const rawReworkSeries = _proActive ? buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity) : [];
-        const rawTokenSeries = _proActive ? buildTokenSeries(filteredFeatures, statsState.volumeGranularity) : [];
+        const rawCtSeries = buildCycleTimeSeries(filteredFeatures, statsState.volumeGranularity);
+        const rawCpfSeries = buildCommitsPerFeatureSeries(filteredFeatures, featureCommitMap, statsState.volumeGranularity);
+        const rawReworkSeries = buildReworkRatioSeries(filteredCommits, statsState.volumeGranularity);
+        const rawTokenSeries = buildTokenSeries(filteredFeatures, statsState.volumeGranularity);
         const [alignedVol, alignedCommit, alignedCt, alignedCpf, alignedRework, alignedToken] = alignAllSeries(rawVolSeries, rawCommitSeries, rawCtSeries, rawCpfSeries, rawReworkSeries, rawTokenSeries);
         renderVolumeChart(alignedVol, statsState.volumeGranularity);
         renderCommitChart(alignedCommit, statsState.volumeGranularity);
-        if (_proActive) {
-          renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
-          renderCpfChart(alignedCpf, statsState.volumeGranularity);
-          renderReworkChart(alignedRework, statsState.volumeGranularity);
-          renderTokenChart(alignedToken, statsState.volumeGranularity);
-        }
+        renderCycleTimeChart(alignedCt, statsState.volumeGranularity);
+        renderCpfChart(alignedCpf, statsState.volumeGranularity);
+        renderReworkChart(alignedRework, statsState.volumeGranularity);
+        renderTokenChart(alignedToken, statsState.volumeGranularity);
       }
 
       // Hide inactive tabs now that charts are rendered
@@ -1359,10 +1323,10 @@ import { escHtml, logsDateFmt } from './utils.js';
           if (statsState.subTab === 'charts') {
             if (statsState.volumeChart) { statsState.volumeChart.resize(); applyVolumeWindow(); }
             if (statsState.commitChart) { statsState.commitChart.resize(); applyCommitWindow(); }
-            if (_proActive && statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
-            if (_proActive && statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
-            if (_proActive && statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
-            if (_proActive && statsState.tokenChart) { statsState.tokenChart.resize(); applyTokenWindow(); }
+            if (statsState.cycleTimeChart) { statsState.cycleTimeChart.resize(); applyCycleTimeWindow(); }
+            if (statsState.cpfChart) { statsState.cpfChart.resize(); applyCpfWindow(); }
+            if (statsState.reworkChart) { statsState.reworkChart.resize(); applyReworkWindow(); }
+            if (statsState.tokenChart) { statsState.tokenChart.resize(); applyTokenWindow(); }
           }
         };
       });
@@ -1458,20 +1422,6 @@ import { escHtml, logsDateFmt } from './utils.js';
       // Feature list
       renderFeatureList();
 
-      // Load pro-reports.js when Pro is active — replaces data-pro-slot placeholders
-      if (_proActive && !globalThis._proReportsLoaded) {
-        import('/js/pro-reports.js')
-          .then((mod) => {
-            globalThis._proReportsLoaded = true;
-            const renderProReports = mod.renderProReports || globalThis.renderProReports;
-            if (typeof renderProReports === 'function') {
-              renderProReports(container, statsState.data);
-            }
-          })
-          .catch(() => {});
-      } else if (_proActive && typeof globalThis.renderProReports === 'function') {
-        globalThis.renderProReports(container, statsState.data);
-      }
     }
 
 // ── ESM exports (F623) ──

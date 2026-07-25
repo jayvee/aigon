@@ -2,7 +2,6 @@
 
 import { buildInsightsMetricsSection, initAmpTokenCharts, loadInsights } from '../logs.js';
 import { loadAnalytics, statsState } from '../statistics.js';
-import { isProActive } from '../store.js';
 import { escHtml, relTime } from '../utils.js';
 export function createInsightsView() {
   let mounted = false;
@@ -11,11 +10,6 @@ export function createInsightsView() {
     const embedded = opts && opts.embedded;
     const c = document.getElementById('insights-view');
     if (!c) return;
-
-    if (!isProActive()) {
-      c.innerHTML = '<div class="amp-empty insights-empty"><div class="insights-empty-title">Insights is a Pro feature — coming later</div><div class="insights-empty-body">AI-powered observations, coaching, and quality analytics. Pro is in development and not yet available for purchase.</div><div class="insights-empty-body">Free alternative: <code>aigon board</code>, <code>aigon commits</code>, <code>aigon feature-status</code></div></div>';
-      return;
-    }
 
     if (!statsState.data) {
       c.innerHTML = '<div class="amp-empty insights-loading"><span class="toast-spinner"></span>Loading insights…</div>';
@@ -71,9 +65,9 @@ export function createInsightsView() {
           '</article>';
       }).join('');
 
-      let coachingHtml = '<div class="amp-insights-gated">AI coaching is available for Pro tier with <code>aigon insights --coach</code>.</div>';
+      let coachingHtml = '<div class="amp-insights-gated">Run <code>aigon insights --coach</code> for AI coaching.</div>';
       if (payload.coaching && payload.coaching.ok && Array.isArray(payload.coaching.recommendations) && payload.coaching.recommendations.length > 0) {
-        coachingHtml = '<div class="amp-insights-coaching-title">AI Coaching (Pro)</div><ol class="amp-insights-coaching-list">' + payload.coaching.recommendations.slice(0, 5).map(function(rec) { return '<li>' + escHtml(rec) + '</li>'; }).join('') + '</ol>';
+        coachingHtml = '<div class="amp-insights-coaching-title">AI Coaching</div><ol class="amp-insights-coaching-list">' + payload.coaching.recommendations.slice(0, 5).map(function(rec) { return '<li>' + escHtml(rec) + '</li>'; }).join('') + '</ol>';
       } else if (payload.coaching && payload.coaching.error && !payload.coaching.gated) {
         coachingHtml = '<div class="amp-insights-gated">AI coaching unavailable: ' + escHtml(payload.coaching.error) + '</div>';
       }

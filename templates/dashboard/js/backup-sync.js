@@ -116,14 +116,6 @@ function renderBackupSync() {
     fetch('/api/backup/status', { cache: 'no-store' })
         .then((r) => r.json().then((d) => ({ ok: r.ok, status: r.status, d })))
         .then(({ ok, status, d }) => {
-            if (status === 404 || (d && d.error && String(d.error).toLowerCase().includes('not found'))) {
-                host.innerHTML =
-                    '<div class="amp-empty" style="padding:20px 0;text-align:center">' +
-                    '<div style="font-size:15px;font-weight:600;margin-bottom:8px">Aigon Sync <span style="font-size:10px;opacity:0.7">(Pro)</span></div>' +
-                    '<div style="color:var(--text-secondary);font-size:12px">Install <code>@aigon/pro</code>, run ' +
-                    '<code>npm link @aigon/pro</code> from this repo, restart <code>aigon server</code>, then refresh.</div></div>';
-                return;
-            }
             if (!ok) throw new Error((d && d.error) || ('HTTP ' + status));
             renderStatus(host, d);
         })

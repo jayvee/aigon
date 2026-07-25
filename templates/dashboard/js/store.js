@@ -189,28 +189,6 @@ function deepCloneData(data) {
   return data == null ? data : JSON.parse(JSON.stringify(data));
 }
 
-function getForceProOverride() {
-  const params = new URLSearchParams(location.search);
-  if (!params.has('forcePro')) return null;
-  const val = params.get('forcePro');
-  if (val === '0' || val === 'false') return false;
-  if (val === '1' || val === 'true') return true;
-  return null;
-}
-
-export function applyForceProOverride(data) {
-  if (!data) return data;
-  const override = getForceProOverride();
-  if (override === false) data.proAvailable = false;
-  return data;
-}
-
-export function isProActive() {
-  const override = getForceProOverride();
-  if (override === false) return false;
-  return !!(_rawState.data && _rawState.data.proAvailable);
-}
-
 function normalizeRepoPath(repoPath) {
   if (!repoPath) return '';
   return String(repoPath).replace(/^\/private\/var\//, '/var/');
@@ -299,7 +277,7 @@ function pruneOptimisticOverlays(raw) {
 }
 
 function assignDataFromRaw(rawNext, { evaluateSettled = true } = {}) {
-  const raw = applyForceProOverride(rawNext);
+  const raw = rawNext;
   if (evaluateSettled) pruneOptimisticOverlays(raw);
   _lastRawData = raw;
   const draft = deepCloneData(raw);
@@ -565,5 +543,5 @@ document.addEventListener('alpine:init', () => {
   globalThis.state = state;
 });
 
-_lastRawData = applyForceProOverride(INITIAL_DATA);
+_lastRawData = INITIAL_DATA;
 assignDataFromRaw(_lastRawData, { evaluateSettled: false });

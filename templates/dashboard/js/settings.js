@@ -216,7 +216,7 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       section.appendChild(wrap);
     }
 
-    // Pro sync UI (`renderBackupSync` from @aigon/pro) targets `#backup-sync-view`, now
+    // The sync UI (`renderBackupSync`) targets `#backup-sync-view`, now
     // embedded in Settings → Aigon Sync (feature 236 batch).
 
     function _renderSyncPanel_REMOVED(scope, host) {
@@ -379,7 +379,7 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
     }
 
     // renderSyncPanels removed with feature 236; Backup & Sync now lives in
-    // its own top-level dashboard tab populated by @aigon/pro.
+    // its own top-level dashboard tab.
 
     function readConductorReposFromGlobalConfig_client() {
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
@@ -493,15 +493,11 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       content.className = 'settings-content';
 
       const sections = [];
-      function addSection(id, label, title, description, sectionOpts) {
+      function addSection(id, label, title, description) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'settings-nav-btn';
-        if (sectionOpts && sectionOpts.proBadge) {
-          btn.innerHTML = escHtml(label) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
-        } else {
-          btn.textContent = label;
-        }
+        btn.textContent = label;
         btn.onclick = () => {
           setActiveSection(id);
           scrollSettingsSection(id);
@@ -514,11 +510,7 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
         section.dataset.settingsSection = id;
 
         const heading = document.createElement('h3');
-        if (sectionOpts && sectionOpts.proBadge) {
-          heading.innerHTML = escHtml(title) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
-        } else {
-          heading.textContent = title;
-        }
+        heading.textContent = title;
         section.appendChild(heading);
 
         if (description) {
@@ -1313,10 +1305,10 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       const inputWasFocused = existingInput && document.activeElement === existingInput;
       const inputValue = existingInput ? existingInput.value : '';
 
-      const detachedProViews = {};
+      const detachedEngineViews = {};
       ['backup-sync-view', 'scheduled-features-view'].forEach(function (vid) {
         const el = document.getElementById(vid);
-        if (el && el.parentNode) detachedProViews[vid] = el.parentNode.removeChild(el);
+        if (el && el.parentNode) detachedEngineViews[vid] = el.parentNode.removeChild(el);
       });
 
       const reposRoot = document.getElementById('settings-view');
@@ -1437,15 +1429,15 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       section.appendChild(form);
       shell.observeSection(section);
 
-      // ── Aigon Sync (Pro) — backup-sync-view filled by @aigon/pro dashboard JS (Insights stays a top-level tab)
-      const aigonSyncSection = shell.addSection('aigon-sync', 'Aigon Sync', 'Aigon Sync', 'Remote push/pull to a GitHub configuration repository (Pro). You can always back up this machine with git, archives, or clones — that does not require Pro.', { proBadge: true });
-      if (detachedProViews['backup-sync-view']) {
-        detachedProViews['backup-sync-view'].style.cssText = 'padding:0 0 28px';
-        aigonSyncSection.appendChild(detachedProViews['backup-sync-view']);
+      // ── Aigon Sync — #backup-sync-view is filled by js/backup-sync.js (Insights stays a top-level tab)
+      const aigonSyncSection = shell.addSection('aigon-sync', 'Aigon Sync', 'Aigon Sync', 'Remote push/pull to a GitHub configuration repository. You can always back up this machine with git, archives, or clones as well.');
+      if (detachedEngineViews['backup-sync-view']) {
+        detachedEngineViews['backup-sync-view'].style.cssText = 'padding:0 0 28px';
+        aigonSyncSection.appendChild(detachedEngineViews['backup-sync-view']);
       }
 
       // ── Schedule section (deferred kickoffs + Pro recurring UI) ─────────────
-      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).', { proBadge: true });
+      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).');
       const scheduleToolbar = document.createElement('div');
       scheduleToolbar.className = 'settings-schedule-toolbar';
       const schedRepoLabel = document.createElement('span');
@@ -1577,9 +1569,9 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       schedRefresh.onclick = () => { loadScheduleJobsTable(); };
       shell.observeSection(scheduleSection);
       loadScheduleJobsTable();
-      if (detachedProViews['scheduled-features-view']) {
-        detachedProViews['scheduled-features-view'].style.cssText = 'padding:12px 0 28px';
-        scheduleSection.appendChild(detachedProViews['scheduled-features-view']);
+      if (detachedEngineViews['scheduled-features-view']) {
+        detachedEngineViews['scheduled-features-view'].style.cssText = 'padding:12px 0 28px';
+        scheduleSection.appendChild(detachedEngineViews['scheduled-features-view']);
       }
 
       // ── Notifications section ─────────────────────────────────────────────
@@ -2150,7 +2142,7 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
       }
 
       // Version section
-      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed Aigon CLI version, npm registry update status, and Aigon Pro install + activation state.');
+      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed Aigon CLI version and npm registry update status.');
       const uc = (state.data || {}).updateCheck;
       const stateLabels = { latest: 'up to date', 'update-available': 'update available', 'prerelease-available': 'prerelease available', unavailable: 'unavailable' };
       const stateCls = { latest: 'state-latest', 'update-available': 'state-update', 'prerelease-available': 'state-prerelease', unavailable: 'state-unavailable' };
@@ -2191,51 +2183,6 @@ import { mountBenchmarkMatrix } from './benchmark-matrix.js';
         checking.className = 'version-row';
         checking.innerHTML = '<span class="version-label">Status</span><span class="version-value version-value--muted">Checking…</span>';
         vPanel.appendChild(checking);
-      }
-
-      // ── Aigon Pro ────────────────────────────────────────────────
-      const proHeader = document.createElement('div');
-      proHeader.className = 'version-subheader';
-      proHeader.textContent = 'Aigon Pro';
-      vPanel.appendChild(proHeader);
-      const proStatus = (state.data || {}).proStatus || null;
-      if (!proStatus) {
-        vPanel.appendChild(vRow('Status', 'Checking…', { muted: true }));
-      } else {
-        // Package @senlabsai/aigon-pro: installed (vX.Y.Z) / not installed
-        const pkgValue = proStatus.packageInstalled
-          ? (proStatus.version ? '✅ installed (v' + proStatus.version + ')' : '✅ installed')
-          : '❌ not installed';
-        vPanel.appendChild(vRow('Package @senlabsai/aigon-pro', pkgValue));
-        const keyValue = proStatus.keyPresent ? '✅ present' : '❌ not set';
-        vPanel.appendChild(vRow('Pro key (~/.aigon/config.json)', keyValue));
-
-        let proBadgeClass = 'state-unavailable';
-        let proBadgeText = 'not installed';
-        if (proStatus.active) {
-          proBadgeClass = 'state-latest';
-          proBadgeText = 'active';
-        } else if (proStatus.packageInstalled && !proStatus.keyPresent) {
-          proBadgeClass = 'state-update';
-          proBadgeText = 'installed (not activated)';
-        } else if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
-          proBadgeClass = 'state-update';
-          proBadgeText = 'installed (inactive in this process)';
-        }
-        vPanel.appendChild(vBadgeRow('Status', proBadgeClass, proBadgeText));
-
-        if (!proStatus.packageInstalled) {
-          vPanel.appendChild(vRow('Install', 'npm install -g @senlabsai/aigon-pro'));
-        }
-        if (proStatus.packageInstalled && !proStatus.keyPresent) {
-          vPanel.appendChild(vRow('Activate', 'aigon pro activate <your-key>'));
-        }
-        if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
-          vPanel.appendChild(vRow('Note', 'Restart the dashboard: aigon server restart'));
-        }
-        if (proStatus.resolvedPath) {
-          vPanel.appendChild(vRow('Resolved from', proStatus.resolvedPath, { muted: true }));
-        }
       }
 
       versionSection.appendChild(vPanel);
