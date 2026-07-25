@@ -27,6 +27,18 @@ const config = {
         destination: "/docs/guides/autonomous-mode",
         permanent: true,
       },
+      // Aigon Pro was merged into the open-source product; these URLs were
+      // public and indexed, so they redirect rather than 404.
+      {
+        source: "/pro",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/docs/guides/pro-installation",
+        destination: "/docs/getting-started",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {
@@ -34,10 +46,6 @@ const config = {
       {
         source: "/",
         destination: "/home.html",
-      },
-      {
-        source: "/pro",
-        destination: "/pro.html",
       },
     ];
   },
