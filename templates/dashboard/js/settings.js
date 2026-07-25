@@ -1299,7 +1299,6 @@ import { escHtml, relTime, showToast } from './utils.js';
       captureSettingsUiState();
       const renderToken = ++settingsUiState.renderToken;
       const scrollTop = captureDetailScrollTop();
-      document.getElementById('monitor-summary').style.display = 'none';
       document.getElementById('repo-header').style.display = 'none';
       document.getElementById('repo-sidebar').style.display = 'none';
       document.getElementById('repo-select-mobile').style.display = 'none';
