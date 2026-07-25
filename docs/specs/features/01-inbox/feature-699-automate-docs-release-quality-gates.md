@@ -45,12 +45,28 @@ Preserve the current Aigon Pro terminology and classifications until the separat
 - [ ] Existing hand-authored guidance remains canonical. Any generator creates scaffolds or
       a drift report and never overwrites enriched MDX pages.
 - [ ] `site/scripts/gen-commands.js` is removed or corrected to target `site/content/reference`
-      and use the executable inventory rather than slash-template metadata.
+      and use the executable inventory rather than slash-template metadata. Confirmed broken at
+      review: `OUTPUT_DIR` (`gen-commands.js:24`) points at `../content/docs/reference/commands`,
+      but the real pages live at `site/content/reference/commands` — so running it today writes
+      a parallel tree nobody serves. Its input (`TEMPLATES_DIR`, `:23`) is
+      `templates/generic/commands`, i.e. slash-command templates rather than CLI handlers,
+      which is the wrong source of truth as the spec says. Removal is the cleaner option.
 
 ### Side-effect-free help
 
+> **Spec review — this section is a live bug and should not be third in line.** Confirmed:
+> `aigon-cli.js:258` only treats `--help` as help when it is the *resolved command*, i.e. the
+> first argument. Anything later in argv is passed through as a normal parameter, so
+> `aigon feature-create --help` creates a feature literally named `--help`. Reproduced
+> incidentally during review: `aigon feature-spec-review-record --help` responded
+> `❌ Could not resolve feature spec "--help"` — treating the flag as a spec identifier.
+>
+> This is the most user-visible defect in the whole set and it has **zero coupling** to the
+> 108-page docs rewrite it currently sits behind. See Dependencies.
+
 - [ ] Global argument handling intercepts `--help`/`-h` before command execution for every
-      public command and subcommand.
+      public command and subcommand — the guard lives in `aigon-cli.js` dispatch (widen the
+      `resolvedCommand` check at `:258` to scan argv) so no individual handler can forget it.
 - [ ] `aigon feature-create --help`, `aigon setup --help`, lifecycle mutations, server
       commands, and Pro stubs return usage with no file, workflow, config, process, or network
       changes.
@@ -97,6 +113,11 @@ Preserve the current Aigon Pro terminology and classifications until the separat
       heavy site build to run repeatedly during normal implementation.
 - [ ] Focused regression tests consolidate existing command/help/docs checks where possible;
       every new test has `// REGRESSION:` and `scripts/check-test-budget.sh` remains green.
+- [ ] **Do not assume test-budget headroom.** The suite was already 30 LOC over ceiling at
+      review time (17255 vs 17225) with zero slack, and all three specs in this set add tests
+      against that one shared ceiling. F697 has been made to own the pre-existing overage, but
+      as the last feature in the chain this one inherits whatever F697 and F698 left. Re-run
+      `check-test-budget.sh` *before* planning new tests and consolidate first if it is red.
 - [ ] The repository release documentation identifies the final order: scoped validation,
       deploy gate, docs build/check, clean package install/setup smoke, full release gate,
       version/tag/publish.
@@ -137,8 +158,23 @@ workflow state.
 
 ## Dependencies
 
-- `refresh-public-docs-for-current-oss` — the checker should lock in a corrected baseline,
-  not require a large allowlist for known stale content.
+- `refresh-public-docs-for-current-oss` — the **checker** should lock in a corrected baseline,
+  not require a large allowlist for known stale content. That reasoning is sound and applies to
+  the "Documentation checker" and "Machine-readable and visual release artifacts" sections.
+
+### Two sections do not depend on F698 — author decision needed
+
+The dependency is real for the checker but **backwards** for these:
+
+- **Side-effect-free help.** A CLI argv-parsing bug. Nothing about it touches docs content, and
+  it is the cheapest, most user-visible fix in the set. Startable immediately.
+- **Removing `site/scripts/gen-commands.js`.** The script already writes to a path nobody
+  serves; deleting it does not need a corrected docs baseline to precede it.
+
+As with F698, `depends_on:` was left untouched — resequencing the set is the author's call.
+Recommend hoisting the help guard so it lands before or alongside F697 rather than waiting on
+a 108-page rewrite. If the author prefers to keep the set strictly serial, that is a legitimate
+choice, but the help bug then ships to users two features later than it needs to.
 
 ## Out of Scope
 
@@ -150,8 +186,16 @@ workflow state.
 
 ## Open Questions
 
+Resolved by spec review (reopen if you disagree):
+
+- ~~Should `docs:check` run in `prepublishOnly`, `test:release`, or both?~~ → **Both, via one
+  shared script.** Two entry points calling one implementation cannot drift; two
+  implementations can. This also satisfies the existing criterion about a single stable
+  docs-check entry point.
+
+Still needs the author's call:
+
 - Should command references remain one page per command or group tightly related subcommands?
-- Should `docs:check` run in `prepublishOnly`, `test:release`, or both through one shared script?
 - What body-size limit should `llms-full.txt` enforce to remain useful without truncation?
 
 ## Related
