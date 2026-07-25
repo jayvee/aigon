@@ -1,13 +1,9 @@
+#!/usr/bin/env node
 'use strict';
 
 const assert = require('assert');
+const { test, report } = require('../_helpers');
 const state = require('../../lib/onboarding/state');
-
-let failed = 0;
-function test(name, fn) {
-    try { fn(); console.log(`  ✓ ${name}`); }
-    catch (error) { failed++; console.error(`  ✗ ${name}\n    ${error.message}`); }
-}
 
 // REGRESSION: skipped and failed setup steps must remain visible and resumable.
 test('selects skipped before failed and preserves completed work on resume', () => {
@@ -69,9 +65,8 @@ test('wizard shouldRunStep survives a removed startStep', () => {
     assert.strictEqual(shouldRunStep('prereqs', 'pro', legacy, options), false);
     assert.strictEqual(shouldRunStep('agents', 'pro', legacy, options), false);
     assert.strictEqual(shouldRunStep('seed-repo', 'pro', legacy, options), true);
-    // The normal path still gates on ordering.
     assert.strictEqual(shouldRunStep('seed-repo', 'server', legacy, options), false);
     assert.strictEqual(shouldRunStep('server', 'server', legacy, options), true);
 });
 
-if (failed) process.exit(1);
+report();
