@@ -94,7 +94,7 @@ test('safeSetAutoSessionExists preserves paused-on-failure when tmux wait-loop i
             status: view.status,
             isComplete: false,
             autonomous: view,
-        }, { requiresPro: false, proAvailable: true });
+        });
         assert.ok(actions.some((a) => a.action === 'set-autonomous-resume'), 'expected resume when paused with live tmux');
         // REGRESSION: a paused conductor must let the operator end automation
         // without resetting its current feature, so manual close/revision work remains possible.
@@ -116,7 +116,7 @@ test('missing running set conductor becomes interrupted with recovery actions', 
     assert.strictEqual(reconciled.running, false);
     assert.strictEqual(reconciled.reason, 'set-auto-session-lost');
     const view = safeSetAutoSessionExists('docs-release-readiness', repo);
-    const actions = buildSetValidActions({ slug: 'docs-release-readiness', isComplete: false, autonomous: view }, { requiresPro: false, proAvailable: true });
+    const actions = buildSetValidActions({ slug: 'docs-release-readiness', isComplete: false, autonomous: view });
     assert.deepStrictEqual(actions.filter(a => ['set-autonomous-resume', 'set-autonomous-start', 'set-autonomous-stop'].includes(a.action)).map(a => a.label), ['Resume (choose agents…)', 'Take over manually', 'Resume (same agents)']);
 }));
 

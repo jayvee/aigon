@@ -35,39 +35,27 @@ test('collectRepoStatus decorates feature-set cards with pending schedule metada
     const specPath = path.join(repo, 'docs/specs/features/02-backlog/feature-11-nightly.md');
     fs.writeFileSync(specPath, '---\nset: nightly\n---\n\n# Feature: nightly\n');
 
-    const proModule = require('../../lib/pro');
-    const originalGetPro = proModule.getPro;
-    proModule.getPro = () => ({
-        scheduledKickoff: {
-            buildPendingScheduleIndex: () => ({
-                lookupFeature: () => null,
-                lookupResearch: () => null,
-                lookupSet: (slug) => slug === 'nightly'
-                    ? {
-                        runAt: '2026-06-19T09:00:00.000Z',
-                        kind: 'set_autonomous',
-                        jobId: 'job-set-1',
-                        state: 'pending',
-                        agents: ['cx', 'gg'],
-                        reviewAgent: 'cc',
-                    }
-                    : null,
-            }),
+    const scheduledKickoff = require('../../lib/scheduled-kickoff');
+    const added = scheduledKickoff.addJob(repo, {
+        kind: scheduledKickoff.SET_AUTONOMOUS_KIND,
+        entityId: 'nightly',
+        runAt: '2099-06-19T09:00:00Z',
+        payload: {
+            agents: ['cx', 'gg'],
+            reviewAgent: 'cc',
+            stopAfter: 'close',
         },
     });
+    assert.strictEqual(added.ok, true, added.error);
+
     try {
         clearTierCache(repo);
         const st = collectRepoStatus(repo, { summary: { total: 0 } });
         const set = st.sets.find(s => s.slug === 'nightly');
         assert.ok(set, 'expected nightly set card');
-        assert.strictEqual(set.scheduledRunAt, '2026-06-19T09:00:00.000Z');
-        assert.strictEqual(set.scheduledKind, 'set_autonomous');
-        assert.strictEqual(set.scheduledJobId, 'job-set-1');
-        assert.strictEqual(set.scheduledState, 'pending');
-        assert.deepStrictEqual(set.scheduledAgents, ['cx', 'gg']);
-        assert.strictEqual(set.scheduledReviewAgent, 'cc');
+        assert.strictEqual(set.scheduledRunAt, '2099-06-19T09:00:00Z');
+        assert.strictEqual(set.scheduledKind, scheduledKickoff.SET_AUTONOMOUS_KIND);
     } finally {
-        proModule.getPro = originalGetPro;
         clearTierCache(repo);
     }
 }));
@@ -78,9 +66,6 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
         status: 'idle',
         isComplete: false,
         inboxMemberCount: 0,
-    }, {
-        requiresPro: true,
-        proAvailable: true,
     });
     assert.ok(actions.some(a => a.action === 'set-autonomous-start'), 'expected immediate set start action');
     const schedule = actions.find(a => a.action === 'set-autonomous-schedule');
@@ -88,18 +73,8 @@ test('buildSetValidActions exposes set schedule action for idle incomplete sets'
     assert.strictEqual(schedule.label, 'Schedule set');
     assert.strictEqual(schedule.disabled, undefined);
 
-    const gated = buildSetValidActions({
-        slug: 'nightly',
-        status: 'idle',
-        isComplete: false,
-        inboxMemberCount: 0,
-    }, {
-        requiresPro: true,
-        proAvailable: false,
-        proDisabledReason: 'Pro required',
-    });
-    const gatedSchedule = gated.find(a => a.action === 'set-autonomous-schedule');
-    assert.ok(gatedSchedule && gatedSchedule.disabled, 'expected set schedule action to be Pro-gated');
+    const scheduleMeta = schedule && schedule.metadata;
+    assert.strictEqual(scheduleMeta && scheduleMeta.proOnly, undefined, 'schedule set is not Pro-gated');
 });
 
 test('manual member activity drives set lifecycle without conductor controls', () => {
@@ -114,7 +89,7 @@ test('manual member activity drives set lifecycle without conductor controls', (
         pendingSpecReviseMemberCount: 0,
     };
     assert.strictEqual(resolveSetLifecycle(state), 'running');
-    const actionIds = buildSetValidActions(state, { requiresPro: false, proAvailable: true })
+    const actionIds = buildSetValidActions(state)
         .map(action => action.action);
     assert(!actionIds.includes('set-autonomous-start'));
     assert(!actionIds.includes('set-autonomous-stop'));
@@ -133,8 +108,6 @@ test('buildSetValidActions exposes restart actions for stopped partial sets', ()
             completed: ['609', '610'],
         },
     }, {
-        requiresPro: false,
-        proAvailable: true,
     });
     assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-start'), 'expected restart start action');
     assert.ok(stoppedPartial.some(a => a.action === 'set-autonomous-resume'), 'expected resume action');
@@ -165,7 +138,7 @@ test('buildSetValidActions exposes recovery actions for interrupted sets', () =>
     const actions = buildSetValidActions({
         slug: 'docs-release-readiness', isComplete: false,
         autonomous: { status: 'interrupted', members: ['697', '698', '699'], completed: ['697'] },
-    }, { requiresPro: false, proAvailable: true });
+    });
     assert.ok(actions.some(a => a.action === 'set-autonomous-resume' && a.label === 'Resume (same agents)'));
     assert.ok(actions.some(a => a.action === 'set-autonomous-start' && a.label === 'Resume (choose agents…)'));
     assert.ok(actions.some(a => a.action === 'set-autonomous-stop' && a.label === 'Take over manually'));

@@ -1,0 +1,10 @@
+/* Agent failover (F421) — timeline row colours for failover events in the
+   detail-tabs timeline, plus the "Failover now →" kanban-card button.
+   Merged from aigon-pro/dashboard/failover-dashboard.js by F693, which used to
+   inject these rules from JS at load time. */
+.timeline-item-warn .timeline-dot { background: #f59e0b; border-color: #f59e0b; }
+.timeline-item-warn .timeline-kind { color: #92400e; }
+.timeline-item-ok .timeline-dot { background: #10b981; border-color: #10b981; }
+.timeline-item-ok .timeline-kind { color: #065f46; }
+.kcard-failover-btn { color: var(--accent, #6366f1); }
+.kcard-failover-btn:disabled { opacity: 0.45; cursor: not-allowed; }

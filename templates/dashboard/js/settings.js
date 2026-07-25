@@ -6,10 +6,12 @@ import { isRepoHidden, state, toggleRepoVisibility } from './state.js';
 import { setSettingsDefaultsRepo, setSettingsModelRepo } from './store.js';
 import { getTerminalClickTarget, getTerminalFont, setTerminalClickTarget, setTerminalFont } from './terminal.js';
 import { escHtml, relTime, showToast } from './utils.js';
+// F693: merged from aigon-pro — real modules now, imported directly.
+import { fmtSyncTime, renderBackupSync } from './backup-sync.js';
+import { renderScheduledFeatures } from './scheduled-features.js';
+import { mountBenchmarkMatrix } from './benchmark-matrix.js';
     function formatSyncTime(iso) {
-      // Pro-only: fmtSyncTime from backup-sync stub or @aigon/pro when installed.
-      if (typeof globalThis.fmtSyncTime === 'function') return globalThis.fmtSyncTime(iso);
-      return iso ? relTime(iso) : '—';
+      return iso ? fmtSyncTime(iso) : '—';
     }
 
     // ── Settings view ──────────────────────────────────────────────────────────
@@ -214,7 +216,7 @@ import { escHtml, relTime, showToast } from './utils.js';
       section.appendChild(wrap);
     }
 
-    // Pro sync UI (`renderBackupSync` from @aigon/pro) targets `#backup-sync-view`, now
+    // The sync UI (`renderBackupSync`) targets `#backup-sync-view`, now
     // embedded in Settings → Aigon Sync (feature 236 batch).
 
     function _renderSyncPanel_REMOVED(scope, host) {
@@ -377,7 +379,7 @@ import { escHtml, relTime, showToast } from './utils.js';
     }
 
     // renderSyncPanels removed with feature 236; Backup & Sync now lives in
-    // its own top-level dashboard tab populated by @aigon/pro.
+    // its own top-level dashboard tab.
 
     function readConductorReposFromGlobalConfig_client() {
       return (state.data && state.data.repos) ? state.data.repos.map(r => r.path) : [];
@@ -491,15 +493,11 @@ import { escHtml, relTime, showToast } from './utils.js';
       content.className = 'settings-content';
 
       const sections = [];
-      function addSection(id, label, title, description, sectionOpts) {
+      function addSection(id, label, title, description) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'settings-nav-btn';
-        if (sectionOpts && sectionOpts.proBadge) {
-          btn.innerHTML = escHtml(label) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
-        } else {
-          btn.textContent = label;
-        }
+        btn.textContent = label;
         btn.onclick = () => {
           setActiveSection(id);
           scrollSettingsSection(id);
@@ -512,11 +510,7 @@ import { escHtml, relTime, showToast } from './utils.js';
         section.dataset.settingsSection = id;
 
         const heading = document.createElement('h3');
-        if (sectionOpts && sectionOpts.proBadge) {
-          heading.innerHTML = escHtml(title) + '<sup class="settings-pro-badge" title="Pro feature">PRO</sup>';
-        } else {
-          heading.textContent = title;
-        }
+        heading.textContent = title;
         section.appendChild(heading);
 
         if (description) {
@@ -1311,10 +1305,10 @@ import { escHtml, relTime, showToast } from './utils.js';
       const inputWasFocused = existingInput && document.activeElement === existingInput;
       const inputValue = existingInput ? existingInput.value : '';
 
-      const detachedProViews = {};
+      const detachedEngineViews = {};
       ['backup-sync-view', 'scheduled-features-view'].forEach(function (vid) {
         const el = document.getElementById(vid);
-        if (el && el.parentNode) detachedProViews[vid] = el.parentNode.removeChild(el);
+        if (el && el.parentNode) detachedEngineViews[vid] = el.parentNode.removeChild(el);
       });
 
       const reposRoot = document.getElementById('settings-view');
@@ -1435,15 +1429,15 @@ import { escHtml, relTime, showToast } from './utils.js';
       section.appendChild(form);
       shell.observeSection(section);
 
-      // ── Aigon Sync (Pro) — backup-sync-view filled by @aigon/pro dashboard JS (Insights stays a top-level tab)
-      const aigonSyncSection = shell.addSection('aigon-sync', 'Aigon Sync', 'Aigon Sync', 'Remote push/pull to a GitHub configuration repository (Pro). You can always back up this machine with git, archives, or clones — that does not require Pro.', { proBadge: true });
-      if (detachedProViews['backup-sync-view']) {
-        detachedProViews['backup-sync-view'].style.cssText = 'padding:0 0 28px';
-        aigonSyncSection.appendChild(detachedProViews['backup-sync-view']);
+      // ── Aigon Sync — #backup-sync-view is filled by js/backup-sync.js (Insights stays a top-level tab)
+      const aigonSyncSection = shell.addSection('aigon-sync', 'Aigon Sync', 'Aigon Sync', 'Remote push/pull to a GitHub configuration repository. You can always back up this machine with git, archives, or clones as well.');
+      if (detachedEngineViews['backup-sync-view']) {
+        detachedEngineViews['backup-sync-view'].style.cssText = 'padding:0 0 28px';
+        aigonSyncSection.appendChild(detachedEngineViews['backup-sync-view']);
       }
 
       // ── Schedule section (deferred kickoffs + Pro recurring UI) ─────────────
-      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).', { proBadge: true });
+      const scheduleSection = shell.addSection('schedule', 'Schedule', 'Scheduled kickoffs', 'Pending and past jobs for this dashboard. Jobs use ISO 8601 times with an explicit timezone; the server poller runs them after runAt (catch-up if the server was offline).');
       const scheduleToolbar = document.createElement('div');
       scheduleToolbar.className = 'settings-schedule-toolbar';
       const schedRepoLabel = document.createElement('span');
@@ -1575,9 +1569,9 @@ import { escHtml, relTime, showToast } from './utils.js';
       schedRefresh.onclick = () => { loadScheduleJobsTable(); };
       shell.observeSection(scheduleSection);
       loadScheduleJobsTable();
-      if (detachedProViews['scheduled-features-view']) {
-        detachedProViews['scheduled-features-view'].style.cssText = 'padding:12px 0 28px';
-        scheduleSection.appendChild(detachedProViews['scheduled-features-view']);
+      if (detachedEngineViews['scheduled-features-view']) {
+        detachedEngineViews['scheduled-features-view'].style.cssText = 'padding:12px 0 28px';
+        scheduleSection.appendChild(detachedEngineViews['scheduled-features-view']);
       }
 
       // ── Notifications section ─────────────────────────────────────────────
@@ -2138,22 +2132,17 @@ import { escHtml, relTime, showToast } from './utils.js';
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // Agent benchmarks (Pro) — F420. OSS only mounts; data + UI live in @aigon/pro.
+      // Agent benchmarks — F707.
       const perfBenchSection = shell.addSection('perf-benchmarks', 'Agent benchmarks', 'Agent benchmarks',
-        'Latest maintainer benchmark results from Aigon Pro for the repo selected for defaults above.',
-        { proBadge: true });
-      if (window.AigonProBenchmarkMatrix && typeof window.AigonProBenchmarkMatrix.mount === 'function') {
-        try {
-          window.AigonProBenchmarkMatrix.mount(perfBenchSection, getDefaultsSettingsRepo);
-        } catch (e) {
-          perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
-        }
-      } else {
-        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/benchmark-matrix.js</code> loads.</p>');
+        'Latest maintainer benchmark results for the repo selected for defaults above.');
+      try {
+        mountBenchmarkMatrix(perfBenchSection, getDefaultsSettingsRepo);
+      } catch (e) {
+        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
       }
 
       // Version section
-      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed Aigon CLI version, npm registry update status, and Aigon Pro install + activation state.');
+      const versionSection = shell.addSection('version', 'Version', 'Version', 'Installed Aigon CLI version and npm registry update status.');
       const uc = (state.data || {}).updateCheck;
       const stateLabels = { latest: 'up to date', 'update-available': 'update available', 'prerelease-available': 'prerelease available', unavailable: 'unavailable' };
       const stateCls = { latest: 'state-latest', 'update-available': 'state-update', 'prerelease-available': 'state-prerelease', unavailable: 'state-unavailable' };
@@ -2196,77 +2185,14 @@ import { escHtml, relTime, showToast } from './utils.js';
         vPanel.appendChild(checking);
       }
 
-      // ── Aigon Pro ────────────────────────────────────────────────
-      const proHeader = document.createElement('div');
-      proHeader.className = 'version-subheader';
-      proHeader.textContent = 'Aigon Pro';
-      vPanel.appendChild(proHeader);
-      const proStatus = (state.data || {}).proStatus || null;
-      if (!proStatus) {
-        vPanel.appendChild(vRow('Status', 'Checking…', { muted: true }));
-      } else {
-        // Package @senlabsai/aigon-pro: installed (vX.Y.Z) / not installed
-        const pkgValue = proStatus.packageInstalled
-          ? (proStatus.version ? '✅ installed (v' + proStatus.version + ')' : '✅ installed')
-          : '❌ not installed';
-        vPanel.appendChild(vRow('Package @senlabsai/aigon-pro', pkgValue));
-        const keyValue = proStatus.keyPresent ? '✅ present' : '❌ not set';
-        vPanel.appendChild(vRow('Pro key (~/.aigon/config.json)', keyValue));
-
-        let proBadgeClass = 'state-unavailable';
-        let proBadgeText = 'not installed';
-        if (proStatus.active) {
-          proBadgeClass = 'state-latest';
-          proBadgeText = 'active';
-        } else if (proStatus.packageInstalled && !proStatus.keyPresent) {
-          proBadgeClass = 'state-update';
-          proBadgeText = 'installed (not activated)';
-        } else if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
-          proBadgeClass = 'state-update';
-          proBadgeText = 'installed (inactive in this process)';
-        }
-        vPanel.appendChild(vBadgeRow('Status', proBadgeClass, proBadgeText));
-
-        if (!proStatus.packageInstalled) {
-          vPanel.appendChild(vRow('Install', 'npm install -g @senlabsai/aigon-pro'));
-        }
-        if (proStatus.packageInstalled && !proStatus.keyPresent) {
-          vPanel.appendChild(vRow('Activate', 'aigon pro activate <your-key>'));
-        }
-        if (proStatus.packageInstalled && proStatus.keyPresent && !proStatus.active) {
-          vPanel.appendChild(vRow('Note', 'Restart the dashboard: aigon server restart'));
-        }
-        if (proStatus.resolvedPath) {
-          vPanel.appendChild(vRow('Resolved from', proStatus.resolvedPath, { muted: true }));
-        }
-      }
-
       versionSection.appendChild(vPanel);
 
       reposRoot.appendChild(area);
       restoreDetailScrollTop(scrollTop);
       restoreSettingsUiState(reposRoot);
 
-      (function finalizeProSettingsPanels() {
-        // Pro-only: renderBackupSync from backup-sync stub or @aigon/pro when installed.
-        if (typeof globalThis.renderBackupSync === 'function') {
-          globalThis.renderBackupSync();
-        } else if (detachedProViews['backup-sync-view']) {
-          detachedProViews['backup-sync-view'].innerHTML =
-            '<div class="amp-empty pro-empty-centered">' +
-            '<div class="pro-empty-title">Aigon Sync <span class="pro-tab-badge">(Pro)</span></div>' +
-            '<div class="pro-empty-body">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
-            '</div>';
-        }
-        // Pro-only: renderScheduledFeatures from scheduled-features stub or @aigon/pro.
-        if (typeof globalThis.renderScheduledFeatures === 'function') {
-          globalThis.renderScheduledFeatures();
-        } else if (detachedProViews['scheduled-features-view']) {
-          detachedProViews['scheduled-features-view'].innerHTML =
-            '<p class="settings-empty settings-empty-foot">' +
-            'Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
-        }
-      })();
+      renderBackupSync();
+      renderScheduledFeatures();
 
       if (state.settingsInitialSectionId) {
         const sid = state.settingsInitialSectionId;

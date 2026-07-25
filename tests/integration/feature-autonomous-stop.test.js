@@ -29,8 +29,6 @@ function buildStopDeps(repo) {
 }
 
 testAsync('feature-autonomous-stop writes stopped sidecar without changing workflow snapshot', () => withTempDirAsync('aigon-f561-stop-', async (repo) => {
-    const prevForce = process.env.AIGON_FORCE_PRO;
-    process.env.AIGON_FORCE_PRO = 'true';
     seedEntityDirs(repo, 'features');
     writeSpec(repo, 'features', '03-in-progress', 'feature-561-autonomous-review-takeover.md');
     writeSnap(repo, 'features', '561', 'code_review_in_progress');
@@ -47,8 +45,6 @@ testAsync('feature-autonomous-stop writes stopped sidecar without changing workf
 
     const before = workflowSnapshotAdapter.readFeatureSnapshotSync(repo, '561');
     await stop(['561'], buildStopDeps(repo));
-    if (prevForce === undefined) delete process.env.AIGON_FORCE_PRO;
-    else process.env.AIGON_FORCE_PRO = prevForce;
     const after = workflowSnapshotAdapter.readFeatureSnapshotSync(repo, '561');
     assert.strictEqual(after.currentSpecState, before.currentSpecState, 'workflow lifecycle unchanged');
     const auto = readFeatureAutoState(repo, '561');

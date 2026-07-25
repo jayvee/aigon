@@ -33,7 +33,7 @@ testAsync('submit signals survive concurrent CLI submits', () => withTempDirAsyn
     assert.strictEqual(ccResearch.status, 0, ccResearch.stderr || ccResearch.stdout); assert.strictEqual(ggResearch.status, 0, ggResearch.stderr || ggResearch.stdout);
     assert.strictEqual(readEvents(repo, '.aigon/workflows/research/34/events.jsonl', 'signal.agent_ready').length, 2); assert.deepStrictEqual(Object.values(readJson(repo, '.aigon/workflows/research/34/snapshot.json').agents).map((a) => a.status), ['ready', 'ready']);
     await initFeatureRepo(repo);
-    const envFor = (agent) => ({ AIGON_TEST_MODE: '1', AIGON_ENTITY_TYPE: 'feature', AIGON_ENTITY_ID: '01', AIGON_AGENT_ID: agent, AIGON_PROJECT_PATH: repo, AIGON_FORCE_PRO: 'true' });
+    const envFor = (agent) => ({ AIGON_TEST_MODE: '1', AIGON_ENTITY_TYPE: 'feature', AIGON_ENTITY_ID: '01', AIGON_AGENT_ID: agent, AIGON_PROJECT_PATH: repo });
     const [ccFeature, ggFeature] = await Promise.all([cli(['agent-status', 'implementation-complete'], repo, envFor('cc')), cli(['agent-status', 'implementation-complete'], repo, envFor('gg'))]);
     assert.strictEqual(ccFeature.status, 0, ccFeature.stderr || ccFeature.stdout); assert.strictEqual(ggFeature.status, 0, ggFeature.stderr || ggFeature.stdout);
     assert.strictEqual(readEvents(repo, '.aigon/workflows/features/01/events.jsonl', 'signal.agent_ready').length, 2); assert.deepStrictEqual(Object.values(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents).map((a) => a.status), ['ready', 'ready']);
@@ -43,7 +43,7 @@ testAsync('explicit feature agent-status implementation-complete works from main
     // REGRESSION: F339 explicit `agent-status implementation-complete <id> <agent>` must succeed from default branch; evidence scan is empty on main.
     await initFeatureRepo(repo);
     git(repo, 'git checkout -q main');
-    const r = await cli(['agent-status', 'implementation-complete', '01', 'cc'], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    const r = await cli(['agent-status', 'implementation-complete', '01', 'cc'], repo, { AIGON_TEST_MODE: '1' });
     assert.strictEqual(r.status, 0, r.stderr || r.stdout);
     assert.strictEqual(readEvents(repo, '.aigon/workflows/features/01/events.jsonl', 'signal.agent_ready').length, 1);
     assert.deepStrictEqual(readJson(repo, '.aigon/workflows/features/01/snapshot.json').agents.cc.status, 'ready');
@@ -59,7 +59,7 @@ testAsync('continuation checkpoint uses agent-status sidecar and records one fre
     const r = await cli([
         'agent-status', 'continuation-fallback', '01', 'cc',
         '--session=continuation-01', '--reason=context-conflict',
-    ], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    ], repo, { AIGON_TEST_MODE: '1' });
     assert.strictEqual(r.status, 0, r.stderr || r.stdout);
     const state = readJson(repo, '.aigon/state/feature-01-cc.json');
     assert.deepStrictEqual(state.continuityCheckpoint, {
@@ -79,7 +79,7 @@ testAsync('explicit research submit succeeds when a done feature with same ID ex
     const featureSnapDir = path.join(repo, '.aigon', 'workflows', 'features', '34');
     fs.mkdirSync(featureSnapDir, { recursive: true });
     fs.writeFileSync(path.join(featureSnapDir, 'snapshot.json'), JSON.stringify({ featureId: '34', lifecycle: 'done', agents: {}, currentSpecState: 'done' }));
-    const r = await cli(['agent-status', 'implementation-complete', '34', 'cc'], repo, { AIGON_TEST_MODE: '1', AIGON_FORCE_PRO: 'true' });
+    const r = await cli(['agent-status', 'implementation-complete', '34', 'cc'], repo, { AIGON_TEST_MODE: '1' });
     assert.strictEqual(r.status, 0, r.stderr || r.stdout);
     assert.match(r.stdout, /research-34-cc/);
     assert.deepStrictEqual(readJson(repo, '.aigon/workflows/research/34/snapshot.json').agents.cc.status, 'ready');

@@ -4,9 +4,6 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { test, report } = require('../_helpers');
-// `scheduled-kickoff`, agent-registry/validateFeatureAutonomousPayload imports
-// removed with feature 236: the F367/F379 scheduled-kickoff invariants moved
-// to @aigon/pro alongside the engine. Token-window tests below are unaffected.
 
 // REGRESSION: token-window config schema must exist and command must be registered.
 test('token-window config defaults and command registry', () => {
@@ -63,7 +60,6 @@ test('token-window command exported from misc commands', () => {
     assert.strictEqual(typeof cmds['token-window'], 'function', 'token-window must be a function');
 });
 
-// F367/F379 scheduled-kickoff regression tests moved to @aigon/pro with
-// feature 236 alongside the engine.
+// Scheduled-kickoff (F703/F704) coverage lives in tests/unit/scheduled-kickoff.test.js.
 
 report();

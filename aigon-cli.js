@@ -42,7 +42,6 @@ let createAgentCommands;
 let createSignalHealthCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
-let createProCommands;
 let onboardingState;
 
 try {
@@ -61,7 +60,6 @@ try {
     ({ createAgentCommands } = require('./lib/commands/agent'));
     ({ createSignalHealthCommands } = require('./lib/commands/signal-health'));
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
-    ({ createProCommands } = require('./lib/commands/pro'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
     onboardingState = require('./lib/onboarding/state');
 } catch (error) {
@@ -93,7 +91,6 @@ const commands = {
     ...createAgentCommands(),
     ...createSignalHealthCommands(),
     ...createSecurityScanCommands(),
-    ...createProCommands(),
 };
 
 const args = process.argv.slice(2);

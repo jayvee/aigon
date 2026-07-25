@@ -147,12 +147,9 @@ import { escHtml } from './utils.js';
       </svg>`;
     }
 
-    function buildStatCard(label, value, trendHtml, extra, tooltip, options) {
-      const opts = options || {};
+    function buildStatCard(label, value, trendHtml, extra, tooltip) {
       const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
-      const proBadge = opts.pro ? '<span class="pro-badge-inline">PRO</span>' : '';
       return `<div class="stat-card">
-        ${proBadge}
         <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
         <div class="stat-card-value">${value}</div>
         ${trendHtml ? `<div class="stat-card-trend">${trendHtml}</div>` : ''}
@@ -163,46 +160,6 @@ import { escHtml } from './utils.js';
     function buildKvLabel(label, tooltip) {
       if (!tooltip) return escHtml(label);
       return `${escHtml(label)} <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>`;
-    }
-
-    /**
-     * Build a Pro-gated stat card: blurred fake content with a PRO badge.
-     * The data-pro-slot attribute lets pro-reports.js replace it when Pro activates.
-     */
-    function buildProGatedStatCard(label, slotId, tooltip) {
-      const infoHtml = tooltip ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltip)}">?</span>` : '';
-      return `<div class="stat-card pro-gated" data-pro-slot="${escHtml(slotId)}">
-        <span class="pro-badge">PRO</span>
-        <div class="stat-card-label">${escHtml(label)}${infoHtml}</div>
-        <div class="pro-gated-content">
-          <div class="stat-card-value">42%</div>
-        </div>
-        <div class="pro-gated-foot">Pro — coming later. Free alternative: aigon board, aigon commits</div>
-      </div>`;
-    }
-
-    /**
-     * Build a Pro-gated chart placeholder: blurred static SVG with overlay.
-     * Title is outside the blur so users know what they're missing.
-     */
-    function buildProGatedChart(title, slotId, tooltipText) {
-      const tooltip = tooltipText ? ` <span class="stat-info" data-stat-tooltip="${escHtml(tooltipText)}">?</span>` : '';
-      const fakeSvg = `<svg viewBox="0 0 400 120" preserveAspectRatio="none" class="pro-chart-svg">
-        <polyline points="10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20" fill="none" stroke="var(--text-tertiary)" stroke-width="2" opacity="0.5"/>
-        <polygon points="10,120 10,100 60,80 120,90 180,50 240,60 300,30 360,45 390,20 390,120" fill="var(--text-tertiary)" opacity="0.08"/>
-      </svg>`;
-      return `<div class="volume-chart-wrap pro-gated-chart" data-pro-slot="${escHtml(slotId)}">
-        <div class="volume-chart-header">
-          <div class="volume-chart-title">${escHtml(title)}${tooltip}</div>
-        </div>
-        <div class="pro-gated-content pro-gated-relative">
-          <div class="pro-chart-wrap">${fakeSvg}</div>
-        </div>
-        <div class="pro-chart-overlay">
-          <span class="pro-badge">PRO</span>
-          <span class="text-muted-sm">Coming later. Free alternative: aigon board, aigon commits</span>
-        </div>
-      </div>`;
     }
 
     function buildVolumeSeries(features, granularity) {
@@ -1105,4 +1062,4 @@ import { escHtml } from './utils.js';
     }
 
 // ── ESM exports (F623) ──
-export { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildProGatedChart, buildProGatedStatCard, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon };
+export { alignAllSeries, applyCommitWindow, applyCpfWindow, applyCycleTimeWindow, applyReworkWindow, applyTokenWindow, applyVolumeWindow, buildCommitSeries, buildCommitsPerFeatureSeries, buildCycleTimeSeries, buildKvLabel, buildReworkRatioSeries, buildSparklineSvg, buildStatCard, buildTokenSeries, buildVolumeSeries, filterCommitsByPeriodAndRepo, filterFeaturesByPeriodAndRepo, fmtHours, fmtNum, fmtPct, loadAnalytics, loadCommits, panCycleTimeChart, panVolumeChart, renderCommitChart, renderCpfChart, renderCycleTimeChart, renderReworkChart, renderTokenChart, renderVolumeChart, saveStatsPrefs, statsState, trendIcon };

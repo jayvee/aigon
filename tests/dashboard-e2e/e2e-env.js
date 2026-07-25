@@ -26,7 +26,6 @@ const MODEL_OVERRIDE_KEY = /^AIGON_(?:[A-Z0-9]+_(?:RESEARCH|IMPLEMENT|EVALUATE|R
 const E2E_AGENT_ENV_KEYS = [
     'AIGON_TEST_MODE',
     'AIGON_E2E_SERVER',
-    'AIGON_FORCE_PRO',
     'MOCK_AGENT_BIN',
     'MOCK_DELAY',
     'PORT',
@@ -61,7 +60,6 @@ function buildMockOnlyDashEnv(overrides = {}) {
     env.AIGON_TEST_MODE = '1';
     env.AIGON_E2E_SERVER = '1';
     env.GEMINI_CLI = '1';
-    env.AIGON_FORCE_PRO = 'true';
     env.MOCK_AGENT_BIN = MOCK_AGENT_BIN_PATH;
     delete env.TMUX;
     return env;
@@ -75,7 +73,6 @@ function buildMockOnlyDashEnv(overrides = {}) {
 function buildLiveAgentDashEnv(overrides = {}) {
     const env = stripLiveAgentEnv({ ...process.env, ...overrides });
     env.AIGON_E2E_SERVER = '1';
-    env.AIGON_FORCE_PRO = 'true';
     env.AIGON_CC_IMPLEMENT_MODEL = LIVE_AGENT_CC_MODEL;
     delete env.AIGON_TEST_MODE;
     delete env.MOCK_AGENT_BIN;
