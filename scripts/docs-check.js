@@ -9,9 +9,13 @@ const CONTENT = path.join(ROOT, 'site/content');
 const SITE = path.join(ROOT, 'site');
 const errors = [];
 const fail = (file, message) => errors.push(`${path.relative(ROOT, file)}: ${message}`);
+const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'public/_pagefind']);
 const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-    const file = path.join(dir, entry.name);
-    return entry.isDirectory() ? walk(file) : [file];
+    if (entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) return [];
+        return walk(path.join(dir, entry.name));
+    }
+    return [path.join(dir, entry.name)];
 });
 const mdxFiles = walk(CONTENT).filter(file => file.endsWith('.mdx'));
 const pageFor = file => {
@@ -20,6 +24,8 @@ const pageFor = file => {
     return `/docs${slug ? `/${slug}` : ''}`;
 };
 const pages = new Set(mdxFiles.map(pageFor));
+const { getAllAgentIds, isAgentLaunchable } = require('../lib/agent-registry');
+const deactivatedAgentIds = getAllAgentIds().filter(id => !isAgentLaunchable(id));
 
 function executableCommands() {
     const factories = [
@@ -47,6 +53,11 @@ for (const file of mdxFiles) {
     for (const match of text.matchAll(/!?\[[^\]]*\]\((\/docs\/[^)#?]+)(?:#[^)]+)?\)/g)) if (!pages.has(match[1].replace(/\/$/, ''))) fail(file, `broken internal link ${match[1]}`);
     for (const match of text.matchAll(/!\[[^\]]*\]\((\/img\/[^)]+)\)/g)) if (!fs.existsSync(path.join(SITE, 'public', match[1].slice(1)))) fail(file, `missing image ${match[1]}`);
     if (/\bgg\b|Gemini CLI|ANTIGRAVITY_API_KEY|ANTIGRAVITY_TOKEN|headless Antigravity|periodic quota probe/i.test(text)) fail(file, 'contains a retired/unsupported Antigravity example or authentication claim');
+    for (const match of text.matchAll(/aigon\s+(?:install-agent|feature-start|research-start|feature-open|research-open)\b[^\n]*/g)) {
+        for (const id of deactivatedAgentIds) {
+            if (new RegExp(`\\b${id}\\b`).test(match[0])) fail(file, `references deactivated agent ID ${id} in command example: ${match[0].trim()}`);
+        }
+    }
 }
 for (const file of walk(SITE).filter(file => /\.(mdx|tsx|ts|html)$/i.test(file))) if (/\bMIT License\b|licensed under MIT/i.test(fs.readFileSync(file, 'utf8'))) fail(file, 'marketing copy must identify Apache-2.0, not MIT');
 const documented = new Set(mdxFiles.map(file => path.basename(file, '.mdx')));
@@ -60,9 +71,10 @@ for (const command of ['feedback-migrate']) groupedReferences.set(command, '/doc
 for (const command of ['update']) groupedReferences.set(command, '/docs/reference/commands/setup/apply');
 for (const command of ['sync', 'backup', 'recurring-list', 'schedule', 'agent-launch', 'agent', 'signal-health', 'pro']) groupedReferences.set(command, '/docs/reference/commands');
 const commandIndex = fs.readFileSync(path.join(CONTENT, 'reference/commands/index.mdx'), 'utf8');
-for (const entry of executableCommands()) {
+const commands = executableCommands();
+for (const entry of commands) {
     const reference = groupedReferences.get(entry.command);
     if (entry.classification !== 'internal' && !documented.has(entry.command) && (!reference || !pages.has(reference) || !commandIndex.includes(`\`${entry.command}\``))) fail(path.join(CONTENT, 'reference/commands/index.mdx'), `no reference page or approved grouping for executable command ${entry.command} (${entry.classification})`);
 }
 if (errors.length) { console.error(`Documentation check failed (${errors.length} issues):`); errors.forEach(error => console.error(`- ${error}`)); process.exit(1); }
-console.log(`✓ docs:check validated ${mdxFiles.length} MDX pages and ${executableCommands().length} executable commands`);
+console.log(`✓ docs:check validated ${mdxFiles.length} MDX pages and ${commands.length} executable commands`);
