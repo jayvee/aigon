@@ -8,7 +8,9 @@
   "displayName": "OpenCode",
   "shortName": "OP",
   "providerFamily": "router",
-  "quotaProviders": ["openrouter"],
+  "quotaProviders": [
+    "openrouter"
+  ],
   "portOffset": 5,
   "terminalColor": "cyan",
   "bannerColor": "#06B6D4",
@@ -67,7 +69,10 @@
         "confidence": "medium"
       }
     ],
-    "successPatterns": ["^PONG$", "PONG"],
+    "successPatterns": [
+      "^PONG$",
+      "PONG"
+    ],
     "unknownPolicy": "permit"
   },
   "cli": {
@@ -87,92 +92,172 @@
       {
         "value": "openrouter/deepseek/deepseek-v3.1-terminus",
         "label": "DeepSeek V3.1 Terminus via OpenRouter (default)",
-        "pricing": { "input": 0.27, "output": 1.0 },
+        "pricing": {
+          "input": 0.27,
+          "output": 1
+        },
         "notes": {
           "implement": "Updated V3.1 addressing language-consistency issues; supports thinking/non-thinking modes; 164K ctx. Aigon-curated default as of 2026-04-29 — passed brewboard bench in 3m51s and was the fastest probe across the V3.x family. Promoted from a candidate slot after the previous default (deepseek-chat-v3.1) timed out at 10m on the same bench task today."
         },
-        "score": { "implement": 4 },
+        "score": {
+          "implement": 4
+        },
         "summary": {
           "headline": "Best default for cheap OpenRouter implement loops; bench-backed but aging.",
           "body": "Reliability patch over V3.1 fixing language mixing and agent templates. Aigon brewboard PASS Apr 2026 (3m51s). Published SWE-bench multilingual 57.8%. Pricing $0.27/$1.00 MTok as of W29.",
-          "bestFor": ["implement"],
-          "avoidFor": ["spec", "research"],
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
           "confidence": "medium",
           "researchedAt": "2026-07-12T00:00:00.000Z",
           "sources": [
-            { "kind": "aigon-bench", "ref": "all-brewboard-2026-04-29T11-59-07-090Z.json" },
-            { "kind": "benchmark", "title": "SWE-bench Multilingual 57.8%", "url": "https://api-docs.deepseek.com/news/news250922" },
-            { "kind": "provider", "title": "DeepSeek V3.1 Terminus release", "url": "https://api-docs.deepseek.com/news/news250922" }
+            {
+              "kind": "aigon-bench",
+              "ref": "all-brewboard-2026-04-29T11-59-07-090Z.json"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Multilingual 57.8%",
+              "url": "https://api-docs.deepseek.com/news/news250922"
+            },
+            {
+              "kind": "provider",
+              "title": "DeepSeek V3.1 Terminus release",
+              "url": "https://api-docs.deepseek.com/news/news250922"
+            }
           ]
         },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-chat-v3.1",
         "label": "DeepSeek V3.1 via OpenRouter",
-        "pricing": { "input": 0.25, "output": 0.95 },
+        "pricing": {
+          "input": 0.25,
+          "output": 0.95
+        },
         "notes": {
           "implement": "Original V3.1; was the curated default until 2026-04-29 when it failed the brewboard bench (10-minute timeout) despite passing single-turn probes. Kept active for backward-compatible benchmark continuity; pick deepseek-v3.1-terminus instead for new work."
         },
-        "score": { "implement": 2 },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "score": {
+          "implement": 2
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Legacy V3.1; bench timeout — use Terminus instead.",
+          "body": "Original V3.1 hybrid MoE (671B/37B active). Published SWE-bench Verified 66.0% but Aigon brewboard FAIL (10m timeout Apr 2026). Probe PASS 4.7s W30. $0.25/$0.95 MTok.",
+          "bestFor": [],
+          "avoidFor": [
+            "implement",
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "aigon-bench",
+              "ref": "all-brewboard-2026-04-29T11-59-07-090Z.json"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 66.0%",
+              "url": "https://api-docs.deepseek.com/"
+            },
+            {
+              "kind": "provider",
+              "title": "DeepSeek V3.1 OpenRouter",
+              "url": "https://openrouter.ai/deepseek/deepseek-chat-v3.1"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-flash",
         "label": "DeepSeek V4 Flash via OpenRouter",
-        "pricing": { "input": 0.14, "output": 0.28 },
+        "pricing": {
+          "input": 0.0938,
+          "output": 0.1876
+        },
         "notes": {
           "implement": "Newest DeepSeek (Apr 2026); 1M context, 13B active params; cost-efficient flash variant. Probe-passed (warm: ~22s) but bench timed out at 10m on 2026-04-29 — flash-tier cannot sustain multi-turn agentic loops."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-29T12:00:00.000Z",
         "quarantined": {
           "since": "2026-04-30",
           "reason": "0/1 on brewboard bench (10m timeout 2026-04-29). Flash-tier active-param count too small for sustained agentic tool-use loops; superseded by deepseek-v4-pro for agentic work.",
           "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json",
-          "supersededBy": ["openrouter/deepseek/deepseek-v4-pro"]
+          "supersededBy": [
+            "openrouter/deepseek/deepseek-v4-pro"
+          ]
         }
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-pro",
         "label": "DeepSeek V4 Pro via OpenRouter",
-        "pricing": { "input": 0.435, "output": 0.87 },
+        "pricing": {
+          "input": 0.435,
+          "output": 0.87
+        },
         "notes": {
           "implement": "Bench-passed in 3m27s on 2026-04-29. QUARANTINED 2026-05-11: triggered opencode compaction infinite loop bug (issue #22329 — open, unresolved). Thinking mode causes reasoning_content to be dropped by opencode on turn 2+, generating 400 errors and retries; combined with auto-compaction loop, produces 50-100+ tool_call turns on simple tasks. Confirmed: burned ~$20 of OpenRouter credits in under an hour on a footer-add benchmark. Do not run until opencode issue #22329 is resolved and tested."
         },
-        "score": { "implement": 4 },
+        "score": {
+          "implement": 4
+        },
         "lastRefreshAt": "2026-05-11T00:00:00.000Z",
         "quarantined": {
           "since": "2026-05-11",
           "reason": "Triggers opencode compaction infinite loop (issue #22329, open). DeepSeek thinking mode + opencode auto-compaction = unbounded tool_call loop. A simple 3-turn footer task ran 50-100+ turns and burned ~$20 of OpenRouter credits. finish_reason never reaches 'stop'. Do not run until opencode #22329 is confirmed fixed.",
           "evidence": "OpenRouter logs 2026-05-11T07:27 AEST: 15+ visible rows all finish_reason=tool_calls, input growing 7K→27K per call, multiple providers (NovitaAI/SiliconFlow/Parasail). GitHub: sst/opencode #22329 (DeepSeek compaction loop), #25000 (reasoning_content dropped).",
-          "supersededBy": ["openrouter/deepseek/deepseek-v3.1-terminus"]
+          "supersededBy": [
+            "openrouter/deepseek/deepseek-v3.1-terminus"
+          ]
         }
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2",
         "label": "DeepSeek V3.2 via OpenRouter",
-        "pricing": { "input": 0.252, "output": 0.378 },
+        "pricing": {
+          "input": 0.269,
+          "output": 0.4
+        },
         "notes": {
           "implement": "Bench-passed in 6m52s on 2026-04-29. QUARANTINED 2026-05-11: same opencode compaction loop as V4 Pro (issue #22329 affects all DeepSeek models). Also reported in RooCode #9779 (Dec 2025): empty assistant responses and tool-call loops in opencode. Inherently slow (35 tok/s median). Superseded by V3.1 Terminus which passed the bench and is not affected by the compaction loop."
         },
-        "score": { "implement": 3 },
+        "score": {
+          "implement": 3
+        },
         "lastRefreshAt": "2026-05-11T00:00:00.000Z",
         "quarantined": {
           "since": "2026-05-11",
           "reason": "All DeepSeek models affected by opencode compaction infinite loop (issue #22329). Also has tool-call loop failures in opencode reported Dec 2025 (RooCode #9779). Slow by nature (35 tok/s median). Superseded by deepseek-v3.1-terminus which is unaffected.",
           "evidence": "opencode GitHub issue #22329 (all DeepSeek models); RooCode #9779 Dec 2025; OpenRouter logs 2026-05-11 showing same finish_reason:tool_calls loop pattern.",
-          "supersededBy": ["openrouter/deepseek/deepseek-v3.1-terminus"]
+          "supersededBy": [
+            "openrouter/deepseek/deepseek-v3.1-terminus"
+          ]
         }
       },
       {
         "value": "openrouter/meta-llama/llama-3.3-70b-instruct",
         "label": "Llama 3.3 70B via OpenRouter (cheapest)",
-        "pricing": { "input": 0.1, "output": 0.32 },
+        "pricing": {
+          "input": 0.1,
+          "output": 0.32
+        },
         "notes": {
           "implement": "Ultra-cheap general-purpose. Capable for routine implementation; weaker on complex reasoning."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-28T00:00:00.000Z",
         "archived": {
           "since": "2026-04-28",
@@ -184,164 +269,367 @@
       {
         "value": "openrouter/x-ai/grok-code-fast-1",
         "label": "Grok Code Fast 1 via OpenRouter",
-        "pricing": { "input": 0.2, "output": 1.5 },
+        "pricing": {
+          "input": 0.2,
+          "output": 1.5
+        },
         "notes": {
           "implement": "Code-optimised, low latency; strong on agentic loops and tool use."
         },
-        "score": { "implement": 3.5 },
+        "score": {
+          "implement": 3.5
+        },
         "lastRefreshAt": "2026-04-27T11:30:00.000Z",
-        "quarantined": {
-          "since": "2026-04-29",
-          "reason": "Probe timed out at 45s on a trivial PONG prompt; bench sweeps consistently hang past the 10-minute per-pair ceiling. OpenRouter routing for this model appears unhealthy or the upstream is consistently slow — distinct from the quota/credit issues that affected the other op models on the same date.",
-          "evidence": "aigon agent-probe op --all on 2026-04-29 returned FAIL TIMEOUT (>45s) for grok-code-fast-1 while every other op model PASSed in 2.7-5.3s on the same run. Prior bench sweeps on 2026-04-28 also showed grok-code-fast-1 at 461s (vs ~30-60s for healthy agents).",
+        "archived": {
+          "since": "2026-07-25",
+          "reason": "Removed from OpenRouter catalog — ID no longer routable.",
+          "evidence": "openrouter.ai/api/v1/models — no row for openrouter/x-ai/grok-code-fast-1",
           "supersededBy": []
         }
       },
       {
         "value": "openrouter/qwen/qwen3-235b-a22b-2507",
         "label": "Qwen3 235B (2507) via OpenRouter",
-        "pricing": { "input": 0.09, "output": 0.55 },
+        "pricing": {
+          "input": 0.09,
+          "output": 0.55
+        },
         "notes": {
           "implement": "Alibaba flagship MoE; 262K ctx; excellent cost/perf at sub-cent input. Canonical OpenCode/OpenRouter id is `-2507`; legacy `-07-25` aliases normalize at launch. Tools-capable on OpenRouter. 11 providers, 7.8x speed spread."
         },
-        "score": { "implement": 4 },
+        "score": {
+          "implement": 4
+        },
         "summary": {
           "headline": "Excellent value for implementation loops; not suitable for spec or research work.",
           "body": "Sub-cent input pricing with strong implement scores on Aigon bench. MoE flagship via OpenRouter with 262K context. Lacks curated notes for spec/research roles — use a dedicated spec/research model instead.",
-          "bestFor": ["implement", "review"],
-          "avoidFor": ["spec", "research"],
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
           "confidence": "medium",
           "researchedAt": "2026-07-08T07:42:00.000Z",
           "sources": []
         },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/qwen/qwen3-coder-30b-a3b-instruct",
         "label": "Qwen3 Coder 30B via OpenRouter",
-        "pricing": { "input": 0.07, "output": 0.27 },
+        "pricing": {
+          "input": 0.07,
+          "output": 0.27
+        },
         "notes": {
           "implement": "Code-specialist MoE; 156K ctx; quarantined — consistently times out on simple prompts."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-28T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-28",
           "reason": "Consistently times out (>45s) on a trivial one-shot PONG probe via opencode run. Likely no healthy endpoints on OpenRouter at time of testing.",
           "evidence": "aigon agent-probe op --model returned TIMEOUT on two consecutive runs (2026-04-28).",
-          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-2507"]
+          "supersededBy": [
+            "openrouter/qwen/qwen3-235b-a22b-2507"
+          ]
         }
       },
       {
         "value": "openrouter/qwen/qwen3-next-80b-a3b-thinking",
         "label": "Qwen3 Next 80B Thinking via OpenRouter",
-        "pricing": { "input": 0.1, "output": 0.78 },
+        "pricing": {
+          "input": 0.0975,
+          "output": 0.78
+        },
         "notes": {
           "implement": "Reasoning variant; thinking mode causes token runaway on multi-turn agentic loops — consistently times out."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-30T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-30",
           "reason": "0/3 on brewboard bench (2 timeout, 1 error). Thinking mode triggers unbounded token spend on multi-turn tool-use loops; never signals completion within 10m ceiling.",
           "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json",
-          "supersededBy": ["openrouter/qwen/qwen3-235b-a22b-2507"]
+          "supersededBy": [
+            "openrouter/qwen/qwen3-235b-a22b-2507"
+          ]
         }
       },
       {
         "value": "openrouter/mistralai/devstral-small-2507",
         "label": "Devstral Small (2507) via OpenRouter",
-        "pricing": { "input": 0.1, "output": 0.3 },
+        "pricing": {
+          "input": 0.1,
+          "output": 0.3
+        },
         "notes": {
           "implement": "Mistral's coding-agent specialist (July 2025 build); tuned for SWE-bench style tool use; 128K ctx. Superseded by devstral-2512 for new work but kept active for backward-compat benchmark continuity."
         },
-        "score": { "implement": 3.5 },
+        "score": {
+          "implement": 3.5
+        },
         "lastRefreshAt": "2026-07-18T00:00:00.000Z",
         "archived": {
           "since": "2026-07-18",
           "reason": "Removed from OpenRouter catalog (STALE-ID). OpenCode cannot route this model id.",
           "evidence": "openrouter.ai/api/v1/models — no row for mistralai/devstral-small-2507 as of 2026-07-18; superseded by devstral-2512.",
-          "supersededBy": ["openrouter/mistralai/devstral-2512"]
+          "supersededBy": [
+            "openrouter/mistralai/devstral-2512"
+          ]
         }
       },
       {
         "value": "openrouter/mistralai/devstral-2512",
         "label": "Devstral 2 (2512) via OpenRouter",
-        "pricing": { "input": 0.4, "output": 2.0 },
+        "pricing": {
+          "input": 0.4,
+          "output": 2
+        },
         "notes": {
           "implement": "Newest Devstral (Dec 2025); state-of-the-art open-source agentic coding; 256K ctx. Probed PASS in 4.1s. More expensive than devstral-small-2507 but a genuine generational jump for agentic coding."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-04-29T00:00:00.000Z"
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Open SWE-bench leader at $0.40/$2; bench before default.",
+          "body": "Mistral 123B dense agentic coder (Dec 2025). Published SWE-bench Verified 72.2%, multilingual 61.3%. Probe PASS 4.6s W30. No Aigon bench yet. $0.40/$2.00 MTok.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 72.2%",
+              "url": "https://awesomeagents.ai/models/devstral-2/"
+            },
+            {
+              "kind": "provider",
+              "title": "Devstral 2 Hugging Face",
+              "url": "https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512"
+            },
+            {
+              "kind": "community",
+              "title": "Mistral Devstral 2 announcement",
+              "url": "https://ai-tldr.dev/models/devstral-2/"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/qwen/qwen3-coder",
         "label": "Qwen3 Coder 480B via OpenRouter",
-        "pricing": { "input": 0.30, "output": 1.0 },
+        "pricing": {
+          "input": 0.3,
+          "output": 1
+        },
         "notes": {
           "implement": "Alibaba flagship purpose-built coder; 480B MoE (35B active params); probed PASS in 5.4s. Distinct from the quarantined qwen3-coder-30b-a3b; this is the full-size flagship variant at very low cost."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "summary": {
           "headline": "Top open MoE coder for agentic loops; bench before promoting to defaults.",
           "body": "480B MoE with 35B active params; Qwen team claims Sonnet-4-class agentic coding. Independent SWE-bench Verified ~68%. OpenRouter at $0.30/$1.00 MTok. Probe PASS 4.3s Jul 2026.",
-          "bestFor": ["implement", "review"],
-          "avoidFor": ["spec", "research"],
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
           "confidence": "medium",
           "researchedAt": "2026-07-12T00:00:00.000Z",
           "sources": [
-            { "kind": "benchmark", "title": "SWE-bench Verified ~68.4%", "url": "https://contracollective.com/blog/qwen-3-coder-vs-claude-opus-4-8-swe-bench-2026" },
-            { "kind": "provider", "title": "Qwen3-Coder announcement", "url": "https://qwenlm.github.io/blog/qwen3-coder/" },
-            { "kind": "community", "title": "OpenRouter model page", "url": "https://openrouter.ai/qwen/qwen3-coder" }
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified ~68.4%",
+              "url": "https://contracollective.com/blog/qwen-3-coder-vs-claude-opus-4-8-swe-bench-2026"
+            },
+            {
+              "kind": "provider",
+              "title": "Qwen3-Coder announcement",
+              "url": "https://qwenlm.github.io/blog/qwen3-coder/"
+            },
+            {
+              "kind": "community",
+              "title": "OpenRouter model page",
+              "url": "https://openrouter.ai/qwen/qwen3-coder"
+            }
           ]
         },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-coder-next",
+        "label": "Qwen3 Coder Next via OpenRouter",
+        "pricing": {
+          "input": 0.11,
+          "output": 0.8
+        },
+        "notes": {
+          "implement": "Added 2026-W30. Ultra-sparse 80B/3B-active MoE coder (Feb 2026). Vendor SWE-bench Verified 70.6%. Distinct from flagship qwen3-coder 480B. Bench before promoting."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "Ultra-efficient MoE coder; vendor SWE-bench 70.6% unverified.",
+          "body": "80B/3B-active MoE released Feb 2026. Vendor SWE-bench Verified 70.6%, SWE-Pro 44.3%. OpenRouter $0.11/$0.80 MTok. Added W30 — bench before default.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 70.6% (vendor)",
+              "url": "https://github.com/QwenLM/Qwen3-Coder/"
+            },
+            {
+              "kind": "provider",
+              "title": "Qwen3 Coder Next OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3-coder-next"
+            },
+            {
+              "kind": "community",
+              "title": "Qwen3-Coder-Next local guide",
+              "url": "https://dev.to/sienna/qwen3-coder-next-the-complete-2026-guide-to-running-powerful-ai-coding-agents-locally-1k95"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3.6-35b-a3b",
+        "label": "Qwen3.6 35B A3B via OpenRouter",
+        "pricing": {
+          "input": 0.14,
+          "output": 1
+        },
+        "notes": {
+          "implement": "Added 2026-W30. New Qwen3.6 family MoE tier. OpenRouter $0.14/$1.00 MTok. Probe and bench before promoting to defaults."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "New Qwen3.6 MoE tier; probe-only until bench.",
+          "body": "Qwen3.6 35B A3B MoE from the Qwen3.6 release family. OpenRouter $0.14/$1.00 MTok. No Aigon bench or curated external SWE score yet. Added W30 catalog scan.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Qwen3.6 35B OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/mistralai/codestral-2508",
         "label": "Codestral 2508 via OpenRouter",
-        "pricing": { "input": 0.3, "output": 0.90 },
+        "pricing": {
+          "input": 0.3,
+          "output": 0.9
+        },
         "notes": {
           "implement": "Mistral code-specialist (Aug 2025 build); tuned for code completion and generation; probed PASS in 3.1s. Cheapest Mistral agentic-coding option."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "summary": {
           "headline": "Cheapest Mistral agent; probe-only — unverified on multi-turn bench.",
           "body": "Mistral code-specialist Aug 2025 build. Probe PASS 4.3s. No Aigon bench or external SWE score curated yet. Use for cost-sensitive completion, not default implement.",
-          "bestFor": ["implement"],
-          "avoidFor": ["spec", "research"],
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
           "confidence": "low",
           "researchedAt": "2026-07-12T00:00:00.000Z",
           "sources": [
-            { "kind": "provider", "title": "OpenRouter Codestral 2508", "url": "https://openrouter.ai/mistralai/codestral-2508" }
+            {
+              "kind": "provider",
+              "title": "OpenRouter Codestral 2508",
+              "url": "https://openrouter.ai/mistralai/codestral-2508"
+            }
           ]
         },
-        "lastRefreshAt": "2026-07-12T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/mistralai/devstral-medium-2507",
         "label": "Devstral Medium (2507) via OpenRouter",
-        "pricing": { "input": 0.4, "output": 2.0 },
+        "pricing": {
+          "input": 0.4,
+          "output": 2
+        },
         "notes": {
           "implement": "Mid-tier Devstral (Jul 2025); fills the gap between devstral-small and devstral-2512; probed PASS in 5.3s. Note: openrouter/mistralai/devstral-medium fails (wrong ID) — use this 2507-suffixed form."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-07-18T00:00:00.000Z",
         "archived": {
           "since": "2026-07-18",
           "reason": "Removed from OpenRouter catalog (STALE-ID). OpenCode cannot route this model id.",
           "evidence": "openrouter.ai/api/v1/models — no row for mistralai/devstral-medium-2507 as of 2026-07-18; use devstral-2512 instead.",
-          "supersededBy": ["openrouter/mistralai/devstral-2512"]
+          "supersededBy": [
+            "openrouter/mistralai/devstral-2512"
+          ]
         }
       },
       {
         "value": "openrouter/x-ai/grok-4-fast",
         "label": "Grok 4 Fast via OpenRouter",
-        "pricing": { "input": 0.2, "output": 0.50 },
+        "pricing": {
+          "input": 0.2,
+          "output": 0.5
+        },
         "notes": {
           "implement": "xAI Grok 4 Fast; very cheap at $0.20/$0.50; probed PASS in 5.5s. Distinct from the quarantined grok-code-fast-1 (different model family/routing). Grok 4 family replaces the Grok Code Fast line."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-07-18T00:00:00.000Z",
         "archived": {
           "since": "2026-07-18",
@@ -353,11 +641,16 @@
       {
         "value": "openrouter/x-ai/grok-4.1-fast",
         "label": "Grok 4.1 Fast via OpenRouter",
-        "pricing": { "input": 0.2, "output": 0.50 },
+        "pricing": {
+          "input": 0.2,
+          "output": 0.5
+        },
         "notes": {
           "implement": "xAI Grok 4.1 Fast; latest iteration of the Grok 4 Fast family; probed PASS in 6.2s. Same pricing as grok-4-fast; benchmarking both to track iteration quality."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-07-18T00:00:00.000Z",
         "archived": {
           "since": "2026-07-18",
@@ -369,11 +662,16 @@
       {
         "value": "openrouter/nvidia/nemotron-3-super-120b-a12b",
         "label": "Nemotron 3 Super 120B via OpenRouter",
-        "pricing": { "input": 0.09, "output": 0.45 },
+        "pricing": {
+          "input": 0.085,
+          "output": 0.4
+        },
         "notes": {
           "implement": "Nvidia 120B MoE; 256K ctx — quarantined; consistently times out on agentic bench across 3 runs."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-30T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-30",
@@ -385,55 +683,89 @@
       {
         "value": "openrouter/z-ai/glm-5.1",
         "label": "GLM-5.1 via OpenRouter",
-        "pricing": { "input": 1.05, "output": 3.5 },
+        "pricing": {
+          "input": 0.966,
+          "output": 3.036
+        },
         "notes": {
           "implement": "Retired — superseded by GLM 5.2 (same Z.ai family). Originally quarantined 2026-04-30 for bench timeouts and credit burn on multi-turn agent loops."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-30T00:00:00.000Z",
         "quarantined": {
           "since": "2026-04-30",
           "reason": "Retired — superseded by openrouter/z-ai/glm-5.2 (Z.ai June 2026 release; similar tier, tools-capable). Original quarantine: 0/3 brewboard bench, hung sessions drained OpenRouter monthly credits.",
           "evidence": "all-brewboard-2026-04-29T11-59-07-090Z.json; all-brewboard-2026-04-28T04-54-40-883Z.json; all-brewboard-2026-04-29T04-44-27-508Z.json; PID 51163 ran 10h25m before manual kill on 2026-04-30",
-          "supersededBy": ["openrouter/z-ai/glm-5.2"]
+          "supersededBy": [
+            "openrouter/z-ai/glm-5.2"
+          ]
         }
       },
       {
         "value": "openrouter/z-ai/glm-5.2",
         "label": "GLM 5.2 via OpenRouter",
-        "pricing": { "input": 0.9072, "output": 2.8512 },
+        "pricing": {
+          "input": 0.7896,
+          "output": 2.4816
+        },
         "notes": {
           "implement": "Z.ai flagship reasoning model (Jun 2026); 1M ctx; OpenRouter reports tools support. Probed PASS in 8.4s on 2026-06-26. Successor to quarantined glm-5.1 — score pending brewboard bench."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "summary": {
           "headline": "Long-context open coder; pricing dropped sharply — bench before trust.",
           "body": "1M ctx MIT-licensed MoE; vendor Terminal-Bench 81.0 / SWE-bench Pro 62.1. OpenRouter now $0.91/$2.85 MTok (up from $0.35/$1.10 W28). Probe PASS 5.1s. Prior glm-5.1 quarantined for bench hangs — do not inherit score.",
-          "bestFor": ["implement", "research"],
-          "avoidFor": ["review"],
+          "bestFor": [
+            "implement",
+            "research"
+          ],
+          "avoidFor": [
+            "review"
+          ],
           "confidence": "medium",
           "researchedAt": "2026-07-12T00:00:00.000Z",
           "sources": [
-            { "kind": "provider", "title": "GLM 5.2 OpenRouter", "url": "https://openrouter.ai/z-ai/glm-5.2" },
-            { "kind": "benchmark", "title": "Terminal-Bench 81.0 (vendor)", "url": "https://github.com/zai-org/GLM-5" },
-            { "kind": "community", "title": "InfoWorld GLM-5.2 coverage", "url": "https://www.infoworld.com/article/4186136/z-ai-pitches-glm-5-2-for-long-running-software-engineering-tasks.html" }
+            {
+              "kind": "provider",
+              "title": "GLM 5.2 OpenRouter",
+              "url": "https://openrouter.ai/z-ai/glm-5.2"
+            },
+            {
+              "kind": "benchmark",
+              "title": "Terminal-Bench 81.0 (vendor)",
+              "url": "https://github.com/zai-org/GLM-5"
+            },
+            {
+              "kind": "community",
+              "title": "InfoWorld GLM-5.2 coverage",
+              "url": "https://www.infoworld.com/article/4186136/z-ai-pitches-glm-5-2-for-long-running-software-engineering-tasks.html"
+            }
           ]
         },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/deepseek/deepseek-v3.2-speciale",
         "label": "DeepSeek V3.2 Speciale via OpenRouter",
-        "pricing": { "input": 0.27, "output": 1.1 },
+        "pricing": {
+          "input": 0.27,
+          "output": 1.1
+        },
         "notes": {
           "implement": "Capable reasoning model; quarantined — OpenRouter routing reports no tool-use endpoints (2026-04-27)."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "lastRefreshAt": "2026-04-27T11:30:00.000Z",
-        "quarantined": {
-          "since": "2026-04-27",
-          "reason": "OpenRouter /api/v1/models reports model exists but supported_parameters does not include 'tools'. OpenCode tool-use sessions return 'No endpoints found that support tool use'.",
-          "evidence": "~/.local/share/opencode/log/2026-04-27T112829.log; modelID=deepseek/deepseek-v3.2-speciale agent=build mode=primary",
+        "archived": {
+          "since": "2026-07-25",
+          "reason": "Removed from OpenRouter catalog — ID no longer routable.",
+          "evidence": "openrouter.ai/api/v1/models — no row for openrouter/deepseek/deepseek-v3.2-speciale",
           "supersededBy": [
             "openrouter/deepseek/deepseek-chat-v3.1",
             "openrouter/anthropic/claude-sonnet-4.6"
@@ -445,7 +777,7 @@
         "label": "DeepSeek V3 (0324) via OpenRouter",
         "pricing": {
           "input": 0.27,
-          "output": 1.1
+          "output": 1.12
         },
         "notes": {
           "spec_review": "Capable spec reviewer; quarantined due to instruction-following failure on F358.",
@@ -475,65 +807,227 @@
       {
         "value": "openrouter/qwen/qwen3.7-plus",
         "label": "Qwen3.7 Plus via OpenRouter",
-        "pricing": { "input": 0.32, "output": 1.28 },
+        "pricing": {
+          "input": 0.32,
+          "output": 1.28
+        },
         "notes": {
           "implement": "Added 2026-W28 (F665). Multimodal Qwen3.7 tier; 1M ctx; probe PASS 5.8s. Third-party SWE-bench Pro ~57-60% (below Qwen3.7 Max 60.6%). No Aigon bench yet."
         },
-        "score": { "implement": null },
+        "score": {
+          "implement": null
+        },
         "summary": {
           "headline": "Cost-effective Qwen3.7 tier; add for implement, not deep spec work.",
           "body": "Multimodal agent model with 1M ctx. SWE-bench Pro ~57-60% per third-party trackers (below Max 60.6%). OpenRouter $0.30/$1.30 MTok. Probe PASS 5.8s Jul 2026.",
-          "bestFor": ["implement"],
-          "avoidFor": ["spec", "spec_review"],
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "spec_review"
+          ],
           "confidence": "medium",
           "researchedAt": "2026-07-12T00:00:00.000Z",
           "sources": [
-            { "kind": "provider", "title": "Qwen3.7 Plus OpenRouter", "url": "https://openrouter.ai/qwen/qwen3.7-plus" },
-            { "kind": "benchmark", "title": "SWE-bench Pro ~57-60%", "url": "https://awesomeagents.ai/models/qwen-3-7-plus/" },
-            { "kind": "community", "title": "Alibaba Cloud Qwen3.7-Plus blog", "url": "https://www.alibabacloud.com/blog/qwen3-7-plus-multimodal-agent-intelligence_603206" }
+            {
+              "kind": "provider",
+              "title": "Qwen3.7 Plus OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3.7-plus"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Pro ~57-60%",
+              "url": "https://awesomeagents.ai/models/qwen-3-7-plus/"
+            },
+            {
+              "kind": "community",
+              "title": "Alibaba Cloud Qwen3.7-Plus blog",
+              "url": "https://www.alibabacloud.com/blog/qwen3-7-plus-multimodal-agent-intelligence_603206"
+            }
           ]
         },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
       },
       {
         "value": "openrouter/x-ai/grok-4.5",
         "label": "Grok 4.5 via OpenRouter",
-        "pricing": { "input": 2.00, "output": 6.00 },
+        "pricing": {
+          "input": 2,
+          "output": 6
+        },
         "notes": {
           "implement": "Added 2026-W28 (F665). Probe PASS 5.0s. Successor to the quarantined grok-4-fast / grok-4.1-fast family. Summary deferred to W29 research round-robin; no Aigon bench yet."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-07-12T00:00:00.000Z"
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Cursor-trained frontier coder; pricey at $2/$6 MTok.",
+          "body": "xAI July 2026 flagship; 500K ctx; trained on Cursor agent traces. Probe PASS 5.7s W30. No Aigon bench. Output exceeds $5/MTok economic gate — use sparingly.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Grok 4.5 xAI docs",
+              "url": "https://docs.x.ai/developers/models/grok-4.5"
+            },
+            {
+              "kind": "community",
+              "title": "Cursor-trained coding agent report",
+              "url": "https://byteiota.com/grok-4-5-coding-agent/"
+            },
+            {
+              "kind": "provider",
+              "title": "Grok 4.5 OpenRouter",
+              "url": "https://openrouter.ai/x-ai/grok-4.5"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/moonshotai/kimi-k2.7-code",
         "label": "Kimi K2.7 Code via OpenRouter",
-        "pricing": { "input": 1.0, "output": 4.4 },
+        "pricing": {
+          "input": 0.78,
+          "output": 3.5
+        },
         "notes": {
           "implement": "Added 2026-W28 (F665). Moonshot code-specialist; probe PASS 5.8s. Summary deferred to W29 research round-robin; no Aigon bench yet."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Token-efficient 1T MoE coder; no public SWE-bench yet.",
+          "body": "Moonshot Jun 2026 coding specialist (32B active/1T MoE). Vendor Kimi Code Bench v2 +21.8% vs K2.6; ~30% fewer reasoning tokens. Probe PASS 5.7s. $0.78/$3.50 MTok W30.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Kimi K2.7 Code Hugging Face",
+              "url": "https://huggingface.co/moonshotai/Kimi-K2.7-Code"
+            },
+            {
+              "kind": "community",
+              "title": "Kimi K2.7-Code review",
+              "url": "https://agentguides.dev/reviews/kimi-k2-7-code-review/"
+            },
+            {
+              "kind": "provider",
+              "title": "Kimi K2.7 Code OpenRouter",
+              "url": "https://openrouter.ai/moonshotai/kimi-k2.7-code"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/nvidia/nemotron-3-ultra-550b-a55b",
         "label": "Nemotron 3 Ultra via OpenRouter",
-        "pricing": { "input": 0.60, "output": 3.60 },
+        "pricing": {
+          "input": 0.6,
+          "output": 3.6
+        },
         "notes": {
           "implement": "Added 2026-W28 (F665). Probe PASS 5.3s. Prior nemotron-3-super quarantined for bench timeouts — bench before promoting. Summary deferred; no Aigon bench yet."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "1M-ctx agent orchestrator; prior super quarantined.",
+          "body": "NVIDIA Jun 2026 550B/55B-active MoE hybrid Mamba-Transformer. Vendor SWE-bench 65–70.4% across harnesses. Probe PASS 11.5s W30. Prior nemotron-3-super quarantined — do not inherit score.",
+          "bestFor": [
+            "implement",
+            "research"
+          ],
+          "avoidFor": [
+            "review"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Nemotron 3 Ultra NVIDIA blog",
+              "url": "https://developer.nvidia.com/blog/nvidia-nemotron-3-ultra-powers-faster-more-efficient-reasoning-for-long-running-agents/"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench 65-70.4% across harnesses",
+              "url": "https://www.marktechpost.com/2026/06/04/nvidia-ai-releases-nemotron-3-ultra-an-open-550b-mixture-of-experts-hybrid-mamba-transformer-for-long-running-agents/"
+            },
+            {
+              "kind": "provider",
+              "title": "Nemotron 3 Ultra OpenRouter",
+              "url": "https://openrouter.ai/nvidia/nemotron-3-ultra-550b-a55b"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/minimax/minimax-m3",
         "label": "MiniMax M3 via OpenRouter",
-        "pricing": { "input": 0.30, "output": 1.20 },
+        "pricing": {
+          "input": 0.3,
+          "output": 1.2
+        },
         "notes": {
           "implement": "Added 2026-W28 (F665). Probe PASS 5.4s. Bench before promoting. Summary deferred; no Aigon bench yet."
         },
-        "score": { "implement": null },
-        "lastRefreshAt": "2026-07-18T00:00:00.000Z"
+        "score": {
+          "implement": null
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Multimodal 1M-ctx agent; vendor SWE 80.5% unverified.",
+          "body": "MiniMax Jun 2026 428B/23B-active MoE with native image/video. Vendor SWE-bench Verified 80.5% (Claude Code scaffold, unverified). Probe PASS 5.4s W30. $0.30/$1.20 MTok.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "spec_review"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "MiniMax M3 release blog",
+              "url": "https://www.minimax.io/blog/minimax-m3"
+            },
+            {
+              "kind": "community",
+              "title": "MiniMax M3 benchmark roundup",
+              "url": "https://www.morphllm.com/minimax-m3"
+            },
+            {
+              "kind": "provider",
+              "title": "MiniMax M3 OpenRouter",
+              "url": "https://openrouter.ai/minimax/minimax-m3"
+            }
+          ]
+        }
       }
     ],
     "effortOptions": [],
