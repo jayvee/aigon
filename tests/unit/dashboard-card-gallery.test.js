@@ -150,6 +150,11 @@ test('feature sets cover every conductor status and derive actions from set work
     assert(!actionIds(manual).includes('set-autonomous-start'));
     assert(!actionIds(manual).includes('set-autonomous-stop'));
     assert(scenario('set-paused-failure').contract.decisions.actions.some(action => action.actionId === 'set-autonomous-resume'));
+    const interrupted = scenario('set-conductor-interrupted');
+    assert.strictEqual(interrupted.contract.state.label, 'Conductor interrupted');
+    assert(actionIds(interrupted).includes('set-autonomous-resume'));
+    assert(actionIds(interrupted).includes('set-autonomous-start'));
+    assert(actionIds(interrupted).includes('set-autonomous-stop'));
     assert(scenario('set-complete').setPlan.members.every(member => member.status === 'complete'));
     assert.strictEqual(scenario('set-ready').setPlan.progress.complete, 0);
     assert.strictEqual(scenario('set-ready').showExpandedMembers, true);

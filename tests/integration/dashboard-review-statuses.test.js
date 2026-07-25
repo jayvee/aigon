@@ -160,6 +160,17 @@ test('buildSetValidActions exposes restart actions for stopped partial sets', ()
     assert.ok(!stoppedDone.some(a => a.action === 'set-autonomous-start'), 'complete set should not offer start');
 });
 
+// REGRESSION: an absent conductor must offer recovery instead of a misleading Stop-only running state.
+test('buildSetValidActions exposes recovery actions for interrupted sets', () => {
+    const actions = buildSetValidActions({
+        slug: 'docs-release-readiness', isComplete: false,
+        autonomous: { status: 'interrupted', members: ['697', '698', '699'], completed: ['697'] },
+    }, { requiresPro: false, proAvailable: true });
+    assert.ok(actions.some(a => a.action === 'set-autonomous-resume' && a.label === 'Resume (same agents)'));
+    assert.ok(actions.some(a => a.action === 'set-autonomous-start' && a.label === 'Resume (choose agents…)'));
+    assert.ok(actions.some(a => a.action === 'set-autonomous-stop' && a.label === 'Take over manually'));
+});
+
 // --- spec-review + dashboard status lifecycle ---
 // REGRESSION: dashboard showed "Checking" forever because the read model read
 // from tmux presence instead of the snapshot. Spec-review status now flows from
