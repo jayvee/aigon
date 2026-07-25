@@ -1862,6 +1862,22 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       });
       header.querySelectorAll('.kcard-va-btn[data-va-action]').forEach((btn) => {
         const vaAction = btn.getAttribute('data-va-action');
+        const vaAgentId = btn.getAttribute('data-agent') || null;
+        const embeddedCurrent = btn.closest('.ccard-set-current');
+        if (embeddedCurrent) {
+          const currentId = roll.currentFeature && roll.currentFeature.id;
+          const currentFeature = (repo.features || []).find(feature =>
+            currentId != null && String(feature.id) === String(currentId));
+          const featureAction = currentFeature && (currentFeature.validActions || []).find(action =>
+            action.action === vaAction && (action.agentId || null) === vaAgentId);
+          if (!featureAction || featureAction.disabled || btn.disabled) return;
+          btn.onclick = async (e) => {
+            e.stopPropagation();
+            closeAllKcardOverflowMenus();
+            await handleFeatureAction(featureAction, currentFeature, repo.path, btn, 'features');
+          };
+          return;
+        }
         const va = (roll.validActions || []).find(a => a.action === vaAction);
         if (!va || va.disabled || btn.disabled) return;
         btn.onclick = (e) => {
