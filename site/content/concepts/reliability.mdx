@@ -24,7 +24,7 @@ Worktrees are cleaned up automatically during `feature-close`.
 
 ## Merge gate scanning
 
-When you close or submit a feature, Aigon runs security scanners against the changed files before merging:
+When you close a feature or an agent signals `implementation-complete`, Aigon runs security scanners against the changed files before merging:
 
 ### gitleaks
 
@@ -87,7 +87,7 @@ Each line is a timestamped JSON event:
 Event logs are immutable — Aigon only appends, never modifies or deletes entries. The current state snapshot (`.aigon/workflows/features/{id}/snapshot.json`) is always derivable from the event log.
 
 This gives you a complete history of:
-- When each agent started and submitted
+- When each agent started and signalled completion
 - Which agent won evaluation (Fleet mode)
 - Security scan results at merge time
 - Any errors or failures during the lifecycle
@@ -147,4 +147,4 @@ Heartbeat is **display-only** — it never triggers automatic state changes. If 
 
 - **[Security Scanning](/docs/guides/security-scanning)** — detailed scanner configuration
 - **[Fleet Mode](/docs/guides/fleet-mode)** — how isolation enables safe parallel development
-- **[Evaluation](/docs/concepts/evaluation)** — comparing implementations after agents submit
+- **[Evaluation](/docs/concepts/evaluation)** — comparing implementations after agents signal completion

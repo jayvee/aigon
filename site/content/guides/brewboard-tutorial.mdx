@@ -81,10 +81,10 @@ In the Pipeline view, find feature **01 — Format Date** in the Backlog column.
 
 <img src="/img/tutorial-drive-mode.png" alt="Drive mode agent picker — feature 01 format-date with Claude Code selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
 
-Click **Start**. Aigon creates a worktree, opens a tmux session, and begins implementation.
+Click **Start**. Aigon prepares the selected execution workspace and begins implementation through its configured session host.
 
 Watch the card update in real-time:
-- Status moves from **Starting** → **Working** → **Submitted**
+- Status moves from **Starting** → **Working** → **Complete** after `implementation-complete`
 - The Sessions panel shows agent liveness with heartbeat updates every 30s
 - Elapsed time and cost appear on the card as the session runs
 
@@ -96,7 +96,7 @@ Fleet mode runs two agents on the same feature simultaneously. Find feature **03
 
 <img src="/img/tutorial-fleet-mode.png" alt="Fleet mode agent picker — feature 04 rating-system with Claude Code and Antigravity selected" width="420" style={{borderRadius:"8px",margin:"12px 0"}} />
 
-Two cards appear for the same feature — one per agent — both updating independently. When both show **Submitted**, click **Evaluate** to open a review session that compares both implementations and recommends a winner. Then click **Accept & Close** on your preferred card to merge it.
+Two cards appear for the same feature — one per agent — both updating independently. When both show **Complete**, click **Evaluate** to open a review session that compares both implementations and recommends a winner. Then click **Accept & Close** on your preferred card to merge it.
 
 ### Autonomous mode
 

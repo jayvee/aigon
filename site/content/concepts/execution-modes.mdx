@@ -60,7 +60,7 @@ implement → [review] → close
 implement (parallel) → evaluate → close
 ```
 
-{/* SCREENSHOT: Dashboard showing Swarm run — multiple agents submitted, evaluator running, auto badge visible */}
+{/* SCREENSHOT: Dashboard showing Swarm run — multiple complete agents, evaluator running, auto badge visible */}
 
 ## Mode selection guide
 
@@ -92,7 +92,7 @@ As agents work, they signal status transitions via `aigon agent-status`:
 |--------|---------|
 | `implementing` | Agent is writing code |
 | `waiting` | Agent finished, awaiting review |
-| `submitted` | Agent committed code and log |
+| `implementation-complete` | Agent committed code and its implementation log |
 
 Check status:
 
