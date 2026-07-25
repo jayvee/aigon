@@ -1,3 +1,26 @@
+---
+commit_count: 13
+lines_added: 365
+lines_removed: 145
+lines_changed: 510
+files_touched: 13
+fix_commit_count: 7
+fix_commit_ratio: 0.538
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: true
+input_tokens: 4201722
+output_tokens: 16563
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 3991040
+thinking_tokens: 2967
+total_tokens: 4218285
+billable_tokens: 4221252
+cost_usd: 9.3342
+sessions: 1
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 697 - harden-setup-wizard-contract
 Agent: cx
 
