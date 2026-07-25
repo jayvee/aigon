@@ -4,6 +4,7 @@ Single entry point for every doc under `docs/`. One line per file: what's in it,
 
 ## Engineering
 
+- [code-tour.md](code-tour.md) — **Start here if you're new to the code.** Guided reading of ~25 verbatim excerpts covering the core logic, in the order it runs: CLI dispatch → event engine → identity/storage → agents/sessions → orchestration → dashboard read path → templates. Each with commentary on the pattern and why it exists. Maintained via the `code-tour` skill; anchors checked by `node scripts/check-code-tour.js`.
 - [architecture.md](architecture.md) — Full module docs, the `ctx` pattern, state architecture, write-path contract. Read when changing how `lib/` modules fit together. See § "Install manifest" for `lib/install-manifest.js` — the module that tracks install-agent footprint with sha256+version per file and enables `aigon remove`.
 - [specstore-architecture.md](specstore-architecture.md) — SpecStore boundary, local vs git-branch backends, stable layout interaction. Read when changing `lib/spec-store/` or storage CLI.
 - [aigon-git-branch-storage-migration.md](aigon-git-branch-storage-migration.md) — Operator runbook for converting **this repo** from local storage to the `aigon-state` orphan branch on `origin`.

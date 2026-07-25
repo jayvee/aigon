@@ -6,6 +6,7 @@
 
 - `aigon-cli.js` is dispatch only. Command handlers live in `lib/commands/`; shared behavior lives in focused `lib/` modules.
 - Read the active feature/research spec before implementation and follow its scope and validation instructions.
+- New to this codebase? Read `docs/code-tour.md` — annotated verbatim excerpts of the core logic in execution order.
 - Read `docs/architecture.md` when changing modules, workflow state, installation, agent sessions, the dashboard, or Pro integration.
 - Read `docs/testing.md` before choosing validation commands or adding tests.
 - Read `.aigon/docs/development_workflow.md` for the feature/research lifecycle and agent-status protocol.
@@ -94,6 +95,7 @@ After any `lib/*.js` edit, restart the Aigon dashboard server. Frontend-only ass
 - Before submission, run the active spec's validation. `feature-close` owns the deploy gate.
 - New non-trivial code and bug fixes require focused regression coverage. Every test should explain the behavior it pins with a `// REGRESSION:` comment. Read `docs/testing.md` for exceptions and the test LOC ceiling.
 - Preserve unrelated user changes and never delete tests or exports to make validation pass.
+- If your change touches code quoted by `docs/code-tour.md`, refresh it per `.claude/skills/code-tour/SKILL.md`. Check with `node scripts/check-code-tour.js` — excerpts are verbatim and anchors must resolve.
 - Commit meaningful changes with conventional commit prefixes. After every release commit, the maintainer flow requires `npm version patch|minor|major` and pushing tags; agents must not perform a release unless asked.
 - Syntax sanity: `node -c aigon-cli.js`. Repository suite: `npm test`.
 
@@ -101,6 +103,8 @@ After any `lib/*.js` edit, restart the Aigon dashboard server. Frontend-only ass
 
 | Task area | Read before editing |
 |---|---|
+| Orientation in unfamiliar code; core logic by example | `docs/code-tour.md` |
+| Keeping `docs/code-tour.md` current after a change | `.claude/skills/code-tour/SKILL.md` |
 | Module placement, CLI layering, install internals | `docs/architecture.md` |
 | Workflow events, snapshots, state additions, read models | `docs/architecture.md` § Workflow State |
 | Test selection, gates, test authoring | `docs/testing.md` |
