@@ -153,7 +153,7 @@ Full documentation lives at **[aigon.build/docs](https://www.aigon.build/docs)**
 - 📖 [Docs](https://www.aigon.build/docs) — the full manual
 - 🧑‍💻 [Contributing](CONTRIBUTING.md) — how to set up a dev environment and submit PRs
 - 🔒 [Security policy](SECURITY.md) — how to report vulnerabilities privately
-- 📰 [aigon.build](https://www.aigon.build) — follow here for launch updates, release notes, and Pro announcements
+- 📰 [aigon.build](https://www.aigon.build) — follow here for launch updates and release notes
 - 🏢 [Sen Labs](https://senlabs.ai) — the company behind Aigon
 
 ## License
