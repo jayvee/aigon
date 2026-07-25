@@ -33,4 +33,45 @@ test('distinguishes normal completion from resumable skipped work', () => {
     assert.strictEqual(state.getFirstResumableStep(complete), state.STEP_IDS[0]);
 });
 
+// REGRESSION (F695): the wizard is eight steps and 'pro' is no longer one of them.
+test('exposes the eight canonical wizard steps in order', () => {
+    assert.deepStrictEqual(state.STEP_IDS, ['prereqs', 'terminal', 'agents', 'seed-repo', 'repos', 'server', 'demo', 'vault']);
+    assert.strictEqual(state.getFirstIncompleteStep({ steps: {} }), 'prereqs');
+    assert.strictEqual(state.getFirstResumableStep(null), 'prereqs');
+    assert.deepStrictEqual(state.validateStepIds(['pro']), ['pro']);
+});
+
+// REGRESSION (F695): a state file written before the Pro step was removed must
+// resume at the step after it, not re-run completed work and not throw.
+test('ignores a legacy steps.pro entry when resuming', () => {
+    const legacy = { steps: { prereqs: 'done', terminal: 'done', agents: 'done', pro: 'skipped' } };
+    assert.strictEqual(state.getFirstIncompleteStep(legacy), 'seed-repo');
+    assert.strictEqual(state.getFirstResumableStep(legacy), 'seed-repo');
+    assert.strictEqual(state.isOnboardingComplete(legacy), false);
+});
+
+// REGRESSION (F695): a fully-done nine-step state file must read as complete
+// forever, not stall on the removed step.
+test('treats a complete legacy nine-step state as complete', () => {
+    const legacy = { steps: Object.fromEntries([...state.STEP_IDS, 'pro'].map(id => [id, 'done'])) };
+    assert.strictEqual(state.isOnboardingComplete(legacy), true);
+    assert.strictEqual(state.getFirstIncompleteStep(legacy), null);
+    assert.strictEqual(state.getFirstResumableStep(legacy), null);
+});
+
+// REGRESSION (F695): shouldRunStep must not treat an unknown startStep (indexOf
+// === -1, e.g. a resume from a state file written mid-'pro') as "before every
+// step", which would silently re-run the whole wizard.
+test('wizard shouldRunStep survives a removed startStep', () => {
+    const { shouldRunStep } = require('../../lib/onboarding/wizard');
+    const legacy = { steps: { prereqs: 'done', terminal: 'done', agents: 'done', pro: 'skipped' } };
+    const options = { resumeFlag: true, selectedSteps: [] };
+    assert.strictEqual(shouldRunStep('prereqs', 'pro', legacy, options), false);
+    assert.strictEqual(shouldRunStep('agents', 'pro', legacy, options), false);
+    assert.strictEqual(shouldRunStep('seed-repo', 'pro', legacy, options), true);
+    // The normal path still gates on ordering.
+    assert.strictEqual(shouldRunStep('seed-repo', 'server', legacy, options), false);
+    assert.strictEqual(shouldRunStep('server', 'server', legacy, options), true);
+});
+
 if (failed) process.exit(1);

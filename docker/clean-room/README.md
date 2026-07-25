@@ -83,7 +83,7 @@ The public docs describe each step. In the container specifically:
 - **Step 5 (Repo scan)** — decline.
 - **Step 6 (Dashboard server)** — say yes.
 - **Step 7 (Brewboard demo)** — decline unless you've injected credentials (see [Optional](#optional-inject-your-real-agent-credentials) below).
-- **Step 8 (Aigon Pro vault)** — decline.
+- **Step 8 (Vault backup)** — decline.
 
 ### Verify
 
