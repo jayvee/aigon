@@ -8,6 +8,8 @@ const globals = {
     clearTimeout: 'readonly',
     console: 'readonly',
     exports: 'writable',
+    // Node 18+ global fetch (used by lib/insights.js for the coaching call).
+    fetch: 'readonly',
     global: 'readonly',
     module: 'readonly',
     process: 'readonly',
