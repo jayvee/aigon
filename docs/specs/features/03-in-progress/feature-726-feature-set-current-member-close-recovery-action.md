@@ -1,53 +1,39 @@
 ---
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
-# planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
-#              #   generated during an interactive planning session (e.g. EnterPlanMode).
-#              #   Content is injected into the agent's context at feature-do time and
-#              #   copied into the implementation log at feature-start for durability.
-#              #   Set this whenever you ran plan mode before writing the spec.
-# set: my-slug  # optional — ONLY when creating 2+ inbox peers to ship together.
-#              #   Run `aigon set list` / `aigon set show <slug>` first. NEVER tag into
-#              #   a completed set (all members done). Follow-up work: standalone + depends_on.
 ---
 
-# Feature: feature-set-current-member-close-recovery-action
-
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file changes, new public surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, contract-breaking changes, new invariants, cross-cutting work that spans multiple subsystems
-     At start time, model and effort defaults come from each agent's complexity-defaults
-     table (not from this spec). Do not put model IDs in the spec. -->
+# Feature: Feature-set current-member close recovery action
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+Expose and correctly dispatch the embedded current feature's server-approved
+recovery actions from an expanded feature-set card, so an operator can launch
+`Resolve & close` after an autonomous set member fails to merge.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator taking over a failed autonomous set, I can launch the
+      current feature's agent-assisted close recovery without leaving the set card.
+- [ ] As an operator, I can distinguish feature actions from set-level resume
+      and reset actions, and each action targets the correct entity.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] The embedded current-feature contract in a feature-set card renders its
+      card-surface actions rather than suppressing them.
+- [ ] An embedded `feature-resolve-and-close` button dispatches through
+      `handleFeatureAction` with the current feature row and its matching
+      `validActions` entry; set actions continue to dispatch through
+      `handleSetAction`.
+- [ ] A stopped or paused set whose current feature has a merge-conflict close
+      failure visibly offers `Resolve & close` alongside the set recovery actions.
+- [ ] Gallery/unit and dashboard browser regression coverage pin the rendering
+      and dispatch behavior.
+- [ ] No frontend lifecycle eligibility is introduced: actions and labels remain
+      sourced from the feature and feature-set UI contracts.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the project's general checks.
-     All commands must exit 0 for the iteration to be considered successful.
-     Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+node tests/unit/dashboard-card-gallery.test.js
+npx playwright test tests/dashboard-e2e/contract-cards-preview.spec.js --config tests/dashboard-e2e/playwright.config.js
+npm run test:iterate
 ```
 
 ## Pre-authorised
@@ -58,25 +44,24 @@ complexity: medium
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+Keep workflow eligibility server-owned. Update the contract set-card renderer
+to include the embedded feature contract's action bar. In the pipeline wiring,
+route buttons inside `.ccard-set-current` against the current member's real
+feature row and `validActions`; route all remaining buttons against the set's
+`validActions`. Extend the gallery's failed-set fixture so its current member
+uses a real merge-conflict recovery contract, then assert rendering and click
+dispatch in the existing contract-card preview coverage.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- Existing feature UI contract and feature-set UI contract.
+- Existing `feature-resolve-and-close` dashboard action handler.
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+- Changing close-failure lifecycle semantics or set-conductor resume behavior.
+- Automatically resolving merge conflicts without an agent session.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+- None.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
-<!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
-     See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
+- Prior work: F338 close-failure resolve action; F678/F679 contract cards.
