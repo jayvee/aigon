@@ -43,6 +43,7 @@ let createSignalHealthCommands;
 let checkForUpdate, getCachedUpdateCheck, formatUpdateNotice;
 let createSecurityScanCommands;
 let createProCommands;
+let onboardingState;
 
 try {
     ({ COMMAND_ALIASES } = require('./lib/constants'));
@@ -62,6 +63,7 @@ try {
     ({ createSecurityScanCommands } = require('./lib/commands/security-scan'));
     ({ createProCommands } = require('./lib/commands/pro'));
     ({ checkForUpdate, getCachedUpdateCheck, formatUpdateNotice } = require('./lib/npm-update-check'));
+    onboardingState = require('./lib/onboarding/state');
 } catch (error) {
     console.error(formatCliError(error));
     process.exit(1);
@@ -129,13 +131,12 @@ function firstRunComplete() {
         } catch (_) {}
     }
     // Check onboarding state file for all steps complete
-    const statePath = path.join(os.homedir(), '.aigon', 'onboarding-state.json');
+    const statePath = onboardingState.STATE_PATH;
     if (!fs.existsSync(statePath)) return false;
     try {
         const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
         const steps = state.steps || {};
-        const STEP_IDS = ['prereqs', 'terminal', 'agents', 'pro', 'seed-repo', 'repos', 'server', 'demo', 'vault'];
-        return STEP_IDS.every(id => steps[id] === 'done' || steps[id] === 'skipped');
+        return onboardingState.STEP_IDS.every(id => steps[id] === 'done' || steps[id] === 'skipped');
     } catch (_) {
         return false;
     }
@@ -257,6 +258,13 @@ async function main() {
 
     if (!resolvedCommand || resolvedCommand === 'help' || resolvedCommand === '--help' || resolvedCommand === '-h') {
         commands.help();
+        return;
+    }
+
+    // Command-local help must be read-only: guard before startup hooks,
+    // first-run setup, or any command handler can create state or processes.
+    if (commandArgs.includes('--help') || commandArgs.includes('-h')) {
+        commands.help([resolvedCommand]);
         return;
     }
 

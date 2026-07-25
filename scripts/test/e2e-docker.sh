@@ -158,21 +158,23 @@ else
   echo "$SETUP_LOG" | tail -30 | sed 's/^/      /'
 fi
 
-# Brewboard step in --yes mode auto-clones; verify
-if docker exec "$CONTAINER_NAME" bash -lc 'test -d ~/src/brewboard/.aigon'; then
-  ok "brewboard cloned + apply ran"
+# setup --yes must stay conservative: no Brewboard clone (F697 contract)
+if docker exec "$CONTAINER_NAME" bash -lc 'test -d ~/src/brewboard'; then
+  bad "setup --yes cloned brewboard — violates conservative contract"
 else
-  # --yes does not auto-clone (it's a yes-or-no choice with no default); do it explicitly
-  note "wizard did not auto-clone brewboard in --yes mode — cloning + applying manually"
-  docker exec "$CONTAINER_NAME" bash -lc '
-    git clone -q https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
-    cd ~/src/brewboard
-    npm install --silent 2>&1 | tail -1
-    aigon apply 2>&1 | tail -3
-    aigon install-agent cc gg 2>&1 | tail -2
-    aigon server add ~/src/brewboard >/dev/null 2>&1
-  ' >/dev/null 2>&1 && ok "manual brewboard bootstrap complete" || bad "brewboard bootstrap failed"
+  ok "setup --yes did not clone brewboard"
 fi
+
+# Downstream feature runs still need a seed repo — bootstrap explicitly after the contract check.
+note "cloning brewboard manually for downstream feature runs"
+docker exec "$CONTAINER_NAME" bash -lc '
+  git clone -q https://github.com/jayvee/brewboard-seed.git ~/src/brewboard
+  cd ~/src/brewboard
+  npm install --silent 2>&1 | tail -1
+  aigon apply 2>&1 | tail -3
+  aigon install-agent cc gg 2>&1 | tail -2
+  aigon server add ~/src/brewboard >/dev/null 2>&1
+' >/dev/null 2>&1 && ok "manual brewboard bootstrap complete" || bad "brewboard bootstrap failed"
 
 # Ensure dashboard is running
 docker exec "$CONTAINER_NAME" bash -lc '

@@ -3,23 +3,27 @@ title: Setup wizard
 description: What `aigon setup` does, step by step.
 ---
 
-`aigon setup` runs once after install. Eight steps, each skippable. Re-run any time with `aigon setup --resume`, or force a clean re-run with `aigon global-setup --force`.
+`aigon setup` runs once after install. It has nine persisted steps, each skippable. `aigon setup --resume` retries skipped, failed, or incomplete work without repeating completed steps. Use repeatable `--step <id>` when you only need to retry a named step; `global-setup --force` regenerates machine configuration and does not restart the wizard.
 
 1. **Prerequisites** — verifies Node, npm, Git, GitHub CLI (`gh`), `tmux`, and `lsof`; offers to install missing optionals (`gh`, `tmux`, `lsof`); prompts for Git identity if not configured; runs `gh auth login` if needed.
 2. **Terminal preference** (macOS) — iTerm2, Warp, Terminal.app, Ghostty, or cmux. Linux auto-detects GNOME Terminal / Kitty / xterm and falls back to `tmux`.
-3. **Agent install** — multi-select from Claude Code, Antigravity CLI, Codex CLI, Cursor, OpenCode, and Kimi. Installs the binary and runs auth flow where supported.
-4. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon apply`, registers it with the dashboard.
-5. **Repo scan** — scans `~/src` for Git repos and offers to register them with the dashboard.
-6. **Dashboard server** — starts the server (persistent on macOS/Linux). Skip if you want to start it yourself later with `aigon server start --persistent`.
-7. **Brewboard demo** — opt-in walkthrough that runs an autonomous feature against the seed repo.
-8. **Aigon Pro vault** — Pro users only; encrypted backups for spec history. See [Installing Aigon Pro](/docs/guides/pro-installation).
+3. **Agent install** — multi-select from Claude Code, Antigravity CLI, Codex CLI, Cursor, OpenCode, and Kimi. Nothing is preselected; pick agents to install and authenticate using each agent's registry metadata.
+4. **Aigon Pro** (optional) — install and activate the Pro beta package when eligible. See [Installing Aigon Pro](/docs/guides/pro-installation).
+5. **Optional seed clone** — clones the [brewboard-seed](https://github.com/jayvee/brewboard-seed) demo repo, runs `aigon apply`, registers it with the dashboard, and persists the target path for later steps.
+6. **Repo scan** — scans `~/src` for Git repos and offers to register them with the dashboard.
+7. **Dashboard** — optional persistent, loopback-only server start. Setup verifies its health endpoint before marking the step complete and reports the log/remediation path if it fails.
+8. **Brewboard demo** — opt-in walkthrough that starts a supervised feature using an available installed agent against the selected seed repo.
+9. **Vault** — optional Pro backup setup for eligible installations.
 
 ## Re-running a step
 
 ```bash
 aigon setup --resume          # pick up where you left off
-aigon global-setup --force    # start over from step 1
+aigon setup --step server     # retry only the dashboard step
+aigon global-setup --force    # regenerate machine configuration
 ```
+
+`aigon setup --yes` is deliberately conservative: it does not install agents, clone Brewboard, register existing repositories, authenticate, start the dashboard, or run a demo. Command help is also read-only: `aigon setup --help` never runs setup.
 
 ## What if I skip the wizard entirely?
 
