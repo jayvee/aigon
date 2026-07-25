@@ -36,7 +36,7 @@ The dashboard and CLI are interchangeable views of the same state. Any action yo
 
 ## Pipeline
 
-Drag features through the pipeline: inbox → backlog → in-progress → in-evaluation → done. The **Remaining quota before reset** strip at the top summarises cached Claude Code and Codex limits — see [Usage limits on the Pipeline](./pipeline-quota).
+The Pipeline renders each feature's server-owned valid actions and lifecycle state: inbox → backlog → in-progress → in-evaluation → done. The **Remaining quota before reset** strip summarises any available unified agent-quota data — see [Usage limits on the Pipeline](./pipeline-quota).
 
 ![Pipeline view](/img/aigon-dashboard-kanban.png)
 
@@ -59,7 +59,7 @@ See the [GitHub Integration guide](./github-integration) for prerequisites, stat
 
 When an agent is blocked on a decision, it can emit `aigon agent-status awaiting-input "<question>"`. The feature card then shows a pulsing **Awaiting input** badge with the question text so you can see exactly what is blocking progress from the dashboard.
 
-{/* PLACEHOLDER: awaiting-input badge on a dashboard card */}
+The card surfaces the status inline; open its session **Peek** control to inspect retained output when more context is needed.
 
 The badge clears automatically when the agent reports its next status, so cards do not get stuck showing stale prompts after work resumes.
 
@@ -69,11 +69,11 @@ When you start a feature from the dashboard, each agent slot includes a **model*
 
 **Complexity-driven defaults:** If the feature spec (or research topic) has valid YAML frontmatter with a **`complexity`** level, the dialog shows a short **explanation under the title** and pre-fills each row from that complexity plus each agent’s built-in **complexity ladder** in `templates/agents/<id>.json` (not from model names stored in the spec). **Default** in a dropdown still means your global `aigon config` value; change any row before Start if you want a one-off override. Details and the full resolution order are in the [Agents reference](/docs/reference/agents#spec-complexity-and-model-defaults).
 
-{/* PLACEHOLDER: model picker dropdown in the dashboard start dialog */}
+The start dialog presents these controls directly in each agent row.
 
 After launch, the card shows the selected model and effort on the agent row so you can confirm exactly what configuration is running.
 
-{/* PLACEHOLDER: model and effort badge on an agent row */}
+Selected values remain visible on the running agent row.
 
 ### Review-check statuses
 
@@ -82,7 +82,7 @@ After a code review completes, the implementing agent row can show two follow-up
 - **Addressing review** means the agent is actively working through the review findings.
 - **Feedback addressed** means the implementation agent finished the requested follow-up and signaled completion.
 
-{/* PLACEHOLDER: addressing-review and feedback-addressed badges on an agent row */}
+These states are displayed on the relevant agent row.
 
 These statuses make review handoff visible without requiring you to open the session log.
 
@@ -90,7 +90,7 @@ These statuses make review handoff visible without requiring you to open the ses
 
 If `feature-close` fails because of a merge conflict or another closing error, the card exposes a **Close with agent** button. That action starts an agent session specifically to unblock the close rather than making you leave the dashboard and recover manually.
 
-{/* PLACEHOLDER: close-with-agent button on a feature card */}
+The action appears only when the server reports it as valid.
 
 Use it when the failure needs code changes or conflict resolution inside the worktree before the feature can be merged.
 
@@ -119,13 +119,13 @@ If you want the conceptual walkthrough for how set-level autonomy works end to e
 
 ## Agent Budget
 
-Claude Code and Codex expose remaining session and weekly budgets. Aigon polls those values every 30 minutes via a throwaway tmux session and caches the result to `.aigon/budget-cache.json`.
+Where an agent exposes a supported non-interactive source, Aigon records remaining quota in the unified agent-quota state. Antigravity exhaustion can be detected from a running session, but Aigon does not automatically probe Antigravity for quota.
 
 - **Settings → Agent Budget** shows each agent's session % and weekly % remaining with colour bars (green ≥ 50 %, amber 20–49 %, red < 20 %) plus a manual refresh button.
 - The **agent picker** on `feature-start` / `feature-autonomous-start` annotates `cc` and `cx` rows with inline budget, e.g. `cc — 35% session · 3% week ⚠`.
 - Picking an agent with < 20 % remaining on any limit shows a non-blocking confirmation before the run proceeds.
 
-Data flows through `GET /api/budget` (cached snapshot) and `POST /api/budget/refresh` (force a re-poll). If tmux or the agent binary is missing, polling is a silent no-op — the dashboard falls back to `null` per agent.
+Data flows through `GET /api/agent-quota` and `POST /api/agent-quota/refresh`. If no supported source is available, the dashboard shows no quota value for that agent.
 
 ## Monitor view
 
@@ -297,7 +297,7 @@ Feature and research cards/details show active, non-expired lease metadata when 
 
 ## Remote access
 
-The dashboard binds to `0.0.0.0` by default, making it accessible from any device on the local network.
+The dashboard binds to loopback (`127.0.0.1`) by default, so it is available only on the local machine. To expose it beyond loopback, configure an explicit host allow-list and shared secret/token; do not expose the dashboard directly to a LAN or the internet without those controls.
 
 <div className="max-w-sm mx-auto">
   <img src="/img/aigon-dashboard-mobile.png" alt="Dashboard on mobile" className="rounded-xl landing-image" />
