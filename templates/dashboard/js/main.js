@@ -1,7 +1,6 @@
 /* dashboard-esm-processed */
 /**
  * Dashboard ESM entry — preserves classic script load order via sequential side-effect imports.
- * Pro-tier scripts are fetched from the same URLs the server resolves (stub vs @aigon/pro).
  */
 import './store.js';
 import './state.js';
@@ -21,12 +20,8 @@ import './monitor.js';
 import './live-monitor.js';
 import './autonomous-plan.js';
 import './pipeline.js';
-import '/js/benchmark-matrix.js';
 import './settings.js';
 import './statistics.js';
-import '/js/backup-sync.js';
-import '/js/scheduled-features.js';
-import '/js/failover-dashboard.js';
 import './logs.js';
 import './close-log-panel.js';
 import './alpine-bindings.js';

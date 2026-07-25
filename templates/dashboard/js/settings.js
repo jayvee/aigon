@@ -6,10 +6,12 @@ import { isRepoHidden, state, toggleRepoVisibility } from './state.js';
 import { setSettingsDefaultsRepo, setSettingsModelRepo } from './store.js';
 import { getTerminalClickTarget, getTerminalFont, setTerminalClickTarget, setTerminalFont } from './terminal.js';
 import { escHtml, relTime, showToast } from './utils.js';
+// F693: merged from aigon-pro — real modules now, imported directly.
+import { fmtSyncTime, renderBackupSync } from './backup-sync.js';
+import { renderScheduledFeatures } from './scheduled-features.js';
+import { mountBenchmarkMatrix } from './benchmark-matrix.js';
     function formatSyncTime(iso) {
-      // Pro-only: fmtSyncTime from backup-sync stub or @aigon/pro when installed.
-      if (typeof globalThis.fmtSyncTime === 'function') return globalThis.fmtSyncTime(iso);
-      return iso ? relTime(iso) : '—';
+      return iso ? fmtSyncTime(iso) : '—';
     }
 
     // ── Settings view ──────────────────────────────────────────────────────────
@@ -2138,18 +2140,13 @@ import { escHtml, relTime, showToast } from './utils.js';
           matrixWrap.innerHTML = '<div class="matrix-empty">Failed to load matrix: ' + escHtml(err.message) + '</div>';
         });
 
-      // Agent benchmarks (Pro) — F420. OSS only mounts; data + UI live in @aigon/pro.
+      // Agent benchmarks — F707.
       const perfBenchSection = shell.addSection('perf-benchmarks', 'Agent benchmarks', 'Agent benchmarks',
-        'Latest maintainer benchmark results from Aigon Pro for the repo selected for defaults above.',
-        { proBadge: true });
-      if (window.AigonProBenchmarkMatrix && typeof window.AigonProBenchmarkMatrix.mount === 'function') {
-        try {
-          window.AigonProBenchmarkMatrix.mount(perfBenchSection, getDefaultsSettingsRepo);
-        } catch (e) {
-          perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
-        }
-      } else {
-        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/benchmark-matrix.js</code> loads.</p>');
+        'Latest maintainer benchmark results for the repo selected for defaults above.');
+      try {
+        mountBenchmarkMatrix(perfBenchSection, getDefaultsSettingsRepo);
+      } catch (e) {
+        perfBenchSection.insertAdjacentHTML('beforeend', '<p class="settings-empty">Benchmark UI failed: ' + escHtml(e.message) + '</p>');
       }
 
       // Version section
@@ -2247,26 +2244,8 @@ import { escHtml, relTime, showToast } from './utils.js';
       restoreDetailScrollTop(scrollTop);
       restoreSettingsUiState(reposRoot);
 
-      (function finalizeProSettingsPanels() {
-        // Pro-only: renderBackupSync from backup-sync stub or @aigon/pro when installed.
-        if (typeof globalThis.renderBackupSync === 'function') {
-          globalThis.renderBackupSync();
-        } else if (detachedProViews['backup-sync-view']) {
-          detachedProViews['backup-sync-view'].innerHTML =
-            '<div class="amp-empty pro-empty-centered">' +
-            '<div class="pro-empty-title">Aigon Sync <span class="pro-tab-badge">(Pro)</span></div>' +
-            '<div class="pro-empty-body">Install <code>@senlabsai/aigon-pro</code> for remote GitHub sync. Manual backup does not require Pro.</div>' +
-            '</div>';
-        }
-        // Pro-only: renderScheduledFeatures from scheduled-features stub or @aigon/pro.
-        if (typeof globalThis.renderScheduledFeatures === 'function') {
-          globalThis.renderScheduledFeatures();
-        } else if (detachedProViews['scheduled-features-view']) {
-          detachedProViews['scheduled-features-view'].innerHTML =
-            '<p class="settings-empty settings-empty-foot">' +
-            'Install <code>@senlabsai/aigon-pro</code> and restart the dashboard so <code>dashboard/scheduled-features.js</code> loads.</p>';
-        }
-      })();
+      renderBackupSync();
+      renderScheduledFeatures();
 
       if (state.settingsInitialSectionId) {
         const sid = state.settingsInitialSectionId;

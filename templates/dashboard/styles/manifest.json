@@ -21,6 +21,7 @@
     "terminal-theme.css",
     "stats-matrix.css",
     "stats-benchmarks.css",
+    "failover.css",
     "components-overrides.css",
     "responsive.css",
     "chrome-upgrade.css"
