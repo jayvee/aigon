@@ -10,7 +10,7 @@ guide. Read top to bottom the first time; after that, use the table of contents.
 
 > **Freshness:** excerpts drift as code changes. Line numbers are the first thing to rot.
 > When you find a mismatch, fix it (see [Maintaining this document](#maintaining-this-document)).
-> Last verified against `main` @ `17b6e5fe8` (2026-07-25).
+> Last verified against `main` @ `922c29d3f` (2026-07-25).
 
 ---
 
@@ -78,10 +78,10 @@ lifecycle decision is made, and it is the engine.**
 
 ## 1. The CLI is a dispatch shim
 
-**`aigon-cli.js:81`**
+**`aigon-cli.js:79`**
 
 Every `aigon <command>` you type lands here. The file is deliberately thin: it builds one
-flat object mapping command name → handler function by spreading fifteen domain factories
+flat object mapping command name → handler function by spreading fourteen domain factories
 together, then looks up `argv[2]` in it. There is no routing logic, no argument parsing,
 no business rules — those live in `lib/commands/*.js`.
 
@@ -101,7 +101,6 @@ const commands = {
     ...createAgentCommands(),
     ...createSignalHealthCommands(),
     ...createSecurityScanCommands(),
-    ...createProCommands(),
 };
 
 const args = process.argv.slice(2);
@@ -1344,7 +1343,7 @@ sleeping.
 
 ## 19. Topological order for feature sets
 
-**`lib/set-conductor.js:147`**
+**`lib/set-conductor.js:146`**
 
 A *set* is a group of features executed in dependency order. Kahn's algorithm, with one
 addition.
@@ -1505,7 +1504,7 @@ permissive one.
 
 ## 21. Degrading loudly when state is missing
 
-**`lib/workflow-read-model.js:254`**
+**`lib/workflow-read-model.js:255`**
 
 A spec file with no engine snapshot is a genuine possibility. This function decides what
 the dashboard shows, and its comment is the clearest statement of the read-side philosophy
@@ -1705,7 +1704,7 @@ call this out; now you know why.
 
 ## 24. Optimistic UI as overlays, never mutation
 
-**`templates/dashboard/js/store.js:291`**
+**`templates/dashboard/js/store.js:269`**
 
 The frontend needs a Start button to feel instant while the server catches up. It does this
 without ever writing to the data it renders.
@@ -1722,7 +1721,7 @@ function pruneOptimisticOverlays(raw) {
 }
 
 function assignDataFromRaw(rawNext, { evaluateSettled = true } = {}) {
-  const raw = applyForceProOverride(rawNext);
+  const raw = rawNext;
   if (evaluateSettled) pruneOptimisticOverlays(raw);
   _lastRawData = raw;
   const draft = deepCloneData(raw);
