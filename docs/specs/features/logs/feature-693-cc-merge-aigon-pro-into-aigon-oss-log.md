@@ -1,3 +1,26 @@
+---
+commit_count: 10
+lines_added: 18743
+lines_removed: 1783
+lines_changed: 20526
+files_touched: 193
+fix_commit_count: 2
+fix_commit_ratio: 0.2
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 568
+output_tokens: 158917
+cache_creation_input_tokens: 657145
+cache_read_input_tokens: 58200942
+thinking_tokens: 0
+total_tokens: 59017572
+billable_tokens: 159485
+cost_usd: 37.1834
+sessions: 1
+model: "claude-opus-5"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 693 - merge-aigon-pro-into-aigon-oss
 Agent: cc
 
