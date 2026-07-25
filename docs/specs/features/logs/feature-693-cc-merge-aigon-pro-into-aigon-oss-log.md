@@ -129,3 +129,25 @@ no stub table left to purge.
 - `bash scripts/check-test-budget.sh`: 18148 / 200000 LOC (9%) — no bump needed.
 - `npm run test:core` green (lint, path literals, module graph, alpine bindings, diagrams, budget, unit, integration, workflow).
 - `npm run test:iterate` green including the `@smoke` Playwright subset (31 passed).
+
+## Code Review
+
+**Reviewed by**: composer (Cursor)
+**Date**: 2026-07-25
+
+### Fixes Applied
+- `cd17347cf` fix(review): remove leftover Insights PRO tab badge
+- `4dd2da9eb` fix(review): drop proOnly metadata and repair schedule integration test
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- **ESCALATE:subsystem** — F694/F695 own user-facing docs and the wizard `pro` step; wizard still installs `@senlabsai/aigon-pro@beta` and references removed `aigon pro activate`. Expected intermediate state per spec.
+- **ESCALATE:blocked** — Imported workflow dirs are gitignored; post-merge operator must run `node scripts/import-aigon-pro-specs.js` from primary checkout then `aigon doctor` (documented in Gotchas).
+- **ESCALATE:blocked** — `~/src/aigon-pro/AGENTS.md` archive notice was written but not committed (unrelated drift in that repo).
+- **ESCALATE:ambiguous** — Research 15/23/25 left in private archive rather than renumbered/imported; intentional sanitisation trade-off vs spec numbering AC.
+
+### Notes
+- Merge is mechanically sound: engines vendored, routes registered, gating deleted, spec history imported with sanitisation. Two small gating remnants (PRO tab badge, `proOnly` metadata) and a stale `lib/pro` mock in an excluded heavy-integration test were the only code issues found in review.
+- `npm run test:browser` full suite and `test:integration:heavy` remain for the implementor/deploy gate before close.
