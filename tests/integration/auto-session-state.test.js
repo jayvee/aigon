@@ -96,7 +96,9 @@ test('safeSetAutoSessionExists preserves paused-on-failure when tmux wait-loop i
             autonomous: view,
         }, { requiresPro: false, proAvailable: true });
         assert.ok(actions.some((a) => a.action === 'set-autonomous-resume'), 'expected resume when paused with live tmux');
-        assert.ok(!actions.some((a) => a.action === 'set-autonomous-stop'), 'stop must not replace resume on pause');
+        // REGRESSION: a paused conductor must let the operator end automation
+        // without resetting its current feature, so manual close/revision work remains possible.
+        assert.ok(actions.some((a) => a.action === 'set-autonomous-stop' && a.label === 'Take over manually'), 'expected manual takeover alongside resume on pause');
     } finally {
         _resetTmuxListCache();
     }
