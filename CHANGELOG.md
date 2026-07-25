@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [2.75.0-beta.1] — 2026-07-25
+
+Restores Antigravity, hardens first-run setup, refreshes the public documentation, and adds automated release-quality gates.
+
+### Added
+
+- **Documentation release-quality gate.** `npm run docs:check` validates public MDX metadata, links and images, command-reference coverage, active-agent examples, license copy, and generated documentation inputs. It runs from both `prepublishOnly` and `test:release`.
+- **Useful machine-readable documentation.** `llms-full.txt` now contains documentation bodies with a fail-fast 1 MiB cap, while sitemap timestamps no longer change meaninglessly on every build.
+- **Release review guidance.** The maintainer checklist now covers the docs build/check, gallery at desktop and mobile, package/channel agreement, and clean setup smoke.
+
+### Changed
+
+- **Antigravity restored as an active agent.** Aigon now launches Antigravity through its supported interactive Google sign-in flow, uses current model identifiers, and keeps the retired Gemini CLI (`gg`) only as historical compatibility data.
+- **Setup wizard made safe and resumable.** The nine persisted steps support `--resume` and repeatable `--step`; unattended `--yes` uses conservative defaults, global config writes remain private, Git identity values use argv-safe execution, and persistent dashboard startup is health-checked.
+- **Public documentation aligned with current OSS behavior.** Agent guidance, lifecycle terminology, stable spec layout, dashboard security, Feedback migration, Apache-2.0 licensing, install channels, command examples, `/pro` routing, and search metadata now match the shipped product.
+- **Autonomous-set recovery improved.** Stale or interrupted conductors surface in the current workflow lane, preserve owed review/revision work, and allow explicit resume or manual takeover.
+- **Dashboard session controls compacted.** Live and retained session output remains available through Peek without crowding workflow cards.
+
+### Fixed
+
+- Command-local `--help` no longer executes lifecycle or setup handlers.
+- Failed setup steps remain resumable, completed setup is not recorded prematurely, custom seed state reaches the demo, and stricter existing global-config permissions are preserved.
+- Lost review/revision sessions no longer appear addressed while another worker is still owed.
+- Public completion examples consistently use `implementation-complete` and `research-complete`; deprecated `submitted` remains only in explicit compatibility guidance.
+- Documentation packaging now includes and independently allowlists `scripts/docs-check.js`.
+- The gallery contract includes the canonical interrupted-set resting state and passes its complete desktop/mobile suite.
+
 ## [Unreleased]
 
 ## [2.74.0-beta.1] — 2026-07-13
