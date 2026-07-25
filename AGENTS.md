@@ -95,7 +95,7 @@ After any `lib/*.js` edit, restart the Aigon dashboard server. Frontend-only ass
 - Before submission, run the active spec's validation. `feature-close` owns the deploy gate.
 - New non-trivial code and bug fixes require focused regression coverage. Every test should explain the behavior it pins with a `// REGRESSION:` comment. Read `docs/testing.md` for exceptions and the test LOC ceiling.
 - Preserve unrelated user changes and never delete tests or exports to make validation pass.
-- If your change touches code quoted by `docs/code-tour.md`, refresh it per `.claude/skills/code-tour/SKILL.md`. Check with `node scripts/check-code-tour.js` — excerpts are verbatim and anchors must resolve.
+- If your change touches code quoted by `docs/code-tour.md`, refresh it per `.claude/skills/code-tour/SKILL.md`. Check with `node scripts/check-code-tour.js` — excerpts are verbatim and anchors must resolve. `test:core` runs this, so drift fails the deploy gate.
 - Commit meaningful changes with conventional commit prefixes. After every release commit, the maintainer flow requires `npm version patch|minor|major` and pushing tags; agents must not perform a release unless asked.
 - Syntax sanity: `node -c aigon-cli.js`. Repository suite: `npm test`.
 

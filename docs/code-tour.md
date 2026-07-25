@@ -10,7 +10,7 @@ guide. Read top to bottom the first time; after that, use the table of contents.
 
 > **Freshness:** excerpts drift as code changes. Line numbers are the first thing to rot.
 > When you find a mismatch, fix it (see [Maintaining this document](#maintaining-this-document)).
-> Last verified against `main` @ `ae1a0f2c1` (2026-07-25).
+> Last verified against `main` @ `17b6e5fe8` (2026-07-25).
 
 ---
 
