@@ -10,7 +10,7 @@
     "build": "next build && npx pagefind --site .next/server/app --output-path public/_pagefind",
     "start": "next start",
     "preview": "next build && next start",
-    "gen-commands": "node scripts/gen-commands.js"
+    "screenshots": "node scripts/take-screenshots.js"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

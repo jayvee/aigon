@@ -92,6 +92,14 @@ Commands that ship in the open-source CLI but gate on `@senlabsai/aigon-pro` bei
 - [`pro status`](/docs/reference/commands/pro/status) — Show install / key / activation state
 - [`installed-notice`](/docs/reference/commands/pro/installed-notice) — Post-upgrade summary of which registered repos are behind
 
+## Grouped and compatibility commands
+
+These executable commands share the workflow pages above: `feature-list`, `feature-status`, `feature-spec`, `feature-context`, `feature-transfer`, `feature-pause`, `feature-resume`, `feature-spec-review`, `feature-spec-revise`, `feature-cancel-spec-review`, `feature-cancel-spec-revision`, `feature-transcript`, `feature-unprioritise`, `feature-delete`, `feature-rebase`, `feature-backfill-timestamps`, `feature-autonomous-resume`, and `feature-escalation`; plus `research-context`, `research-pause`, `research-resume`, `research-spec-review`, `research-spec-revise`, `research-cancel-spec-review`, `research-cancel-spec-revision`, `research-cancel-code-review`, `research-transcript`, `research-unprioritise`, `research-review`, `research-reset`, `research-delete`, and `research-submit`.
+
+Setup/maintenance commands are grouped under Setup or Infrastructure: `init`, `uninstall`, `project-context`, `trust-worktree`, `install-seed`, `check-version`, `update`, `feedback-migrate`, `nudge`, `agent-context`, `agent-probe`, `agent-quota`, `agent-resume`, `commits`, `stats`, `profile`, `workflow-rules`, and `rollout`. Set workflow commands are `set`, `set-prioritise`, `feature-set-spec-review`, `feature-set-spec-revise`, `set-autonomous-start`, `set-autonomous-stop`, `set-autonomous-resume`, and `set-autonomous-reset`.
+
+The following are explicitly classified as Pro-gated or optional integrations: `pro`, `sync`, `backup`, `recurring-list`, `schedule`, `agent-launch`, `agent`, and `signal-health`. They are discoverable through `aigon help`; their detailed contracts are supplied by the installed integration where applicable.
+
 ## Conventions
 
 - **Slash form** — every workflow command is also a slash command inside Claude Code, Antigravity, Codex, and Cursor: `/aigon:feature-create`, `/aigon:research-start`, etc.

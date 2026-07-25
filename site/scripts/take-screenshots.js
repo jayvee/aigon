@@ -3,9 +3,8 @@
  * take-screenshots.js — Capture dashboard screenshots with Playwright
  *
  * Prerequisites:
- *   cd ~/src/brewboard
- *   aigon seed-reset ~/src/brewboard --force   # restore seed state with completed features
- *   aigon server start                          # dashboard at http://localhost:4100
+ *   aigon seed-reset <seed-repo> --force        # restore a disposable seed repo
+ *   aigon server start --port <port>             # dashboard at the configured local port
  *
  * Then run:
  *   node site/scripts/take-screenshots.js
@@ -114,9 +113,8 @@ async function main() {
     console.error(`\n❌ Dashboard not reachable at ${DASHBOARD_URL}`);
     console.error(`   Start it first: aigon server start\n`);
     console.error(`   Setup steps:`);
-    console.error(`   1. cd ~/src/brewboard`);
-    console.error(`   2. aigon seed-reset ~/src/brewboard --force`);
-    console.error(`   3. aigon server start`);
+    console.error(`   1. aigon seed-reset <seed-repo> --force`);
+    console.error(`   2. aigon server start --port <port>`);
     process.exit(1);
   }
 

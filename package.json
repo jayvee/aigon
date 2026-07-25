@@ -33,7 +33,8 @@
     "scripts/fix-node-pty-perms.js",
     "scripts/probe-agent.js",
     "scripts/check-package-security-config.js",
-    "scripts/check-suspicious-deps.js"
+    "scripts/check-suspicious-deps.js",
+    "scripts/docs-check.js"
   ],
   "publishConfig": {
     "access": "public"
@@ -43,7 +44,7 @@
   },
   "scripts": {
     "postinstall": "node ./aigon-cli.js global-setup --non-interactive --quiet || true && node scripts/fix-node-pty-perms.js || true && node ./aigon-cli.js installed-notice || true",
-    "prepublishOnly": "node scripts/check-root-instruction-budget.js && node scripts/check-template-leaks.js && node scripts/check-rendered-template-leaks.js && node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
+    "prepublishOnly": "npm run docs:check && node scripts/check-root-instruction-budget.js && node scripts/check-template-leaks.js && node scripts/check-rendered-template-leaks.js && node scripts/check-install-manifest-clean.js && node scripts/check-pack.js",
     "release": "node scripts/publish.js",
     "ship": "node scripts/ship.js",
     "ship:share": "node scripts/ship.js share",
@@ -68,7 +69,8 @@
     "test:browser:live": "node -e \"if(process.env.AIGON_E2E_REAL!=='1'){console.error('Set AIGON_E2E_REAL=1 to run the opt-in live-agent smoke path');process.exit(1)}\" && MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.live.config.js --reporter=list",
     "test:browser:smoke": "MOCK_DELAY=fast npx playwright test --config tests/dashboard-e2e/playwright.config.js --reporter=list --grep @smoke",
     "test:deploy": "npm run test:core && npm run test:browser:smoke && bash scripts/check-test-budget.sh",
-    "test:release": "npm run test:core:full && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser:full && bash scripts/check-test-budget.sh",
+    "test:release": "npm run docs:check && npm run test:core:full && npm run security:package-config && npm run security:suspicious-deps && npm audit --omit=dev --audit-level=high && npm run test:browser:full && bash scripts/check-test-budget.sh",
+    "docs:check": "node scripts/docs-check.js",
     "test:ui": "npm run test:browser:smoke",
     "test:all": "npm run test:release",
     "gallery": "node scripts/start-dashboard-gallery.js",
