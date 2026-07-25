@@ -16,7 +16,6 @@ aigon setup --yes
 
 ## Notes
 
-- `--resume` starts from the first incomplete or skipped wizard step.
 - `--resume` retries the first skipped, failed, or incomplete step, then considers every later unfinished step without repeating completed work.
 - Repeat `--step <id>` to retry exactly one or more of: `prereqs`, `terminal`, `agents`, `pro`, `seed-repo`, `repos`, `server`, `demo`, or `vault`.
 - `--yes` is conservative: it performs no agent installation, seed clone, existing-repository registration, demo, authentication, or dashboard start unless an explicit supported environment option requests it.
