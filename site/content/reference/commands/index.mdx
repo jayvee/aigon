@@ -79,18 +79,10 @@ The dashboard, server, and supporting tooling that runs around your features.
 - [`token-window`](/docs/reference/commands/infra/token-window) — Nudge sessions to align rolling provider usage windows
 - [`repair`](/docs/reference/commands/infra/repair) — Repair safe drift without resetting work
 - [`next`](/docs/reference/commands/infra/next) — Suggest the most likely next workflow action
-- [`insights`](/docs/reference/commands/infra/insights) — Pro analytics: cost, quality, trends
-- **Aigon Sync (Pro)** — [`aigon backup`](/docs/guides/aigon-sync) / `aigon vault` and dashboard **Settings → Aigon Sync**; see the [Aigon Sync guide](/docs/guides/aigon-sync) (CLI reference ships in `@senlabsai/aigon-pro`)
+- [`insights`](/docs/reference/commands/infra/insights) — Analytics: cost, quality, trends
+- **Aigon Sync** — [`aigon backup`](/docs/guides/aigon-sync) / `aigon vault` and dashboard **Settings → Aigon Sync**; see the [Aigon Sync guide](/docs/guides/aigon-sync)
 - [`deploy`](/docs/reference/commands/infra/deploy) — Deploy a feature preview
 - [`help`](/docs/reference/commands/infra/help) — Show available commands
-
-## Pro commands
-
-Commands that ship in the open-source CLI but gate on `@senlabsai/aigon-pro` being installed and activated. See [Installing Aigon Pro](/docs/guides/pro-installation).
-
-- [`pro activate`](/docs/reference/commands/pro/activate) — Save your Pro key to `~/.aigon/config.json`
-- [`pro status`](/docs/reference/commands/pro/status) — Show install / key / activation state
-- [`installed-notice`](/docs/reference/commands/pro/installed-notice) — Post-upgrade summary of which registered repos are behind
 
 ## Grouped and compatibility commands
 
@@ -98,7 +90,7 @@ These executable commands share the workflow pages above: `feature-list`, `featu
 
 Setup/maintenance commands are grouped under Setup or Infrastructure: `init`, `uninstall`, `project-context`, `trust-worktree`, `install-seed`, `check-version`, `update`, `feedback-migrate`, `nudge`, `agent-context`, `agent-probe`, `agent-quota`, `agent-resume`, `commits`, `stats`, `profile`, `workflow-rules`, and `rollout`. Set workflow commands are `set`, `set-prioritise`, `feature-set-spec-review`, `feature-set-spec-revise`, `set-autonomous-start`, `set-autonomous-stop`, `set-autonomous-resume`, and `set-autonomous-reset`.
 
-The following are explicitly classified as Pro-gated or optional integrations: `pro`, `sync`, `backup`, `recurring-list`, `schedule`, `agent-launch`, `agent`, and `signal-health`. They are discoverable through `aigon help`; their detailed contracts are supplied by the installed integration where applicable.
+The following share pages with the guides above or are thin aliases: `sync`, `backup`, `recurring-list`, `schedule`, `agent-launch`, `agent`, `installed-notice`, and `signal-health`. They are all discoverable through `aigon help`.
 
 ## Conventions
 

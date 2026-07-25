@@ -157,10 +157,6 @@ git commit -m "chore: refresh installed agent files for vX.Y.Z"
 
 Skip the check (rare — local dry-runs only) with `AIGON_SKIP_PREPUBLISH_INSTALL_CHECK=1 npm publish`.
 
-## Aigon Pro
-
-The commercial Pro tier lives in a separate private repo and is **not yet available for purchase**. PRs to aigon (this repo) should only touch open-source code. If a feature needs to coordinate with Pro, that's documented in `CLAUDE.md` and is rare — open an issue first.
-
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).

@@ -20,10 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Add the landing page and top-level marketing routes
-  pages.unshift(
-    { url: "https://www.aigon.build" },
-    { url: "https://www.aigon.build/pro" },
-  );
+  pages.unshift({ url: "https://www.aigon.build" });
 
   return pages;
 }

@@ -5,7 +5,7 @@ description: "Run or resume the first-run onboarding wizard."
 
 # `aigon setup`
 
-Runs the interactive onboarding wizard for machine-level setup: prerequisite checks, terminal preference, agent CLI installation, optional seed repo clone, repo registration, dashboard start, demo walkthrough, and Pro vault setup when available.
+Runs the interactive onboarding wizard for machine-level setup: prerequisite checks, terminal preference, agent CLI installation, optional seed repo clone, repo registration, dashboard start, demo walkthrough, and vault backup setup.
 
 ```bash
 aigon setup
@@ -17,7 +17,7 @@ aigon setup --yes
 ## Notes
 
 - `--resume` retries the first skipped, failed, or incomplete step, then considers every later unfinished step without repeating completed work.
-- Repeat `--step <id>` to retry exactly one or more of: `prereqs`, `terminal`, `agents`, `pro`, `seed-repo`, `repos`, `server`, `demo`, or `vault`.
+- Repeat `--step <id>` to retry exactly one or more of: `prereqs`, `terminal`, `agents`, `seed-repo`, `repos`, `server`, `demo`, or `vault`.
 - `--yes` is conservative: it performs no agent installation, seed clone, existing-repository registration, demo, authentication, or dashboard start unless an explicit supported environment option requests it.
 - Interactive setup defaults the persistent, loopback dashboard prompt to yes. It marks the server done only after its health endpoint responds; on failure, run `aigon server status` and inspect `~/.aigon/dashboard.log`.
 - `aigon global-setup --force` regenerates machine configuration only; it does not restart the wizard.

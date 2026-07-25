@@ -124,4 +124,4 @@ Reports and raw output are gitignored (ephemeral). `state.json` and `suppression
 
 ## Recurring schedule
 
-The recurring template lives at `docs/specs/recurring/security-scan-weekly.md`. Automated schedule execution is handled by Aigon Pro's recurring engine; in OSS, run `aigon security-scan` on demand.
+The recurring template lives at `docs/specs/recurring/security-scan-weekly.md`. The recurring engine (`aigon recurring-run` / `recurring-list`) executes it on schedule; you can also run `aigon security-scan` on demand at any time.

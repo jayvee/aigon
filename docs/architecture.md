@@ -50,8 +50,7 @@ Current command families:
 | `lib/commands/set.js` | `set-*` feature-set actions and derived set operations |
 | `lib/commands/signal-health.js` | `signal-health` diagnostics over signal telemetry |
 | `lib/commands/security-scan.js` | Standalone `security-scan` CLI surface |
-| `lib/commands/pro.js` | `pro activate/status` free-tier activation/status commands |
-| `lib/commands/recurring.js`, `lib/commands/schedule.js`, `lib/commands/agent-launch.js` | OSS stubs that delegate to `@aigon/pro` when installed, otherwise print the standard "Pro feature — coming later" notice |
+| `lib/commands/recurring.js`, `lib/commands/schedule.js`, `lib/commands/agent-launch.js` | Recurring batches, scheduled kickoffs, and agent launches — see "Merged engines" below |
 
 `aigon-cli.js` is the executable's authoritative composition point: it imports and spreads every command factory above into the runtime command map. `lib/commands/shared.js` still exists for tests and legacy helper callers that need a ctx-overridable command map; do not assume it includes every user-facing command wired by the executable.
 
@@ -221,7 +220,7 @@ Current shared modules:
 - `lib/repo-identity.js` (~40 lines): identifies when a command is running inside the Aigon source repo itself (vs a consumer project) so install/scaffold behavior is skipped here
   `isAigonSourceRepo`
 
-> **Moved to Pro:** the solo multi-laptop sync engine (`sync.js`, `sync-merge.js`) moved to `@aigon/pro` with feature 236 (2026-04-27), alongside backup and scheduling. `aigon sync` / `aigon backup` are now Pro-delegating stubs in `lib/commands/infra.js`. See "Scheduling and recurring work" below.
+> The solo multi-laptop sync engine (`sync.js`, `sync-merge.js`) lives alongside backup and scheduling; `aigon sync` / `aigon backup` are wired through `lib/commands/infra.js`. See "Merged engines" below.
 
 **Additional modules:**
 
@@ -678,11 +677,12 @@ Components:
 - `{agent}` — agent short code (`cc`, `ag`, `cx`, `cu`)
 - `{desc}` — kebab-case feature description from the spec filename
 
-## Merged engines (formerly Aigon Pro)
+## Merged engines
 
-Aigon had a free/Pro split between 2026-04-07 and 2026-07-25. **F693 dissolved
-it.** Aigon is one free, open-source product; every engine below ships to every
-user with no key, no gate, and no badge. `lib/pro.js`, `lib/pro-bridge.js`,
+Aigon had a two-tier split between 2026-04-07 and 2026-07-25. **F693 dissolved
+it** and **F694** brought the documentation in line. Aigon is one free,
+open-source product; every engine below ships to every user with no key, no
+gate, and no badge. `lib/pro.js`, `lib/pro-bridge.js`,
 `lib/dashboard-pro-assets.js`, `lib/commands/pro.js`, the dashboard stub modules
 and `AIGON_FORCE_PRO` are all deleted — there is no extension seam to hook.
 

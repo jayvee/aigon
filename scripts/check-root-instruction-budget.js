@@ -7,7 +7,7 @@ const path = require('path');
 const MAX_BYTES = 24 * 1024;
 const MAX_LINES = 180;
 const REQUIRED_ANCHORS = [
-    'aigon-root:oss-pro-boundary',
+    'aigon-root:public-repo',
     'aigon-root:target-zero-opinion',
     'aigon-root:template-source',
     'aigon-root:lifecycle-authority',

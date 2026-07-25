@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Note on entries from v2.19 onwards:** the changelog was backfilled in bulk from git history on 2026-04-07 ahead of the public launch. Entries are grouped by theme and dated by month rather than per-patch. For commit-level detail, see `git log v2.18.0..HEAD` or browse the [git tags](https://github.com/jayvee/aigon/tags).
 
+## [Unreleased]
+
+### Changed
+
+- **Aigon Pro is now part of the free open-source product.** Every engine that used to sit behind the commercial tier — Insights, Aigon Sync, vault/backup, recurring features, scheduled kickoffs, agent failover, benchmark matrix, and profile sync — ships to every user with no key, no gate, and no badge. The `@senlabsai/aigon-pro` package is deprecated; `aigon doctor` reports leftover installs and `proKey` entries, and migration `2.76.0` drops the key from `~/.aigon/config.json`.
+- **Documentation describes one product.** The Pro guide section is folded into the ordinary guide list, `[Pro]` markers are gone from `aigon help`, and the docs site no longer carries tier language.
+
+### Removed
+
+- **`aigon pro activate` / `aigon pro status`.** There is nothing left to activate. The setup wizard's Pro step is gone; it is now eight steps.
+- **The `/pro` marketing page** at aigon.build, along with the `pro-installation` guide. `/pro` redirects to `/`, and `/docs/guides/pro-installation` redirects to `/docs/getting-started`, so indexed inbound links do not 404.
+
 ## [2.75.0-beta.1] — 2026-07-25
 
 Restores Antigravity, hardens first-run setup, refreshes the public documentation, and adds automated release-quality gates.

@@ -1,13 +1,7 @@
 ---
 title: "insights"
-description: "View AI workflow insights and coaching (Aigon Pro)"
+description: "View AI workflow insights and coaching"
 ---
-
-import { Callout } from "nextra/components";
-
-<Callout type="info">
-  **Aigon Pro command.** Full insights, trend analysis, agent comparisons, and AI coaching require [Aigon Pro](/pro). Without Pro installed, `aigon insights` shows a free-tier summary with basic metrics.
-</Callout>
 
 ## Synopsis
 
@@ -21,15 +15,13 @@ aigon insights [--coach] [--refresh]
 
 ## Description
 
-Displays workflow insights — metrics, trends, and recommendations based on your feature history. Requires **Aigon Pro** (`@senlabsai/aigon-pro`).
-
-Without Pro installed, shows a free-tier summary with basic metrics. With Pro, unlocks full insights including trend analysis, agent comparisons, and AI coaching.
+Displays workflow insights — metrics, trends, and recommendations based on your feature history, including trend analysis, cross-agent comparisons, and AI coaching.
 
 ## Flags
 
 | Flag | Description |
 |------|-------------|
-| `--coach` | Enable AI-powered coaching recommendations (Pro only) |
+| `--coach` | Enable AI-powered coaching recommendations |
 | `--refresh` | Recalculate insights from scratch instead of using cached data |
 
 ## Usage
@@ -47,6 +39,5 @@ aigon insights --refresh
 
 ## Access
 
-- **Free tier**: Basic metrics (features completed, cycle time, agent wins)
-- **Pro tier**: Full insights dashboard, trend analysis, cross-agent comparisons, AI coaching
+- **CLI**: Basic metrics (features completed, cycle time, agent wins) plus trend analysis and coaching with `--coach`
 - **Dashboard**: Insights are also available in the dashboard under the "Insights" tab

@@ -113,7 +113,7 @@ aigon set list              # All sets with stage counts
 aigon set show <slug>       # Members in dependency order + intra-set edges
 ```
 
-Set-level autonomous actions (`set-autonomous-start` / `-stop` / `-resume` / `-reset`) are Pro features; OSS users see the progress view with the action buttons disabled.
+Set-level autonomous actions (`set-autonomous-start` / `-stop` / `-resume` / `-reset`) drive the same progress view from the dashboard.
 
 If you want the conceptual walkthrough for how set-level autonomy works end to end, see [Feature Sets in Autonomous Mode](./feature-sets-autonomous).
 
@@ -189,18 +189,15 @@ Paginated tables for drilling into individual items:
 
 ### Activity breakdown
 
-Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. With Pro, the Insights tab's Token Usage by Activity chart visualizes this breakdown over time.
+Each telemetry record includes an `activity` field — `implement`, `evaluate`, or `review` — so you can see where tokens are being spent. The Insights tab's Token Usage by Activity chart visualizes this breakdown over time.
 
 For details on what is collected, how cost is computed, and how to interpret activity data, see the [Telemetry & Analytics guide](/docs/guides/telemetry).
 
-### Pro Features
+### Deeper analysis
 
-The Reports tab includes additional Pro-gated charts and cards with [Aigon Pro](/pro):
+Alongside the Features Completed and Commits charts, the Reports tab carries Median Cycle Time, Commits per Feature, Rework Ratio, and Tokens Used charts, plus Commits/Feature and Rework Ratio cards in the Summary sub-tab.
 
-- **Additional charts** — Median Cycle Time, Commits per Feature, Rework Ratio, and Tokens Used unlock alongside the free Features Completed and Commits charts
-- **Additional summary cards** — Commits/Feature and Rework Ratio cards in the Summary sub-tab
-
-Pro also adds **Settings → Aigon Sync** for [vault push/pull](/docs/guides/aigon-sync) to a private Git remote, and the **Insights tab** (labeled with **PRO** in the nav) with:
+**Settings → Aigon Sync** handles [vault push/pull](/docs/guides/aigon-sync) to a private Git remote, and the **Insights tab** adds:
 
 - **Quality metrics** — First-Pass Rate (No Rework), Median Cost/Feature, Median Tokens/Line Changed
 - **Token analytics** — distribution histograms, per-agent breakdowns, activity-level token tracking
@@ -210,7 +207,7 @@ Pro also adds **Settings → Aigon Sync** for [vault push/pull](/docs/guides/aig
   <img src="/img/aigon-dashboard-use-ai.png" alt="Use AI insights" className="rounded-xl" />
 </div>
 
-These Pro features build on the same data the free Reports tab already collects — Pro adds deeper analysis and AI-powered interpretation. See the [Insights guide](/docs/guides/insights) for a full walkthrough.
+Insights builds on the same data the Reports tab already collects, adding deeper analysis and AI-powered interpretation. See the [Insights guide](/docs/guides/insights) for a full walkthrough.
 
 ### Code Changes tab
 
@@ -268,7 +265,7 @@ No phase auto-advances — every transition requires an explicit click. The pill
 
 ## Settings → Version
 
-**Settings → Version** mirrors the data the upgrade pill uses, plus Pro state:
+**Settings → Version** mirrors the data the upgrade pill uses:
 
 | Row | What it shows |
 |---|---|
@@ -276,9 +273,6 @@ No phase auto-advances — every transition requires an explicit click. The pill
 | Latest stable / Latest next | Latest registry versions from the cached npm check |
 | Status | `up to date` / `update available` / `prerelease available` / `unavailable` |
 | Upgrade command | The `npm update -g @senlabsai/aigon` line to copy |
-| Pro package | Whether `@senlabsai/aigon-pro` is installed (and the resolved version) |
-| Pro key | Whether `proKey` is present in `~/.aigon/config.json` |
-| Pro status | `active`, `installed (not activated)`, or `not installed` |
 | Registry error | Last npm registry error, if any |
 
 ## Settings → Storage

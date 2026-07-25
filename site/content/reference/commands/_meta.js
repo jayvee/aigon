@@ -5,5 +5,4 @@ export default {
   research: "Research Commands",
   feedback: "Feedback Commands",
   infra: "Infrastructure",
-  pro: "Pro Commands",
 };

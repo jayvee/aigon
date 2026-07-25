@@ -36,12 +36,10 @@ function executableCommands() {
         ['./lib/commands/recurring', 'createRecurringCommands'], ['./lib/commands/schedule', 'createScheduleCommands'],
         ['./lib/commands/agent-launch', 'createAgentLaunchCommands'], ['./lib/commands/agent', 'createAgentCommands'],
         ['./lib/commands/signal-health', 'createSignalHealthCommands'], ['./lib/commands/security-scan', 'createSecurityScanCommands'],
-        ['./lib/commands/pro', 'createProCommands'],
     ];
     const internal = new Set(['feature-spec-review-record', 'feature-spec-revise-record', 'research-spec-review-record', 'research-spec-revise-record', 'capture-session-telemetry', 'capture-antigravity-telemetry', 'check-agent-signal', 'check-agent-submitted', 'terminal-focus', 'hooks', 'global-setup', 'check-prerequisites', 'security-scan-commit', 'recurring-run']);
     const deprecated = new Set(['update', 'feature-review', 'research-review']);
-    const pro = new Set(['pro', 'sync', 'backup', 'recurring-list', 'schedule', 'agent-launch', 'agent', 'signal-health', 'insights']);
-    return factories.flatMap(([module, name]) => Object.keys(require(path.join(ROOT, module))[name]()).map(command => ({ command, classification: internal.has(command) ? 'internal' : deprecated.has(command) ? 'deprecated' : pro.has(command) ? 'pro' : 'public' })));
+    return factories.flatMap(([module, name]) => Object.keys(require(path.join(ROOT, module))[name]()).map(command => ({ command, classification: internal.has(command) ? 'internal' : deprecated.has(command) ? 'deprecated' : 'public' })));
 }
 
 for (const file of mdxFiles) {
@@ -69,7 +67,7 @@ for (const command of ['agent-probe', 'agent-quota', 'commits', 'stats', 'profil
 for (const command of ['set', 'set-prioritise', 'feature-set-spec-review', 'feature-set-spec-revise', 'set-autonomous-start', 'set-autonomous-stop', 'set-autonomous-resume', 'set-autonomous-reset']) groupedReferences.set(command, '/docs/reference/commands');
 for (const command of ['feedback-migrate']) groupedReferences.set(command, '/docs/reference/commands');
 for (const command of ['update']) groupedReferences.set(command, '/docs/reference/commands/setup/apply');
-for (const command of ['sync', 'backup', 'recurring-list', 'schedule', 'agent-launch', 'agent', 'signal-health', 'pro']) groupedReferences.set(command, '/docs/reference/commands');
+for (const command of ['sync', 'backup', 'recurring-list', 'schedule', 'agent-launch', 'agent', 'signal-health', 'installed-notice']) groupedReferences.set(command, '/docs/reference/commands');
 const commandIndex = fs.readFileSync(path.join(CONTENT, 'reference/commands/index.mdx'), 'utf8');
 const commands = executableCommands();
 for (const entry of commands) {

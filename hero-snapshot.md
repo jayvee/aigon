@@ -9,11 +9,6 @@
       - link "GitHub" [ref=e21] [cursor=pointer]:
         - /url: https://github.com/jayvee/aigon
   - main [ref=e22]:
-    - generic [ref=e24]:
-      - generic [ref=e25]: Pro
-      - generic [ref=e26]: Agent quality metrics, trend charts & AI-powered coaching
-      - link "See what’s coming →" [ref=e27] [cursor=pointer]:
-        - /url: /pro
     - generic [ref=e28]:
       - generic [ref=e30]
       - generic [ref=e87]
@@ -58,7 +53,7 @@
       - generic [ref=e407]
     - generic [ref=e412]:
       - generic [ref=e413]
-      - img "Aigon Pro — AI-powered insights and coaching dashboard" [ref=e425]
+      - img "Aigon Insights — AI-powered quality metrics and coaching dashboard" [ref=e425]
   - contentinfo [ref=e426]:
     - generic [ref=e427]:
       - paragraph [ref=e428]: Aigon
