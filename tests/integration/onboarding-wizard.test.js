@@ -36,6 +36,23 @@ test('safe setup writes private config without cloning or starting a server', ()
     } finally { fs.rmSync(home, { recursive: true, force: true }); }
 });
 
+// REGRESSION: saving a credential-bearing config must never loosen 0400 permissions.
+test('global config writer preserves stricter existing permissions', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-config-mode-'));
+    try {
+        const configDir = path.join(home, '.aigon');
+        fs.mkdirSync(configDir);
+        const configPath = path.join(configDir, 'config.json');
+        fs.writeFileSync(configPath, '{"repos":[]}\n', { mode: 0o400 });
+        fs.chmodSync(configPath, 0o400);
+        const result = spawnSync(process.execPath, ['-e', "require('./lib/config').saveGlobalConfig({ repos: [], terminalApp: 'apple-terminal' })"], {
+            cwd: ROOT, encoding: 'utf8', env: { ...process.env, HOME: home },
+        });
+        assert.strictEqual(result.status, 0, result.stderr);
+        assert.strictEqual(fs.statSync(configPath).mode & 0o777, 0o400);
+    } finally { fs.rmSync(home, { recursive: true, force: true }); }
+});
+
 // REGRESSION: command-local help must not execute setup or create onboarding files.
 test('setup command-local help is read-only', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-onboarding-help-'));
