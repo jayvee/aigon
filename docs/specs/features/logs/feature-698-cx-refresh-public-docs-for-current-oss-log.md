@@ -24,3 +24,24 @@ Refreshed public OSS docs, landing facts, dashboard guidance, lifecycle terminol
 - `npm run build --prefix site`
 - Regression searches for retired agent naming, MIT marketing copy, insecure dashboard binding, and placeholders (the raw retired-name command still sees the generated Pagefind vendor artifact; source allowlist is clean)
 - `curl -sI http://localhost:3600/pro | head -1` → `HTTP/1.1 200 OK`
+
+## Code Review
+
+**Reviewed by**: cu (Composer)
+**Date**: 2026-07-25
+
+### Fixes Applied
+- `e049e24f2` fix(review): finish lifecycle, install, and workflow doc corrections
+- `7b755063c` fix(review): update fleet tutorial completion signal wording
+- `1cc6c1307` fix(review): correct feature-prioritise summary in command index
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- **ESCALATE:subsystem** — Dashboard/gallery screenshots were not recaptured in this branch (`site/public/img/` unchanged). The spec requires refreshed Cards, Pipeline, Monitor, landing, and mobile visuals after the content pass.
+- **ESCALATE:subsystem** — Residual `submitted` wording remains in a few reference examples (e.g. `board.mdx` sample output, `autonomous-mode.mdx` internal state table) and research command pages; broader pass may be needed to align every non-compatibility mention with `implementation-complete` / `research-complete`.
+
+### Notes
+- Core factual fixes (Apache-2.0, loopback binding, `@latest`, placeholders, uninstall guide, `/pro` routing, feedback demotion) look solid after review fixes.
+- Reverted incidental `site/package-lock.json` drift unrelated to the docs work.
