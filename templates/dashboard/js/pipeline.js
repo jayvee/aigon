@@ -1595,6 +1595,15 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
     function shouldRenderSetSummaryInLane(roll, members) {
       const summaryLane = roll && roll.uiContract && roll.uiContract.state && roll.uiContract.state.lane;
       const memberLane = members[0] && members[0].stage;
+      // Sets can enter recovery lanes (paused/interrupted) that the Pipeline
+      // does not render as a column. Host their full contract where the
+      // current feature actually lives; otherwise the stack skips that member
+      // as embedded while the header is invisible.
+      if (summaryLane === 'paused' && roll && roll.currentFeature) {
+        const currentId = String(roll.currentFeature.id || '');
+        const currentMember = (members || []).find(member => String(member.id || '') === currentId);
+        if (currentMember && currentMember.stage) return String(memberLane) === String(currentMember.stage);
+      }
       return !summaryLane || !memberLane || String(summaryLane) === String(memberLane);
     }
 
