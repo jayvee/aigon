@@ -3,27 +3,12 @@
 
 const assert = require('assert');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const { test, withTempDir, report } = require('../_helpers');
+const sk = require('../../lib/scheduled-kickoff');
 
-let passed = 0;
-let failed = 0;
-
-function test(description, fn) {
-    try {
-        fn();
-        console.log(`  \u2713 ${description}`);
-        passed++;
-    } catch (err) {
-        console.error(`  \u2717 ${description}`);
-        console.error(`    ${err.stack || err.message}`);
-        failed++;
-    }
-}
-
-function withTempRepo(fn) {
-    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'aigon-pro-schedule-'));
-    try {
+function withScheduleRepo(fn) {
+    return withTempDir('aigon-pro-schedule-', (repo) => {
         const backlog = path.join(repo, 'docs', 'specs', 'features', '02-backlog');
         fs.mkdirSync(backlog, { recursive: true });
         fs.writeFileSync(path.join(backlog, 'feature-01-nightly-root.md'), [
@@ -35,16 +20,11 @@ function withTempRepo(fn) {
             '',
         ].join('\n'));
         return fn(repo);
-    } finally {
-        fs.rmSync(repo, { recursive: true, force: true });
-    }
+    });
 }
 
-const sk = require('../../lib/scheduled-kickoff');
-
-console.log('\n  scheduled set autonomous kickoffs');
-
-test('addJob persists set_autonomous payload and buildSpawnArgvForJob dispatches set-autonomous-start', () => withTempRepo((repo) => {
+// REGRESSION: set-autonomous schedule jobs must round-trip payload and argv for set-autonomous-start.
+test('addJob persists set_autonomous payload and buildSpawnArgvForJob dispatches set-autonomous-start', () => withScheduleRepo((repo) => {
     const added = sk.addJob(repo, {
         kind: sk.SET_AUTONOMOUS_KIND,
         entityId: 'nightly',
@@ -75,7 +55,8 @@ test('addJob persists set_autonomous payload and buildSpawnArgvForJob dispatches
     ]);
 }));
 
-test('addJob rejects unsupported set stopAfter before persistence', () => withTempRepo((repo) => {
+// REGRESSION: unsupported stopAfter values must be rejected before the job is persisted.
+test('addJob rejects unsupported set stopAfter before persistence', () => withScheduleRepo((repo) => {
     const added = sk.addJob(repo, {
         kind: sk.SET_AUTONOMOUS_KIND,
         entityId: 'nightly',
@@ -87,7 +68,8 @@ test('addJob rejects unsupported set stopAfter before persistence', () => withTe
     assert.deepStrictEqual(sk.listJobs(repo, { includeAll: true }), []);
 }));
 
-test('buildPendingScheduleIndex exposes lookupSet for earliest pending set job', () => withTempRepo((repo) => {
+// REGRESSION: pending schedule lookup must return the earliest runAt for a set.
+test('buildPendingScheduleIndex exposes lookupSet for earliest pending set job', () => withScheduleRepo((repo) => {
     const later = sk.addJob(repo, {
         kind: sk.SET_AUTONOMOUS_KIND,
         entityId: 'nightly',
@@ -110,5 +92,4 @@ test('buildPendingScheduleIndex exposes lookupSet for earliest pending set job',
     });
 }));
 
-console.log(`\n  ${passed} passed, ${failed} failed\n`);
-if (failed > 0) process.exit(1);
+report();

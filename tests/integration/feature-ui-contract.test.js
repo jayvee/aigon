@@ -1,20 +1,9 @@
 'use strict';
 
 const assert = require('assert');
+const { test, report } = require('../_helpers');
 const { snapshotToDashboardActions } = require('../../lib/workflow-snapshot-adapter');
 const { buildFeatureUiContract } = require('../../lib/feature-ui-contract');
-
-let passed = 0;
-function test(name, fn) {
-    try {
-        fn();
-        passed += 1;
-        console.log(`  ✓ ${name}`);
-    } catch (error) {
-        console.error(`  ✗ ${name}`);
-        throw error;
-    }
-}
 
 function contractFor(context) {
     const stage = context.currentSpecState === 'evaluating' ? 'in-evaluation'
@@ -253,4 +242,4 @@ test('slug-keyed legacy feature yields a null numericId rather than NaN', () => 
     assert.strictEqual(contract.entity.id, 'beer-style-filters');
 });
 
-console.log(`\n${passed} passed, 0 failed`);
+report();

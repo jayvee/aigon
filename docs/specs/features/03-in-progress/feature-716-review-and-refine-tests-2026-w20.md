@@ -63,6 +63,18 @@ If a grouping scheme is already in place from a prior run, validate it still map
 
 ## Run Log
 
+### 2026-W20 — 2026-07-25
+- Baseline: 99 core tests (44 unit + 53 integration + 2 workflow), ~13s `npm test`; 126 test files; 18261 LOC; no coverage metrics; no flaky/skipped in core suite (live-agent E2E opt-in only)
+- After:    99 core tests, ~15s `npm test`; 18014 LOC (-247)
+- Deltas:   0 net test files; -3 individual test cases (insights 11→9, backup 9→8); -247 LOC; grouping validated (unit/integration/workflow/browser + `test:related` intact)
+- Deleted:  insights.test.js — merged cost/autonomy reads and dropped weak rework-rate assertion; backup.test.js — DEFAULT_RETENTION constant-only check
+- Merged:   insights AADE frontmatter reads into one collectAadeFeatures behavioural test; backup retention disable paths consolidated
+- Rewritten: insights, backup, onboarding-state, scheduled-kickoff, onboarding-wizard, portable-spec-paths, feature-ui-contract — migrated bespoke harnesses to `_helpers` with REGRESSION comments
+- Added:    nil — no missing-coverage gaps identified this run
+- Tooling:  removed stale `spec-layout-migration.test.js` exclude from integration fast/heavy splits
+- Deferred for human: none (post-review restored tests to stay within the 20% per-file reduction threshold)
+- Commits:  3272a4fc b7adb27a 9613e3c4
+
 <!-- Append a new entry here at the top of this section before closing the feature. -->
 <!-- Format:
 ### 2026-W20 — <ISO date>

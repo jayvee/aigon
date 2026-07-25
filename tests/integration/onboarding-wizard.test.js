@@ -5,13 +5,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { test, report } = require('../_helpers');
 
 const ROOT = path.resolve(__dirname, '../..');
-let failed = 0;
-function test(name, fn) {
-    try { fn(); console.log(`  ✓ ${name}`); }
-    catch (error) { failed++; console.error(`  ✗ ${name}\n    ${error.message}`); }
-}
 
 function run(args, home) {
     return spawnSync(process.execPath, ['aigon-cli.js', ...args], {
@@ -64,4 +60,4 @@ test('setup command-local help is read-only', () => {
     } finally { fs.rmSync(home, { recursive: true, force: true }); }
 });
 
-if (failed) process.exit(1);
+report();
