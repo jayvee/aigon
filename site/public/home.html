@@ -431,7 +431,7 @@
         <terminal-line data="output">  ag  ✓ passed checks · implementation complete (iter 2)</terminal-line>
         <terminal-line data="output">  cx  ✓ passed checks · implementation complete</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
+        <terminal-line data="output">  All 3 agents completed. Ready to evaluate.</terminal-line>
       </template>
 
       <template id="step-evaluate">
@@ -448,7 +448,7 @@
         <terminal-line data="input" lineDelay="600">aigon feature-close 07 cx --adopt</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  ✅ Merged cx implementation into main</terminal-line>
-        <terminal-line data="output">  Spec moved to: 04-done/</terminal-line>
+        <terminal-line data="output">  Spec moved to: 05-done/</terminal-line>
         <terminal-line data="output">  Worktrees cleaned up.</terminal-line>
       </template>
 
@@ -491,7 +491,7 @@
         <terminal-line data="output">  ✓ Task 3/4: Integration tests (8/8 passing)</terminal-line>
         <terminal-line data="output">  ✓ Task 4/4: Update API documentation</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">aigon agent-status submitted</terminal-line>
+        <terminal-line data="input" lineDelay="600">aigon agent-status implementation-complete</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
@@ -833,12 +833,12 @@
           },
           autopilot: {
             title: "Iterate until checks pass.",
-            desc: "One agent runs autonomously through implement-review cycles. It retries until all validation checks pass, then submits.",
+            desc: "One agent runs autonomously through implement-review cycles. It retries until all validation checks pass, then signals implementation-complete.",
             cmd: '<div><span class="prompt">$</span> aigon feature-autonomous-start 07 cx --review-agent=cc --stop-after=closed</div>'
           },
           swarm: {
             title: "All agents iterate autonomously.",
-            desc: "Multiple agents each iterate autonomously in parallel. When all have submitted, evaluate and merge the winner.",
+            desc: "Multiple agents each iterate autonomously in parallel. When all signal implementation-complete, evaluate and merge the winner.",
             cmd: '<div><span class="prompt">$</span> aigon feature-start 07 cc ag cx</div><div><span class="prompt">$</span> aigon feature-do 07 --iterate</div><div><span class="prompt">$</span> aigon feature-eval 07</div>'
           }
         };

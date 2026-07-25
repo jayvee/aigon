@@ -67,10 +67,10 @@ planning_context: ~/.claude/plans/dark-mode-plan.md
 ### 2. Prioritise
 
 ```bash
-aigon feature-prioritise dark-mode    # Assigns ID, e.g. #108
+aigon feature-prioritise dark-mode    # Moves allocated F<ID> to backlog
 ```
 
-Moves the spec to `02-backlog/` and assigns a global ID.
+Moves the feature to `02-backlog/`; the permanent `F<ID>` was allocated at create time.
 
 ### 3. Start
 
@@ -95,7 +95,7 @@ aigon feature-do 108
 Then the agent implements the feature. You can:
 - **Watch** — attach to the tmux session and observe
 - **Guide** — jump in and give feedback, redirect, or refine
-- **Wait** — let the agent work and check back when it signals `submitted`
+- **Wait** — let the agent work and check back when it signals `implementation-complete`
 
 ### 5. Review (optional)
 

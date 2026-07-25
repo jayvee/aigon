@@ -1,11 +1,11 @@
 ---
 title: Core Concepts
-description: The three workflows and four execution modes that make up Aigon.
+description: The two core workflows and four execution modes that make up Aigon.
 ---
 
-Aigon organises development work into three workflows, each with its own lifecycle.
+Aigon organises development work into two core workflows, each with its own lifecycle.
 
-## Three workflows
+## Two core workflows
 
 ### Features
 
@@ -21,11 +21,7 @@ The discovery workflow. Research topics move through: **create → prioritise �
 
 Research supports Drive (one agent), Fleet (multiple agents for diverse perspectives), and Autopilot (`research-autopilot` — hands-off Fleet that auto-evaluates). Research findings are synthesised qualitatively rather than scored.
 
-### Feedback
-
-The triage workflow. Feedback items move through: **create → triage → promote/reject → close**. Feedback captures user input, bugs, and improvement ideas. Triaged feedback can be promoted to a feature or research topic.
-
-Feedback does not use agents or execution modes — it's a lightweight categorisation workflow.
+Legacy [feedback commands](/docs/guides/feedback-workflow) remain for compatibility only. Capture new customer input as research with `origin: customer-feedback`.
 
 ## Four execution modes
 
@@ -56,17 +52,18 @@ All three drive the same underlying state. Mix them freely.
 
 ![Dashboard Pipeline view](/img/aigon-dashboard-kanban.png)
 
-## Specs as folders
+## Specs and lifecycle views
 
-Each spec file lives in a folder that reflects its current stage. As you run commands, Aigon moves the file through the pipeline:
+Canonical specs live under `docs/specs/{features,research-topics}/00-specs/`. Lifecycle stage folders are projected views of workflow state rather than Git file moves on every transition:
 
 ```
 docs/specs/features/
+  00-specs/        → canonical spec home
   01-inbox/        → ideas
-  02-backlog/      → prioritised, assigned an ID
+  02-backlog/      → prioritised
   03-in-progress/  → being worked on
   04-in-evaluation/→ comparing implementations (Fleet)
   05-done/         → merged and complete
 ```
 
-Research and feedback follow the same pattern with their own folder structures. See [File Structure](/docs/reference/file-structure) for the full layout.
+Research follows the same pattern with its own folder structure. See [File Structure](/docs/reference/file-structure) for the full layout.
