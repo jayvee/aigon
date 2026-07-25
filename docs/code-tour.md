@@ -1,16 +1,16 @@
 # Code Tour — How Aigon Actually Works
 
-A guided reading of ~22 real excerpts from this codebase, in the order the machinery
-actually runs. Every code block is **verbatim** from the file named above it, with a
-`path:line` anchor so you can jump to it. Commentary above each block explains what it
-does, what pattern it demonstrates, and why it is shaped that way.
+A guided reading of 25 core ideas through real excerpts from this codebase, in the order
+the machinery actually runs. Every code block is **verbatim** from the file named above
+it, with a `path:line` anchor so you can jump to it. Commentary above each block explains
+what it does, what pattern it demonstrates, and why it is shaped that way.
 
 This document is for **understanding what Aigon does** — the domain logic, not a style
 guide. Read top to bottom the first time; after that, use the table of contents.
 
 > **Freshness:** excerpts drift as code changes. Line numbers are the first thing to rot.
 > When you find a mismatch, fix it (see [Maintaining this document](#maintaining-this-document)).
-> Last verified against `main` @ `9a0e89987` (2026-07-25).
+> Last verified against `main` @ `ae1a0f2c1` (2026-07-25).
 
 ---
 
@@ -19,11 +19,12 @@ guide. Read top to bottom the first time; after that, use the table of contents.
 Aigon is a spec-driven multi-agent harness. A unit of work (a **feature** or a **research
 topic**) is a markdown spec plus an **append-only event log**. The log is folded into a
 **context object** by a projector, and that context is fed into an **XState machine** that
-decides which transitions are legal. Nothing in the system reads "what state is this
-feature in?" from the filesystem — folders are a *generated view* of engine state, never
-the source of it. Agents (Claude Code, Codex, Cursor…) run in git worktrees inside tmux
-sessions, write heartbeat status files, and the dashboard renders a **server-computed UI
-contract** — the browser never decides what a card is allowed to do.
+decides which transitions are legal. For engine-backed entities, folders are a *generated
+view* of lifecycle state, never its source; narrow folder fallbacks remain only for
+pre-engine compatibility. Agent work is represented by durable **AgentSession** records
+and hosted in tmux today, while heartbeat files provide a dashboard-facing cache. The
+dashboard renders a **server-computed UI contract** — the browser never decides what a
+card is allowed to do.
 
 Almost every design decision below follows from one rule: **there is exactly one place a
 lifecycle decision is made, and it is the engine.**
@@ -41,7 +42,7 @@ lifecycle decision is made, and it is the engine.**
 4. [Compiling the table into a state machine](#4-compiling-the-table-into-a-state-machine)
 5. [The event log](#5-the-event-log)
 6. [The projector: events → context](#6-the-projector-events--context)
-7. [The write path (the most important function in the repo)](#7-the-write-path-the-most-important-function-in-the-repo)
+7. [The feature write path](#7-the-feature-write-path)
 8. [Effects: how state changes touch the world](#8-effects-how-state-changes-touch-the-world)
 9. [Available actions come from `snapshot.can()`](#9-available-actions-come-from-snapshotcan)
 10. [Engine-first, folder-fallback](#10-engine-first-folder-fallback)
@@ -49,13 +50,13 @@ lifecycle decision is made, and it is the engine.**
 **Part 2 — Identity and storage**
 11. [Reserve the ID before you write the file](#11-reserve-the-id-before-you-write-the-file)
 12. [The SpecStore interface](#12-the-specstore-interface)
-13. [Content-addressed event merge](#13-content-addressed-event-merge)
+13. [ID-based event union](#13-id-based-event-union)
 14. [Stage folders are a symlink projection](#14-stage-folders-are-a-symlink-projection)
 
 **Part 3 — Agents and sessions**
-15. [Session names are the join key](#15-session-names-are-the-join-key)
+15. [Sessions are records behind a host boundary](#15-sessions-are-records-behind-a-host-boundary)
 16. [One place resolves model + effort](#16-one-place-resolves-model--effort)
-17. [The heartbeat](#17-the-heartbeat)
+17. [The heartbeat cache](#17-the-heartbeat-cache)
 18. [The idle ladder](#18-the-idle-ladder)
 
 **Part 4 — Orchestration**
@@ -124,10 +125,11 @@ and a grep command. That is a small thing that has paid for itself.
 
 ## 2. The `ctx` pattern
 
-**`lib/commands/shared.js:101`** and **`lib/commands/feature.js:216`**
+**`lib/commands/shared.js:88`**
 
-Command modules do not `require()` their collaborators at call time. They are *factories*
-that receive a `ctx` object holding every shared dependency, and return the handler map.
+Command modules are factories that receive a `ctx` object containing the command-wide
+dependencies Aigon deliberately makes replaceable. Focused domain helpers may still be
+imported normally; `ctx` is the shared testing seam, not a container for every module.
 
 ```js
 function buildCtx(overrides = {}) {
@@ -156,7 +158,9 @@ function createAllCommands(overrides = {}) {
     };
 ```
 
-And the consuming side destructures once at the top of the factory:
+The consuming side carries its own anchor and destructures once at the top of the factory:
+
+**`lib/commands/feature.js:216`**
 
 ```js
 module.exports = function featureCommands(ctx) {
@@ -169,15 +173,16 @@ module.exports = function featureCommands(ctx) {
 ```
 
 **The pattern:** *constructor injection without a DI framework*. `overrides` is spread
-over every namespace, so a test can pass `{ getCurrentBranch: () => 'feature/42' }` and
-every module that reads `ctx.git.getCurrentBranch` sees the fake — no `jest.mock`, no
-global patching, no module-cache surgery. The `_cachedCommands` memo only applies when
-there are no overrides, so production pays the build cost once and tests always get a
-fresh graph.
+over every injected namespace, so a test can pass
+`{ getCurrentBranch: () => 'feature/42' }` and every handler that reads
+`ctx.git.getCurrentBranch` sees the fake — no `jest.mock`, no global patching, no
+module-cache surgery. The `_cachedCommands` memo only applies when there are no overrides,
+so production pays the build cost once and tests always get a fresh graph.
 
-This is why `AGENTS.md` insists new handlers preserve ctx-injection: a handler that
-`require()`s `../git` directly is invisible to the override mechanism and silently
-untestable.
+This is why `AGENTS.md` insists new handlers preserve ctx-injection for these shared
+dependencies: a handler that starts reading `../git` directly is invisible to the
+override mechanism. That rule does not prohibit focused imports such as workflow helpers
+or parsers that are outside the injected bundle.
 
 ---
 
@@ -236,14 +241,15 @@ guard list top-to-bottom and lands in the right resting state. This is how a pro
 just started reconstitutes a feature's position without a stored "current state" string
 being authoritative.
 
-**The pattern:** *declarative state table*. Because the lifecycle is data, three different
-consumers can read the *same* definition — the state machine (§4), the action deriver
-(§9), and the workflow-diagram generator in `docs/generated/`. A transition that exists in
-one but not the others is impossible by construction.
+**The pattern:** *declarative state table*. The state machine (§4) and workflow-diagram
+generator in `docs/generated/` compile the same definition. The action deriver (§9) asks
+that compiled machine whether a candidate event is legal, so it shares transition
+legality without duplicating a state-by-state matrix.
 
-**Reading a diff here:** any change to this table changes what the dashboard offers,
-what the CLI permits, and what the generated diagrams say — all at once. That is the
-intended blast radius.
+**Reading a diff here:** a change to this table changes what the engine permits and what
+the generated diagrams say. It can also enable or disable an *existing* action candidate,
+but it does not create a button by itself — the candidate registry is a separate,
+intentional input covered in §9.
 
 ---
 
@@ -345,7 +351,9 @@ above this function (`lib/workflow-core/machine.js:21`), as XState `guards` and 
 
 **`lib/workflow-core/event-store.js:17`**
 
-The entire persistence primitive for lifecycle state. Two functions, JSONL, no database.
+This is the local SpecStore backend's low-level event persistence primitive: two
+functions, JSONL, no database. The engine reaches it through the SpecStore boundary (§12),
+so the git-branch backend can provide a different physical representation.
 
 ```js
 async function readEvents(eventsPath) {
@@ -363,20 +371,24 @@ async function readEvents(eventsPath) {
   }
 }
 
+// …
+
 async function appendEvent(eventsPath, event) {
   await fs.mkdir(path.dirname(eventsPath), { recursive: true });
   await fs.appendFile(eventsPath, `${JSON.stringify(event)}\n`, 'utf8');
 }
 ```
 
-**The pattern:** *append-only log as the source of truth*. Missing file ≡ empty history —
-a feature that has never had an event is indistinguishable from one whose log was never
-created, which is exactly right. Nothing ever rewrites a line. Every state you can observe
-is derivable by replaying from the top.
+**The pattern:** *append-only domain history as the source of truth*. Missing file ≡ empty
+history — a feature that has never had an event is indistinguishable from one whose log
+was never created, which is exactly right. The local backend only appends. The git-branch
+backend may write a new merged blob in a new commit, but it preserves the accumulated
+event IDs rather than treating a snapshot as authority. Every lifecycle state is
+derivable by replaying the ordered history.
 
 The consequence, which shows up everywhere else: **to change what a feature's state is,
-you append an event.** There is no `setState`. If you find code writing `snapshot.json`
-directly outside `applyEventsUnlocked` (§7), that is a bug.
+you append an event.** There is no `setState`. Snapshot writes belong only in the
+feature/research engine persistence paths described in §7.
 
 ---
 
@@ -408,6 +420,7 @@ function projectContext(events) {
           mode: event.mode || null,
           authorAgentId: bootAuthor.authorAgentId,
           specAuthor: bootAuthor.specAuthor,
+          // …
           agents: createAgents(event.agents || [], {
             modelOverrides: event.modelOverrides,
             effortOverrides: event.effortOverrides,
@@ -424,6 +437,8 @@ function projectContext(events) {
 
 The `feature.reset` case carries a comment that is worth reading in full, because it
 explains the whole architecture in one paragraph:
+
+**`lib/workflow-core/projector.js:211`**
 
 ```js
       case 'feature.reset':
@@ -447,13 +462,12 @@ event exists.
 
 ---
 
-## 7. The write path (the most important function in the repo)
+## 7. The feature write path
 
 **`lib/workflow-core/engine.js:1117`**
 
-If you read one function in Aigon, read this one. Every lifecycle mutation funnels through
-it: append event → re-project → apply transition → run effects → write snapshot → refresh
-the folder view.
+Feature lifecycle mutations funnel through this function: load history → apply each new
+event → run effects → write the derived snapshot → refresh the folder view.
 
 ```js
 async function applyEventsUnlocked(repoPath, featureId, newEvents) {
@@ -496,12 +510,27 @@ async function applyEventsUnlocked(repoPath, featureId, newEvents) {
 
 And the locked public wrapper right below it:
 
+**`lib/workflow-core/engine.js:1158`**
+
 ```js
 async function persistEvents(repoPath, featureId, newEvents) {
   const store = getSpecStore(repoPath);
   const ref = entityRef('feature', featureId);
   await syncBeforeWrite(repoPath, ref);
   return store.lock(ref, async () => applyEventsUnlocked(repoPath, featureId, newEvents));
+}
+```
+
+Research has a parallel implementation, and shared callers select the correct path
+explicitly:
+
+**`lib/workflow-core/engine.js:1165`**
+
+```js
+async function persistEntityEvents(repoPath, entityType, entityId, newEvents) {
+  return entityType === 'research'
+    ? persistResearchEvents(repoPath, entityId, newEvents)
+    : persistEvents(repoPath, entityId, newEvents);
 }
 ```
 
@@ -525,9 +554,10 @@ async function persistEvents(repoPath, featureId, newEvents) {
   `applyEventsUnlocked` is exported separately only for callers that already hold the lock.
 
 **This is the "write-path contract" `AGENTS.md` keeps referring to:** *every write path
-must produce the state its read path assumes*. Bypassing this function — writing a
-snapshot, moving a spec file, or nudging a folder by hand — produces state the read side
-was never designed to see.
+must produce the state its read path assumes*. Research follows the same sequence in
+`applyResearchEventsUnlocked` (`lib/workflow-core/engine.js:2327`). Bypassing either
+entity path — writing a snapshot, moving a spec file, or nudging a folder by hand —
+produces state the read side was never designed to see.
 
 ---
 
@@ -545,6 +575,8 @@ async function runEffects(repoPath, featureId, effects, executeEffect = runFeatu
   }
 }
 ```
+
+**`lib/workflow-core/effects.js:56`**
 
 ```js
 async function runFeatureEffect(repoPath, featureId, effect) {
@@ -633,40 +665,37 @@ function deriveAvailableActions(context, entityTypeOverride) {
 }
 ```
 
-**The pattern:** *the machine is the availability oracle*. There is no second list of
-"which buttons appear when". If `feature.close` isn't a legal transition from the current
-state, the Close button cannot render — not because someone wrote a `if (state === ...)`
-in the UI, but because `snapshot.can({ type: 'feature.close' })` returned false. Add a
-transition to the table in §3 and the button appears everywhere, for free.
+**The pattern:** *candidate registry filtered by the machine*. There is a list of actions
+the product knows how to present, but there is no second state-by-state legality matrix.
+`buildCandidates` (`lib/workflow-core/actions.js:21`) applies mode and fine-grained
+candidate guards; `deriveAvailableActions` then asks XState whether each
+machine-governed event is legal. An action appears only when it is declared as a candidate
+*and* every applicable gate passes.
 
-`bypassMachine` is the escape hatch, and it is honest about being one. Some actions aren't
-state transitions at all — "Open Terminal", "Nudge agent", "Push". Those declare
-`bypassMachine: true` and supply their own `guard` function, which `buildCandidates`
-(`lib/workflow-core/actions.js:21`) runs during construction. A candidate is either machine-governed or
-guard-governed, never both, and never neither.
+Machine-governed candidates can also carry a guard for facts more precise than lifecycle
+state. This one requires both a pending review and an accepted XState transition:
 
-The candidate definitions themselves live back in `lib/feature-workflow-rules.js`, so the
-transitions and the actions that trigger them are declared side by side:
+**`lib/feature-workflow-rules.js:322`**
 
 ```js
     {
-        kind: ManualActionKind.FEATURE_PUSH,
-        label: 'Push',
-        eventType: null,
-        recommendedOrder: 35,
-        bypassMachine: true,
-        modeFilter: 'solo',
-        category: 'lifecycle',
+        kind: ManualActionKind.FEATURE_SPEC_REVISE,
+        label: 'Revise Spec',
+        eventType: 'feature.spec_revision.started',
+        recommendedOrder: 46,
+        requiresInput: 'agentPicker',
+        category: ActionCategory.SPEC_REVIEW,
         guard: ({ context }) => {
-            if (context.currentSpecState !== 'implementing') return false;
-            const agents = Object.values(context.agents || {});
-            return agents.some(agent => agent.status === 'ready');
-        },
-        metadata: {
-            confirmationMessage: 'Push feature branch to origin?',
+            const state = context.currentSpecState;
+            if (!isSpecReviewCycleAllowed(state) && state !== 'spec_review_in_progress') return false;
+            return Boolean(context.specReview && context.specReview.pendingCount > 0);
         },
     },
 ```
+
+`bypassMachine` is the explicit escape hatch for actions that are not state transitions
+at all — "Open Terminal", "Nudge agent", "Push". Those candidates have no machine event
+and therefore own their complete guard.
 
 There is a long comment above the `PAUSE_FEATURE` candidate (`lib/feature-workflow-rules.js:287`)
 documenting an incident where two candidates fired for the same state and the browser
@@ -690,9 +719,13 @@ A tiny function that encodes the precedence rule the whole system depends on.
  *   2. No snapshot, folder fallback is the done stage folder → legacy pre-engine done
  *   3. Otherwise → false
  *
+ * @param {string} repoPath
+ * @param {string} entityType - 'feature' or 'research'
+ * @param {string} entityId
  * @param {string|null} folderFallback - the folder name found by a folder
  *   scan, or null if not scanned. Required to be passed explicitly so the
  *   call site documents what fallback applies.
+ * @returns {boolean}
  */
 function isEntityDone(repoPath, entityType, entityId, folderFallback) {
   const snapshot = readSnapshotSync(repoPath, entityType, entityId);
@@ -721,9 +754,9 @@ them is the actual bug this function fixes:
 - **engine directory exists but snapshot is missing** → *drift*. Something wrote partial
   state. The folder must not be trusted, and the honest answer is "not done".
 
-Note the API design: `folderFallback` is a **required positional parameter**. You cannot
-call this function without stating, at the call site, what fallback you're authorising.
-That is deliberate — it makes the precedence visible in every diff that uses it.
+Note the API design: `folderFallback` has no default. JavaScript will still allow an
+omitted argument, but maintained call sites must state what fallback they are authorising.
+That convention makes the precedence visible in every diff that uses it.
 
 ---
 
@@ -731,7 +764,7 @@ That is deliberate — it makes the precedence visible in every diff that uses i
 
 ## 11. Reserve the ID before you write the file
 
-**`lib/entity.js:134`**
+**`lib/entity.js:106`**
 
 Creating a feature reserves an immutable numeric identity *first*, then writes the spec at
 that number, then bootstraps engine state at that same number.
@@ -753,6 +786,8 @@ function reserveCreateIdentity(def) {
 ```
 
 The build/afterWrite pair inside `entityCreate`:
+
+**`lib/entity.js:170`**
 
 ```js
             build: (value) => {
@@ -832,6 +867,8 @@ const SPEC_STORE_METHODS = Object.freeze([
   'readIdentityPending',
 ]);
 
+// …
+
 function assertSpecStoreInterface(store) {
   for (const name of SPEC_STORE_METHODS) {
     if (typeof store[name] !== 'function') {
@@ -855,12 +892,13 @@ module from bypassing the git-branch back end and writing to a path nothing sync
 
 ---
 
-## 13. Content-addressed event merge
+## 13. ID-based event union
 
 **`lib/spec-store/event-merge.js:13`**
 
-When the same feature's log exists on two machines, they must converge without a
-coordinator. The answer: derive a stable ID from the event's content and union.
+When the same feature's log exists on two machines, the backend unions events by stable
+ID. Newer events normally carry an explicit `id`; legacy events get a fallback hash over
+selected identity fields.
 
 ```js
 function getEventId(event) {
@@ -878,6 +916,8 @@ function getEventId(event) {
   return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 24);
 }
 
+// …
+
 function mergeEventsById(localEvents, remoteEvents) {
   const merged = [];
   const seen = new Set();
@@ -893,17 +933,21 @@ function mergeEventsById(localEvents, remoteEvents) {
 }
 ```
 
-**The pattern:** *CRDT-ish set union over content-addressed events*. Merge is commutative
-and idempotent — sync twice, sync in either direction, get the same log. No vector clocks,
-no last-write-wins, no conflict markers.
+**The pattern:** *directional ordered union with ID deduplication*. Re-merging the same
+inputs is idempotent, but the returned array is deliberately **local-first, then
+remote-only**. Reversing the arguments can therefore change event order; this is not a
+commutative ordered-log merge. The git-branch backend combines that union with
+optimistic-concurrency retries and merge commits rather than claiming CRDT semantics.
 
-This is the property that makes §6's reset-as-event design necessary rather than merely
-tidy: in a union-merge world, the only way to express "undo" is to add something, because
-subtraction doesn't survive a merge with a peer who still has the original.
+The additive-union property is what makes §6's reset-as-event design necessary rather
+than merely tidy: in a union-merge world, the only way to express "undo" is to add
+something, because subtraction doesn't survive a merge with a peer who still has the
+original.
 
-Note the back-compat in `parseEventsPayload` below it — logs are read as either a
-`{formatVersion, events}` envelope or bare JSONL, detected by a leading `{`. Old on-disk
-data keeps working.
+`parseEventsPayload` below this excerpt belongs to the legacy git-ref envelope format.
+Current git-branch storage uses a dedicated raw-JSONL parser
+(`lib/spec-store/git-branch-backend.js:73`); multi-line JSONL must not be sent through the
+envelope parser because both formats begin with `{`.
 
 ---
 
@@ -954,6 +998,8 @@ function computeDesiredView(repoPath) {
 
 And the reconciler's contract, stated in its own docblock:
 
+**`lib/spec-view.js:230`**
+
 ```js
 /**
  * Reconcile the on-disk view to the desired projection. Idempotent: correct
@@ -983,64 +1029,92 @@ entity*, never an overwrite. A broken projection is recoverable; a clobbered spe
 
 # Part 3 — Agents and sessions
 
-## 15. Session names are the join key
+## 15. Sessions are records behind a host boundary
 
-**`lib/agent-sessions/names.js:72`**
+**`lib/agent-sessions/service.js:12`**
 
-Aigon does not keep a database of running agents. The tmux session *name* encodes the
-identity, and the name is parsed back when needed.
-
-```js
-/**
- * Build a tmux session name following the naming convention:
- *   {repo}-{typeChar}{num}-{role}-{agent}(-{desc})
- * The 'auto' role omits the agent suffix.
- */
-function buildTmuxSessionName(entityId, agentId, options) {
-    const repo = resolveTmuxRepoName(options);
-    const num = toUnpaddedId(entityId);
-    const typeChar = (options && options.entityType) || 'f';
-    const role = (options && options.role) || 'do';
-    const desc = options && options.desc;
-    const noAgent = role === 'auto';
-    const agent = noAgent ? null : (agentId || 'solo');
-    const middle = noAgent ? role : `${role}-${agent}`;
-    return desc
-        ? `${repo}-${typeChar}${num}-${middle}-${desc}`
-        : `${repo}-${typeChar}${num}-${middle}`;
-}
-```
+An agent session is a durable domain record, not a fact reconstructed from a tmux name.
+The service is the one layer that knows both the record store and the live `SessionHost`.
 
 ```js
-function parseTmuxSessionName(name) {
-    // 0. Set autonomous orchestrator: {repo}-s{setSlug}-auto
-    const setAutoMatch = name.match(/^(.+)-s([a-z0-9][a-z0-9-]*)-auto$/);
-    if (setAutoMatch) return { repoPrefix: setAutoMatch[1], type: 'S', id: setAutoMatch[2], role: 'auto', agent: null };
-    // 1. Auto sessions (no agent): {repo}-{type}{id}-auto(-desc)
-    const autoMatch = name.match(/^(.+)-(f|r)(\d+)-auto(?:-|$)/);
-    if (autoMatch) return { repoPrefix: autoMatch[1], type: autoMatch[2], id: autoMatch[3], role: 'auto', agent: null };
-    // 2. Role+agent sessions: {repo}-{type}{id}-{role}-{agent}(-desc)
-    const roleMatch = name.match(/^(.+)-(f|r)(\d+)-(spec-draft|do|eval|review|revise|spec-review|spec-revise|spec-check|close)-([a-z]{2})(?:-|$)/);
-    if (roleMatch) return { repoPrefix: roleMatch[1], type: roleMatch[2], id: roleMatch[3], role: roleMatch[4], agent: roleMatch[5] };
-    // 3. Legacy feature eval sessions omitted the agent segment: {repo}-f{id}-eval(-desc)
-    const legacyFeatureEvalMatch = name.match(/^(.+)-f(\d+)-eval(?:-|$)/);
-    if (legacyFeatureEvalMatch) return { repoPrefix: legacyFeatureEvalMatch[1], type: 'f', id: legacyFeatureEvalMatch[2], role: 'eval', agent: null };
-    // 4. Legacy fallback (no role prefix): {repo}-{type}{id}-{agent}(-desc) → role 'do'
-    const legacyMatch = name.match(/^(.+)-(f|r)(\d+)-([a-z]{2})(?:-|$)/);
-    if (!legacyMatch) return null;
-    return { repoPrefix: legacyMatch[1], type: legacyMatch[2], id: legacyMatch[3], role: 'do', agent: legacyMatch[4] };
-}
+function createAgentSessionService({
+    repoPath = process.cwd(),
+    store = createAgentSessionStore({ repoPath }),
+    host = undefined,
+    now = () => new Date(),
+} = {}) {
+    // …
+    function startSession(request) {
+        const requestedAt = timestamp();
+        const startRequest = validateAgentSessionStartRequest({
+            ...request,
+            state: request.state || SESSION_STATES.REQUESTED,
+            createdAt: request.createdAt || requestedAt,
+            updatedAt: request.updatedAt || requestedAt,
+        });
+        const activeHost = requireHost('startSession');
+
+        store.writeSession(startRequest);
+        store.appendEvent({
+            type: SESSION_EVENT_TYPES.REQUESTED,
+            sessionId: startRequest.sessionId,
+            at: requestedAt,
+            payload: { role: startRequest.role, agentId: startRequest.agent && startRequest.agent.id },
+        });
+        // …
+        const hostResult = activeHost.startSession(startRequest) || {};
+        // …
+        store.writeSession(record);
+        store.appendEvent({
+            type: SESSION_EVENT_TYPES.STARTED,
+            sessionId: record.sessionId,
+            at: record.startedAt,
+            payload: { host: record.host || null },
+        });
+        return record;
+    }
 ```
 
-**The pattern:** *the name is the record*. `tmux ls` is the query interface. Sessions
-survive Aigon restarting, crashing, or being upgraded, because no in-memory registry has to
-survive with them. The cost is paid in that ordered cascade of regexes — four generations of
-naming convention, tried newest-first, each documented with the shape it matches.
+The default store is deliberately plain files:
 
-The header comment also records a structural constraint: this module is **pure and
-path-only**, extracted out of `lib/worktree.js` specifically so workflow-core, dashboard
-routes, and commands can all use it without creating a require cycle. `lib/worktree.js`
-re-exports it for back-compat.
+**`lib/agent-sessions/store.js:10`**
+
+```js
+function createAgentSessionStore({ repoPath = process.cwd(), sessionsDir = null } = {}) {
+    const rootDir = sessionsDir || path.join(repoPath, '.aigon', 'sessions');
+    const eventsPath = path.join(rootDir, 'events.jsonl');
+
+    function getRecordPath(sessionId) {
+        if (!sessionId || typeof sessionId !== 'string') {
+            throw createAgentSessionError(ERROR_CODES.INVALID_REQUEST, 'Missing session id');
+        }
+        return path.join(rootDir, sessionId + '.json');
+    }
+
+    function readSession(sessionRef) {
+        const sessionId = typeof sessionRef === 'string' ? sessionRef : sessionRef && sessionRef.sessionId;
+        const recordPath = getRecordPath(sessionId);
+        const raw = readJsonSafe(recordPath, null);
+        if (!raw) return null;
+        return normalizeAgentSessionRecord(raw, recordPath);
+    }
+
+    function writeSession(record) {
+        const normalized = normalizeAgentSessionRecord(record, 'writeSession');
+        writeJsonAtomic(getRecordPath(normalized.sessionId), toSidecarShape(normalized));
+        return normalized;
+    }
+```
+
+**The pattern:** *durable record + replaceable host*. The store preserves identity,
+metadata, transcript bindings, and runtime facts across Aigon restarts. The host owns
+process mechanics — tmux today, another host later — while callers use
+`AgentSessionService` for both.
+
+Tmux names still encode entity, role, and agent for live discovery and legacy
+compatibility; the ordered parser remains in `lib/agent-sessions/names.js:103`. But the
+name is no longer the domain record, and new consumers should not query raw tmux state
+instead of the service.
 
 ---
 
@@ -1063,6 +1137,14 @@ the specification.
  *      the previous agent's model, e.g. cc's opus on cx).
  *   3. caller-supplied default for the stage (e.g. cliConfig.models[taskType])
  *   4. null (caller decides whether to pass no flag or use a hard default)
+ *
+ * @param {object} params
+ * @param {string} params.agentId
+ * @param {object|null} params.snapshot - engine snapshot (may be null for pre-engine spawns)
+ * @param {string|null} [params.stageDefaultModel] - the cliConfig-resolved model for the current task type
+ * @param {string|null} [params.launcherModel]
+ * @param {string|null} [params.launcherEffort]
+ * @returns {{ model: string|null, effort: string|null, modelSource: string, effortSource: string }}
  */
 function resolveLaunchTriplet({ agentId, slotAgentId, snapshot, stageDefaultModel, launcherModel, launcherEffort }) {
     const agent = snapshot && snapshot.agents && snapshot.agents[slotAgentId || agentId];
@@ -1087,6 +1169,8 @@ function resolveLaunchTriplet({ agentId, slotAgentId, snapshot, stageDefaultMode
 ```
 
 The module header is unusually direct about why the function exists:
+
+**`lib/agent-launch.js:6`**
 
 ```js
  * Every spawn path (feature-start, autoconductor run-loop, dashboard
@@ -1114,11 +1198,12 @@ but the *intent* stays recorded on the event log for attribution.
 
 ---
 
-## 17. The heartbeat
+## 17. The heartbeat cache
 
 **`lib/agent-status.js:176`**
 
-Agents report progress by writing a small JSON file. This is the write side.
+The compatibility `agent-status` path maintains a small JSON cache that dashboard and
+session consumers can read cheaply. This is its write side.
 
 ```js
 function writeAgentStatus(id, agent, data, prefix = 'feature', options) {
@@ -1152,6 +1237,11 @@ itself*. Three things are happening at once:
 - **Every write emits a signal-health event.** `signalHealth` is how Aigon knows whether
   the *signalling mechanism itself* is working — a nudge that never produced a status
   change is recorded as abandoned. That is the input to §18.
+
+These files do not replace the AgentSession record from §15 or own lifecycle state.
+Current command adapters record session facts and let
+`lib/agent-sessions/workflow-signal-bridge.js` map the relevant facts into workflow
+events; the status file is the read cache retained for compatibility and polling.
 
 Note also the read side (`lib/agent-status.js:78`): `readAgentStatus` loops over
 `candidateIds(id)` rather than formatting the id once, because `7`, `07`, and `007` all
@@ -1216,6 +1306,8 @@ function computeIdleLadder(repoPath, input = {}, deps = {}) {
 ```
 
 And the definition of "idle", which is stricter than you'd guess:
+
+**`lib/auto-nudge.js:54`**
 
 ```js
 function getIdleSec(input, nowMs) {
@@ -1371,6 +1463,8 @@ function buildCloseReadiness(entity, snapshot, options) {
         ));
     }
 
+    // …
+
     if (entity.stage === 'backlog' && Array.isArray(entity.blockedBy) && entity.blockedBy.length > 0) {
         const deps = entity.blockedBy.map(d => `#${String(d.id).padStart(2, '0')}`).join(', ');
         blockers.push(makeBlocker('dependency-blocked', 'Dependency blocked', `Waiting on ${deps}`));
@@ -1378,6 +1472,8 @@ function buildCloseReadiness(entity, snapshot, options) {
 ```
 
 with each blocker carrying its own remedy:
+
+**`lib/close-readiness.js:148`**
 
 ```js
         blockers.push(makeBlocker(
@@ -1563,6 +1659,8 @@ function computeStatusFingerprint(data) {
         });
 ```
 
+**`lib/dashboard-status-version.js:113`**
+
 ```js
 function createStatusSnapshotStore() {
     let latestStatus = null;
@@ -1591,23 +1689,23 @@ function createStatusSnapshotStore() {
 ```
 
 **The pattern:** *semantic fingerprint as a change oracle*. `generatedAt` changes on every
-poll and is useless as a validator. The fingerprint deliberately includes only what should
-cause a **repaint** — stage, lifecycle, agent statuses, idle ladder, close-readiness
-verdict, contract digest — and excludes timestamps and other churn. Version bumps only when
-the fingerprint moves; that version becomes the ETag, so unchanged polls return `304` and
-SSE clients skip the render.
+poll and is useless as a validator. The fingerprint includes fields intended to cause a
+**repaint** — stage, lifecycle, agent statuses, idle ladder, close-readiness verdict,
+contract digest, and selected operational metadata — while excluding `generatedAt`.
+Version bumps only when the fingerprint moves; that version becomes the ETag, so unchanged
+polls return `304` and SSE clients skip the render.
 
 **The trap, and it catches people:** add a field to `/api/status` and forget to add it here,
-and the field arrives in the payload but **the card never repaints**, because the version
-didn't bump and the client short-circuits. The symptom is "my new field works on hard
-refresh but not on poll", which sends you hunting in the browser for a bug that is on the
-server. `AGENTS.md` and `CLAUDE.md` both call this out; now you know why.
+and conditional polls keep returning `304`, so the browser never receives the new value.
+The symptom is "my new field works on hard refresh but not on poll", which sends you
+hunting in the browser for a bug that is on the server. `AGENTS.md` and `CLAUDE.md` both
+call this out; now you know why.
 
 ---
 
 ## 24. Optimistic UI as overlays, never mutation
 
-**`templates/dashboard/js/store.js:301`**
+**`templates/dashboard/js/store.js:291`**
 
 The frontend needs a Start button to feel instant while the server catches up. It does this
 without ever writing to the data it renders.
@@ -1733,16 +1831,18 @@ anything there ships into strangers' repositories.
 If you only remember five things:
 
 1. **One source of truth, and it's the engine.** Lifecycle state comes from the event log
-   via the projector. Folders, snapshots, and cards are all *derived*. Anything that reads
-   the filesystem to decide "what state is this in?" is wrong (§7, §10, §14).
+   via the projector. Folders, snapshots, and cards are all *derived*. Folder state is
+   consulted only by the explicit pre-engine compatibility paths (§7, §10, §14).
 
 2. **Declare it as data, compile it into behaviour.** The state table (§3) feeds the
-   machine, the action deriver, and the diagrams. The action registry feeds availability
-   and the UI contract. One definition, many consumers, no drift possible.
+   machine and diagrams; the action registry declares candidate affordances; the machine
+   filters their lifecycle legality (§9). Each decision has one owner, and the UI contract
+   receives the composed result.
 
 3. **Inject the seam.** `ctx` for commands (§2), `executeEffect` for effects (§8),
    `deps.nowMs` / `deps.sendNudge` for the idle ladder (§18), `store` for persistence (§12).
-   Nothing important is reachable only through a hardcoded `require`.
+   Shared decisions get explicit replacement points; focused implementation helpers can
+   remain ordinary imports.
 
 4. **Degrade loudly, never silently repair.** Missing state produces a distinct, visible,
    diagnosable outcome — an inert card and a badge on the dashboard, a non-zero exit and a
@@ -1763,6 +1863,7 @@ If you only remember five things:
 | Lifecycle states, events, snapshots, read models | [`architecture.md`](architecture.md) § Workflow State |
 | Dashboard cards, actions, contracts | [`feature-interaction-contract.md`](feature-interaction-contract.md) |
 | Spec storage, git-branch backend, stable layout | [`specstore-architecture.md`](specstore-architecture.md) |
+| AgentSession records, hosts, signals, and continuity | [`architecture.md`](architecture.md) § Agent Sessions |
 | Autonomous runs and the conductor loop | [`autonomous-mode.md`](autonomous-mode.md) |
 | Adding a new agent CLI | [`adding-agents.md`](adding-agents.md) |
 | Test gates and authoring rules | [`testing.md`](testing.md) |
@@ -1780,7 +1881,8 @@ skill defines the update contract — verbatim-excerpt rule, line-anchor verific
 verification command, and when a new section is warranted. Non-Claude agents: read that
 file directly; it is plain markdown and agent-agnostic.
 
-**Quick line-anchor check** — reprints the first line at each anchor so you can eyeball drift:
+**Tour integrity check** — validates every anchor, its excerpt association, and every
+retained verbatim segment:
 
 ```bash
 node scripts/check-code-tour.js

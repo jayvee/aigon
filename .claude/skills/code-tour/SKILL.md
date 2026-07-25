@@ -5,10 +5,10 @@ description: Maintain docs/code-tour.md — the annotated guided reading of Aigo
 
 # code-tour
 
-`docs/code-tour.md` is the annotated guided reading of Aigon's core logic — ~25 verbatim
-source excerpts, in the order the machinery runs, each with commentary on what it does and
-why it is shaped that way. Its reader is someone who does **not** routinely read the code
-and wants an accurate mental model of the system.
+`docs/code-tour.md` is the annotated guided reading of Aigon's core logic — 25 core
+sections built around verbatim source excerpts, in the order the machinery runs, each
+with commentary on what it does and why it is shaped that way. Its reader is someone who
+does **not** routinely read the code and wants an accurate mental model of the system.
 
 You are its maintainer. It is part of the internal doc set, alongside `docs/architecture.md`.
 
@@ -40,8 +40,9 @@ You are its maintainer. It is part of the internal doc set, alongside `docs/arch
 node scripts/check-code-tour.js
 ```
 
-Prints every `file:line` anchor with the source line it currently resolves to, and exits
-non-zero on anchors that point at a missing file or past EOF. Run this before you decide
+Validates that every JavaScript excerpt has a dedicated, aligned `file:line` anchor and
+that every retained excerpt segment is byte-identical to its source. It also checks all
+inline anchors for missing files and out-of-range lines. Run this before you decide
 whether there is work to do — often there isn't.
 
 ---
@@ -67,8 +68,8 @@ Bare basenames (`engine.js:1117`) do not resolve and will fail the checker. Pros
 use the same full-path form so they're checked too.
 
 **3. The anchor points at the declaration the excerpt opens with.** Not the docblock above
-it, not the file top. `check-code-tour.js` prints what each anchor resolves to — read that
-output and confirm it matches.
+it, not the file top. For a deliberately partial or comment-only excerpt, anchor the first
+retained statement. The checker enforces this alignment.
 
 **4. Commentary explains the *why*, not the *what*.** A reader can see that a function
 loops over events. What they cannot see is that the loop has two paths because seeding
@@ -95,7 +96,7 @@ Use the commit you verified against — `git rev-parse --short HEAD`.
 
 ## Updating an existing section
 
-1. Run `node scripts/check-code-tour.js` and note which anchors drifted.
+1. Run `node scripts/check-code-tour.js` and note which anchors or excerpts drifted.
 2. Open the source file and locate the excerpt's opening declaration.
 3. **Re-copy the excerpt from source**, even if it looks unchanged — this is the step that
    catches behaviour changes the checker cannot see. Do not hand-patch a line.
@@ -105,7 +106,7 @@ Use the commit you verified against — `git rev-parse --short HEAD`.
 6. If the excerpt grew past ~45 lines, elide the middle with `// …` rather than shipping a
    wall of code. The tour is for reading.
 7. Update the freshness stamp.
-8. Re-run the checker.
+8. Re-run the checker and confirm it reports every excerpt as verbatim and aligned.
 
 ---
 
@@ -163,7 +164,13 @@ Renumber, fix `§N` references, fix the Contents list, update the freshness stam
 ## Verification before you finish
 
 ```bash
-node scripts/check-code-tour.js   # all anchors resolve, and point where you expect
+node scripts/check-code-tour.js   # anchors resolve; excerpts are verbatim and aligned
+```
+
+If you changed the checker itself, also run its focused regression test:
+
+```bash
+node tests/unit/check-code-tour.test.js
 ```
 
 Then by eye:
@@ -174,6 +181,6 @@ Then by eye:
 - [ ] The freshness stamp names the commit you actually verified against.
 - [ ] No excerpt exceeds ~45 lines without elision.
 
-The tour is prose and does not need the test suite. It does need `git diff` read once
-before you commit — verbatim excerpts are exactly the thing that gets silently mangled by
-an editor's auto-format.
+The tour does not need the repository suite unless another touched file requires it. It
+does need `git diff` read once before you commit — verbatim excerpts are exactly the thing
+that gets silently mangled by an editor's auto-format.
