@@ -39,11 +39,15 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
 - [ ] `setup --resume` reruns the first skipped or incomplete step and then considers each
       later step independently; it no longer reports “Nothing to resume” when skipped steps
       exist.
-- [ ] Add a precise single-step/from-step mechanism (`--step <id>` or `--from <id>`) so an
-      operator can retry server/auth/seed setup without resetting the full wizard. Invalid
-      step IDs fail with usage and non-zero status.
+- [ ] Add `--step <id>` (repeatable) so an operator can rerun exactly the named step(s)
+      without resetting the full wizard. A `--from <id>` range form is deliberately **not**
+      added: `--resume` already means "continue from where I stopped", so `--from` would
+      duplicate it while `--step` covers the stated need (retry server/auth/seed alone).
+      Invalid step IDs fail with usage and non-zero status.
 - [ ] SIGINT and step failure persist enough state for a subsequent resume without setting
       `completedAt` or `onboarded: true` prematurely.
+- [ ] A failed step persists as `failed` rather than reverting to missing, so `--resume`
+      and the summary can distinguish "never reached" from "tried and broke".
 - [ ] `global-setup --force` is documented and implemented only as machine configuration;
       it is not presented as a clean rerun of all wizard steps.
 
@@ -102,6 +106,11 @@ current Aigon Pro step, wording, package gate, and vault gate; F695 in the separ
       rather than compensating for undocumented side effects.
 - [ ] Every test carries a `// REGRESSION:` comment and the test LOC ceiling stays green by
       consolidating obsolete or duplicated wizard/install coverage first.
+- [ ] **The budget is already red at review time**: `scripts/check-test-budget.sh` reports
+      17255 LOC against a 17225 ceiling, so the Validation block below fails before any work
+      starts. As the first feature in the set, F697 owns clearing that pre-existing overage
+      *and* funding its own four new suites; F698/F699 must not inherit a red budget. If
+      nothing can be consolidated, stop and ask before raising the ceiling.
 
 ## Validation
 
@@ -135,10 +144,28 @@ Route config through the canonical writer and process execution through argv API
 seed/server/demo behavior and finally align the public guide in F698. Restart the dashboard
 after `lib/*.js` edits.
 
+### Verified defect anchors (added by spec review)
+
+Each Summary claim was confirmed against the tree at `bbf64b21c`; start from these rather than
+re-deriving them:
+
+| Defect | Location |
+|---|---|
+| `STEP_IDS` duplicated | `aigon-cli.js:137` vs `lib/onboarding/state.js:8` |
+| `--resume` skips skipped steps | `state.js:43` — `!state.steps[id]` treats `'skipped'` as truthy |
+| `--yes` clones Brewboard | `wizard.js:440` — `doClone = yesFlag` |
+| `--yes` starts the server | `wizard.js:625` — `doStart = yesFlag` |
+| No health check; `done` written anyway | `wizard.js:640-651` — detached `spawn`, `setTimeout(2000)`, then `writeStepState('server','done')` |
+| Server start is not `--persistent` | `wizard.js:645` — plain `server start` |
+| Git config shell interpolation | `wizard.js:215-216` — `execSync(\`git config --global user.name ${JSON.stringify(name)}\`)`; JSON quoting still leaves backticks and `$()` shell-active inside double quotes |
+| `writeGlobalConfig()` duplicate | `wizard.js:106`, used at `:389` and `:425` (the Pro-key write) |
+| Demo hardcodes `cc` and the seed path | `wizard.js:657` (`~/src/brewboard`), `wizard.js:672` (`spawnSync('claude', …)`), `wizard.js:710` (`feature-start <id> cc`) |
+
 ## Dependencies
 
-- No intra-set dependency; this can run in parallel with F696.
-- F698 depends on this feature so the docs describe the corrected contract.
+- No intra-set dependency. F696 is closed (`05-done`, commits on `main`), so this starts clean.
+- F698 depends on this feature **only for its "Setup and dashboard truth" criteria**. The rest
+  of F698 does not need this feature; see the note in F698's Dependencies section.
 
 ## Out of Scope
 
@@ -150,10 +177,18 @@ after `lib/*.js` edits.
 
 ## Open Questions
 
-- Prefer `--step <id>` (one step only) or `--from <id>` (resume from a chosen point)?
-  Recommend supporting one precise form, not both aliases.
-- Should a failed optional step remain `failed` for resume visibility or return to missing?
+Resolved by spec review (folded into the criteria above — reopen if you disagree):
+
+- ~~`--step` or `--from`?~~ → `--step <id>`, repeatable. `--from` would duplicate `--resume`.
+- ~~Does a failed step stay `failed`?~~ → Yes; it stays `failed` so resume can distinguish it
+  from "never reached".
+
+Still needs the author's call:
+
 - Should persistent server setup remain the interactive default after a successful health check?
+  **Recommend yes** — the dashboard is meant to be an always-on command centre, so the default
+  should match that. This is a UX default rather than a correctness question, so it is left to
+  the author; whichever way it lands, the prompt text and F698's docs must say the same thing.
 
 ## Related
 
