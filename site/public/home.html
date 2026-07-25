@@ -72,8 +72,8 @@
             <p class="hero-subtitle">Aigon orchestrates Claude Code, Antigravity CLI, Codex, and Cursor from a single spec. Competing implementations, cross-agent review, merge the survivor.</p>
 
             <div class="hero-actions">
-              <a href="#get-started" class="hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@next">
-                <span class="hero-install-cta-label"><span style="color:var(--text-muted);user-select:none">$ </span>npm install -g @senlabsai/aigon@next</span>
+              <a href="#get-started" class="hero-install-cta" id="hero-install-cta" data-copy-text="npm install -g @senlabsai/aigon@latest">
+                <span class="hero-install-cta-label"><span style="color:var(--text-muted);user-select:none">$ </span>npm install -g @senlabsai/aigon@latest</span>
                 <span class="hero-install-cta-state" aria-hidden="true">Copy</span>
               </a>
               <span class="hero-install-beta" title="Public beta — APIs and config formats may change">Beta</span>
@@ -389,27 +389,27 @@
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All tasks complete · 12 files changed</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="input" lineDelay="600">aigon agent-status submitted</terminal-line>
+        <terminal-line data="input" lineDelay="600">aigon agent-status implementation-complete</terminal-line>
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
-        <terminal-line data="output">  ✅ Submitted</terminal-line>
+        <terminal-line data="output">  ✅ Implementation complete</terminal-line>
       </template>
 
       <template id="step-implement-fleet">
         <terminal-line data="output">  [worktree: feature-07-cc]</terminal-line>
         <terminal-line data="input" lineDelay="400">/aigon:feature-do 07</terminal-line>
-        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 12 files · submitted</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 12 files · implementation complete</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  [worktree: feature-07-ag]</terminal-line>
         <terminal-line data="input" lineDelay="300">/aigon:feature-do 07</terminal-line>
-        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 18 files · submitted</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 18 files · implementation complete</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  [worktree: feature-07-cx]</terminal-line>
         <terminal-line data="input" lineDelay="300">/aigon:feature-do 07</terminal-line>
-        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 9 files · submitted</terminal-line>
+        <terminal-line data="output" lineDelay="200">  ✓ Tasks complete · 9 files · implementation complete</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
+        <terminal-line data="output">  All 3 agents completed. Ready to evaluate.</terminal-line>
       </template>
 
       <template id="step-implement-autopilot">
@@ -421,15 +421,15 @@
         <terminal-line data="output">  Iteration 2/4 ···</terminal-line>
         <terminal-line data="output">  ✓ All checks pass</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  ✅ Submitted after 2 iterations</terminal-line>
+        <terminal-line data="output">  ✅ Implementation complete after 2 iterations</terminal-line>
       </template>
 
       <template id="step-implement-swarm">
         <terminal-line data="output">  All agents iterating autonomously in parallel.</terminal-line>
         <terminal-line data="output"> </terminal-line>
-        <terminal-line data="output">  cc  ✓ passed checks · submitted</terminal-line>
-        <terminal-line data="output">  ag  ✓ passed checks · submitted (iter 2)</terminal-line>
-        <terminal-line data="output">  cx  ✓ passed checks · submitted</terminal-line>
+        <terminal-line data="output">  cc  ✓ passed checks · implementation complete</terminal-line>
+        <terminal-line data="output">  ag  ✓ passed checks · implementation complete (iter 2)</terminal-line>
+        <terminal-line data="output">  cx  ✓ passed checks · implementation complete</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All 3 agents submitted. Ready to evaluate.</terminal-line>
       </template>
@@ -470,7 +470,7 @@
         <terminal-line data="output">  ✓ Task 4/4: Update API documentation</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  All tasks complete · 12 files changed</terminal-line>
-        <terminal-line data="output">  Next: aigon agent-status submitted or /aigon:feature-close 07</terminal-line>
+        <terminal-line data="output">  Next: aigon agent-status implementation-complete</terminal-line>
       </template>
 
       <template id="demo-fleet">
@@ -495,7 +495,7 @@
         <terminal-line data="output" lineDelay="300"> </terminal-line>
         <terminal-line data="output">  Committed: feat(07): jwt auth middleware</terminal-line>
         <terminal-line data="output">  Log: logs/feature-07-cc-jwt-auth-log.md</terminal-line>
-        <terminal-line data="output">  ✅ Submitted · waiting for other agents</terminal-line>
+        <terminal-line data="output">  ✅ Implementation complete · waiting for other agents</terminal-line>
         <terminal-line data="output"> </terminal-line>
         <terminal-line data="output">  When all done: /aigon:feature-eval 07</terminal-line>
       </template>
@@ -601,7 +601,7 @@
           <div class="section-head docs-head">
             <p class="eyebrow">Get started</p>
           </div>
-          <pre class="quickstart"><code>npm install -g @senlabsai/aigon@next</code></pre>
+          <pre class="quickstart"><code>npm install -g @senlabsai/aigon@latest</code></pre>
           <div class="docs-links">
             <a href="/docs/getting-started" class="docs-link">
               <h3>Getting Started</h3>
