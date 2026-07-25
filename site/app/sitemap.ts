@@ -16,13 +16,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? "https://www.aigon.build/docs"
       : `https://www.aigon.build/docs/${slug}`;
 
-    return { url, lastModified: new Date() };
+    return { url };
   });
 
   // Add the landing page and top-level marketing routes
   pages.unshift(
-    { url: "https://www.aigon.build", lastModified: new Date() },
-    { url: "https://www.aigon.build/pro", lastModified: new Date() },
+    { url: "https://www.aigon.build" },
+    { url: "https://www.aigon.build/pro" },
   );
 
   return pages;

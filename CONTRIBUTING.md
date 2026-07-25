@@ -143,6 +143,8 @@ If you genuinely need to bump the ceiling, mention it in your PR and explain why
 
 ## Release checklist (template/install lockstep)
 
+Before a release, run the scoped validation and deploy gate, then `npm run docs:check` and `npm run build --prefix site`. Review the dashboard gallery at desktop and 390px mobile, refresh its screenshots with `npm run screenshots --prefix site` against a disposable seed scenario, confirm package/version/dist-tag agreement, and complete a clean package install/setup smoke. `docs:check` verifies command-reference coverage and source documentation integrity; the site build verifies rendered routes and Pagefind indexing.
+
 `prepublishOnly` runs `scripts/check-install-manifest-clean.js`. It re-installs every agent against the current templates and **fails the publish if tracked installed-file trees diverge** from what a fresh install produces. The install manifest (`.aigon/install-manifest.json`) is derived metadata and is not git-tracked (F589).
 
 If `prepublishOnly` blocks you with that error:
