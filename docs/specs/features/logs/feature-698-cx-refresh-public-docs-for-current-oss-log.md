@@ -1,3 +1,26 @@
+---
+commit_count: 12
+lines_added: 201
+lines_removed: 225
+lines_changed: 426
+files_touched: 43
+fix_commit_count: 5
+fix_commit_ratio: 0.417
+rework_thrashing: false
+rework_fix_cascade: true
+rework_scope_creep: false
+input_tokens: 5081824
+output_tokens: 23200
+cache_creation_input_tokens: 0
+cache_read_input_tokens: 4845568
+thinking_tokens: 4112
+total_tokens: 5105024
+billable_tokens: 5109136
+cost_usd: 11.3183
+sessions: 2
+model: "openai-codex"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 698 - refresh-public-docs-for-current-oss
 Agent: cx
 
