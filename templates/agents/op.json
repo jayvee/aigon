@@ -146,7 +146,35 @@
         "score": {
           "implement": 2
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Legacy V3.1; bench timeout — use Terminus instead.",
+          "body": "Original V3.1 hybrid MoE (671B/37B active). Published SWE-bench Verified 66.0% but Aigon brewboard FAIL (10m timeout Apr 2026). Probe PASS 4.7s W30. $0.25/$0.95 MTok.",
+          "bestFor": [],
+          "avoidFor": [
+            "implement",
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "aigon-bench",
+              "ref": "all-brewboard-2026-04-29T11-59-07-090Z.json"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 66.0%",
+              "url": "https://api-docs.deepseek.com/"
+            },
+            {
+              "kind": "provider",
+              "title": "DeepSeek V3.1 OpenRouter",
+              "url": "https://openrouter.ai/deepseek/deepseek-chat-v3.1"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/deepseek/deepseek-v4-flash",
@@ -371,7 +399,38 @@
         "score": {
           "implement": null
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Open SWE-bench leader at $0.40/$2; bench before default.",
+          "body": "Mistral 123B dense agentic coder (Dec 2025). Published SWE-bench Verified 72.2%, multilingual 61.3%. Probe PASS 4.6s W30. No Aigon bench yet. $0.40/$2.00 MTok.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 72.2%",
+              "url": "https://awesomeagents.ai/models/devstral-2/"
+            },
+            {
+              "kind": "provider",
+              "title": "Devstral 2 Hugging Face",
+              "url": "https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512"
+            },
+            {
+              "kind": "community",
+              "title": "Mistral Devstral 2 announcement",
+              "url": "https://ai-tldr.dev/models/devstral-2/"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/qwen/qwen3-coder",
@@ -414,6 +473,87 @@
               "kind": "community",
               "title": "OpenRouter model page",
               "url": "https://openrouter.ai/qwen/qwen3-coder"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3-coder-next",
+        "label": "Qwen3 Coder Next via OpenRouter",
+        "pricing": {
+          "input": 0.11,
+          "output": 0.8
+        },
+        "notes": {
+          "implement": "Added 2026-W30. Ultra-sparse 80B/3B-active MoE coder (Feb 2026). Vendor SWE-bench Verified 70.6%. Distinct from flagship qwen3-coder 480B. Bench before promoting."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "Ultra-efficient MoE coder; vendor SWE-bench 70.6% unverified.",
+          "body": "80B/3B-active MoE released Feb 2026. Vendor SWE-bench Verified 70.6%, SWE-Pro 44.3%. OpenRouter $0.11/$0.80 MTok. Added W30 — bench before default.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 70.6% (vendor)",
+              "url": "https://github.com/QwenLM/Qwen3-Coder/"
+            },
+            {
+              "kind": "provider",
+              "title": "Qwen3 Coder Next OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3-coder-next"
+            },
+            {
+              "kind": "community",
+              "title": "Qwen3-Coder-Next local guide",
+              "url": "https://dev.to/sienna/qwen3-coder-next-the-complete-2026-guide-to-running-powerful-ai-coding-agents-locally-1k95"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3.6-35b-a3b",
+        "label": "Qwen3.6 35B A3B via OpenRouter",
+        "pricing": {
+          "input": 0.14,
+          "output": 1
+        },
+        "notes": {
+          "implement": "Added 2026-W30. New Qwen3.6 family MoE tier. OpenRouter $0.14/$1.00 MTok. Probe and bench before promoting to defaults."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "New Qwen3.6 MoE tier; probe-only until bench.",
+          "body": "Qwen3.6 35B A3B MoE from the Qwen3.6 release family. OpenRouter $0.14/$1.00 MTok. No Aigon bench or curated external SWE score yet. Added W30 catalog scan.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Qwen3.6 35B OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
             }
           ]
         },
@@ -722,7 +862,37 @@
         "score": {
           "implement": null
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Cursor-trained frontier coder; pricey at $2/$6 MTok.",
+          "body": "xAI July 2026 flagship; 500K ctx; trained on Cursor agent traces. Probe PASS 5.7s W30. No Aigon bench. Output exceeds $5/MTok economic gate — use sparingly.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Grok 4.5 xAI docs",
+              "url": "https://docs.x.ai/developers/models/grok-4.5"
+            },
+            {
+              "kind": "community",
+              "title": "Cursor-trained coding agent report",
+              "url": "https://byteiota.com/grok-4-5-coding-agent/"
+            },
+            {
+              "kind": "provider",
+              "title": "Grok 4.5 OpenRouter",
+              "url": "https://openrouter.ai/x-ai/grok-4.5"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/moonshotai/kimi-k2.7-code",
@@ -737,7 +907,37 @@
         "score": {
           "implement": null
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Token-efficient 1T MoE coder; no public SWE-bench yet.",
+          "body": "Moonshot Jun 2026 coding specialist (32B active/1T MoE). Vendor Kimi Code Bench v2 +21.8% vs K2.6; ~30% fewer reasoning tokens. Probe PASS 5.7s. $0.78/$3.50 MTok W30.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Kimi K2.7 Code Hugging Face",
+              "url": "https://huggingface.co/moonshotai/Kimi-K2.7-Code"
+            },
+            {
+              "kind": "community",
+              "title": "Kimi K2.7-Code review",
+              "url": "https://agentguides.dev/reviews/kimi-k2-7-code-review/"
+            },
+            {
+              "kind": "provider",
+              "title": "Kimi K2.7 Code OpenRouter",
+              "url": "https://openrouter.ai/moonshotai/kimi-k2.7-code"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/nvidia/nemotron-3-ultra-550b-a55b",
@@ -752,7 +952,37 @@
         "score": {
           "implement": null
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "1M-ctx agent orchestrator; prior super quarantined.",
+          "body": "NVIDIA Jun 2026 550B/55B-active MoE hybrid Mamba-Transformer. Vendor SWE-bench 65–70.4% across harnesses. Probe PASS 11.5s W30. Prior nemotron-3-super quarantined — do not inherit score.",
+          "bestFor": [
+            "implement",
+            "research"
+          ],
+          "avoidFor": [
+            "review"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Nemotron 3 Ultra NVIDIA blog",
+              "url": "https://developer.nvidia.com/blog/nvidia-nemotron-3-ultra-powers-faster-more-efficient-reasoning-for-long-running-agents/"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench 65-70.4% across harnesses",
+              "url": "https://www.marktechpost.com/2026/06/04/nvidia-ai-releases-nemotron-3-ultra-an-open-550b-mixture-of-experts-hybrid-mamba-transformer-for-long-running-agents/"
+            },
+            {
+              "kind": "provider",
+              "title": "Nemotron 3 Ultra OpenRouter",
+              "url": "https://openrouter.ai/nvidia/nemotron-3-ultra-550b-a55b"
+            }
+          ]
+        }
       },
       {
         "value": "openrouter/minimax/minimax-m3",
@@ -767,7 +997,37 @@
         "score": {
           "implement": null
         },
-        "lastRefreshAt": "2026-07-25T00:00:00.000Z"
+        "lastRefreshAt": "2026-07-25T00:00:00.000Z",
+        "summary": {
+          "headline": "Multimodal 1M-ctx agent; vendor SWE 80.5% unverified.",
+          "body": "MiniMax Jun 2026 428B/23B-active MoE with native image/video. Vendor SWE-bench Verified 80.5% (Claude Code scaffold, unverified). Probe PASS 5.4s W30. $0.30/$1.20 MTok.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "spec_review"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "MiniMax M3 release blog",
+              "url": "https://www.minimax.io/blog/minimax-m3"
+            },
+            {
+              "kind": "community",
+              "title": "MiniMax M3 benchmark roundup",
+              "url": "https://www.morphllm.com/minimax-m3"
+            },
+            {
+              "kind": "provider",
+              "title": "MiniMax M3 OpenRouter",
+              "url": "https://openrouter.ai/minimax/minimax-m3"
+            }
+          ]
+        }
       }
     ],
     "effortOptions": [],

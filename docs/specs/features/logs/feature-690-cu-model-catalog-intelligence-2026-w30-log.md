@@ -3,7 +3,7 @@ Agent: cu
 
 ## Status
 
-W30 weekly catalog scan complete — 8 pricing refreshes, 2 quarantine→archive upgrades (grok-code-fast-1, deepseek-v3.2-speciale), 12/12 probes PASS, 6 summary drafts in report (yes/no gated). GLM-5.2 pricing dropped 13%; kimi-k2.7-code dropped 22%.
+W30 weekly catalog scan complete — 8 pricing refreshes, 2 quarantine→archive upgrades, 12/12 probes PASS. Maintainer approved items 1–8: added qwen3-coder-next + qwen3.6-35b-a3b, applied 6 summaries.
 
 ## New API Surface
 
