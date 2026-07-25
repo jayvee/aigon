@@ -60,7 +60,7 @@ If you want a comparison table, this is the only one that matters. Everything el
 
 The last column isn't just a posture claim — it's a feature claim. Aigon surfaces quota only where a supported source exists. Antigravity is intentionally excluded from automatic polling because its CLI uses interactive OAuth; exhaustion is detected from a running session. Failover behavior depends on the configured capability rather than a universal provider guarantee.
 
-**OSS vs Pro split:** The quota poller, exhaustion event vocabulary, and dashboard quota display are OSS. Automatic failover (`policy: switch`) and the manual "Failover now" dashboard button are [Aigon Pro](/docs/getting-started#aigon-pro-beta-access) features. Without Pro, exhaustion events are still recorded in `events.jsonl` and the supervisor logs a warning, but no agent switch is triggered. See the [Agent Failover guide](/docs/guides/agent-failover) for configuration details.
+The quota poller, the exhaustion event vocabulary, the dashboard quota display, automatic failover (`policy: switch`), and the manual "Failover now" dashboard button all ship in Aigon. Exhaustion events are recorded in `events.jsonl` regardless of the policy you configure. See the [Agent Failover guide](/docs/guides/agent-failover) for configuration details.
 
 ## When *not* to use Aigon
 

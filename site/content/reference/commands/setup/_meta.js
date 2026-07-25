@@ -4,5 +4,6 @@ export default {
   apply: "apply",
   remove: "remove",
   doctor: "doctor",
+  "installed-notice": "installed-notice",
   "seed-reset": "seed-reset",
 };

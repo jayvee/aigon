@@ -3,12 +3,6 @@ title: "Tutorial: Brewboard Feature Set"
 description: A concrete Brewboard walkthrough for tagging a feature set and running it autonomously.
 ---
 
-import { Callout } from "nextra/components";
-
-<Callout type="info">
-  **Aigon Pro feature.** Set-level autonomous orchestration for Brewboard requires [Aigon Pro](/pro). The public repo gives you the feature-set membership and dashboard grouping foundation, but the set conductor itself is Pro-gated.
-</Callout>
-
 The Brewboard seed repo is a good place to learn feature sets because it keeps the scope small while still showing the real orchestration flow. Instead of a single feature running on its own, you can tag a short chain of related Brewboard specs as one set and let Aigon execute them in dependency order.
 
 ## The Brewboard set
@@ -31,7 +25,7 @@ That gives you a compact sequence that shows how set autonomy behaves when later
 
 The best way to understand feature-set autonomy is to start it from the dashboard and watch the members complete one at a time.
 
-Open the Brewboard repo in the dashboard, find the `brewboard-data` set card, and use the Pro autonomous control to launch it.
+Open the Brewboard repo in the dashboard, find the `brewboard-data` set card, and use the autonomous control to launch it.
 
 <img
   src="/img/feature-set-autonomous-start-choose-agent.png"

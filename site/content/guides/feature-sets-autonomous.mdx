@@ -3,12 +3,6 @@ title: Feature Sets in Autonomous Mode
 description: How Aigon runs a whole set end-to-end by sequencing member features in dependency order.
 ---
 
-import { Callout } from "nextra/components";
-
-<Callout type="info">
-  **Aigon Pro feature.** Set-level autonomous orchestration — including `set-autonomous-start`, `set-autonomous-stop`, `set-autonomous-resume`, and `set-autonomous-reset` — requires [Aigon Pro](/pro). The OSS repo keeps the feature-set membership and dashboard grouping foundation, but the autonomous conductor itself is Pro-gated.
-</Callout>
-
 Aigon feature sets are more than a grouping label. In autonomous mode, a set becomes the unit of orchestration: Aigon walks the member features in dependency order, runs each feature through the existing autonomous loop, and carries the run forward until the set is complete or paused.
 
 If you want a concrete mental model, the [Brewboard tutorial](./brewboard-tutorial) shows the single-feature autonomous flow in a small sandbox repo. This page explains how that same idea scales from one feature to a whole set.

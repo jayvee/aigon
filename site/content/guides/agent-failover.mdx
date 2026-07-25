@@ -3,12 +3,6 @@ title: Agent Failover
 description: Automatic and manual failover between agents when one hits its quota — how to configure it, how it works, and how to verify it ran.
 ---
 
-import { Callout } from 'nextra/components'
-
-<Callout type="info">
-**Aigon Pro feature.** Auto-failover and the manual "Failover now" button require `@senlabsai/aigon-pro`. The event vocabulary (`agent.token_exhausted`, `agent.failover_switched`) works in OSS, but `policy: switch` degrades to `policy: notify` without Pro loaded.
-</Callout>
-
 ## Why this exists
 
 Long-running autonomous features regularly hit a provider's rolling quota window before the work is done. Without failover, a hit means the agent stops, the feature stalls, and you manually restart it on a different agent when the window resets (often hours later).
@@ -30,7 +24,7 @@ Auto-failover then fires **only when both conditions hold**:
 - `agentFailover.policy` is `switch`, AND
 - the feature is running in autonomous (autopilot) mode.
 
-Manual / Drive / Fleet runs **never** auto-swap — the operator is at the wheel and clicks the "Failover now →" button when they're ready. With those conditions met, Pro's exhaustion handler:
+Manual / Drive / Fleet runs **never** auto-swap — the operator is at the wheel and clicks the "Failover now →" button when they're ready. With those conditions met, the exhaustion handler:
 
 1. Calls `chooseNextAgent(chain, currentAgentId, [currentAgentId])` to pick the replacement.
 2. Kills the current tmux session.
@@ -58,7 +52,7 @@ Add an `agentFailover` block to your repo's `.aigon/config.json`:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `policy` | `"notify"` \| `"switch"` \| `"pause"` | `notify` logs and notifies but does not switch. `switch` triggers auto-failover (Pro). `pause` marks the agent slot paused for manual action. |
+| `policy` | `"notify"` \| `"switch"` \| `"pause"` | `notify` logs and notifies but does not switch. `switch` triggers auto-failover. `pause` marks the agent slot paused for manual action. |
 | `chain` | `string[]` | Ordered priority list of agent IDs. The supervisor walks forward from the current agent's position. |
 | `tokenLimits.perSessionBillableTokens` | `number` | Soft limit (tokens) above which telemetry-based exhaustion fires. Defaults to unlimited if unset. |
 
@@ -74,7 +68,7 @@ The full auto path, step by step:
 2. `cc` hits its quota. The CLI prints "usage limit" and returns to its REPL prompt — it does **not** exit.
 3. The supervisor sweep (runs every 30 s) reads the live tmux pane, matches the quota string, fires.
 4. `agent.token_exhausted` is appended to `events.jsonl` (source: `live_pane_pattern`). The slot's status flips to `needs_attention`.
-5. Because the feature is autonomous and `policy: switch`, the Pro exhaustion handler fires. It selects `cx` (next in chain after `cc`).
+5. Because the feature is autonomous and `policy: switch`, the exhaustion handler fires. It selects `cx` (next in chain after `cc`).
 6. The `cc` tmux session is killed.
 7. A new session is spawned for `cx` in the **same worktree**, with a handoff prompt referencing the last commit.
 8. `agent.failover_switched` is appended.
@@ -128,12 +122,6 @@ grep -E '"agent\.token_exhausted"|"agent\.failover_switched"' \
 - **One global chain.** There is a single chain per repo config, not per-agent chains.
 - **Pre-exhaustion switching is not supported.** The manual button and auto-switch both require the `tokenExhausted` flag to be set first.
 - **Model override edge case.** If a slot has a `modelOverride` (e.g. `opus`), the replacement session uses its own agent's config, not the slot's override. Track separately if this causes problems in practice.
-
-## Pro tier note
-
-- `policy: switch` and the "Failover now" dashboard button require `@senlabsai/aigon-pro`.
-- The event vocabulary (`agent.token_exhausted`, `agent.failover_switched`) and their projector branches are part of the OSS event schema and work without Pro — `events.jsonl` will still record exhaustion events.
-- Without Pro, `policy: switch` logs a one-line warning at supervisor startup (`agentFailover.policy=switch requires aigon-pro; falling back to notify`) and behaves as `notify`.
 
 ## See also
 
