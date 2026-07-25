@@ -2,7 +2,6 @@
 aigon_id: F698
 complexity: high
 set: docs-release-readiness
-depends_on: [restore-antigravity-agent-reliability, harden-setup-wizard-contract]
 ---
 
 # Feature: refresh-public-docs-for-current-oss
@@ -10,19 +9,20 @@ depends_on: [restore-antigravity-agent-reliability, harden-setup-wizard-contract
 ## Summary
 
 Bring the public landing page and all 108 documentation pages into line with the Aigon
-release that actually exists after F696 and F697. Commit `bbf64b21c` has already performed
+release that actually exists after F696. Commit `bbf64b21c` has already performed
 the broad live Gemini CLI/`gg` → Antigravity CLI/`ag` naming pass; treat that commit as the
 baseline to verify, not work to repeat. Correct inaccurate or mechanical substitutions
 (especially authentication, subscription, and quota claims), then address the remaining
-license, lifecycle, stable spec layout, dashboard security, setup flow, deprecated Feedback
-workflow, command examples, and stale visuals. Preserve the existing Aigon Pro product
+license, lifecycle, stable spec layout, dashboard security, deprecated Feedback workflow,
+command examples, navigation, and stale visuals. F697 independently owns the setup wizard
+and its dedicated public setup documentation. Preserve the existing Aigon Pro product
 terminology and tier framing exactly as a separate concern: F693–F695 (`pro-merge`) will
 remove/rewrite that material later.
 
 ## User Stories
 
-- [ ] As a new user, I can install Aigon, choose a supported agent, run setup, create a
-      feature, and understand its lifecycle without encountering obsolete commands or agents.
+- [ ] As a new user, I can install Aigon, choose a supported agent, create a feature, and
+      understand its lifecycle without encountering obsolete commands or agents.
 - [ ] As an existing user, public docs distinguish current behavior, compatibility history,
       deprecated aliases, and Pro-gated behavior without mixing them together.
 - [ ] As a security-conscious operator, the dashboard access documentation matches the
@@ -78,8 +78,9 @@ remove/rewrite that material later.
 
 - [ ] The landing page and Pro page say Apache-2.0, matching `package.json` and the repository
       license; no live marketing/footer surface says MIT.
-- [ ] Install and update commands use the release channel chosen by the maintainer and do
-      not point at an older npm tag than the release being documented.
+- [ ] Default install and update commands use `@senlabsai/aigon@latest`. This release is a
+      stable bare-semver release, which `scripts/publish.js`/`scripts/ship.js` route to the
+      `latest` dist-tag; `@next` appears only in an explicitly labelled prerelease-channel note.
 - [ ] Competitive claims have primary-source links or are softened, carry a last-verified
       date, and do not claim universal competitor capabilities without evidence.
 - [ ] Pro benchmark copy does not promise machine-independent results or a fresh sweep on
@@ -102,13 +103,8 @@ remove/rewrite that material later.
 - [ ] Workflow definitions and Fleet are classified according to current OSS behavior; only
       genuinely gated launch/capability surfaces carry the existing Pro marker.
 
-### Setup and dashboard truth
+### Dashboard truth
 
-- [ ] Getting Started, Setup Wizard, setup command reference, and clean-room material describe
-      F697's real nine-step flow, resume/explicit-step behavior, conservative `--yes` defaults,
-      terminal options, agent auth, seed behavior, and server persistence.
-- [ ] This feature may correct facts inside the Pro step description but must not remove,
-      reposition, rename, or harmonize Pro terminology, availability, or tier messaging.
 - [ ] Dashboard docs state loopback binding by default. Non-loopback access documents the
       required shared secret/token and host allow-list; it never says `0.0.0.0` or LAN access
       is the default.
@@ -125,7 +121,8 @@ remove/rewrite that material later.
       no longer appears as `guides/pro-installation` in machine-readable output.
 - [ ] Resolve all eleven `PLACEHOLDER`/`TODO` markers in the five affected public pages.
 - [ ] Recapture current dashboard/gallery images after the content pass. Review Cards,
-      Pipeline, Monitor, setup, landing, and Pro surfaces at desktop and 390px mobile.
+      Pipeline, Monitor, landing, and Pro surfaces at desktop and 390px mobile. F697 owns
+      setup-specific screenshots.
 - [ ] Screenshots do not show retired agents, `Submitted`, obsolete Feedback tabs, stale card
       controls, or layouts that predate the compact contract cards.
 - [ ] `/pro` serves its canonical page without an accidental temporary redirect to
@@ -171,10 +168,11 @@ and context, and hand the allowlist to F699.
 Start with a focused review of `bbf64b21c`: classify each changed statement as a correct
 agent rename, a model-family mention, or a claim requiring correction. Then create a temporary
 facts checklist from the executable agent registry, F696 implementation log, workflow read
-model, wizard step contract, dashboard security resolver, package metadata, and command
-handlers. Update the remaining reader journey in order: landing and Getting Started, concepts,
-guides, references, then metadata/LLM/sitemap and visuals. This reduces repeated edits and
-keeps each page grounded in an already-correct implementation.
+model, dashboard security resolver, package metadata, and command handlers. Update the
+remaining reader journey in order: landing and the non-setup parts of Getting Started,
+concepts, guides, references, then metadata/LLM/sitemap and visuals. Do not rewrite the
+setup-owned passages or dedicated setup pages assigned to F697. This reduces repeated edits
+and keeps each page grounded in an already-correct implementation.
 
 Use registry- or command-derived examples where practical, but do not turn the prose into
 generated boilerplate. Keep deprecated/historical material clearly separated from current
@@ -197,27 +195,12 @@ locations are exact as of review, so start here instead of re-hunting:
 ## Dependencies
 
 - `restore-antigravity-agent-reliability` — **satisfied.** F696 is closed (`05-done`) and
-  `139c0ae68`/`bbf64b21c` are on `main`, so the "must not start from an unmerged state" caveat
-  no longer blocks anything.
-- `harden-setup-wizard-contract` — setup docs must describe the fixed behavior, not the audit.
-
-### Dependency is narrower than the frontmatter implies — author decision needed
-
-Only the **"Setup and dashboard truth"** criteria genuinely need F697. Everything else here —
-license facts, lifecycle/Feedback corrections, the uninstall link, `/pro` routing, sitemap
-dates, the 11 placeholders, navigation and visuals — is independent of the wizard and is
-currently blocked behind a high-complexity refactor for no reason. As written this is also five
-distinct workstreams under one `complexity: high` spec covering 108 pages.
-
-The reviewer deliberately did **not** touch `depends_on:` — rewiring the set graph is the
-author's call, not a reviewer's. Two options:
-
-1. **Split** F698 into a docs-content feature (startable now, parallel with F697) and a
-   setup/dashboard-docs feature that keeps the F697 dependency. Preferred.
-2. **Keep one spec** but sequence internally: do every non-setup section first, and treat the
-   setup section as a late block gated on F697 closing.
-
-Either way the whole 108-page pass should not wait on the wizard.
+  `139c0ae68`/`bbf64b21c` are on `main`; no active dependency remains.
+- F697 runs in parallel and owns setup implementation plus the setup-specific docs/passages.
+  This feature deliberately keeps the broader content baseline as one independently reviewable
+  unit instead of creating another feature, while removing the false whole-feature dependency.
+- F699 depends on both F697 and F698 and therefore cannot lock the site baseline until both
+  parallel branches are complete.
 
 ## Out of Scope
 
@@ -227,30 +210,29 @@ Either way the whole 108-page pass should not wait on the wizard.
 - Editing historical specs, logs, evaluations, or old changelog entries to replace `gg`.
 - Rewriting stored `gg` telemetry or attribution as `ag`.
 - Implementing missing command-reference automation; F699 owns the lasting gate.
+- Rewriting Setup Wizard, setup-command reference, clean-room setup material, or the
+  setup-specific passages/screenshots in Getting Started; F697 owns those facts.
 
-## Open Questions
+## Decisions
 
-**Blocking — must be answered before this feature starts:**
-
-- Which npm dist-tag will this release publish, and therefore which command should the site
-  show? This is not a nice-to-have: the criterion "Install and update commands use the release
-  channel chosen by the maintainer" is unresolvable by the implementer, who has no way to pick
-  a channel. Answer it in the spec, not mid-implementation.
-
-Non-blocking (implementer may choose and record the choice):
-
-- Should the legacy Feedback guide remain navigable under a "Migration/Deprecated" separator
-  or redirect to the research workflow?
-- Which competitive claims remain valuable after requiring citations and verification dates?
+- Publish/document the stable channel: default commands use `@latest`; `@next` is only an
+  explicitly labelled prerelease option.
+- Keep the legacy Feedback guide navigable under a “Migration/Deprecated” separator. It is a
+  compatibility aid, not part of the primary journey.
+- Keep a competitive claim only when a current primary source supports it and a
+  last-verified date is useful; otherwise soften or remove it.
+- Keep this as one high-complexity content-baseline feature. Setup docs moved to F697, which
+  removes the unnecessary dependency and makes F697/F698 safely parallel at set level.
 
 ## Related
 
-- F696 and F697 — implementation facts this documentation consumes.
+- F696 — completed Antigravity implementation facts this documentation consumes.
+- F697 — parallel owner of the setup wizard and setup-specific public documentation.
 - Commits `139c0ae68` and `bbf64b21c` — Antigravity implementation and initial docs baseline.
 - F691 — release stabilisation and compact dashboard session controls.
 - F693–F695 (`pro-merge`) — intentionally separate follow-up for all Pro terminology/removal.
 ## Dependency Graph
 
 <!-- AIGON_DEP_GRAPH_START -->
-<svg xmlns="http://www.w3.org/2000/svg" width="868" height="240" viewBox="0 0 868 240" role="img" aria-label="Feature dependency graph for feature 698" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-698" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-698)"/><path d="M 244 174 C 284 174, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-698)"/><path d="M 544 66 C 584 66, 584 66, 624 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-698)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#696</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">restore antigravity agent…</text><text x="36" y="90" font-size="12" fill="#475569">done</text></g><g><rect x="24" y="132" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="36" y="156" font-size="14" font-weight="700" fill="#0f172a">#697</text><text x="36" y="178" font-size="13" font-weight="500" fill="#1f2937">harden setup wizard contr…</text><text x="36" y="198" font-size="12" fill="#475569">inbox</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#698</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">refresh public docs for c…</text><text x="336" y="90" font-size="12" fill="#475569">inbox</text></g><g><rect x="624" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="636" y="48" font-size="14" font-weight="700" fill="#0f172a">#699</text><text x="636" y="70" font-size="13" font-weight="500" fill="#1f2937">automate docs release qua…</text><text x="636" y="90" font-size="12" fill="#475569">inbox</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 698" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-698" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-698)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#f59e0b" stroke-width="3"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#698</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">refresh public docs for c…</text><text x="36" y="90" font-size="12" fill="#475569">inbox</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#699</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">automate docs release qua…</text><text x="336" y="90" font-size="12" fill="#475569">inbox</text></g></svg>
 <!-- AIGON_DEP_GRAPH_END -->
