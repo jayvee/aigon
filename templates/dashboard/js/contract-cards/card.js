@@ -105,7 +105,6 @@ export function renderSetContractCardBody(contract, options = {}) {
         ...options,
         badgeLabel: null,
         density: 'expanded',
-        suppressActions: true,
         suppressIdentity: true,
       }),
     }),

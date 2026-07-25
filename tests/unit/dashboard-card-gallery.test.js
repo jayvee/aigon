@@ -149,7 +149,12 @@ test('feature sets cover every conductor status and derive actions from set work
     assert(manual.contract.plan.currentFeatureContract);
     assert(!actionIds(manual).includes('set-autonomous-start'));
     assert(!actionIds(manual).includes('set-autonomous-stop'));
-    assert(scenario('set-paused-failure').contract.decisions.actions.some(action => action.actionId === 'set-autonomous-resume'));
+    const pausedFailure = scenario('set-paused-failure');
+    assert(pausedFailure.contract.decisions.actions.some(action => action.actionId === 'set-autonomous-resume'));
+    // REGRESSION: a failed set member's recovery action must survive embedding
+    // in the set contract so the operator can resolve close without leaving the card.
+    assert(pausedFailure.contract.plan.currentFeatureContract.decisions.actions
+        .some(action => action.actionId === 'feature-resolve-and-close'));
     const interrupted = scenario('set-conductor-interrupted');
     assert.strictEqual(interrupted.contract.state.label, 'Conductor interrupted');
     assert(actionIds(interrupted).includes('set-autonomous-resume'));

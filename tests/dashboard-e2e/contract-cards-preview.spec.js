@@ -454,6 +454,57 @@ test.describe('Contract card production renderer @smoke', () => {
         await expect(inProgress.locator('[data-va-action="set-autonomous-resume"]')).toHaveCount(1);
     });
 
+    // REGRESSION: set cards used to suppress all actions from the embedded
+    // current-feature contract, leaving close failures with no agent recovery path.
+    test('failed set current feature dispatches Resolve & close to that feature @smoke', async ({ page }) => {
+        const setScenario = scenario('set-paused-failure');
+        const closeFailure = scenario('feature-close-merge-conflict');
+        let launchBody = null;
+        await page.route('**/api/feature-open', async (route) => {
+            launchBody = route.request().postDataJSON();
+            await route.fulfill({ json: { ok: true, message: 'Recovery agent started' } });
+        });
+        await mountPreview(page, buildPayload({
+            features: [baseRow('682', closeFailure, {
+                stage: 'in-progress',
+                set: 'autonomous-recovery',
+                lastCloseFailure: { kind: 'merge-conflict', conflictFiles: ['site/package-lock.json'] },
+            })],
+            sets: [{
+                slug: 'autonomous-recovery',
+                goal: 'Autonomous recovery',
+                status: 'paused-on-failure',
+                isComplete: false,
+                completed: 1,
+                memberCount: 3,
+                progress: { merged: 1, total: 3, percent: 33 },
+                currentFeature: { id: '682', label: 'Recover interrupted runs', stage: 'in-progress' },
+                validActions: setScenario.dashboardActions,
+                autonomous: {
+                    status: 'paused-on-failure',
+                    running: false,
+                    currentFeature: '682',
+                    failedFeature: '682',
+                },
+                uiContract: setScenario.contract,
+            }],
+        }));
+        await page.getByRole('button', { name: 'Group by Set' }).click();
+
+        const bundle = page.locator('.kanban-set-bundle').filter({ hasText: 'Autonomous recovery' }).first();
+        const resolve = bundle.locator('.ccard-set-current [data-va-action="feature-resolve-and-close"]');
+        await expect(resolve).toBeVisible();
+        await expect(resolve).toHaveText('Resolve & close');
+        await resolve.click();
+        await expect.poll(() => launchBody).not.toBeNull();
+        expect(launchBody).toMatchObject({
+            featureId: '682',
+            repoPath: REPO_PATH,
+            pipelineType: 'features',
+            mode: 'close-resolve',
+        });
+    });
+
     test('responsive pipeline keeps kanban columns in one horizontal row @smoke', async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 900 });
         await mountPreview(page, buildPayload({
