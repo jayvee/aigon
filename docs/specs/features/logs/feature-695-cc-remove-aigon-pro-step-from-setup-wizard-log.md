@@ -108,3 +108,29 @@ prose against. Three shared files are already partly reconciled by this feature:
   commit out before touching it. Fixed in `fix: unblock agent-status gate …`.
 - `npm run test:browser` not run mid-iteration (pre-authorised); the deploy gate
   covers it before close.
+
+## Code Review
+
+**Reviewed by**: cursor-agent (code-review)
+**Date**: 2026-07-25
+
+### Fixes Applied
+- None — implementation was clean
+
+### Validation
+- Validation not run by reviewer per policy
+
+### Escalated Issues (exceptions only)
+- None
+
+### Notes
+- `STEP_IDS`, wizard step removal, vault un-gating, legacy `steps.pro` handling,
+  `--step pro` rejection, and docs/README updates all match the spec acceptance
+  criteria.
+- The `shouldRunStep` `-1` guard is defensive (resume now derives `startStep` from
+  `getFirstResumableStep`, which cannot return `'pro'` after F695) but is
+  well-tested and harmless.
+- `proKey` migration correctly deferred to F693's `drop_pro_key`; no duplicate
+  migration added.
+- `docker/clean-room/smoke-test.sh` left untouched per F694 ownership — reasonable
+  given no wizard/step-count assertions in that file.
