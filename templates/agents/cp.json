@@ -92,6 +92,21 @@
           "spec": null,
           "research": null
         },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists Claude Sonnet 4.6 as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
+        },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
       {
@@ -103,6 +118,21 @@
           "review": null,
           "spec": null,
           "research": null
+        },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists GPT-5.4 as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
         },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
@@ -116,6 +146,21 @@
           "spec": null,
           "research": null
         },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists Claude Haiku 4.5 as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
+        },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
       {
@@ -127,6 +172,21 @@
           "review": null,
           "spec": null,
           "research": null
+        },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists GPT-5.3 Codex as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
         },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
@@ -140,6 +200,21 @@
           "spec": null,
           "research": null
         },
+        "summary": {
+          "headline": "Preview option with no Aigon evidence; keep Auto for routine work.",
+          "body": "GitHub lists Gemini 3.1 Pro Preview as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Preview availability and access can change with the user's plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
+        },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
       {
@@ -151,6 +226,21 @@
           "review": null,
           "spec": null,
           "research": null
+        },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists Gemini 3.5 Flash as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
         },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
@@ -164,6 +254,21 @@
           "spec": null,
           "research": null
         },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists Gemini 3.6 Flash as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
+        },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       },
       {
@@ -175,6 +280,21 @@
           "review": null,
           "spec": null,
           "research": null
+        },
+        "summary": {
+          "headline": "Unscored named option; keep Auto unless explicitly testing this model.",
+          "body": "GitHub lists MAI Code 1 Flash as a Copilot CLI model, but Aigon has not benchmarked it through Copilot. Access depends on the user's Copilot plan and organization policy.",
+          "bestFor": [],
+          "avoidFor": [],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T00:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "GitHub Copilot CLI command reference",
+              "url": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+            }
+          ]
         },
         "lastRefreshAt": "2026-08-05T00:00:00.000Z"
       }

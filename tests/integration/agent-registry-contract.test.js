@@ -129,6 +129,11 @@ test('GitHub Copilot registry contract keeps Auto default with named models avai
     for (const value of ['gpt-5.4', 'claude-sonnet-4.6', 'gemini-3.6-flash', 'mai-code-1-flash']) {
         assert.ok(modelValues.includes(value), `cp picker missing ${value}`);
     }
+    for (const option of copilot.cli.modelOptions.filter(option => option.value !== 'auto')) {
+        assert.strictEqual(option.summary.confidence, 'low', `${option.value} must remain explicitly unscored`);
+        assert.ok(option.summary.body.includes('Copilot plan and organization policy') || option.summary.body.includes('plan and organization policy'));
+        assert.ok(option.summary.sources.some(source => source.kind === 'provider'));
+    }
 });
 test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
     // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).

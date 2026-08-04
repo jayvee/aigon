@@ -56,3 +56,8 @@ Benchmark `cp` and gather session reliability evidence before considering defaul
 - The `templates/generic/skill.md` rewrite is safe: `install-agent.js` only runs `processTemplate` substitution on it (no structural parsing of the removed `tools:`/`system_prompt:` block), and it installs only for agents with `extras.skill.enabled` (cc), whose install test confirms the new standard frontmatter. cp uses `extras: {}` and per-command skills.
 - The `lib/templates.js` `JSON.stringify(hint)` change correctly YAML-escapes the embedded quotes in the `feature-transfer` argument hint that previously broke `copilot skill list`; scoped to the `markdown` frontmatter branch.
 - Launch shape verified against the spec: `copilot --allow-all --interactive --model auto '/aigon-feature-do <ID>'`, no `-p/--prompt`, no tmux paste injection.
+
+### Author Revision
+
+- Accepted `912415619`: `none` and `minimal` are supported by the tested Copilot CLI and required by the F743 effort-ladder specification.
+- Resolved the catalog-summary escalation with low-confidence, provider-sourced summaries for every named model. The summaries make the lack of Aigon benchmarks and entitlement-dependent access explicit; Auto remains the only default.
