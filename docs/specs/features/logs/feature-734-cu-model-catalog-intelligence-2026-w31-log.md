@@ -3,7 +3,7 @@ Agent: cu
 
 ## Status
 
-W31 weekly catalog scan complete — 22 pricing refreshes, 5 archive actions (Devstral family delisted), 12/13 active probes PASS. Report written with 4 NEW model yes/no questions and 9 maintainer judgment items.
+W31 complete — auto-applied pricing/archive; maintainer approved all 9 yes/no items: added qwen3.8-max, v4-flash-0731, qwen3.7-flash, inkling-small with summaries; promoted qwen3.6-35b-a3b to complexityDefaults low.
 
 ## New API Surface
 

@@ -538,28 +538,222 @@
           "output": 1
         },
         "notes": {
-          "implement": "Added 2026-W30. New Qwen3.6 family MoE tier. OpenRouter $0.14/$1.00 MTok. Probe and bench before promoting to defaults."
+          "implement": "Promoted to complexityDefaults low (W31). Published SWE-bench Verified 78.8% on Qwen3.6 family; no Aigon bench yet. OpenRouter $0.14/$1.00 MTok."
+        },
+        "score": {
+          "implement": 4
+        },
+        "summary": {
+          "headline": "Best-value low-complexity OpenRouter default; published SWE 78.8% unverified on Aigon.",
+          "body": "Qwen3.6 35B A3B MoE. Published SWE-bench Verified 78.8%. Promoted to complexityDefaults low W31. Probe PASS 5.8s. No Aigon brewboard yet. $0.14/$1.00 MTok.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-08-05T12:00:00.000Z",
+          "sources": [
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 78.8% (vendor)",
+              "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+            },
+            {
+              "kind": "provider",
+              "title": "Qwen3.6 35B OpenRouter",
+              "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3.8-max",
+        "label": "Qwen3.8 Max via OpenRouter",
+        "pricing": {
+          "input": 2,
+          "output": 6
+        },
+        "notes": {
+          "implement": "Added 2026-W31. Flagship Qwen3.8 GA (Aug 2026); 2.4T MoE, 1M ctx. Vendor Terminal-Bench 86.6%, SWE-bench Pro 67.7%. Probe PASS 9.8s. Bench before promoting beyond picker."
         },
         "score": {
           "implement": null
         },
         "summary": {
-          "headline": "New Qwen3.6 MoE tier; probe-only until bench.",
-          "body": "Qwen3.6 35B A3B MoE from the Qwen3.6 release family. OpenRouter $0.14/$1.00 MTok. No Aigon bench or curated external SWE score yet. Added W30 catalog scan.",
+          "headline": "Flagship Qwen agent for long-horizon tasks; trails frontier on SWE-bench Pro.",
+          "body": "2.4T MoE flagship GA Aug 2026. Vendor Terminal-Bench 86.6%, SWE-bench Pro 67.7% (vs Fable 5 80.0%). Probe PASS 9.8s W31. $2/$6 MTok. No Aigon bench yet.",
           "bestFor": [
-            "implement"
+            "implement",
+            "spec",
+            "research"
+          ],
+          "avoidFor": [
+            "review"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-08-05T12:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Qwen3.8 Max Alibaba blog",
+              "url": "https://www.alibabacloud.com/blog/qwen3-8-max-a-new-bar-for-coding-and-cowork_603421"
+            },
+            {
+              "kind": "benchmark",
+              "title": "Terminal-Bench 86.6% (vendor)",
+              "url": "https://benchlm.ai/models/qwen3-8-max"
+            },
+            {
+              "kind": "community",
+              "title": "VentureBeat Qwen3.8 Max launch",
+              "url": "https://venturebeat.com/technology/qwen3-8-max-arrives-with-a-bold-claim-it-outperforms-gpt-5-6-sol-max-and-fable-5-on-agentic-computer-use"
+            },
+            {
+              "kind": "provider",
+              "title": "OpenRouter qwen3.8-max",
+              "url": "https://openrouter.ai/qwen/qwen3.8-max"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/deepseek/deepseek-v4-flash-0731",
+        "label": "DeepSeek V4 Flash 0731 via OpenRouter",
+        "pricing": {
+          "input": 0.09,
+          "output": 0.18
+        },
+        "notes": {
+          "implement": "Added 2026-W31. V4 Flash GA re-post-train (Jul 2026). Vendor agent benchmarks leap vs preview; prior deepseek-v4-flash Aigon bench FAIL. Probe PASS 8.0s — bench before default."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "Probe-only V4 Flash GA; vendor agent scores beat V4-Pro but prior flash failed Aigon bench.",
+          "body": "284B/13B-active MoE GA Jul 2026. Vendor Terminal-Bench 82.7%, DeepSWE 54.4%. Prior flash slug Aigon brewboard FAIL Apr 2026. Probe PASS 8.0s W31. $0.09/$0.18 MTok.",
+          "bestFor": [
+            "implement",
+            "review"
           ],
           "avoidFor": [
             "spec",
             "research"
           ],
           "confidence": "low",
-          "researchedAt": "2026-07-25T00:00:00.000Z",
+          "researchedAt": "2026-08-05T12:00:00.000Z",
           "sources": [
             {
               "kind": "provider",
-              "title": "Qwen3.6 35B OpenRouter",
-              "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
+              "title": "DeepSeek V4 Flash 0731 model card",
+              "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731"
+            },
+            {
+              "kind": "benchmark",
+              "title": "Terminal-Bench 82.7% (vendor)",
+              "url": "https://deepseek.ai/blog/deepseek-v4-flash-ga-agent-benchmarks"
+            },
+            {
+              "kind": "community",
+              "title": "Developers Digest V4 Flash 0731 guide",
+              "url": "https://www.developersdigest.tech/blog/deepseek-v4-flash-0731-opencode-guide"
+            },
+            {
+              "kind": "aigon-bench",
+              "ref": "all-brewboard-2026-04-29T11-59-07-090Z.json"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/qwen/qwen3.7-flash",
+        "label": "Qwen3.7 Flash via OpenRouter",
+        "pricing": {
+          "input": 0.03,
+          "output": 0.13
+        },
+        "notes": {
+          "implement": "Added 2026-W31. Ultra-cheap Qwen3.7 flash tier. Probe PASS 5.7s. No published SWE score on OpenRouter — bench before promoting."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "Ultra-cheap Qwen3.7 flash tier; probe-only — unverified for agentic loops.",
+          "body": "Qwen3.7 flash SKU at $0.03/$0.13 MTok — cheapest active Qwen tier. Probe PASS 5.7s W31. No Aigon bench or independent SWE score yet.",
+          "bestFor": [
+            "implement"
+          ],
+          "avoidFor": [
+            "spec",
+            "research",
+            "review"
+          ],
+          "confidence": "low",
+          "researchedAt": "2026-08-05T12:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "OpenRouter qwen3.7-flash",
+              "url": "https://openrouter.ai/qwen/qwen3.7-flash"
+            }
+          ]
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "openrouter/thinkingmachines/inkling-small",
+        "label": "Inkling Small via OpenRouter",
+        "pricing": {
+          "input": 0.5,
+          "output": 1.2
+        },
+        "notes": {
+          "implement": "Added 2026-W31. Thinking Machines 276B/12B-active open MoE (Jul 2026). Vendor SWE-bench Verified 80.2% on own harness. Probe PASS 5.9s. Bench before defaults."
+        },
+        "score": {
+          "implement": null
+        },
+        "summary": {
+          "headline": "Token-efficient open MoE; vendor SWE 80.2% on own harness — bench before defaults.",
+          "body": "276B/12B-active multimodal MoE from Thinking Machines Lab. Vendor SWE-bench Verified 80.2%, Terminal-Bench 64.7% on own harness. AA Terminal-Bench ~55%. Probe PASS 5.9s W31. $0.50/$1.20 MTok.",
+          "bestFor": [
+            "implement",
+            "review"
+          ],
+          "avoidFor": [
+            "spec",
+            "research"
+          ],
+          "confidence": "medium",
+          "researchedAt": "2026-08-05T12:00:00.000Z",
+          "sources": [
+            {
+              "kind": "provider",
+              "title": "Inkling-Small model card",
+              "url": "https://thinkingmachines.ai/model-card/inkling-small/"
+            },
+            {
+              "kind": "benchmark",
+              "title": "SWE-bench Verified 80.2% (vendor harness)",
+              "url": "https://huggingface.co/thinkingmachines/Inkling-Small"
+            },
+            {
+              "kind": "community",
+              "title": "VentureBeat Inkling Small launch",
+              "url": "https://venturebeat.com/technology/thinking-machines-debuts-inkling-small-open-source-ai-model-nearing-performance-of-predecessor-at-about-1-4-size"
+            },
+            {
+              "kind": "provider",
+              "title": "OpenRouter inkling-small",
+              "url": "https://openrouter.ai/thinkingmachines/inkling-small"
             }
           ]
         },
@@ -1040,7 +1234,25 @@
     "modelFlag": "--model",
     "effortFlag": null,
     "effortEnv": null,
-    "submitKey": "Enter"
+    "submitKey": "Enter",
+    "complexityDefaults": {
+      "low": {
+        "model": "openrouter/qwen/qwen3.6-35b-a3b",
+        "effort": null
+      },
+      "medium": {
+        "model": "openrouter/deepseek/deepseek-v3.1-terminus",
+        "effort": null
+      },
+      "high": {
+        "model": "openrouter/deepseek/deepseek-v3.1-terminus",
+        "effort": null
+      },
+      "very-high": {
+        "model": "openrouter/deepseek/deepseek-v3.1-terminus",
+        "effort": null
+      }
+    }
   },
   "placeholders": {
     "AGENT_ID": "op",
