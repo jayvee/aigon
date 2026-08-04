@@ -58,6 +58,57 @@ test('entityCreate stores authorAgentId on the inbox workflow snapshot when crea
     assert.strictEqual(snapshot.authorAgentId, 'cx');
     assert.ok(events.includes('"authorAgentId":"cx"'));
 }));
+// REGRESSION: a missing snapshot must be replayed from canonical events instead of resurrecting a completed entity from its folder.
+test('ensureEntityBootstrappedSync replays an existing event stream', () => withTempDir('aigon-bootstrap-replay-', (repo) => {
+    seedEntityDirs(repo, 'research-topics');
+    const specPath = path.join(repo, 'docs/specs/research-topics/05-done/research-29-finished.md');
+    fs.writeFileSync(specPath, '# Research: finished\n');
+    const workflowDir = path.join(repo, '.aigon/workflows/research/29');
+    fs.mkdirSync(workflowDir, { recursive: true });
+    const event = { type: 'research.bootstrapped', researchId: '29', lifecycle: 'done', stage: 'done', at: '2026-04-12T00:00:00.000Z' };
+    fs.writeFileSync(path.join(workflowDir, 'events.jsonl'), `${JSON.stringify(event)}\n`);
+
+    const snapshot = engine.ensureEntityBootstrappedSync(repo, 'research', '29', 'paused', specPath);
+
+    assert.strictEqual(snapshot.currentSpecState, 'done');
+    assert.strictEqual(snapshot.eventCount, 1);
+    assert.strictEqual(fs.readFileSync(path.join(workflowDir, 'events.jsonl'), 'utf8').trim(), JSON.stringify(event));
+}));
+
+// REGRESSION: repair must preserve findings while correcting a completed stream resurrected by a legacy bootstrap event.
+test('repair restores terminal research lifecycle after a legacy bootstrap', () => withTempDir('aigon-terminal-repair-', (repo) => {
+    initGitRepo(repo);
+    seedEntityDirs(repo, 'research-topics');
+    const pausedPath = path.join(repo, 'docs/specs/research-topics/06-paused/research-29-pr-option.md');
+    const findingsPath = path.join(repo, 'docs/specs/research-topics/logs/research-29-cx-findings.md');
+    fs.mkdirSync(path.dirname(findingsPath), { recursive: true });
+    fs.writeFileSync(pausedPath, '# Research: PR option\n');
+    fs.writeFileSync(findingsPath, '# Findings\nvaluable result\n');
+    const workflowDir = path.join(repo, '.aigon/workflows/research/29');
+    fs.mkdirSync(workflowDir, { recursive: true });
+    const events = [
+        { type: 'research.started', researchId: '29', mode: 'fleet', agents: ['cx'], at: '2026-04-12T00:00:00.000Z' },
+        { type: 'signal.agent_ready', agentId: 'cx', at: '2026-04-12T00:01:00.000Z' },
+        { type: 'research.eval_requested', at: '2026-04-12T00:02:00.000Z' },
+        { type: 'research.close_requested', at: '2026-04-12T00:03:00.000Z' },
+        { type: 'research.closed', at: '2026-04-12T00:04:00.000Z' },
+        { type: 'research.bootstrapped', researchId: '29', lifecycle: 'implementing', stage: 'in-progress', at: '2026-04-13T00:00:00.000Z' },
+    ];
+    fs.writeFileSync(path.join(workflowDir, 'events.jsonl'), `${events.map(event => JSON.stringify(event)).join('\n')}\n`);
+    engine.ensureEntityBootstrappedSync(repo, 'research', '29', 'paused', pausedPath);
+    execFileSync('git', ['add', '-A'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+    execFileSync('git', ['commit', '-m', 'seed terminal regression'], { cwd: repo, env: { ...process.env, ...GIT_SAFE_ENV }, stdio: 'pipe' });
+
+    const repairResult = runAigonCli(repo, ['repair', 'research', '29']);
+
+    const donePath = path.join(repo, 'docs/specs/research-topics/05-done/research-29-pr-option.md');
+    assert.ok(fs.existsSync(donePath), repairResult.output);
+    assert.strictEqual(fs.readFileSync(findingsPath, 'utf8'), '# Findings\nvaluable result\n');
+    assert.strictEqual(readJson(path.join(workflowDir, 'snapshot.json')).currentSpecState, 'done');
+    const repairedEvents = fs.readFileSync(path.join(workflowDir, 'events.jsonl'), 'utf8');
+    assert.match(repairedEvents, /"type":"research\.closed"/);
+    assert.match(repairedEvents, /"lifecycle":"done"/);
+}));
 // REGRESSION: F667 prioritise moves numbered inbox specs without re-keying workflow identity.
 test('entityPrioritise transitions numbered inbox workflow state without re-keying', () => withTempDir('aigon-f667-prio-', (repo) => {
     seedEntityDirs(repo, 'features');

@@ -110,7 +110,7 @@ test.describe('Critical dashboard action surfaces @smoke', () => {
         const startModuleHits = requested.filter((u) => u.includes('/js/actions/start.js'));
         expect(startModuleHits, 'start.js must not load on initial dashboard paint').toHaveLength(0);
 
-        const startBtn = page.locator('.kcard-va-btn[data-va-action="feature-start"]').first();
+        const startBtn = page.locator('.kcard-va-btn[data-va-action="feature-start"]:visible').first();
         await expect(startBtn, 'fixture should include a startable backlog feature').toBeVisible();
         await startBtn.click();
         await page.waitForResponse((res) => res.url().includes('/js/actions/start.js') && res.status() === 200, { timeout: 10000 });
