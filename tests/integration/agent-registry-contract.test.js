@@ -110,6 +110,26 @@ test('Amp registry contract exposes modes and quarantines large mode from picker
     assert.ok(dashboardAmp, 'Amp missing from dashboard registry projection');
     assert.deepStrictEqual(dashboardAmp.modelOptions.map(o => o.value), [null, 'rush', 'smart', 'deep']);
 });
+test('GitHub Copilot registry contract keeps Auto default with named models available', () => {
+    // REGRESSION: cp must remain an interactive Agent Skills integration, not a one-shot prompt runner.
+    const copilot = agentRegistry.getAgent('cp');
+    assert.ok(copilot, 'cp missing from registry');
+    assert.strictEqual(copilot.cli.command, 'copilot');
+    assert.deepStrictEqual(copilot.aliases, ['copilot', 'github-copilot', 'cp']);
+    assert.strictEqual(copilot.providerFamily, 'router');
+    assert.strictEqual(copilot.defaultFleetAgent, false);
+    assert.strictEqual(copilot.capabilities.resolvesSlashCommands, true);
+    assert.strictEqual(copilot.capabilities.transcriptTelemetry, false);
+    assert.strictEqual(copilot.cli.injectPromptViaTmux, false);
+    assert.ok(!/(?:^|\s)(?:-p|--prompt)(?:\s|$)/.test(copilot.cli.implementFlag));
+    assert.deepStrictEqual(Object.values(copilot.cli.models), ['auto', 'auto', 'auto', 'auto']);
+    assert.ok(Object.values(copilot.cli.complexityDefaults).every(value => value.model === 'auto'));
+    const modelValues = copilot.cli.modelOptions.map(option => option.value);
+    assert.strictEqual(modelValues[0], 'auto');
+    for (const value of ['gpt-5.4', 'claude-sonnet-4.6', 'gemini-3.6-flash', 'mai-code-1-flash']) {
+        assert.ok(modelValues.includes(value), `cp picker missing ${value}`);
+    }
+});
 test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
     // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).
     const f = dashboardServer.parseDashboardActionRequest({ action: 'feature-delete', args: ['5'] });

@@ -1,0 +1,293 @@
+{
+  "id": "cp",
+  "name": "GitHub Copilot",
+  "aliases": [
+    "copilot",
+    "github-copilot",
+    "cp"
+  ],
+  "displayName": "GitHub Copilot CLI",
+  "shortName": "CP",
+  "providerFamily": "router",
+  "portOffset": 9,
+  "terminalColor": "white",
+  "bannerColor": "#8250DF",
+  "defaultFleetAgent": false,
+  "installHint": "brew install copilot-cli  (or: npm i -g @github/copilot)",
+  "installCommand": "npm i -g @github/copilot",
+  "authCheck": {
+    "method": "none",
+    "loginCommand": "copilot login",
+    "loginHint": "Run copilot login and authenticate with a Copilot-enabled GitHub account"
+  },
+  "trust": null,
+  "worktreeEnv": {},
+  "git": {
+    "hasEmailAttribution": true
+  },
+  "capabilities": {
+    "supportsModelFlag": true,
+    "transcriptTelemetry": false,
+    "resolvesSlashCommands": true
+  },
+  "runtime": {
+    "sessionStrategy": null,
+    "telemetryStrategy": null,
+    "trustInstallScope": "worktree-base",
+    "resume": null,
+    "continuity": {
+      "resumeById": false,
+      "taskDelivery": "initial-argument"
+    }
+  },
+  "quota": {
+    "errorPatterns": [],
+    "successPatterns": [
+      "^PONG$",
+      "PONG"
+    ],
+    "unknownPolicy": "permit"
+  },
+  "cli": {
+    "command": "copilot",
+    "implementFlag": "--allow-all --interactive",
+    "planFlag": null,
+    "implementPrompt": "/aigon-feature-do {featureId}",
+    "evalPrompt": "/aigon-feature-eval {featureId}",
+    "reviewPrompt": "/aigon-feature-code-review {featureId}",
+    "reviewCheckPrompt": "/aigon-feature-code-revise {featureId}",
+    "models": {
+      "research": "auto",
+      "implement": "auto",
+      "evaluate": "auto",
+      "review": "auto"
+    },
+    "modelOptions": [
+      {
+        "value": "auto",
+        "label": "Auto (recommended)",
+        "notes": {
+          "spec_review": "Lets Copilot select an available model for the spec review.",
+          "implement": "Lets Copilot select an available model for the implementation task.",
+          "review": "Lets Copilot select an available model for the code review.",
+          "spec": "Lets Copilot select an available model for spec drafting.",
+          "research": "Lets Copilot select an available model for the research task."
+        },
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "claude-sonnet-4.6",
+        "label": "Claude Sonnet 4.6",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.4",
+        "label": "GPT-5.4",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "claude-haiku-4.5",
+        "label": "Claude Haiku 4.5",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "gpt-5.3-codex",
+        "label": "GPT-5.3 Codex",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.1-pro-preview",
+        "label": "Gemini 3.1 Pro Preview",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.5-flash",
+        "label": "Gemini 3.5 Flash",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "gemini-3.6-flash",
+        "label": "Gemini 3.6 Flash",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      },
+      {
+        "value": "mai-code-1-flash",
+        "label": "MAI Code 1 Flash",
+        "score": {
+          "spec_review": null,
+          "implement": null,
+          "review": null,
+          "spec": null,
+          "research": null
+        },
+        "lastRefreshAt": "2026-08-05T00:00:00.000Z"
+      }
+    ],
+    "effortOptions": [
+      {
+        "value": null,
+        "label": "Default"
+      },
+      {
+        "value": "low",
+        "label": "Low"
+      },
+      {
+        "value": "medium",
+        "label": "Medium"
+      },
+      {
+        "value": "high",
+        "label": "High"
+      },
+      {
+        "value": "xhigh",
+        "label": "Extra high"
+      },
+      {
+        "value": "max",
+        "label": "Maximum"
+      }
+    ],
+    "complexityDefaults": {
+      "low": {
+        "model": "auto",
+        "effort": null
+      },
+      "medium": {
+        "model": "auto",
+        "effort": null
+      },
+      "high": {
+        "model": "auto",
+        "effort": null
+      },
+      "very-high": {
+        "model": "auto",
+        "effort": null
+      }
+    },
+    "modelFlag": "--model",
+    "effortFlag": "--effort",
+    "effortEnv": null,
+    "promptFlag": null,
+    "injectPromptViaTmux": false,
+    "submitKey": "Enter",
+    "nudgeTransport": {
+      "submitKey": "Enter",
+      "submitAttempts": 2,
+      "retryDelayMs": 700
+    }
+  },
+  "placeholders": {
+    "AGENT_ID": "cp",
+    "AGENT_NAME": "GitHub Copilot",
+    "AGENT_TITLE": "GitHub Copilot CLI Configuration",
+    "ARG_SYNTAX": "$ARGUMENTS",
+    "ARG1_SYNTAX": "$1",
+    "CMD_PREFIX": "/aigon-",
+    "AGENT_TEAMS_RESEARCH_NOTE": "",
+    "AGENT_TEAMS_FEATURE_NOTE": "",
+    "PERMISSION_SAVE_NOTE": "",
+    "AGENT_PITFALLS": "\n## GitHub Copilot CLI Notes\n\n- Model availability depends on the signed-in Copilot plan and organization policy. Use Auto when a named model is unavailable.\n- Aigon launches the interactive TUI with `--allow-all`; do not replace this with `-p` or `--prompt`, because one-shot mode breaks session observability and follow-up input.\n- Transcript, cost, token, and resume integration are not available in this first release.\n",
+    "AGENT_DEV_SERVER_NOTE": ""
+  },
+  "output": {
+    "format": "skill-md",
+    "commandDir": ".agents/skills",
+    "commandFilePrefix": "aigon-",
+    "commandFileExtension": "",
+    "skillFileName": "SKILL.md",
+    "frontmatter": [
+      "name",
+      "description"
+    ],
+    "global": false
+  },
+  "rootFile": null,
+  "supportsAgentsMd": true,
+  "agentFile": "github-copilot.md",
+  "templatePath": "generic/docs/agent.md",
+  "extras": {},
+  "signals": {
+    "shellTrap": true,
+    "heartbeatSidecar": true,
+    "cliHooks": null
+  },
+  "legacy": {
+    "promptFile": null
+  },
+  "failureDetectors": {
+    "tokenExhaustion": {
+      "exitCodes": [
+        1,
+        2
+      ],
+      "stderrPatterns": [
+        "quota exceeded",
+        "usage limit",
+        "rate limit exceeded"
+      ]
+    }
+  },
+  "idleDetection": {
+    "_todo": "no reliable GitHub Copilot CLI idle pattern confirmed yet — leave absent so supervisor skips capture-pane"
+  },
+  "commandExcludes": []
+}

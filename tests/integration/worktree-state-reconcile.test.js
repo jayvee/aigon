@@ -175,6 +175,14 @@ test('active ag launches through the interactive prompt contract', () => {
     assert.match(command, /agy.*--dangerously-skip-permissions.*--model.*gemini-3\.5-flash-medium.*--prompt-interactive/);
 });
 
+test('GitHub Copilot launches its interactive TUI with an Agent Skill prompt', () => withLiveAgentMode(() => {
+    // REGRESSION: -p/--prompt exits after one response and breaks Aigon follow-up and session observability.
+    const command = buildRawAgentCommand({ agent: 'cp', featureId: '743', path: '/tmp/aigon-cp-onboard-test-wt', repoPath: process.cwd() }, 'do');
+    assert.match(command, /copilot\s+--allow-all\s+--interactive\s+--model\s+auto\s+'\/aigon-feature-do 743'/);
+    assert.ok(!/(?:^|\s)(?:-p|--prompt)(?:\s|$)/.test(command), command);
+    assert.ok(!command.includes('tmux paste-buffer') && !command.includes('tmux send-keys'), command);
+}));
+
 test('Codex resume pins the resumed author thread to the implementation worktree', () => {
     const cmd = buildRawAgentCommand({
         agent: 'cx', featureId: '11', path: '/tmp/aigon-cx-resume-worktree',
