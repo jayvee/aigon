@@ -13,6 +13,8 @@ feedback_refs:
 type: "security"
 severity: "high"
 tags: ["semgrep-fp", "security-scan"]
+transitions:
+  - { from: "in-evaluation", to: "done", at: "2026-08-04T14:13:50.963Z", actor: "cli/research-close" }
 ---
 
 # Research: [Security] HIGH: regex_injection_dos in /Users/jviner/.aigon/worktrees/aigon/feature-532-cu-security-scan-2026-w21/lib/board.js
