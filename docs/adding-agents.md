@@ -15,11 +15,11 @@ Not every CLI earns a slot. Before starting the onboarding process, a candidate 
 - It cannot reliably execute shell commands (e.g. `aigon agent-status implementation-complete`) from inside the agent session.
 - Context delivery requires manual configuration per repo with no auto-discovery path.
 
-**Evaluated candidates (as of 2026-04-28):**
+**Evaluated candidates (as of 2026-08-05):**
 
 | CLI | Verdict | Reason |
 |---|---|---|
-| GitHub Copilot | ❌ Skip | Wraps foundation models already covered by native CLIs (cc, ag, cx); no unique model access |
+| GitHub Copilot | ✅ Added as `cp` | First-party interactive CLI with Agent Skills discovery and a plan-dependent router across named GPT, Claude, Gemini, and MAI models. Auto is the Aigon default; `cp` stays out of the default Fleet roster pending benchmark evidence. |
 | Aider | ❌ Disqualified | Exits after each task (one-shot); cannot call `aigon agent-status` reliably; no auto-context discovery |
 | Cline CLI 2.0 | ✅ Add when ready | CLI only launched Feb 2026 (previously IDE-only); 5M installs is VS Code extension history, not CLI users. Add once context delivery conventions stabilise. Current BYOK slot is `op` (OpenCode: 132k stars, 650k MAU — proven). |
 | Amazon Q | ❌ Low priority | ~50–66% SWE-bench (below current roster); Nova models reachable via op/Bedrock |
@@ -64,7 +64,7 @@ Answer these 5 questions in order to determine the correct configuration for any
 
 | Type | Agents | Prompt delivery | Session after work |
 |---|---|---|---|
-| Slash-command | `cc` (claude), `cu` (agent/cursor) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
+| Slash-command | `cc` (claude), `cu` (agent/cursor), `cp` (copilot) | `/aigon-feature-do XX` as CLI arg | Stays at agent's interactive prompt |
 | File-prompt | `cx` (codex), `ag` (antigravity) | `$(< /tmp/aigon-prompt-XX.md)` shell expansion | Stays at agent's interactive prompt |
 | TUI-inject | `op` (opencode), `km` (kimi), `am` (amp) | Pasted via `tmux paste-buffer` after TUI is ready | Stays at agent's interactive prompt |
 

@@ -109,6 +109,34 @@ testAsync('install-agent cc: does not create AGENTS.md, leaves existing byte-ide
         'AGENTS.md must be byte-identical after install-agent');
 }));
 
+testAsync('install-agent cp: writes Agent Skills and docs without touching consumer root docs', () => withTempDirAsync('aigon-f743-cp-', async (repo) => {
+    // REGRESSION: Copilot must use its discovered .agents/skills tree and leave user-owned root instructions untouched.
+    const rootFiles = {
+        'AGENTS.md': '# User AGENTS\n',
+        'CLAUDE.md': '# User CLAUDE\n',
+        'README.md': '# User README\n',
+    };
+    for (const [file, content] of Object.entries(rootFiles)) fs.writeFileSync(path.join(repo, file), content);
+    runInstallAgent(repo, 'cp');
+
+    const skillPath = path.join(repo, '.agents', 'skills', 'aigon-feature-do', 'SKILL.md');
+    assert.ok(fs.existsSync(skillPath), 'cp feature-do Agent Skill missing');
+    assert.match(fs.readFileSync(skillPath, 'utf8'), /^---\nname: aigon-feature-do\ndescription:/);
+    assert.ok(fs.existsSync(path.join(repo, '.aigon', 'docs', 'agents', 'github-copilot.md')));
+    for (const [file, content] of Object.entries(rootFiles)) {
+        assert.strictEqual(fs.readFileSync(path.join(repo, file), 'utf8'), content, `${file} changed`);
+    }
+}));
+
+testAsync('install-agent cc: emits Copilot-compatible skill frontmatter and YAML-safe argument hints', () => withTempDirAsync('aigon-f743-cc-compat-', async (repo) => {
+    // REGRESSION: Copilot scans .claude/skills and commands; malformed Aigon YAML broke `copilot skill list`.
+    runInstallAgent(repo, 'cc');
+    const skill = fs.readFileSync(path.join(repo, '.claude', 'skills', 'aigon', 'SKILL.md'), 'utf8');
+    assert.match(skill, /^---\nname: aigon\ndescription: .+\n---\n/);
+    const transfer = fs.readFileSync(path.join(repo, '.claude', 'commands', 'aigon', 'feature-transfer.md'), 'utf8');
+    assert.ok(transfer.includes('argument-hint: "<ID> --to=<agent> [--reason=\\"...\\"] [--no-launch]"'), transfer.slice(0, 250));
+}));
+
 // --- F440 registry contract (pure-function, no install spawn) ---
 testAsync('agent-registry (F440): cc single-output and op multi-output normalise to outputs[] with output alias', async () => {
     delete require.cache[require.resolve('../../lib/agent-registry')];
