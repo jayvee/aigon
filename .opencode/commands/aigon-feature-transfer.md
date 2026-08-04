@@ -1,6 +1,6 @@
 ---
 description: Transfer feature <ID> from its current agent to a different agent — preserves commits and in-flight work
-argument-hint: "<ID> --to=<agent> [--reason="..."] [--no-launch]"
+argument-hint: "<ID> --to=<agent> [--reason=\"...\"] [--no-launch]"
 ---
 # aigon-feature-transfer
 

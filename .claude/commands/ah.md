@@ -64,6 +64,7 @@ description: Show Aigon commands (shortcut for help)
 | km | Kimi Code CLI | `kimi --yolo` | Auto-approves all |
 | am | Amp | `amp --no-ide --no-jetbrains --no-notifications --dangerously-allow-all` | --no-ide --no-jetbrains --no-notifications --dangerously-allow-all |
 | ag | Antigravity CLI | `agy --dangerously-skip-permissions` | --dangerously-skip-permissions |
+| cp | GitHub Copilot CLI | `copilot --allow-all` | --allow-all |
 
 **Quick-allow when prompted:** Claude `Shift+Tab` • Antigravity uses `--dangerously-skip-permissions` at launch • Cursor "Add to allowlist" • Codex "Allow and remember"
 
