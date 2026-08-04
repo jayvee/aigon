@@ -121,6 +121,7 @@ test('GitHub Copilot registry contract keeps Auto default with named models avai
     assert.strictEqual(copilot.capabilities.resolvesSlashCommands, true);
     assert.strictEqual(copilot.capabilities.transcriptTelemetry, false);
     assert.strictEqual(copilot.cli.injectPromptViaTmux, false);
+    assert.strictEqual(copilot.cli.promptFlag, '--interactive');
     assert.ok(!/(?:^|\s)(?:-p|--prompt)(?:\s|$)/.test(copilot.cli.implementFlag));
     assert.deepStrictEqual(Object.values(copilot.cli.models), ['auto', 'auto', 'auto', 'auto']);
     assert.ok(Object.values(copilot.cli.complexityDefaults).every(value => value.model === 'auto'));
@@ -135,6 +136,30 @@ test('GitHub Copilot registry contract keeps Auto default with named models avai
         assert.ok(option.summary.sources.some(source => source.kind === 'provider'));
     }
 });
+test('GitHub Copilot worktree trust preserves config and pre-seeds trustedFolders', () => withTempDir('aigon-cp-trust-', tmpDir => {
+    // REGRESSION: cp otherwise stops at its folder-trust dialog before executing the initial Aigon feature prompt.
+    const originalHome = process.env.HOME;
+    const originalCwd = process.cwd();
+    const repoPath = path.join(tmpDir, 'repo');
+    const worktreePath = path.join(tmpDir, 'worktrees', 'feature-09-cp-dark-mode');
+    const configPath = path.join(tmpDir, '.copilot', 'config.json');
+    fs.mkdirSync(repoPath, { recursive: true });
+    fs.mkdirSync(worktreePath, { recursive: true });
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, JSON.stringify({ firstLaunchAt: 'preserve-me', trustedFolders: ['/existing'] }, null, 2));
+    try {
+        process.env.HOME = tmpDir;
+        process.chdir(repoPath);
+        const trustedRepoPath = process.cwd();
+        agentRegistry.ensureAgentTrust('cp', [worktreePath]);
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        assert.strictEqual(config.firstLaunchAt, 'preserve-me');
+        assert.deepStrictEqual(config.trustedFolders, ['/existing', worktreePath, trustedRepoPath]);
+    } finally {
+        process.chdir(originalCwd);
+        process.env.HOME = originalHome;
+    }
+}));
 test('parseDashboardActionRequest allows feature-delete and research-delete', () => {
     // REGRESSION: engine manual actions must pass /api/action allowlist (not only SM_INVOCABLE_ACTIONS).
     const f = dashboardServer.parseDashboardActionRequest({ action: 'feature-delete', args: ['5'] });

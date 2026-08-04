@@ -20,7 +20,11 @@
     "loginCommand": "copilot login",
     "loginHint": "Run copilot login and authenticate with a Copilot-enabled GitHub account"
   },
-  "trust": null,
+  "trust": {
+    "type": "json-array",
+    "path": "~/.copilot/config.json",
+    "key": "trustedFolders"
+  },
   "worktreeEnv": {},
   "git": {
     "hasEmailAttribution": true
@@ -50,7 +54,7 @@
   },
   "cli": {
     "command": "copilot",
-    "implementFlag": "--allow-all --interactive",
+    "implementFlag": "--allow-all",
     "planFlag": null,
     "implementPrompt": "/aigon-feature-do {featureId}",
     "evalPrompt": "/aigon-feature-eval {featureId}",
@@ -354,7 +358,7 @@
     "modelFlag": "--model",
     "effortFlag": "--effort",
     "effortEnv": null,
-    "promptFlag": null,
+    "promptFlag": "--interactive",
     "injectPromptViaTmux": false,
     "submitKey": "Enter",
     "nudgeTransport": {

@@ -176,9 +176,9 @@ test('active ag launches through the interactive prompt contract', () => {
 });
 
 test('GitHub Copilot launches its interactive TUI with an Agent Skill prompt', () => withLiveAgentMode(() => {
-    // REGRESSION: -p/--prompt exits after one response and breaks Aigon follow-up and session observability.
+    // REGRESSION: --interactive consumes the next token as its prompt, so model flags must precede it.
     const command = buildRawAgentCommand({ agent: 'cp', featureId: '743', path: '/tmp/aigon-cp-onboard-test-wt', repoPath: process.cwd() }, 'do');
-    assert.match(command, /copilot\s+--allow-all\s+--interactive\s+--model\s+auto\s+'\/aigon-feature-do 743'/);
+    assert.match(command, /copilot\s+--allow-all\s+--model\s+auto\s+--interactive\s+'\/aigon-feature-do 743'/);
     assert.ok(!/(?:^|\s)(?:-p|--prompt)(?:\s|$)/.test(command), command);
     assert.ok(!command.includes('tmux paste-buffer') && !command.includes('tmux send-keys'), command);
 }));
