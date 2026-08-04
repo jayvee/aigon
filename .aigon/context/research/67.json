@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "entityType": "research",
+  "entityId": "67",
+  "authorHandoff": {
+    "schemaVersion": 1,
+    "artifactVersion": 1,
+    "status": "valid",
+    "recordedAt": "2026-08-04T13:33:51.021Z",
+    "recordedBy": "cx",
+    "decisions": [
+      "Research whether software factory should be Aigon's primary category, a qualified descriptor, a supporting metaphor, or rejected.",
+      "Treat product renaming and marketing reframing as separate decisions.",
+      "Use Herdr as a required adjacent-product comparison rather than assuming it is a direct competitor.",
+      "Require honest falsification criteria and a claims ledger before documentation changes."
+    ],
+    "constraints": [
+      "Ground current-market claims in official product documentation and repositories.",
+      "Ground Aigon capability claims in shipped behavior and current public documentation.",
+      "Separate direct competitors from adjacent runtime tools, single-vendor managers, hosted agents, and general agent frameworks.",
+      "Do not overclaim full-SDLC coverage merely because the software factory metaphor is attractive."
+    ],
+    "nonGoals": [
+      "Do not implement documentation or website changes during research.",
+      "Do not rename the package, repository, CLI, domain, or product during research.",
+      "Do not design or implement a Herdr session-host integration.",
+      "Do not perform visual identity, trademark, or marketing-channel work."
+    ],
+    "unresolvedQuestions": [
+      "What capability expectations does the software factory category create?",
+      "Is the best outcome a category change, qualified descriptor, campaign metaphor, or rejection?",
+      "What is Aigon's most durable competitive wedge?",
+      "Should users see Herdr as a competitor, complement, session substrate, or different category?",
+      "Which documentation claims are supportable now and which require qualification or product work?"
+    ],
+    "implementationNotes": [
+      "Produce one-line, one-paragraph, and landing-page candidate positioning.",
+      "Produce a documentation change map and claims ledger.",
+      "Include evidence that could falsify the preferred framing.",
+      "Check the current compare page for references to competitive artifacts that no longer exist."
+    ],
+    "specReferences": [
+      "docs/specs/research-topics/01-inbox/research-67-software-factory-positioning-and-herdr-comparison.md",
+      "docs/specs/research-topics/05-done/research-44-competitive-positioning-and-landscape.md",
+      "README.md",
+      "site/content/index.mdx",
+      "site/content/compare.mdx"
+    ]
+  },
+  "updatedAt": "2026-08-04T13:33:51.021Z"
+}
