@@ -1,3 +1,16 @@
+---
+commit_count: 2
+lines_added: 294
+lines_removed: 58
+lines_changed: 352
+files_touched: 6
+fix_commit_count: 2
+fix_commit_ratio: 1
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+---
+
 # Implementation Log: Feature 746 - recurring-delete-skips-current-period
 
 ## Plan
