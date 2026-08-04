@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.76.0-beta.2] — 2026-08-05
+
+Adds GitHub Copilot CLI as a supported Aigon agent, hardens backup and recurring-feature state, and refreshes the public agent documentation and model catalog.
+
+### Added
+
+- **GitHub Copilot CLI agent (`cp`).** Install it with `aigon install-agent cp`, use Copilot's interactive permission flow, choose the recommended `Auto` routing or an entitlement-dependent named model, and run Aigon skills through Copilot's `/aigon-*` commands.
+- **Complete Copilot documentation.** The README, agent reference, setup and configuration guides, command references, telemetry and quota guidance, comparison copy, homepage, metadata, and LLM-readable routes now describe the supported Copilot workflow and its current capability boundaries.
+
+### Changed
+
+- **Safer backup restore.** Vault restores are exact, validate recovery integrity, stop schedules before mutation, and preserve cross-machine project state.
+- **Model catalog refresh.** OpenRouter-backed model choices were refreshed and Claude Sonnet 5 was added to Claude Code's available models.
+- Research items on the dashboard are ordered newest first.
+
+### Fixed
+
+- Deleted recurring feature instances stay deleted for their current week, month, or quarter, while the next cadence period remains eligible; background generation now stages only the generated spec.
+- Terminal workflow state repairs correctly after legacy bootstrap.
+- Copilot feature sessions launch interactively instead of receiving incompatible injected prompts.
+
 ## [2.76.0-beta.1] — 2026-07-25
 
 Aigon Pro is merged into the open-source product — every engine that sat behind the commercial tier now ships to everyone, with no key and no gate.
