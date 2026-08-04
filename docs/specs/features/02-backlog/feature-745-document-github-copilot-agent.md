@@ -2,6 +2,8 @@
 aigon_id: F745
 complexity: low
 depends_on: [743]
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-08-04T14:30:30.365Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: Document GitHub Copilot CLI agent
@@ -82,3 +84,8 @@ git diff --check
 - `docs/adding-agents.md`
 - `site/content/reference/agents.mdx`
 - GitHub Copilot CLI documentation: https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli
+## Dependency Graph
+
+<!-- AIGON_DEP_GRAPH_START -->
+<svg xmlns="http://www.w3.org/2000/svg" width="568" height="132" viewBox="0 0 568 132" role="img" aria-label="Feature dependency graph for feature 745" style="font-family: system-ui, -apple-system, sans-serif"><defs><marker id="dep-arrow-745" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#94a3b8"/></marker></defs><path d="M 244 66 C 284 66, 284 66, 324 66" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#dep-arrow-745)"/><g><rect x="24" y="24" width="220" height="84" rx="12" ry="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/><text x="36" y="48" font-size="14" font-weight="700" fill="#0f172a">#743</text><text x="36" y="70" font-size="13" font-weight="500" fill="#1f2937">onboard github copilot cli</text><text x="36" y="90" font-size="12" fill="#475569">in-progress</text></g><g><rect x="324" y="24" width="220" height="84" rx="12" ry="12" fill="#e5e7eb" stroke="#f59e0b" stroke-width="3"/><text x="336" y="48" font-size="14" font-weight="700" fill="#0f172a">#745</text><text x="336" y="70" font-size="13" font-weight="500" fill="#1f2937">document github copilot a…</text><text x="336" y="90" font-size="12" fill="#475569">backlog</text></g></svg>
+<!-- AIGON_DEP_GRAPH_END -->
