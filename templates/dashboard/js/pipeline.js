@@ -1619,9 +1619,19 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       return header;
     }
 
-    function sortColumnCards(unsorted, stage) {
+    function sortColumnCards(unsorted, stage, entityType) {
       if (stage === 'done') {
         return unsorted.slice().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      }
+      if (entityType === 'research') {
+        return unsorted.slice().sort((a, b) => {
+          const recency = (b.createdAt || b.updatedAt || '').localeCompare(a.createdAt || a.updatedAt || '');
+          if (recency) return recency;
+          const aHasNumericId = /^\d+$/.test(String(a.id || ''));
+          const bHasNumericId = /^\d+$/.test(String(b.id || ''));
+          if (aHasNumericId && bHasNumericId) return parseInt(b.id, 10) - parseInt(a.id, 10);
+          return String(a.name || a.id || '').localeCompare(String(b.name || b.id || ''));
+        });
       }
       return unsorted.slice().sort((a, b) => {
         const aHasNumericId = /^\d+$/.test(String(a.id || ''));
@@ -2101,7 +2111,7 @@ import { renderContractCardBody, renderSetContractCardBody } from './contract-ca
       const s = Alpine.store('dashboard');
       const pType = s.pipelineType || 'features';
       const items = repo[pType] || [];
-      const cards = sortColumnCards(items.filter(f => f.stage === stage), stage);
+      const cards = sortColumnCards(items.filter(f => f.stage === stage), stage, pType);
       const expandedColumns = state.expandedPipelineColumns || {};
       const columnKey = pipelineColumnKey(repo.path, pType, stage);
       const isExpanded = !!expandedColumns[columnKey];
