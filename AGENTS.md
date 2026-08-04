@@ -39,6 +39,7 @@ Run `node scripts/check-template-leaks.js` for template changes.
 ## Lifecycle and State Authority
 
 - Use Aigon CLI lifecycle commands. Do not manually move spec files, create lifecycle links, or write `.aigon/state/` / workflow files.
+- Treat commits that appear on the default branch during an agent run as concurrent operator actions. Never revert, reset, or remove them as test cleanup without explicit user approval; if they conflict with the current task, stop and ask.
 - Workflow-core events and snapshots are authoritative for feature/research state. Visible stage folders may be a generated symlink view; never infer authority from folder position when a snapshot exists.
 - Read paths derive from canonical state and must not silently repair missing write-path behavior. Add lifecycle states and transitions in the engine/projector first, then update read contracts and UI.
 - Dashboard/browser code must not re-derive lifecycle decisions, action eligibility, labels, or session roles. It renders server-owned UI contracts.
