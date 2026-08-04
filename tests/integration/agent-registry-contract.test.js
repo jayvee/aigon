@@ -146,15 +146,42 @@ test('GitHub Copilot worktree trust preserves config and pre-seeds trustedFolder
     fs.mkdirSync(repoPath, { recursive: true });
     fs.mkdirSync(worktreePath, { recursive: true });
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, JSON.stringify({ firstLaunchAt: 'preserve-me', trustedFolders: ['/existing'] }, null, 2));
+    fs.writeFileSync(configPath, [
+        '// User settings for GitHub Copilot CLI',
+        '{',
+        '  "firstLaunchAt": "preserve-me",',
+        '  // Existing trusted folders must survive Aigon setup.',
+        '  "trustedFolders": [',
+        '    "/existing",',
+        '  ],',
+        '}',
+        '',
+    ].join('\n'));
     try {
         process.env.HOME = tmpDir;
         process.chdir(repoPath);
         const trustedRepoPath = process.cwd();
         agentRegistry.ensureAgentTrust('cp', [worktreePath]);
-        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const updated = fs.readFileSync(configPath, 'utf8');
+        assert.ok(updated.includes('// User settings for GitHub Copilot CLI'));
+        assert.ok(updated.includes('// Existing trusted folders must survive Aigon setup.'));
+        const config = JSON.parse(updated.replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1'));
         assert.strictEqual(config.firstLaunchAt, 'preserve-me');
         assert.deepStrictEqual(config.trustedFolders, ['/existing', worktreePath, trustedRepoPath]);
+
+        fs.writeFileSync(configPath, [
+            '// User settings for GitHub Copilot CLI',
+            '{',
+            '  "firstLaunchAt": "still-preserve-me",',
+            '}',
+            '',
+        ].join('\n'));
+        agentRegistry.ensureAgentTrust('cp', [worktreePath]);
+        const inserted = fs.readFileSync(configPath, 'utf8');
+        assert.ok(inserted.includes('// User settings for GitHub Copilot CLI'));
+        const insertedConfig = JSON.parse(inserted.replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1'));
+        assert.strictEqual(insertedConfig.firstLaunchAt, 'still-preserve-me');
+        assert.deepStrictEqual(insertedConfig.trustedFolders, [worktreePath, trustedRepoPath]);
     } finally {
         process.chdir(originalCwd);
         process.env.HOME = originalHome;
