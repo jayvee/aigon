@@ -94,6 +94,6 @@ The following share pages with the guides above or are thin aliases: `sync`, `ba
 
 ## Conventions
 
-- **Slash form** — every workflow command is also a slash command inside Claude Code, Antigravity, Codex, and Cursor: `/aigon:feature-create`, `/aigon:research-start`, etc.
+- **Slash form** — every workflow command is also invocable from inside an agent session. The prefix depends on the agent: `/aigon:feature-create` (Claude Code), `$aigon-feature-create` (Codex), `/aigon-feature-create` (Cursor, GitHub Copilot CLI), or an inlined prompt body (Antigravity, OpenCode, Kimi, Amp). See the [Agents reference](/docs/reference/agents#supported-agents).
 - **Shortcuts** — common commands have two-letter aliases (`afc` for `feature-create`, `ars` for `research-start`, `ab` for `board`). See each command page for its shortcut.
 - **IDs vs names** — most commands accept either the numeric feature ID (`42`) or the feature slug (`dark-mode`). Aigon resolves whichever you give it.

@@ -32,7 +32,7 @@ export async function GET() {
   const lines = [
     "# Aigon",
     "",
-    "> Aigon: spec-driven multi-agent harness. Feature lifecycle, git-worktree isolation, and orchestration of local agent CLIs such as Claude Code, Antigravity CLI, Codex CLI, Cursor, OpenCode, and Kimi.",
+    "> Aigon: spec-driven multi-agent harness. Feature lifecycle, git-worktree isolation, and orchestration of local agent CLIs such as Claude Code, Antigravity CLI, Codex CLI, Cursor, OpenCode, Kimi, Amp, and GitHub Copilot CLI.",
     "",
     "## Docs",
     "",

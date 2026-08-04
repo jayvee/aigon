@@ -13,6 +13,7 @@ The **Pipeline** tab shows a **Remaining quota before reset** panel: a read-only
 - **Codex** — short-window (e.g. five-hour) and weekly remaining percentages, plus plan / credit hints when the Codex app-server returns them.
 - **Antigravity CLI** — unavailable for automatic polling; Aigon never starts its interactive CLI to scrape quota.
 - **Kimi Code CLI** — usage tiers when the CLI exposes them.
+- **GitHub Copilot CLI** — not polled; the Copilot CLI exposes no quota readout to Aigon, so `cp` shows **usage unavailable**. Check your Copilot usage on GitHub instead.
 
 Each **bar** is *remaining* headroom for that window (not “used”). **0%** means that window is already exhausted until it resets.
 

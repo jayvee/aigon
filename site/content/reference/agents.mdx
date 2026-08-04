@@ -16,8 +16,9 @@ Aigon supports multiple AI coding agents, with more being added over time. Each 
 | `op` | OpenCode | inlined prompt body | `opencode` |
 | `km` | Kimi Code CLI | inlined prompt body | `kimi` |
 | `am` | Amp | inlined prompt body | `amp` |
+| `cp` | GitHub Copilot CLI | `/aigon-` (skill) | `copilot` |
 
-Slash-invocable agents (`cc`, `cu`) receive Aigon prompts through their native slash-command discovery. File-prompt agents (`ag`, `cx`, `op`, `km`, `am`) launch with the canonical prompt body inlined directly — no slash-command registration is required on those CLIs.
+Slash-invocable agents (`cc`, `cu`, `cp`) receive Aigon prompts through their native slash-command discovery. File-prompt agents (`ag`, `cx`, `op`, `km`, `am`) launch with the canonical prompt body inlined directly — no slash-command registration is required on those CLIs.
 
 ## Installing agents
 
@@ -43,6 +44,7 @@ Install only the agents you have access to. You can add more at any time.
 | **op** | `.opencode/commands/` | agent CLI config | Prompt body inlined at launch |
 | **km** | n/a | agent CLI config | Prompt body inlined at launch |
 | **am** | `.agents/skills/aigon-*/SKILL.md` | agent CLI config | Prompt body inlined at launch |
+| **cp** | `.agents/skills/aigon-*/SKILL.md` | agent CLI config | `.agents/skills/` (per-skill `description:` is the entry point) |
 
 ### Shared Aigon-owned files
 
@@ -69,6 +71,7 @@ Instead of injecting into user-owned files, Aigon delivers context through each 
 - **Cursor**: `.cursor/rules/aigon.mdc` with `alwaysApply: true`
 - **Codex**: per-skill `description:` fields under `.agents/skills/aigon-*/SKILL.md` — Codex selects skills implicitly or via explicit `$aigon-feature-do <id>` mentions
 - **OpenCode / Kimi / Amp**: Aigon resolves the canonical command prompt and passes it directly when launching the agent.
+- **GitHub Copilot CLI**: Agent Skills under `.agents/skills/aigon-*/SKILL.md` — invoke them explicitly, e.g. `/aigon-feature-do 07`
 
 ## Codex example
 
@@ -86,6 +89,64 @@ $aigon-feature-do 07
 ```
 
 Use `$aigon-next` any time you want Codex to suggest the most likely next Aigon command for the current workflow state.
+
+## GitHub Copilot CLI (`cp`)
+
+GitHub Copilot CLI runs as the `copilot` binary and reads Aigon commands as **Agent Skills** under `.agents/skills/`.
+
+### Install and authenticate
+
+```bash
+# macOS / Homebrew
+brew install --cask copilot-cli
+
+# or npm (requires Node.js 22+)
+npm install -g @github/copilot
+
+copilot login                  # authenticate with a Copilot-enabled GitHub account
+aigon install-agent cp         # write Aigon's skills for Copilot into this repo
+```
+
+An **active GitHub Copilot plan is required**. On organization-managed accounts, an administrator may also need to enable the **Copilot CLI policy** before the CLI will authenticate. Aigon never asks for or stores your Copilot credentials — `copilot login` owns that entirely.
+
+### Invoking Aigon commands
+
+Copilot resolves Aigon skills from their `description:` fields, but the reliable form is an explicit skill mention:
+
+```text
+/aigon-feature-do 07
+```
+
+```text
+/aigon-feature-create dark-mode
+Add a theme toggle to the site header. Default to system preference and persist the user's choice.
+```
+
+### Model selection
+
+**Auto is the recommended default**, and it is what Aigon's complexity ladder pre-selects for every tier. Auto lets Copilot pick an available model, so it keeps working when a named model is not entitled to your account.
+
+The Aigon model picker also offers reviewed named options across the GPT, Claude, Gemini, and MAI families. These are **not benchmarked by Aigon**, and access to any of them varies by your Copilot plan, your organization's policy, and the model catalog in your installed CLI version. If a named model is rejected at launch, return to **Auto** rather than assuming another named model will be available.
+
+Copilot is **one GitHub Copilot entitlement that can route among model families**. Routing to a Claude or Gemini model through Copilot is not a separate Anthropic or Google subscription, does not draw on a separate quota pool, and does not make one `cp` session provider-independent from another `cp` session. If you want genuinely independent subscriptions in a Fleet run, pair `cp` with a different agent such as `cc` or `cx`.
+
+### Permissions
+
+Aigon launches Copilot with `--allow-all --interactive`: the interactive TUI, with tool approval pre-granted for the session. That means Copilot can run commands and edit files in its worktree without prompting — the same trust posture as other Aigon "yolo mode" agents. Do not swap this for a one-shot `-p` / `--prompt` mode; one-shot runs break session observability and follow-up input.
+
+### Capabilities and current limits
+
+| Capability | `cp` support |
+|-----------|--------------|
+| Drive mode | Yes |
+| Fleet mode | Yes — launchable, but **not** a default Fleet agent |
+| Model selection | Yes (`--model`, Auto recommended) |
+| Transcript telemetry | No |
+| Token / cost accounting | No |
+| Quota polling | No |
+| Session resume | No |
+
+In this first release Aigon does not collect Copilot transcripts, token counts, cost, or quota, and cannot resume a `cp` session by ID — a relaunch starts a fresh session with the task delivered as its initial argument. Telemetry and Reports views will show no data for `cp` runs.
 
 ## Updating
 
@@ -118,6 +179,7 @@ Default "yolo mode" flags auto-approve commands:
 | `op` | `run` | Runs the OpenCode `run` subcommand |
 | `km` | `--print` | Headless prompt mode |
 | `am` | `--no-ide --no-jetbrains --no-notifications` | Disables IDE integrations for worktree isolation |
+| `cp` | `--allow-all --interactive` | Auto-approves tool use in the interactive TUI |
 
 Override with:
 
