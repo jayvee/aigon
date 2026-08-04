@@ -1,3 +1,16 @@
+---
+commit_count: 3
+lines_added: 371
+lines_removed: 81
+lines_changed: 452
+files_touched: 6
+fix_commit_count: 2
+fix_commit_ratio: 0.667
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+---
+
 # Implementation Log: Feature 740 - backup-restore-integrity
 
 ## Status
