@@ -227,9 +227,12 @@ test.describe('F625 keyed kanban card render', () => {
 
     const bundle = col.locator('.kanban-set-bundle').filter({ hasText: 'e2e-set' }).first();
     await expect(bundle).toBeVisible({ timeout: 5000 });
-    await bundle.locator('.kanban-set-toggle').click();
+    // REGRESSION: an active in-progress member expands its set stack by
+    // default; do not collapse it before checking keyed replacement.
+    await expect(bundle.locator('.kanban-set-toggle')).toHaveAttribute('aria-expanded', 'true');
     await bundle.evaluate(el => { window.__bundleRef = el; });
     const cardOne = bundle.locator('.kanban-set-stack .kcard').filter({ hasText: 'e2e set one' });
+    await expect(cardOne).toBeVisible();
     await cardOne.evaluate(el => { window.__cardOneRef = el; });
 
     await page.evaluate(async ({ repoPath }) => {
@@ -247,7 +250,13 @@ test.describe('F625 keyed kanban card render', () => {
     const cardOneReplaced = await page.evaluate(() => !document.contains(window.__cardOneRef));
     expect(bundleSame).toBe(true);
     expect(cardOneReplaced).toBe(true);
-    await expect(bundle.locator('.kanban-set-stack .kcard').filter({ hasText: 'e2e set one renamed' })).toBeVisible();
+    // Keep the visibility assertion anchored to the preserved bundle node.
+    const renamedCardVisible = await page.evaluate(() => {
+      const cards = Array.from(window.__bundleRef.querySelectorAll('.kanban-set-stack .kcard'));
+      const renamed = cards.find(card => card.textContent.includes('e2e set one renamed'));
+      return Boolean(renamed && renamed.getClientRects().length > 0);
+    });
+    expect(renamedCardVisible).toBe(true);
   });
 
   test('overflow cap keeps full set visible when group-by-set is on', async ({ page }) => {
