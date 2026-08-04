@@ -1,3 +1,26 @@
+---
+commit_count: 7
+lines_added: 140
+lines_removed: 22
+lines_changed: 162
+files_touched: 21
+fix_commit_count: 0
+fix_commit_ratio: 0
+rework_thrashing: false
+rework_fix_cascade: false
+rework_scope_creep: false
+input_tokens: 270
+output_tokens: 63122
+cache_creation_input_tokens: 261688
+cache_read_input_tokens: 11516937
+thinking_tokens: 0
+total_tokens: 11842017
+billable_tokens: 63392
+cost_usd: 8.9734
+sessions: 1
+model: "claude-opus-5"
+tokens_per_line_changed: null
+---
 # Implementation Log: Feature 745 - document-github-copilot-agent
 
 Agent: cc
