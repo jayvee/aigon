@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "entityType": "feature",
+  "entityId": "743",
+  "authorHandoff": {
+    "schemaVersion": 1,
+    "artifactVersion": 1,
+    "status": "valid",
+    "recordedAt": "2026-08-04T14:09:27.299Z",
+    "recordedBy": null,
+    "decisions": [
+      "Use cp as the permanent two-character GitHub Copilot agent ID.",
+      "Use Copilot's existing interactive TUI and Agent Skills support rather than adding an ACP runtime.",
+      "Make model auto the effective default for every task and complexity tier while retaining a populated named-model picker.",
+      "Keep transcript, cost, token, resume, and ACP integration out of the first release.",
+      "Keep cp out of the default Fleet roster until it has benchmark and reliability evidence."
+    ],
+    "constraints": [
+      "Feature creation only; do not start or implement F743 in this workflow.",
+      "Use .agents/skills for Copilot commands and preserve consumer-owned AGENTS.md, CLAUDE.md, and README.md.",
+      "Named model availability varies by Copilot plan and organization policy.",
+      "The public repository must contain no credentials, tokens, or private account details.",
+      "Preserve the unrelated in-progress F744 branch and working-tree changes."
+    ],
+    "nonGoals": [
+      "Copilot ACP runtime integration.",
+      "Transcript or session-store parsing.",
+      "Copilot plugins, remote control, memory, hooks, and cloud-agent orchestration.",
+      "Default Fleet promotion."
+    ],
+    "unresolvedQuestions": [
+      "Whether Copilot later exposes a credential-safe non-interactive login status command.",
+      "Whether a later feature should refresh the Copilot model catalog dynamically."
+    ],
+    "implementationNotes": [
+      "Local Copilot CLI 1.0.78 smoke discovered Aigon skills, invoked /aigon-help, accepted follow-up input, and ran aigon help in a disposable tmux session.",
+      "The live model picker confirmed Auto and named GPT, Claude, Gemini, and MAI families, with entitlement-dependent access.",
+      "copilot skill list exposed two Aigon-owned cross-agent compatibility failures: .claude/skills/aigon/SKILL.md missing standard frontmatter and .claude/commands/aft.md containing malformed quoted YAML.",
+      "Use the central model and effort launch helper; prohibit copilot -p for normal Aigon sessions."
+    ],
+    "specReferences": [
+      "docs/specs/features/01-inbox/feature-743-onboard-github-copilot-cli.md",
+      "docs/adding-agents.md",
+      "templates/feature-template-agent-onboard.md",
+      "templates/agents/cu.json",
+      "templates/agents/cx.json",
+      "templates/agents/op.json"
+    ]
+  },
+  "updatedAt": "2026-08-04T14:09:27.299Z"
+}
