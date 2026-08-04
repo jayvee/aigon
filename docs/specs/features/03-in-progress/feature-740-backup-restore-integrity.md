@@ -1,6 +1,6 @@
 ---
 aigon_id: F740
-complexity: very-high
+complexity: high
 # agent: cc    # optional — id of the agent that owns this spec. Used as the
 #              #   default reviewer for spec-revise cycles when the operator
 #              #   does not pick one explicitly. Precedence at revision time:
@@ -34,30 +34,25 @@ transitions:
 
 ## Summary
 
-Make Aigon Vault backup and restore safe for multi-machine use. A pull must be
-previewable, transactional, exact for the managed backup scope, and recoverable;
-a restore must never be followed by an automatic push until the operator accepts
-it. Push and status must expose remote provenance so one machine cannot silently
-replace newer state from another machine. Repository Git/SpecStore state remains
-separate from machine-local runtime state.
+Make Aigon Vault restore safe enough for routine machine recovery. Before a pull
+changes project state it must preserve the current managed state, then replace
+the managed backup scope exactly instead of overlaying it. Machine-local runtime
+and backup configuration remain untouched, and a successful pull disables the
+automatic backup schedule so restarting the dashboard cannot push immediately.
 
 ## User Stories
 - [ ] As an operator restoring a second machine, I can inspect the source and exact file changes before any local state changes.
-- [ ] As an operator with local-only state, I receive a conflict or recovery archive instead of silently losing it.
+- [ ] As an operator with local-only state, I have an automatic recovery archive before it is replaced.
 - [ ] As an operator running the dashboard after a restore, I cannot accidentally push the restored/mixed state back to the vault.
-- [ ] As an operator using two machines, I can see which machine, commit, and time produced the current remote backup.
+- [ ] As an operator, I can use repository Git/SpecStore for ongoing cross-machine state rather than treating Vault as a merge engine.
 
 ## Acceptance Criteria
-- [ ] Every push writes a versioned root manifest containing snapshot time, source machine identity, Aigon version, project names, per-project file counts/hashes, and available Git branch/HEAD/dirty/upstream facts.
-- [ ] `backup status` fetches remote metadata and distinguishes remote snapshot provenance from this machine's last push and pull.
-- [ ] `backup pull --dry-run` performs no local state mutation and reports adds, changes, removals, conflicts, source machine, timestamp, and remote SHA.
-- [ ] A real pull stages and verifies incoming state, creates a timestamped pre-restore archive, installs all projects transactionally, and restores every changed project/settings file if any operation fails.
+- [ ] `backup pull --dry-run` performs no project/settings mutation and reports per-project add, change, and removal counts plus the remote SHA.
+- [ ] A real pull creates a timestamped pre-restore archive before replacing any project state.
 - [ ] Restore is an exact mirror for the filtered managed `.aigon` scope, pruning stale managed files absent from the snapshot while preserving `PROJECT_EXCLUDES`, excluded files, logs, sessions, locks, caches, server state, and other explicitly machine-local paths.
 - [ ] Global `backup` configuration, `repos`, `serverPort`, and `sync` remain machine-local and are never imported from another machine.
-- [ ] Pull records a pending-restore interlock. Scheduled pushes refuse while pending until `aigon backup confirm-restore`; manual replacement of a changed remote requires an explicit `--replace-remote` option.
-- [ ] An explicit remote replacement first preserves the previous remote HEAD under a recovery ref.
-- [ ] Existing vaults without a manifest remain readable with clear `unknown` provenance and acquire a manifest on their next push.
-- [ ] Focused regression coverage proves dry-run immutability, stale-file pruning, excluded-path preservation, rollback, interlock behavior, remote-change rejection, and remote provenance reporting.
+- [ ] A successful pull sets the local backup schedule to `off`; dashboard startup therefore cannot immediately push restored or mixed state.
+- [ ] Focused regression coverage proves dry-run immutability, stale-file pruning, excluded-path preservation, archive creation, and schedule shutdown.
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
@@ -80,12 +75,11 @@ node -c lib/backup.js
 ## Technical Approach
 
 - Keep `lib/backup.js` as the domain owner and preserve the existing CLI aliases.
-- Build deterministic per-project manifests using SHA-256 relative-path indexes.
-- Separate `planPull()` from `applyPullPlan()` so dry-run and mutation use the same comparison contract.
-- Stage restored `.aigon` trees beside their targets on the same filesystem. Copy machine-local exclusions from the current tree into staging, verify incoming hashes, rename current trees to rollback locations, then rename staged trees into place. Retain a durable pre-restore archive and roll back in reverse order on failure.
-- Track `lastSeenRemoteSha`, `restorePending`, and restore provenance in machine-local `backup-meta.json`; never restore these fields from the vault.
-- Add optimistic remote-head validation to push. `--replace-remote` is the explicit authority switch and creates a recovery branch before replacing vault `main`.
+- Separate a read-only restore plan from application so `--dry-run` and pull describe the same adds, changes, and removals.
+- Before applying, copy each target project's filtered managed `.aigon` scope into a timestamped archive under `~/.aigon/restore-archives/`.
+- Build a replacement `.aigon` tree from the incoming managed state plus local excluded/runtime entries, then swap it into place. This prunes stale managed files without touching sessions, locks, cache, server state, excluded files, or logs.
 - Strip the global `backup` key from backed-up settings so schedules and remote configuration remain local.
+- After a successful pull, set the local backup schedule to `off` and report that it must be re-enabled deliberately.
 - Keep canonical feature/research cross-machine collaboration in the existing `git-branch` SpecStore. Vault backup remains disaster recovery for filtered `.aigon` state and settings, not a merge engine.
 
 ## Dependencies
@@ -104,7 +98,7 @@ node -c lib/backup.js
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
-- None. Safety defaults are fail-closed; explicit replacement is available for an intentional authority switch.
+- None.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
