@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "entityType": "feature",
+  "entityId": "740",
+  "authorHandoff": {
+    "schemaVersion": 1,
+    "artifactVersion": 1,
+    "status": "valid",
+    "recordedAt": "2026-08-04T13:05:40.826Z",
+    "recordedBy": null,
+    "decisions": [
+      "Vault restore becomes transactional and exact for the filtered managed scope.",
+      "Machine-local backup configuration and runtime paths are never restored.",
+      "A post-restore interlock blocks scheduled pushes until explicit acceptance.",
+      "Git-branch SpecStore is the recommended live cross-machine authority; Vault remains disaster recovery."
+    ],
+    "constraints": [
+      "Existing vaults without manifests must remain readable.",
+      "Do not include docs/specs or repository code in Vault backup.",
+      "Do not restore sessions, locks, caches, or server runtime state.",
+      "Preserve current backup and vault CLI aliases."
+    ],
+    "nonGoals": [
+      "Merge divergent workflow histories in the backup engine.",
+      "Automatically migrate repositories to git-branch storage."
+    ],
+    "unresolvedQuestions": [],
+    "implementationNotes": [
+      "The incident showed copyDirRecursive overlay at pull left stale workflow directories.",
+      "Dashboard startup immediately invokes runScheduledPushIfDue, so restorePending must be checked below that entry point.",
+      "Push currently fetches and checks out remote main before rewriting it, which masks a remote authority change unless compared with machine-local lastSha."
+    ],
+    "specReferences": [
+      "docs/specs/features/01-inbox/feature-740-backup-restore-integrity.md",
+      "docs/specstore-architecture.md",
+      "docs/architecture.md"
+    ]
+  },
+  "updatedAt": "2026-08-04T13:05:40.826Z"
+}
