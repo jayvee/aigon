@@ -19,6 +19,14 @@ managed `.aigon/` scope exactly on machines where those repos exist. This remove
 stale managed files left by older snapshots while preserving local sessions,
 locks, caches, server state, logs, and other excluded runtime files. Global repo
 registration, ports, sync settings, and backup remote/schedule remain local.
+Files under `.aigon/` that are tracked by the project repository remain under
+normal Git authority: push omits them, restore planning ignores them, and pull
+preserves the currently checked-out versions.
+
+Pushing from a machine that has only some Vault projects refreshes those local
+project snapshots and preserves snapshots for projects that are not cloned on
+that machine. Removing a repo locally therefore cannot silently erase its only
+Vault recovery copy.
 
 After a successful pull, Aigon sets that machine's backup schedule to **off**.
 Verify the restored state before deliberately enabling scheduled pushes again.

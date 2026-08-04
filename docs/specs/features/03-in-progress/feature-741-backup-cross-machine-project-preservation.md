@@ -33,17 +33,24 @@ transitions:
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+
+Make Vault safe to push from a machine that has only a subset of the projects
+stored in the remote, and keep Git-tracked `.aigon` files under Git authority
+during restore. This closes the two concrete gaps found while restoring Machine
+B after F740.
 
 ## User Stories
 <!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator moving between machines, pushing from a smaller machine does not erase recovery snapshots for projects that are not cloned there.
+- [ ] As an operator pulling an older Vault snapshot after updating code, Git-tracked `.aigon` files remain at the checked-out Git version.
 
 ## Acceptance Criteria
 <!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Push refreshes each registered, locally present project's Vault directory but preserves Vault project directories not present locally.
+- [ ] Restore planning excludes currently Git-tracked `.aigon` files because Vault will not mutate them.
+- [ ] Restore preserves the current working-tree version of every Git-tracked `.aigon` file, including tracked deletions.
+- [ ] New pushes omit Git-tracked `.aigon` files from the portable Vault scope.
+- [ ] Focused regression tests cover an unavailable remote project and a newer Git-tracked file surviving an older snapshot restore.
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
@@ -51,6 +58,9 @@ transitions:
      All commands must exit 0 for the iteration to be considered successful.
      Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+npm run test:iterate
+node tests/unit/backup.test.js
+node -c lib/backup.js
 ```
 
 ## Pre-authorised
@@ -61,25 +71,31 @@ transitions:
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+- Preserve the remote `projects/` directory during a push, replacing only directories for registered repositories that exist locally.
+- Derive tracked `.aigon` paths with `git ls-files`; remove them from backup copies and restore diffs.
+- Overlay current tracked files onto the staged restore tree before its atomic swap, removing an incoming path when Git currently records it as deleted.
+- Keep F740's archive, exact managed replacement, and schedule-off behavior unchanged.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
      For Aigon feature dependencies use: depends_on: feature-name-slug
      This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- F740 backup-restore-integrity.
 
 ## Out of Scope
 <!-- Explicitly list what this feature does NOT include -->
--
+- Vault project deletion/pruning commands.
+- Cloning or registering projects automatically.
+- Changes to lifecycle or SpecStore behavior.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
--
+- None.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+- Incident: Machine B had 5 registered repositories while the authoritative Vault contained 16 project snapshots.
+- Prior work: F740 backup-restore-integrity.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->

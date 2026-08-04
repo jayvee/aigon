@@ -92,7 +92,7 @@ Current shared modules:
 - `lib/insights.js` (~497 lines): AADE insights read-model — aggregates, rule-based observations, optional Claude-API coaching (F114)
 - `lib/benchmark-artifacts.js` (~335 lines): read-model over `.aigon/benchmarks/*.json` for the agent benchmark matrix (F713)
 - `lib/sync.js` (~907 lines), `lib/sync-core.js` (~178), `lib/sync-merge.js` (~336), `lib/sync-state.js` (~427): git-backed state sync — bundle build/merge, sync metadata, and `isFeatureSuspended` (F708)
-- `lib/backup.js` (~900 lines): unified vault/backup engine — configure, push, dry-run/exact restore with pre-restore archives, machine-local schedule safety, retention (F712, F740)
+- `lib/backup.js` (~950 lines): unified vault/backup engine — configure, subset-safe push, dry-run/exact restore with pre-restore archives, Git-tracked-file and machine-local schedule safety, retention (F712, F740, F741)
 - `lib/profile-state.js` (~415 lines): `~/.aigon/` profile sync to a git remote (F711)
 - `lib/recurring.js` (~406 lines): weekly/quarterly recurring-feature templates and batch creation (F707)
 - `lib/scheduled-kickoff.js` (~674 lines) + `lib/cron-parse.js` (~110): deferred job store and server poller for scheduled feature/research kickoffs and `agent_prompt` runs (F709, F710)

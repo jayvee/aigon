@@ -12,6 +12,7 @@ const {
     applyTelemetryRetention,
     diffIndexes,
     pull,
+    push,
 } = require('../../lib/backup');
 const { mergeJsonlByTimestamp } = require('../../lib/sync-merge');
 
@@ -59,7 +60,12 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
     const seed = path.join(dir, 'vault-seed');
     try {
         process.env.AIGON_HOME = fakeHome;
-        fs.mkdirSync(path.join(project, '.git'), { recursive: true });
+        execFileSync('git', ['init', project], { stdio: 'ignore' });
+        execFileSync('git', ['-C', project, 'config', 'user.email', 'test@example.com']);
+        execFileSync('git', ['-C', project, 'config', 'user.name', 'Backup Test']);
+        writeJsonFile(path.join(project, '.aigon', 'context', 'tracked.json'), { version: 'new-from-git' });
+        execFileSync('git', ['-C', project, 'add', '.aigon/context/tracked.json']);
+        execFileSync('git', ['-C', project, 'commit', '-m', 'tracked state'], { stdio: 'ignore' });
         writeJsonFile(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json'), { id: 'stale' });
         writeJsonFile(path.join(project, '.aigon', 'sessions', 'live.json'), { session: 'keep' });
         writeJsonFile(path.join(aigonHome, 'config.json'), {
@@ -73,6 +79,7 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
         execFileSync('git', ['-C', seed, 'config', 'user.email', 'test@example.com']);
         execFileSync('git', ['-C', seed, 'config', 'user.name', 'Backup Test']);
         writeJsonFile(path.join(seed, 'projects', projectName, 'workflows', 'features', 'fresh', 'snapshot.json'), { id: 'fresh' });
+        writeJsonFile(path.join(seed, 'projects', projectName, 'context', 'tracked.json'), { version: 'old-from-vault' });
         writeJsonFile(path.join(seed, 'projects', projectName, 'sessions', 'remote.json'), { session: 'do-not-restore' });
         writeJsonFile(path.join(seed, 'settings', 'config.json'), {
             backup: { remote: 'wrong', schedule: 'weekly' },
@@ -86,6 +93,7 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
 
         const dryRun = pull({ dryRun: true });
         assert.strictEqual(dryRun.dryRun, true);
+        assert.ok(!dryRun.plan.projects[0].diff.changed.includes('context/tracked.json'));
         assert.ok(fs.existsSync(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json')));
         assert.strictEqual(JSON.parse(fs.readFileSync(path.join(aigonHome, 'config.json'), 'utf8')).backup.schedule, 'daily');
 
@@ -94,6 +102,10 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
         assert.ok(!fs.existsSync(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json')));
         assert.ok(fs.existsSync(path.join(project, '.aigon', 'sessions', 'live.json')));
         assert.ok(!fs.existsSync(path.join(project, '.aigon', 'sessions', 'remote.json')));
+        assert.deepStrictEqual(
+            JSON.parse(fs.readFileSync(path.join(project, '.aigon', 'context', 'tracked.json'), 'utf8')),
+            { version: 'new-from-git' }
+        );
         assert.ok(fs.existsSync(path.join(restored.archiveRoot, 'projects', projectName, 'workflows', 'features', 'stale', 'snapshot.json')));
         const archivedConfig = JSON.parse(fs.readFileSync(path.join(restored.archiveRoot, 'settings', 'config.json'), 'utf8'));
         assert.strictEqual(archivedConfig.backup.schedule, 'daily');
@@ -101,6 +113,50 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
         assert.strictEqual(config.defaultAgent, 'cx');
         assert.strictEqual(config.backup.remote, remote);
         assert.strictEqual(config.backup.schedule, 'off');
+    } finally {
+        if (previousHome === undefined) delete process.env.AIGON_HOME;
+        else process.env.AIGON_HOME = previousHome;
+    }
+}));
+
+// REGRESSION: pushing from a machine with only some Vault projects used to erase every
+// remote project snapshot that was not cloned and registered on that machine.
+test('push refreshes local projects without deleting unavailable remote projects', () => withTempDir('backup-push-', (dir) => {
+    const previousHome = process.env.AIGON_HOME;
+    const fakeHome = path.join(dir, 'home');
+    const aigonHome = path.join(fakeHome, '.aigon');
+    const project = path.join(dir, 'local-project');
+    const remote = path.join(dir, 'vault.git');
+    const seed = path.join(dir, 'vault-seed');
+    try {
+        process.env.AIGON_HOME = fakeHome;
+        execFileSync('git', ['init', project], { stdio: 'ignore' });
+        execFileSync('git', ['-C', project, 'config', 'user.email', 'test@example.com']);
+        execFileSync('git', ['-C', project, 'config', 'user.name', 'Backup Test']);
+        writeJsonFile(path.join(project, '.aigon', 'context', 'tracked.json'), { owner: 'git' });
+        execFileSync('git', ['-C', project, 'add', '.aigon/context/tracked.json']);
+        execFileSync('git', ['-C', project, 'commit', '-m', 'tracked state'], { stdio: 'ignore' });
+        writeJsonFile(path.join(project, '.aigon', 'workflows', 'features', 'new.json'), { id: 'new' });
+        writeJsonFile(path.join(aigonHome, 'config.json'), {
+            repos: [project],
+            backup: { remote, schedule: 'off' },
+        });
+        execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore' });
+        execFileSync('git', ['init', seed], { stdio: 'ignore' });
+        execFileSync('git', ['-C', seed, 'config', 'user.email', 'test@example.com']);
+        execFileSync('git', ['-C', seed, 'config', 'user.name', 'Backup Test']);
+        writeJsonFile(path.join(seed, 'projects', 'unavailable-project', 'workflows', 'keep.json'), { id: 'keep' });
+        execFileSync('git', ['-C', seed, 'add', '-A']);
+        execFileSync('git', ['-C', seed, 'commit', '-m', 'seed'], { stdio: 'ignore' });
+        execFileSync('git', ['-C', seed, 'branch', '-M', 'main']);
+        execFileSync('git', ['-C', seed, 'remote', 'add', 'origin', remote]);
+        execFileSync('git', ['-C', seed, 'push', '-u', 'origin', 'main'], { stdio: 'ignore' });
+
+        push();
+        const helper = path.join(aigonHome, '.vault', 'repo', 'projects');
+        assert.ok(fs.existsSync(path.join(helper, 'unavailable-project', 'workflows', 'keep.json')));
+        assert.ok(fs.existsSync(path.join(helper, 'local-project', 'workflows', 'features', 'new.json')));
+        assert.ok(!fs.existsSync(path.join(helper, 'local-project', 'context', 'tracked.json')));
     } finally {
         if (previousHome === undefined) delete process.env.AIGON_HOME;
         else process.env.AIGON_HOME = previousHome;
