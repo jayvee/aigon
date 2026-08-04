@@ -21,6 +21,7 @@ aigon install-agent cc      # Claude Code
 aigon install-agent ag      # Antigravity CLI
 aigon install-agent cx      # OpenAI Codex
 aigon install-agent am      # Amp
+aigon install-agent cp      # GitHub Copilot CLI
 
 # Run the test suite
 npm test                       # core validation: lint (incl. dashboard JS) + diagrams + unit/integration/workflow
