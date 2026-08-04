@@ -1,82 +1,75 @@
 ---
+aigon_id: F746
 complexity: medium
-# agent: cc    # optional — id of the agent that owns this spec. Used as the
-#              #   default reviewer for spec-revise cycles when the operator
-#              #   does not pick one explicitly. Precedence at revision time:
-#              #     event payload nextReviewerId > frontmatter agent:
-#              #     > snapshot.authorAgentId > getDefaultAgent().
-# research: 44 # optional — id (or list of ids) of the research topic that
-#              #   spawned this feature. Stamped automatically by `research-eval`
-#              #   on features it creates. Surfaced in the dashboard research
-#              #   detail panel under Agent Log → FEATURES.
-# planning_context: ~/.claude/plans/your-plan.md  # optional — path(s) to plan file(s)
-#              #   generated during an interactive planning session (e.g. EnterPlanMode).
-#              #   Content is injected into the agent's context at feature-do time and
-#              #   copied into the implementation log at feature-start for durability.
-#              #   Set this whenever you ran plan mode before writing the spec.
-# set: my-slug  # optional — ONLY when creating 2+ inbox peers to ship together.
-#              #   Run `aigon set list` / `aigon set show <slug>` first. NEVER tag into
-#              #   a completed set (all members done). Follow-up work: standalone + depends_on.
 ---
 
-# Feature: recurring-delete-skips-current-period
-
-<!-- Authoring AI: set `complexity:` using this rubric before writing the spec:
-       low       — config tweaks, doc-only, single-file helpers, trivial bug fixes
-       medium    — standard feature with moderate cross-cutting, one command handler, small refactor
-       high      — multi-file changes, new public surfaces, judgment-heavy deletion work
-       very-high — architectural shifts, contract-breaking changes, new invariants, cross-cutting work that spans multiple subsystems
-     At start time, model and effort defaults come from each agent's complexity-defaults
-     table (not from this spec). Do not put model IDs in the spec. -->
+# Feature: Recurring delete skips current period
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+
+Make deletion durable for generated recurring features. When an operator deletes a weekly, monthly, or quarterly feature instance, Aigon must record that instance's cadence period as intentionally handled before removing the spec. The background recurring check must then leave it deleted for that period and resume normal generation only in the next period.
+
+## Problem
+
+`feature-delete` removes the generated feature spec and workflow state, but recurring status is tracked separately in `.aigon/recurring-state.json`. If that state is absent or stale, deleting the only open instance makes its template immediately due. The dashboard server's automatic recurring check can recreate the feature after a restart, making deletion appear ineffective.
 
 ## User Stories
-<!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+
+- [ ] As an operator, when I delete a generated recurring feature, it stays absent for the rest of that feature's week, month, or quarter.
+- [ ] As an operator, deleting one period does not disable the recurring template permanently; the next period can still generate normally.
+- [ ] As a maintainer, ordinary non-recurring feature deletion remains unchanged and deletion fails safely if Aigon cannot persist the recurring disposition.
 
 ## Acceptance Criteria
-<!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+
+- [ ] `feature-delete` recognizes a recurring feature from `recurring_slug` plus exactly one of `recurring_week`, `recurring_month`, or `recurring_quarter` in the instance frontmatter.
+- [ ] Before removing a recognized recurring spec, Aigon writes that exact instance period to the existing recurring-state entry (`lastWeek`, `lastMonth`, or `lastQuarter`) and records a deletion timestamp without discarding other cadence fields.
+- [ ] If recurring disposition state cannot be written, deletion exits non-zero and leaves the spec and workflow intact rather than allowing immediate regeneration.
+- [ ] The server's next automatic recurring check and a manual `aigon recurring-run` both skip a deleted instance for the recorded period.
+- [ ] A later weekly, monthly, or quarterly period remains eligible for normal generation.
+- [ ] Non-recurring feature deletion and research deletion retain their existing behavior and do not create recurring state.
+- [ ] CLI output explicitly confirms the cadence period that was skipped.
+- [ ] Public recurring-feature documentation explains that deleting a generated instance skips its current cadence period rather than disabling its template.
+- [ ] Focused regression coverage exercises weekly, monthly, and quarterly instances through the real `feature-delete` and `recurring-run` commands.
+- [ ] Recurring generation stages and commits only the newly generated spec, never unrelated edits or already-staged operator work.
 
 ## Validation
-<!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
-     Use for feature-specific checks that don't fit in the project's general checks.
-     All commands must exit 0 for the iteration to be considered successful.
-     Leave the block below empty or remove it if there is nothing feature-specific to run. -->
+
 ```bash
+node tests/integration/lifecycle-source-deletion.test.js
+npm run test:iterate
 ```
 
 ## Pre-authorised
-<!-- Optional: grant specific policy-gate skips for this feature only.
-     Each line is a single bullet authorising one action. When an agent proceeds
-     under a line, the commit footer must be `Pre-authorised-by: <slug>` where
-     `<slug>` is the slugified line text (lowercase, non-alphanumerics → hyphens).
-     Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+1. Add a focused `markRecurringInstanceDeleted(repoPath, specContent)` helper in `lib/recurring.js`. Parse the instance frontmatter, recognize only valid generated-instance shapes, merge the exact period into `.aigon/recurring-state.json`, and return a small disposition DTO for CLI output.
+2. Call the helper from the feature path in `entityDelete` after all lifecycle/dependency eligibility checks but before `git rm` or workflow removal. Fail closed on state-write errors. Research and ordinary features bypass the helper.
+3. Continue using the existing `lastWeek`/`lastMonth`/`lastQuarter` fields so `checkRecurringFeatures` and `listRecurringStatus` require no second source of truth. Preserve any other cadence stamps already stored for the same recurring slug.
+4. Narrow recurring generation's Git add/commit pathspec to the generated backlog spec so a background run cannot sweep concurrent work into its commit.
+5. Add focused integration coverage that seeds recurring templates and instances, deletes them, runs the recurring checker, and proves that nothing is recreated and unrelated staged work remains untouched.
+6. Document current-period skip semantics and the distinction between deleting an instance and removing/disabling its recurring template.
 
 ## Dependencies
-<!-- Other features, external services, or prerequisites.
-     For Aigon feature dependencies use: depends_on: feature-name-slug
-     This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+
+- `lib/entity.js` deletion pipeline.
+- `lib/recurring.js` cadence state and automatic generation checks.
+- `.aigon/recurring-state.json`, which is already included in Aigon backup/sync state.
 
 ## Out of Scope
-<!-- Explicitly list what this feature does NOT include -->
--
+
+- Disabling or deleting recurring templates.
+- A new recurring-template settings UI or skip command.
+- Restoring previously deleted recurring instances.
+- Changing cadence calculations or the dashboard server's recurring-check interval.
+- Making recurring state part of workflow-core feature events.
 
 ## Open Questions
-<!-- Unresolved questions that may need clarification during implementation -->
--
+
+- None. Deletion skips only the exact period recorded on the generated instance.
 
 ## Related
-<!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
-<!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
-     See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
+
+- F320 — recurring-features
+- F707 — merged recurring engine
+- `site/content/guides/recurring-features.mdx`
