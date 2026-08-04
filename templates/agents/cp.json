@@ -185,6 +185,14 @@
         "label": "Default"
       },
       {
+        "value": "none",
+        "label": "None"
+      },
+      {
+        "value": "minimal",
+        "label": "Minimal"
+      },
+      {
         "value": "low",
         "label": "Low"
       },
