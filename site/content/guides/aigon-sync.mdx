@@ -1,11 +1,11 @@
 ---
 title: Aigon Sync
-description: Push portable Aigon state to a private Git vault — multi-machine sync (dashboard Settings → Aigon Sync).
+description: Back up portable Aigon state to a private Git vault for verified machine recovery.
 ---
 
-**Aigon Sync** is how you keep **portable Aigon state** in a **private Git repository** (the *vault*) so you can move between laptops or teammates without losing workflow metadata. It snapshots each registered project’s `.aigon/` tree (filtered) plus a stripped copy of `~/.aigon/config.json`, then pushes to a remote you control.
+**Aigon Sync** keeps a recovery copy of **portable Aigon state** in a **private Git repository** (the *vault*). It snapshots each registered project’s `.aigon/` tree (filtered) plus a stripped copy of `~/.aigon/config.json`, then pushes to a remote you control.
 
-It is not the only way to back things up — you can always copy repos, zip folders, or rely on host backups. Aigon Sync adds **hosted Git coordination** for Aigon-specific state, and is entirely optional.
+It is not the only way to back things up — you can always copy repos, zip folders, or rely on host backups. Aigon Sync adds a **hosted recovery snapshot** for Aigon-specific state, and is entirely optional.
 
 ## What gets synced
 
@@ -14,7 +14,14 @@ The vault is a normal Git repo you configure once (`aigon backup configure <git-
 - **`projects/<name>/`** — portable subtree from each registered repo’s `.aigon/` (sessions, locks, and disposable caches are excluded)
 - **`settings/`** — sanitized global config plus workflow definition paths
 
-**Pull** restores compatible settings and project `.aigon/` slices onto machines where those repos exist.
+**Pull** creates a timestamped local recovery archive, then replaces the filtered
+managed `.aigon/` scope exactly on machines where those repos exist. This removes
+stale managed files left by older snapshots while preserving local sessions,
+locks, caches, server state, logs, and other excluded runtime files. Global repo
+registration, ports, sync settings, and backup remote/schedule remain local.
+
+After a successful pull, Aigon sets that machine's backup schedule to **off**.
+Verify the restored state before deliberately enabling scheduled pushes again.
 
 ## CLI
 
@@ -22,6 +29,7 @@ The vault is a normal Git repo you configure once (`aigon backup configure <git-
 |---------|---------|
 | `aigon backup configure <url>` | Point the vault at a private HTTPS or SSH remote |
 | `aigon backup push` | Snapshot local state and push to the vault |
+| `aigon backup pull --dry-run` | Preview per-project additions, changes, and removals without changing project or settings state |
 | `aigon backup pull` | Fetch from the vault and restore where repos resolve locally |
 | `aigon backup status` | Remote URL, last push/pull, schedule, project counts |
 | `aigon backup schedule <daily\|hourly\|weekly\|off>` | Cadence for automated pushes (the server checks hourly) |
@@ -29,6 +37,11 @@ The vault is a normal Git repo you configure once (`aigon backup configure <git-
 **`aigon vault`** is an alias for the same engine as `aigon backup`.
 
 Legacy **`aigon sync`** without subcommands is deprecated — it routes to the backup engine with a migration hint; use **`aigon backup`** for new workflows.
+
+Vault backup is a recovery snapshot, not a merge engine. For active feature and
+research work across clones or machines, use the repository's `git-branch`
+SpecStore (`aigon storage convert --backend=git-branch --remote=origin` and
+`aigon storage sync`) so canonical lifecycle events travel with that repository.
 
 ## Dashboard (Settings → Aigon Sync)
 

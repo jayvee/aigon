@@ -4,10 +4,14 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const { execFileSync } = require('child_process');
 const { test, withTempDir, report } = require('../_helpers');
 const {
     PROJECT_EXCLUDES,
+    SETTINGS_STRIPPED_KEYS,
     applyTelemetryRetention,
+    diffIndexes,
+    pull,
 } = require('../../lib/backup');
 const { mergeJsonlByTimestamp } = require('../../lib/sync-merge');
 
@@ -26,6 +30,80 @@ test('PROJECT_EXCLUDES keeps telemetry included and sessions/locks excluded', ()
     assert.ok(PROJECT_EXCLUDES.has('sessions'));
     assert.ok(PROJECT_EXCLUDES.has('locks'));
 });
+
+// REGRESSION: one machine's vault remote and schedule must never be backed up as portable settings.
+test('backup configuration is machine-local', () => {
+    assert.ok(SETTINGS_STRIPPED_KEYS.includes('backup'));
+});
+
+// REGRESSION: restore planning must distinguish incoming, changed, and stale managed files.
+test('diffIndexes reports exact restore changes', () => {
+    const diff = diffIndexes(
+        { 'workflows/1.json': 'old', 'workflows/stale.json': 'stale' },
+        { 'workflows/1.json': 'new', 'workflows/2.json': 'added' }
+    );
+    assert.deepStrictEqual(diff.added, ['workflows/2.json']);
+    assert.deepStrictEqual(diff.changed, ['workflows/1.json']);
+    assert.deepStrictEqual(diff.removed, ['workflows/stale.json']);
+});
+
+// REGRESSION: a pull used to overlay state, retain stale workflows, restore another machine's
+// schedule, and let dashboard startup immediately push the mixed result back to the vault.
+test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime state, and disables schedule', () => withTempDir('backup-pull-', (dir) => {
+    const previousHome = process.env.AIGON_HOME;
+    const fakeHome = path.join(dir, 'home');
+    const aigonHome = path.join(fakeHome, '.aigon');
+    const projectName = 'backup-restore-fixture';
+    const project = path.join(dir, projectName);
+    const remote = path.join(dir, 'vault.git');
+    const seed = path.join(dir, 'vault-seed');
+    try {
+        process.env.AIGON_HOME = fakeHome;
+        fs.mkdirSync(path.join(project, '.git'), { recursive: true });
+        writeJsonFile(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json'), { id: 'stale' });
+        writeJsonFile(path.join(project, '.aigon', 'sessions', 'live.json'), { session: 'keep' });
+        writeJsonFile(path.join(aigonHome, 'config.json'), {
+            repos: [project],
+            backup: { remote, schedule: 'daily' },
+            defaultAgent: 'cc',
+        });
+
+        execFileSync('git', ['init', '--bare', remote], { stdio: 'ignore' });
+        execFileSync('git', ['init', seed], { stdio: 'ignore' });
+        execFileSync('git', ['-C', seed, 'config', 'user.email', 'test@example.com']);
+        execFileSync('git', ['-C', seed, 'config', 'user.name', 'Backup Test']);
+        writeJsonFile(path.join(seed, 'projects', projectName, 'workflows', 'features', 'fresh', 'snapshot.json'), { id: 'fresh' });
+        writeJsonFile(path.join(seed, 'projects', projectName, 'sessions', 'remote.json'), { session: 'do-not-restore' });
+        writeJsonFile(path.join(seed, 'settings', 'config.json'), {
+            backup: { remote: 'wrong', schedule: 'weekly' },
+            defaultAgent: 'cx',
+        });
+        execFileSync('git', ['-C', seed, 'add', '-A']);
+        execFileSync('git', ['-C', seed, 'commit', '-m', 'seed'], { stdio: 'ignore' });
+        execFileSync('git', ['-C', seed, 'branch', '-M', 'main']);
+        execFileSync('git', ['-C', seed, 'remote', 'add', 'origin', remote]);
+        execFileSync('git', ['-C', seed, 'push', '-u', 'origin', 'main'], { stdio: 'ignore' });
+
+        const dryRun = pull({ dryRun: true });
+        assert.strictEqual(dryRun.dryRun, true);
+        assert.ok(fs.existsSync(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json')));
+        assert.strictEqual(JSON.parse(fs.readFileSync(path.join(aigonHome, 'config.json'), 'utf8')).backup.schedule, 'daily');
+
+        const restored = pull();
+        assert.ok(fs.existsSync(path.join(project, '.aigon', 'workflows', 'features', 'fresh', 'snapshot.json')));
+        assert.ok(!fs.existsSync(path.join(project, '.aigon', 'workflows', 'features', 'stale', 'snapshot.json')));
+        assert.ok(fs.existsSync(path.join(project, '.aigon', 'sessions', 'live.json')));
+        assert.ok(!fs.existsSync(path.join(project, '.aigon', 'sessions', 'remote.json')));
+        assert.ok(fs.existsSync(path.join(restored.archiveRoot, 'projects', projectName, 'workflows', 'features', 'stale', 'snapshot.json')));
+        const config = JSON.parse(fs.readFileSync(path.join(aigonHome, 'config.json'), 'utf8'));
+        assert.strictEqual(config.defaultAgent, 'cx');
+        assert.strictEqual(config.backup.remote, remote);
+        assert.strictEqual(config.backup.schedule, 'off');
+    } finally {
+        if (previousHome === undefined) delete process.env.AIGON_HOME;
+        else process.env.AIGON_HOME = previousHome;
+    }
+}));
 
 // REGRESSION: retention compresses aged per-session telemetry and preserves recent files.
 test('retention compress: per-session json older than compressAfterDays becomes .json.gz', () => withTempDir('backup-test-', (repo) => {
