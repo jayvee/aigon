@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "entityType": "feature",
+  "entityId": "745",
+  "authorHandoff": {
+    "schemaVersion": 1,
+    "artifactVersion": 1,
+    "status": "valid",
+    "recordedAt": "2026-08-04T14:30:07.242Z",
+    "recordedBy": "cx",
+    "decisions": [
+      "Cover all three requested surfaces: public docs/help, README and agent reference, and homepage/SEO marketing.",
+      "Keep the feature documentation-only and dependent on F743's final merged registry contract.",
+      "Update exhaustive rosters and affected capability claims, but do not mechanically add Copilot to illustrative examples.",
+      "Retain valid screenshots and GIFs; limit visual work to source copy, metadata, and alt text.",
+      "Position Copilot as one entitlement routing among model families, not as multiple independent vendor quota pools.",
+      "Recommend Auto while documenting entitlement-dependent named model choices and absent v1 telemetry/resume support."
+    ],
+    "constraints": [
+      "Do not alter F743 implementation behavior or registry configuration.",
+      "Use F743's merged cp registry and generated agent guide as the source of truth.",
+      "Do not hand-edit generated Pagefind output.",
+      "Keep public claims accurate for plan and organization-policy differences."
+    ],
+    "nonGoals": [
+      "No Copilot telemetry, quota polling, resume support, or benchmark work.",
+      "No default Fleet promotion.",
+      "No screenshot, GIF, or social-card regeneration.",
+      "No broad rewrite of scenario-specific tutorials."
+    ],
+    "unresolvedQuestions": [],
+    "implementationNotes": [
+      "Audit README.md, CONTRIBUTING.md, templates/help.txt, package.json, site/content, site/app, and site/public/home.html.",
+      "Run npm run docs:check, npm run build --prefix site, node scripts/check-template-leaks.js, and git diff --check.",
+      "Review desktop and 390px layouts only if changed copy materially affects wrapping."
+    ],
+    "specReferences": [
+      "Acceptance Criteria",
+      "Technical Approach",
+      "Dependencies",
+      "Out of Scope"
+    ]
+  },
+  "updatedAt": "2026-08-04T14:30:07.242Z"
+}
