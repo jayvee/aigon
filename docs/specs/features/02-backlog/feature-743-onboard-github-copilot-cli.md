@@ -1,6 +1,8 @@
 ---
 aigon_id: F743
 complexity: high
+transitions:
+  - { from: "inbox", to: "backlog", at: "2026-08-04T14:11:31.484Z", actor: "cli/feature-prioritise" }
 ---
 
 # Feature: onboard-github-copilot-cli
