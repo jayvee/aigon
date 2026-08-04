@@ -3,7 +3,7 @@ title: Telemetry & Analytics
 description: Cross-agent token tracking, cost attribution, and activity breakdown.
 ---
 
-Aigon collects telemetry from every agent session — Claude Code, Antigravity CLI, and Codex CLI — and normalizes it into a unified format. This gives you a single view of token usage, cost, and activity across your entire multi-agent workflow.
+Aigon collects telemetry from the agent CLIs that expose session transcripts — Claude Code, Antigravity CLI, and Codex CLI — and normalizes it into a unified format. This gives you a single view of token usage, cost, and activity across those sessions. Agents without a transcript source (currently Cursor and GitHub Copilot CLI) run normally but contribute no telemetry records.
 
 ## What is collected
 
@@ -30,6 +30,7 @@ Each agent CLI writes transcripts in a different format. Aigon includes a parser
 | **Antigravity CLI** (ag) | `~/.gemini/antigravity-cli/conversations/` SQLite database | Conversation steps and usage metadata |
 | **Codex CLI** (cx) | `~/.codex/sessions/` | JSONL matched by working directory |
 | **Cursor** (cu) | — | No telemetry — Cursor does not expose session data |
+| **GitHub Copilot CLI** (cp) | — | No telemetry in this release — no transcript, token, or cost data is collected |
 
 Parsers run automatically during `feature-close` and submission signaling — no manual step is needed.
 

@@ -19,6 +19,8 @@ By April 2026, every serious peer ships Markdown specs in git, git-worktree isol
 | **Intra-vendor parallel** | Superpowers, Cursor 3 Agents Window, Cline Kanban, GSD, Devin | — *(same model racing itself)* | — *(one quota pool)* |
 | **Cross-vendor parallel** | **Aigon** | ✓ | ✓ |
 
+> **A note on routing agents.** Some agents Aigon supports are *routers* rather than vendors — GitHub Copilot CLI (`cp`) is one GitHub Copilot entitlement that can route work to GPT, Claude, Gemini, or MAI models. That gives you model choice inside one subscription; it does **not** give you several independent quota pools, and two `cp` sessions are not provider-independent from each other. For genuine quota arbitrage, pair `cp` with an agent on a different subscription.
+
 ## Three buyer questions
 
 ### "Why not just use my one favourite tool?"
