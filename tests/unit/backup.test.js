@@ -95,6 +95,8 @@ test('pull dry-run is read-only; real pull archives, mirrors, preserves runtime 
         assert.ok(fs.existsSync(path.join(project, '.aigon', 'sessions', 'live.json')));
         assert.ok(!fs.existsSync(path.join(project, '.aigon', 'sessions', 'remote.json')));
         assert.ok(fs.existsSync(path.join(restored.archiveRoot, 'projects', projectName, 'workflows', 'features', 'stale', 'snapshot.json')));
+        const archivedConfig = JSON.parse(fs.readFileSync(path.join(restored.archiveRoot, 'settings', 'config.json'), 'utf8'));
+        assert.strictEqual(archivedConfig.backup.schedule, 'daily');
         const config = JSON.parse(fs.readFileSync(path.join(aigonHome, 'config.json'), 'utf8'));
         assert.strictEqual(config.defaultAgent, 'cx');
         assert.strictEqual(config.backup.remote, remote);
