@@ -33,17 +33,22 @@ transitions:
      table (not from this spec). Do not put model IDs in the spec. -->
 
 ## Summary
-<!-- One paragraph describing what this feature does and why -->
+
+Order active research pipeline cards by most recent creation time so newly
+created topics are immediately visible above the Inbox overflow cap. Numeric
+research IDs must not force old topics ahead of newer work.
 
 ## User Stories
 <!-- Specific, stories describing what the user is trying to acheive -->
-- [ ]
-- [ ]
+- [ ] As an operator, I see my newest research topic first in its active lane.
+- [ ] As an operator, a newly created topic is not hidden behind older numbered cards and the overflow control.
 
 ## Acceptance Criteria
 <!-- Specific, testable criteria that define "done" -->
-- [ ]
-- [ ]
+- [ ] Non-closed research lanes sort by `createdAt`, falling back to `updatedAt`, newest first.
+- [ ] Equal timestamps use deterministic ID/name tie-breakers.
+- [ ] Feature ordering and closed-item ordering remain unchanged.
+- [ ] Regression coverage pins R67 ahead of older numeric and unnumbered research topics.
 
 ## Validation
 <!-- Optional: commands the iterate loop runs after each iteration (in addition to project-level validation).
@@ -51,6 +56,8 @@ transitions:
      All commands must exit 0 for the iteration to be considered successful.
      Leave the block below empty or remove it if there is nothing feature-specific to run. -->
 ```bash
+node tests/unit/dashboard-pipeline-order.test.js
+npm run test:iterate
 ```
 
 ## Pre-authorised
@@ -61,25 +68,28 @@ transitions:
      Slugs are validated against this section at feature-close — invented footers block close. -->
 
 ## Technical Approach
-<!-- High-level approach, key decisions, constraints, non-functional requirements -->
+
+- Pass the pipeline entity type into the existing card sorter.
+- Apply recent-first timestamp ordering only to non-closed research lanes.
+- Preserve the current feature priority and closed recency contracts.
 
 ## Dependencies
 <!-- Other features, external services, or prerequisites.
      For Aigon feature dependencies use: depends_on: feature-name-slug
      This enables ordering enforcement — dependent features can't start until deps are done. -->
--
+- Existing dashboard pipeline card sorter and overflow cap.
 
 ## Out of Scope
 <!-- Explicitly list what this feature does NOT include -->
--
+- Changing feature ordering.
+- Changing lifecycle state, actions, or the server read model.
 
 ## Open Questions
 <!-- Unresolved questions that may need clarification during implementation -->
--
+- None.
 
 ## Related
 <!-- Links to research topics, other features, or external docs -->
-- Research: <!-- ID and title of the research topic that spawned this feature, if any -->
-- Prior work: <!-- optional — feature IDs this builds on, in prose; omit set: unless active bundle -->
+- Incident: restored R67 existed in the API but was hidden behind 15 older Inbox cards.
 <!-- Do NOT add `set:` here or in frontmatter to "join" a completed initiative.
      See .aigon/docs/feature-sets.md § Completed sets — do not rejoin. -->
