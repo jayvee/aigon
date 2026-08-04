@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aigon | Open-Source AI Agent Orchestration",
     description:
-      "Open-source orchestration for Claude, Antigravity, Cursor, and Codex — run them head-to-head and ship the best implementation.",
+      "Open-source orchestration for Claude, Antigravity, Cursor, Codex, and GitHub Copilot — run them head-to-head and ship the best implementation.",
     images: ["/img/og-image-v2.png"],
   },
   icons: {
