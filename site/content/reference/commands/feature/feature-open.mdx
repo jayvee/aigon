@@ -32,7 +32,7 @@ aigon feature-open <ID> [agent] [--all] [--terminal=<type>]
 1. Finds the matching worktree for the feature (and optional agent) in the worktrees directory
 2. Opens the configured terminal (Warp, iTerm2, etc.) as a new tab
 3. Navigates to the worktree directory
-4. Pre-loads the agent CLI with `/aigon:feature-do <ID>`
+4. Pre-loads the agent CLI with its `feature-do` invocation for that ID (`/aigon:feature-do 42` for Claude Code, `/aigon-feature-do 42` for Cursor and GitHub Copilot CLI, and so on)
 
 ## Agent mappings
 
@@ -42,6 +42,9 @@ aigon feature-open <ID> [agent] [--all] [--terminal=<type>]
 | `ag` | Antigravity | `agy --dangerously-skip-permissions` |
 | `cx` | Codex | `codex --full-auto` |
 | `cu` | Cursor | `agent --force` |
+| `cp` | GitHub Copilot CLI | `copilot --allow-all --interactive` |
+
+Other installed agents (`op`, `km`, `am`) launch from the same registry metadata — see the [Agents reference](/docs/reference/agents).
 
 ## Examples
 
