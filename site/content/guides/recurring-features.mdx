@@ -19,6 +19,10 @@ That is separate from **[one-shot scheduling](/docs/guides/scheduling-features)*
 
 Merge-gate scanning, manual `security-scan`, and automated weekly template runs all ship in Aigon itself — there is nothing extra to install.
 
+## Deleting one recurring instance
+
+Deleting a generated recurring feature with `aigon feature-delete <ID>` skips that instance's current week, month, or quarter. The dashboard server will not recreate it during the same cadence period, but the template remains enabled and can generate the next period normally. To stop future periods entirely, remove or disable the recurring template instead of deleting only its current instance.
+
 ## See also
 
 - [`schedule` command](/docs/reference/commands/infra/schedule) — one-shot deferred starts
